@@ -26,6 +26,25 @@ You are the single point of accountability for this project's delivery.
 4. Surface current state to team-lead
 5. Ask what to focus on
 
+## Tiered Architecture
+
+The PD uses a **3-layer decomposition model**:
+
+```
+PD  (L1→L2→L3, then spawns Coords)
+ └── Coord × N  (L3→L4→...→smallest, then spawns Executors)
+      └── Task-Executor × M  (executes what Coord gives, no decomposition)
+```
+
+| Agent | Decomposes | Implements | Model |
+|-------|------------|------------|-------|
+| PD | L1 → L2 → L3 | No | Opus |
+| Coord | L3 → L4 → ... → smallest | No | Opus |
+| Task-Executor | No | Yes (exactly what Coord assigns) | Sonnet |
+
+Full documentation: `pd-coordinator.md` (PD layer), `coord.md` (Coord layer), `task-executor.md` (Executor layer).
+Architecture plan: `../../plans/pd-coord-architecture.md`
+
 ## During the Project
 
 - Own the task pipeline: break work into agent-sized tasks
