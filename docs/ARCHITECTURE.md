@@ -77,6 +77,22 @@ The system is designed to be extended:
 - **New projects**: run `agency init --project name`
 - **Custom coordination**: add rooms in `~/.agency/rooms/` — see `docs/ROOMS.md`
 
+### Tiered Agent Architecture
+
+```
+PD  (L1→L2→L3 decomposition, then spawns Coords)
+ └── Coord × N  (L3→L4→...→smallest, spawns Executors, autonomous)
+      └── Task-Executor × M  (executes exactly what Coord assigns)
+```
+
+| Layer | Agent | Decomposes | Model |
+|-------|-------|-----------|-------|
+| L1-L3 | PD | L1 → L2 → L3 | Opus |
+| L3+ | Coord | L3 → L4 → ... → smallest | Opus |
+| Leaf | Task-Executor | No | Sonnet |
+
+Full plan: `plans/pd-coord-architecture.md`
+
 ## PD Standard Protocol
 
 Every Project Director follows a mandatory 3-rule protocol (see `core/PD_PROTOCOL.md`):
