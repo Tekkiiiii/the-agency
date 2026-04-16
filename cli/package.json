@@ -1,0 +1,14 @@
+{
+  "name": "@the-agency/cli",
+  "version": "1.0.0",
+  "description": "The Agency CLI — interact with your autonomous agent command center",
+  "bin": {
+    "agency": "./bin/agency.js"
+  },
+  "scripts": {
+    "start": "node bin/agency.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
