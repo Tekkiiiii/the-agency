@@ -6,7 +6,7 @@ Skills are reusable workflows. Invoke them in Claude Code with `/skill-name`.
 
 | Skill | Description | Category |
 |-------|-------------|----------|
-| `save-state` | Persist session to memory files | memory |
+| `save-state` | Persist session to memory files + Pinecone upsert | memory |
 | `recall` | Load project state from memory | memory |
 | `pd-resume` | Resume all PDs at session start | memory |
 | `project-status` | Maintain PROJECT.md conventions | memory |
