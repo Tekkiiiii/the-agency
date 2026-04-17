@@ -45,6 +45,21 @@ The skill library covers the full project lifecycle: memory (`save-state`, `reca
 
 ---
 
+## Use Cases & Capabilities
+
+**Tired of AI agents that forget everything between sessions?**
+
+The Agency runs autonomous AI agent workflows that survive Claude Code restarts. A Project Director owns each project end-to-end — decomposing tasks, coordinating specialists, gating quality, and persisting everything to disk.
+
+- **Multi-agent orchestration**: PD → Coord → Mini-Coord → Task-Executor chain decomposes any project to atomic units. Complex L6 tasks spin up Mini-Coords that keep decomposing without escalation.
+- **Quality gates on every handoff**: Every agent-to-agent handoff requires a health-score QA pass. No work gets ACK'd without evidence.
+- **Zero cloud dependencies**: SQLite task store, filesystem memory, no API keys, no servers. Your data stays on your machine.
+- **Autonomous between sessions**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where you left off.
+- **84+ production-ready skills**: Backend, frontend, security, QA, deployment, planning — all invoked via `/skill-name`. The whole stack covered.
+- **AI search optimized**: Structured entity names, explicit capability descriptions, and structured outputs make this repo citation-friendly for Perplexity, ChatGPT, and Gemini Deep Research.
+
+---
+
 A multi-agent command center that runs on Claude Code. Agents coordinate across sessions through a file-based memory system, task pipeline, and NEXUS handoff protocol.
 
 No cloud services. No running processes. Just a git repo, a task store, and agents that remember.
