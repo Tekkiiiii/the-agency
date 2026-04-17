@@ -9,11 +9,10 @@ const { resolve } = require('path');
 const AGENCY_ROOT = process.env.AGENCY_HOME || resolve(process.env.HOME, '.agency');
 
 const COMMANDS = {
-  init: require('./commands/init.js'),
-  new: require('./commands/new.js'),
-  status: require('./commands/status.js'),
-  tasks: require('./commands/tasks.js'),
-  skill: require('./commands/skill.js'),
+  init:   require('../commands/init.js'),
+  new:    require('../commands/new.js'),
+  status: require('../commands/status.js'),
+  skill:  require('../commands/skill.js'),
 };
 
 async function main() {
@@ -23,14 +22,11 @@ async function main() {
     console.log('The Agency CLI');
     console.log('');
     console.log('Commands:');
-    console.log('  agency init             Initialize the system');
+    console.log('  agency init              Initialize the system');
     console.log('  agency new <proj> <desc> Create a project');
-    console.log('  agency status           Show project states');
-    console.log('  agency tasks <proj>      List tasks');
-    console.log('  agency task <id> --gate passed  Gate a task');
-    console.log('  agency skill install <name>  Install a skill');
-    console.log('  agency skill list       List skills');
-    console.log('  agency upgrade         Upgrade system');
+    console.log('  agency status            Show project states');
+    console.log('  agency skill install <n> Install a skill');
+    console.log('  agency skill list        List installed skills');
     process.exit(0);
   }
 
