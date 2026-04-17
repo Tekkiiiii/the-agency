@@ -6,6 +6,45 @@
 
 ---
 
+**Open-source multi-agent command center for Claude Code.** Run autonomous AI agent workflows — PD-driven task decomposition, mandatory QA gates, health-score handoffs, SQLite task store, 84+ skills, zero cloud dependencies.
+
+---
+
+## What's New?
+
+### 4-Tier Autonomous Chain with Mini-Coord
+
+Projects now decompose to the smallest implementable unit across four levels:
+
+```
+PD  (L1→L3 — project orchestration)
+ └── Coord  (L3→L6 — task decomposition, parallel spawn)
+      └── Mini-Coord  (L6→L7+ — for complex sub-tasks)
+           └── Task-Executor  (executes one atomic unit)
+```
+
+Mini-Coords handle deep L6 decomposition autonomously — complex features split into L7/L8/L9 without escalating to PD. Parallelism scales across the whole chain.
+
+### Mandatory QA Gates Before Every Handoff
+
+Every task now passes a quality gate before approval fires. Executors run `/qa-only` on completion. Coordinators review health scores before ACK. No handoff completes blind.
+
+**Health score ≥ 70 + zero CRITICALs** — that's the gate for every level.
+
+### Explicit ACK/NACK Protocol
+
+Every handoff is now explicit. Agents wait for approval before stopping. NACKs include a fix list. Rejected work loops back through QA until it passes. Traceability is built into the protocol, not bolted on after.
+
+### Health Scores on Every Handoff
+
+Coord→PD reports now include health scores (0–100), issue counts by severity (CRITICAL/HIGH/MED/MED/LOW), and a QA report path. PD pre-aggregates with Coord-qa-Canary before reporting to root.
+
+### 84+ Skills, All Operational
+
+The skill library covers the full project lifecycle: memory (`save-state`, `recall`, `pd-resume`), execution (`ship`, `land-and-deploy`, `canary`), quality (`qa`, `qa-only`, `agent-browser`), engineering (`backend`, `frontend`, `security`), and governance (`cso`, `guard`, `nexus-gatekeeper`).
+
+---
+
 A multi-agent command center that runs on Claude Code. Agents coordinate across sessions through a file-based memory system, task pipeline, and NEXUS handoff protocol.
 
 No cloud services. No running processes. Just a git repo, a task store, and agents that remember.
