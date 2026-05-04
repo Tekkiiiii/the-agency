@@ -1,7 +1,7 @@
 {
   "name": "@the-agency/cli",
-  "version": "1.0.0",
-  "description": "The Agency CLI — interact with your autonomous agent command center",
+  "version": "2.0.0",
+  "description": "The Agency CLI — interact with your autonomous agent command center from the terminal",
   "bin": {
     "agency": "./bin/agency.js"
   },
@@ -10,5 +10,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^9.0.0"
   }
 }

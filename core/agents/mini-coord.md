@@ -11,7 +11,7 @@ skills: []
 
 ## Naming Convention
 
-- PD = "PD-{slug}" (e.g. PD-MarketSenseApp) — project-level orchestrator
+- PD = "PD-{slug}" (e.g. PD-{project}) — project-level orchestrator
 - Coord = "Coord-{l3-name}-{pun}" (e.g. Coord-auth-Gatekeeper) — L3 owner
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
@@ -49,7 +49,10 @@ Examples: Mini-auth-Gatekeeper-loginFlow, Mini-feed-Spinner-cardList, Mini-db-Ar
 
 ```
 1. Read the full L6 task from Coord's spawn prompt
-2. Set up scratch at {project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
+2. Set up scratch at {project-root}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
+   — include ## Status and ## Children tables (see Scratch Board below)
+2a. STATUS_UPDATE — IN_PROGRESS: send to parent Coord via SendMessage immediately
+    after scratch is set up, before decomposing
 3. Decompose L6 → L7 → L8 → L9 → ... → smallest implementable unit
    (atomic = one file, one function, one component — one Agent tool call)
 4. Group atomic units into batches — one Task-Executor per batch
@@ -60,10 +63,16 @@ Examples: Mini-auth-Gatekeeper-loginFlow, Mini-feed-Spinner-cardList, Mini-db-Ar
    - deploy → Pilot/Captain
    - file IO → Conductor/Pipeline
 6. Spawn all Task-Executors in parallel in a SINGLE message
-   - Agent template: ~/.claude/agents/specialized/task-executor.md
+   - Agent template: {agent-root}/agents/specialized/task-executor.md
    - READ + WRITE + CREATE on all scoped resources
 7. Wait for all executor reports (arriving as conversation turns)
-8. Send L6 completion report to "Coord-{l3-name}-{pun}" via SendMessage
+   — On each child STATUS_UPDATE: update ## Status + ## Children in scratch
+   — Forward to parent Coord: terminal states only (DONE / BLOCKED / ESCALATE)
+     — On child DONE: update scratch State → QA_GATE
+     — On child BLOCKED or ESCALATE: forward immediately
+8. Before the L6 COMPLETE report:
+   a. STATUS_UPDATE — DONE: send to parent Coord first
+   b. THEN send the existing L6 COMPLETE report
 9. Run /save-state [{slug}]
 10. Despawn
 ```
@@ -80,24 +89,26 @@ Examples: Mini-auth-Gatekeeper-loginFlow, Mini-feed-Spinner-cardList, Mini-db-Ar
 
 ## Scratch Board
 
-Set up scratch at `{project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md`:
+Set up scratch at `{project-root}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md`:
 
 ```markdown
 # Mini-{l3-name}-{pun}-{branch} Scratch — {project} — {timestamp}
 
-## Owned L6 Task
-{l6-task-description}
+## Status
+| Task | State | Health | Updated | Summary |
+|------|-------|--------|---------|---------|
+| {l6-task-name} | QUEUED | — | {HH:MM} | spawned |
 
-## Current Tasks
-- [ ] task A
-- [ ] task B
+## Children
+- Exec-{subtask}-{pun}: QUEUED
 
-## task A
 Started: {timestamp}
 Working on: ...
 Next step: ...
 Blockers: ...
 ```
+
+Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in local time (configurable).
 
 Scratch is deleted on L6 completion — no history needed.
 
@@ -138,10 +149,10 @@ Task type: {lx-task-type}
 Specific files to touch: {file list}
 Constraints: {constraints from Mini-Coord}
 
-Your Executor scratch file: {project}/memory/agents/executors/exec-{id}-{pun}-scratch.md
+Your Executor scratch file: {project-root}/memory/agents/executors/exec-{id}-{pun}-scratch.md
 Set it up now.
 
-Executor definition: ~/.claude/agents/specialized/task-executor.md
+Executor definition: {agent-root}/agents/specialized/task-executor.md
 Read it fully. That is your complete definition.
 
 ## PD Standard Protocol — NON-NEGOTIABLE
@@ -164,7 +175,7 @@ Step 1 — Check Agency catalog first (matched by domain):
   DevOps/infra     → DevOps Automator, Infrastructure Maintainer
   QA/testing       → Testing Lead, Evidence Collector
 
-Step 2 — Check skills from ~/.claude/skills/INDEX.md
+Step 2 — Check skills from {agent-root}/skills/INDEX.md
 Step 3 — general-purpose (LAST resort only)
 
 Rule 3 — Report every completion to your spawner immediately.
@@ -210,9 +221,45 @@ for "write some code" tasks. If in doubt, ask parent Coord before starting.
 
 ---
 
+## Status Updates to Parent Coord
+
+Mini-Coord sends STATUS_UPDATE to parent Coord on every state transition.
+
+**STATUS_UPDATE — IN_PROGRESS:**
+```
+Mini-{l3-name}-{pun}-{branch}: STATUS_UPDATE
+Task: {l6-task-name}
+State: IN_PROGRESS
+Health: —
+Summary: decomposing {l6-task-name}
+Blockers: none
+```
+
+**STATUS_UPDATE — QA_GATE (fires when Mini-Coord itself enters QA gate, after all Execs done):**
+```
+Mini-{l3-name}-{pun}-{branch}: STATUS_UPDATE
+Task: {l6-task-name}
+State: QA_GATE
+Health: —
+Summary: all {n} Executors done, entering L6 QA
+Blockers: none
+```
+
+**STATUS_UPDATE — DONE (fires before the L6 COMPLETE report):**
+```
+Mini-{l3-name}-{pun}-{branch}: STATUS_UPDATE
+Task: {l6-task-name}
+State: DONE
+Health: —
+Summary: {1-line summary}
+Blockers: none
+```
+
 ## Completion Report to Parent Coord
 
-When all Executors are done, send to "Coord-{l3-name}-{pun}":
+**Two-message sequence — STATUS_UPDATE first, then L6 COMPLETE report.**
+
+Send to "Coord-{l3-name}-{pun}":
 
 ```
 Mini-{l3-name}-{pun}-{branch}: L6 COMPLETE
@@ -248,8 +295,8 @@ Does it change the PROJECT's direction or decisions?
 
 ## References
 
-- Full architecture plan: `~/.claude/plans/pd-coord-architecture.md`
-- Coord (parent): `~/.claude/agents/project-management/coord.md`
-- PD Coordinator: `~/.claude/agents/project-management/pd-coordinator.md`
-- Task-Executor: `~/.claude/agents/specialized/task-executor.md`
-- Scratch: `{project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md`
+- Full architecture plan: `{agent-root}/plans/pd-coord-architecture.md`
+- Coord (parent): `{agent-root}/agents/project-management/coord.md`
+- PD Coordinator: `{agent-root}/agents/project-management/pd-coordinator.md`
+- Task-Executor: `{agent-root}/agents/specialized/task-executor.md`
+- Scratch: `{project-root}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md`

@@ -19,7 +19,7 @@ cd the-agency
 npx agency init
 ```
 
-This creates `~/.agency/` with the task store and memory directories.
+This creates `~/.claude/` with the task store and memory directories.
 
 ## 3. Start a project
 
@@ -53,10 +53,43 @@ agency skill install recall
 agency skill install swarm
 ```
 
+## 6. Copy agent templates
+
+```bash
+cp -r ~/the-agency/core/agents/* ~/.claude/agents/
+```
+
+This copies agent templates organized by department into `~/.claude/agents/{department}/`.
+
+## 7. Create PD-BRIEFING.md for each project
+
+For each project, create a per-project routing doc using the template in
+`core/runbooks/pd-boot-sequence.md`. Place it at:
+
+```
+{project-root}/.claude/PD-BRIEFING.md
+```
+
+This file is the first thing a PD reads on spawn (~500 tokens) and contains
+pre-written routing entries so the PD can delegate without loading the full agent catalog.
+
+## 8. Initialize agency-rooms
+
+```bash
+mkdir -p ~/.claude/agency-rooms/project-oversight/handoffs
+mkdir -p ~/.claude/agency-rooms/project-oversight/context
+touch ~/.claude/agency-rooms/project-oversight/messages.mdl
+touch ~/.claude/agency-rooms/project-oversight/context/shared.md
+touch ~/.claude/agency-rooms/project-oversight/context/rolling.md
+```
+
+Create a room for each active project and department as needed. See `docs/ROOMS.md`
+for the full directory structure and setup instructions.
+
 ## What you get
 
 ```
-~/.agency/
+~/.claude/
 ├── task-store.db        # Your task pipeline
 ├── projects/           # Project states
 ├── sessions/           # Session logs
@@ -82,11 +115,11 @@ npm install -g @the-agency/cli
 
 **Task store locked**
 ```bash
-sqlite3 ~/.agency/task-store.db "PRAGMA busy_timeout=5000;"
+sqlite3 ~/.claude/task-store.db "PRAGMA busy_timeout=5000;"
 ```
 
 **Skills not loading**
-Check `~/.agency/skills/INDEX.md` exists. If not, run `agency init` again.
+Check `~/.claude/skills/INDEX.md` exists. If not, run `agency init` again.
 
 ## Next Steps
 

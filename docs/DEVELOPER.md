@@ -31,7 +31,7 @@ npm install   # optional — CLI is plain Node.js
 node cli/bin/agency.js init
 ```
 
-This creates `~/.agency/` on your machine with:
+This creates `~/.claude/` on your machine with:
 - `skills/` — skills library (34+ skills)
 - `task-store.db` — SQLite task pipeline
 - `sessions/` — session logs
@@ -44,7 +44,7 @@ This creates `~/.agency/` on your machine with:
 agency new my-project
 ```
 
-This scaffolds `~/.agency/projects/my-project/` with:
+This scaffolds `~/.claude/projects/my-project/` with:
 - `memory/` — state, heartbeat, next-session, sessions, lessons
 - Agent prompts and task folders
 
@@ -107,7 +107,8 @@ In Claude Code:
 
 ## Adding an Agent
 
-Agents are defined in `core/agents/{name}.md`.
+Agents are defined in `core/agents/{department}/{name}.md` and deployed to
+`~/.claude/agents/{department}/` so Claude Code can discover them.
 
 ### Agent frontmatter
 
@@ -170,7 +171,7 @@ ALTER TABLE tasks ADD COLUMN my_field TEXT;
 
 The bootstrap system is in `core/bootstrap/`. To customize:
 1. Copy what you need
-2. Add to `~/.agency/` on init
+2. Add to `~/.claude/` on init
 3. Don't touch `core/bootstrap/` — changes persist across upgrades
 
 ---
@@ -184,6 +185,38 @@ agency upgrade
 Preserves: `projects/`, `sessions/`, `lessons/`, `decisions/`, `skills/`, `task-store.db`
 
 Overwrites: `core/`, `cli/`, `docs/`
+
+---
+
+## Skill Directory Format
+
+Production skills use the subdirectory format — each skill lives in its own folder
+with a `SKILL.md` entry point:
+
+```
+~/.claude/skills/{name}/SKILL.md
+```
+
+The repo ships flat `.md` files for readability and diff clarity. When installing
+skills to production, the CLI wraps them into the subdirectory format automatically.
+
+```bash
+agency skill install my-skill   # installs to ~/.claude/skills/my-skill/SKILL.md
+```
+
+After creating a new skill, register it in `skills/INDEX.md` immediately — the
+system will not discover unregistered skills.
+
+---
+
+## Agency Rooms
+
+Agents coordinate via file-based rooms in `{agency-root}/agency-rooms/`. Each room
+is a directory with an append-only message log, shared context extracts, and a
+`handoffs/` directory for NEXUS handoff JSON files.
+
+See `docs/ROOMS.md` for the full room structure, PD status protocol, agent request
+protocol, and RoomManager behavior.
 
 ---
 

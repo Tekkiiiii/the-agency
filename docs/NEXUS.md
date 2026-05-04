@@ -6,6 +6,8 @@ NEXUS is the coordination layer that lets agents work together across sessions.
 
 > Every agent writes what it knows. The next agent reads what it needs.
 
+> **Note on handoff format:** The 6-phase coordination model (Register → Brief → Work → Handoff → Review → Archive) remains the doctrine. The handoff artifact is now a **JSON file** (not markdown) placed in `{room}/handoffs/`. See `core/runbooks/agency-rooms-protocol.md` for the full schema. RoomManager processes handoff files automatically and routes them to the receiving agent.
+
 ## The Six Phases
 
 ### Phase 0: Register

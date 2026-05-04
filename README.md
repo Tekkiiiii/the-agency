@@ -1,243 +1,206 @@
 # The Agency
 
-**[Technical documentation — for developers]**
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude%20Code-yellow)
+![Cloud: Zero dependencies](https://img.shields.io/badge/Cloud-Zero%20Dependencies-green)
+![Skills: 48](https://img.shields.io/badge/Skills-48-orange)
+![Agents: 245+](https://img.shields.io/badge/Agents-245%2B-purple)
+![QA: Gates on every handoff](https://img.shields.io/badge/QA-Gates%20%2B%20Health%20Scores-red)
 
-*The non-technical version is in [README.simple.md](README.simple.md)*
+**Self-running AI workforce. PD-driven task decomposition, mandatory QA gates, SQLite persistence — no servers, no API keys.**
 
 ---
 
-**Open-source multi-agent command center for Claude Code.** Run autonomous AI agent workflows — PD-driven task decomposition, mandatory QA gates, health-score handoffs, SQLite task store, 84+ skills, zero cloud dependencies.
+## TL;DR — Get started in 60 seconds
+
+```bash
+git clone https://github.com/the-agency/the-agency.git
+cd the-agency && npx agency init
+
+agency new my-app "Build a task manager"
+
+# In Claude Code, open your project directory and type:
+/recall my-app
+```
+
+That's it. The PD loads and asks what to build. You supervise; it executes.
 
 ---
 
-## What's New?
+## What it does
 
-### 4-Tier Autonomous Chain with Mini-Coord
+The Agency runs autonomous multi-agent workflows on Claude Code. A **Project Director (PD)** owns each project end-to-end — decomposing work, coordinating specialists, gating quality at every handoff, and persisting everything to disk. Sessions survive restarts.
 
-Projects now decompose to the smallest implementable unit across four levels:
+**Your job is to supervise, not micromanage.** You set direction and review key decisions. The PD handles execution, coordination, and state.
+
+## What you'll actually do — Day 1
+
+Open Claude Code in your project directory and talk to the PD like a teammate:
 
 ```
-PD  (L1→L3 — project orchestration)
- └── Coord  (L3→L6 — task decomposition, parallel spawn)
-      └── Mini-Coord  (L6→L7+ — for complex sub-tasks)
-           └── Task-Executor  (executes one atomic unit)
+You:  "Build a REST API for a task manager with JWT auth"
+PD:   "Got it. Decomposing into tasks. Spawning specialists."
+      → Auth specialist starts, Database specialist starts, API specialist starts (parallel)
+PD:   "Phase 1 complete — auth + DB done, API in review. Starting Phase 2."
+
+You:  /save-state
+
+// Come back tomorrow
+You:  /recall my-app
+PD:   "Phase 1 complete. Phase 2 in progress — 2 of 5 tasks done. Continuing."
 ```
 
-Mini-Coords handle deep L6 decomposition autonomously — complex features split into L7/L8/L9 without escalating to PD. Parallelism scales across the whole chain.
+## Key Features
 
-### Mandatory QA Gates Before Every Handoff
-
-Every task now passes a quality gate before approval fires. Executors run `/qa-only` on completion. Coordinators review health scores before ACK. No handoff completes blind.
-
-**Health score ≥ 70 + zero CRITICALs** — that's the gate for every level.
-
-### Explicit ACK/NACK Protocol
-
-Every handoff is now explicit. Agents wait for approval before stopping. NACKs include a fix list. Rejected work loops back through QA until it passes. Traceability is built into the protocol, not bolted on after.
-
-### Health Scores on Every Handoff
-
-Coord→PD reports now include health scores (0–100), issue counts by severity (CRITICAL/HIGH/MED/MED/LOW), and a QA report path. PD pre-aggregates with Coord-qa-Canary before reporting to root.
-
-### 84+ Skills, All Operational
-
-The skill library covers the full project lifecycle: memory (`save-state`, `recall`, `pd-resume`), execution (`ship`, `land-and-deploy`, `canary`), quality (`qa`, `qa-only`, `agent-browser`), engineering (`backend`, `frontend`, `security`), and governance (`cso`, `guard`, `nexus-gatekeeper`).
-
----
-
-## Use Cases & Capabilities
-
-**Tired of AI agents that forget everything between sessions?**
-
-The Agency runs autonomous AI agent workflows that survive Claude Code restarts. A Project Director owns each project end-to-end — decomposing tasks, coordinating specialists, gating quality, and persisting everything to disk.
-
-- **Multi-agent orchestration**: PD → Coord → Mini-Coord → Task-Executor chain decomposes any project to atomic units. Complex L6 tasks spin up Mini-Coords that keep decomposing without escalation.
-- **Quality gates on every handoff**: Every agent-to-agent handoff requires a health-score QA pass. No work gets ACK'd without evidence.
-- **Zero cloud dependencies**: SQLite task store, filesystem memory, no API keys, no servers. Your data stays on your machine.
-- **Autonomous between sessions**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where you left off.
-- **84+ production-ready skills**: Backend, frontend, security, QA, deployment, planning — all invoked via `/skill-name`. The whole stack covered.
-- **AI search optimized**: Structured entity names, explicit capability descriptions, and structured outputs make this repo citation-friendly for Perplexity, ChatGPT, and Gemini Deep Research.
-
----
-
-A multi-agent command center that runs on Claude Code. Agents coordinate across sessions through a file-based memory system, task pipeline, and NEXUS handoff protocol.
-
-No cloud services. No running processes. Just a git repo, a task store, and agents that remember.
-
-## What it is
-
-The Agency is a system for running autonomous AI agent workflows. It provides:
-
-- **Task store**: SQLite-based pipeline state with gates, retries, and blocking
-- **Memory layers**: Sessions, project state, lessons, cross-project decisions
-- **NEXUS protocol**: Structured handoff system for inter-agent coordination
-- **Project Directors (PDs)**: One agent owns each project end-to-end
-- **Skill library**: Reusable workflows invoked via `/skill-name`
-- **CLI**: `agency init`, `agency new`, `agency tasks`, `agency skill install`
+- **4-tier autonomous chain**: PD → Coord → Mini-Coord → Task-Executor decomposes any project to atomic units. Mini-Coords keep drilling L6→L7→L8 without escalating to PD.
+- **QA gates on every handoff**: No work gets ACK'd without a health-score pass. Gate: score ≥ 70 + zero CRITICALs. Example: 70 = tests pass but docs missing; 90+ = ship-ready.
+- **Explicit ACK/NACK protocol**: Agents wait for approval before stopping. NACKs return a fix list. Rejected work loops back through QA. Traceability is built into the protocol.
+- **40+ production-ready skills**: Memory, execution, QA, engineering, governance — all invoked via `/skill-name`. Full project lifecycle covered.
+- **SQLite task store — nothing leaves your machine**: Task pipeline, gates, retries, blocking in `~/.claude/`. No servers. No API keys.
+- **Session persistence**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where it left off.
+- **Agency Rooms** — file-based inter-agent chat with persistent rooms, RoomManager polling, NEXUS JSON handoffs, and 12-hour department digests.
+- **Inter-PD Protocol** — PDs coordinate via filesystem, not messaging. Delegation through `inter-spawn-tasks/` directories with completion tracking.
+- **PD Boot Sequence** — lazy-loading spawn targeting <500 tokens. Per-project PD-BRIEFING.md for instant routing.
+- **Status Loop Prohibition** — no automated ping loops. On-demand status via append-only `pd-status-live.md`.
+- **Project Scope Management** — `scope.json` per project with 3-tier authority model (PD self-approve → parent AI → human).
 
 ## Architecture
 
 ```
-User (Claude Code)
-  ├── CLI (agency init / agency new / agency tasks)
-  ├── Skills (/save-state, /recall, /swarm, /delegate, ...)
-  └── Agents
-        ├── Project Director (owns one project)
-        │     ├── Breaks work into tasks
-        │     ├── Assigns to specialists
-        │     ├── Gates completed work
-        │     └── Updates state
-        ├── Specialist (executes work)
-        └── Team Lead (coordinates across projects)
-              └── Council (BOD — optional governance layer)
+YOU (Claude Code terminal)
+  ├── agency CLI          ← control panel: init, new, tasks
+  ├── /slash commands     ← skills you invoke
+  └── PD + Specialists    ← agents that do the work
 
-Task Store (SQLite)
-Memory System (filesystem)
-NEXUS Handoff Protocol (files)
+PD's toolkit:
+  ├── SQLite task store   ← what needs building, what's blocked
+  ├── Memory filesystem   ← decisions, session history
+  ├── NEXUS protocol      ← how agents hand off (PD manages, you don't touch it)
+  └── Agency Rooms        ← file-based inter-agent chat, 12-hour department digests
+
+Spawn chain (who creates whom):
+  PD → Coord → Mini-Coord → Task-Executor
+  (one per project) (one per workstream) (one per complex task) (one per atomic unit)
+
+QA gates at every level:
+  Task-Executor output → Mini-Coord QA → Coord QA → PD acceptance gate
+  Gate criteria: health score ≥ 70 + zero CRITICALs before ACK
 ```
 
-## Installation
+## Quick Start
 
 ```bash
+# 1. Install (requires Node.js 18+ and Claude Code)
 git clone https://github.com/the-agency/the-agency.git
-cd the-agency
-npx agency init
-```
+cd the-agency && npx agency init
 
-## Quick start
-
-```bash
-# Create a project
+# 2. Create a project
 agency new my-app "Build a task manager"
 
-# In Claude Code
+# 3. Open Claude Code in your project directory, then type:
 /recall my-app
-# → loads project state, recent sessions, relevant lessons
+# The PD loads. Tell it what to build.
 
-# Do work, then end session
+# When done for the day:
 /save-state
-# → persists session log, updates project state
-
-# Spawn parallel agents for independent workstreams
-/swarm
-# → run multiple specialists in parallel
-
-# Delegate to a specialist
-/delegate
-# → hand off with full context and acceptance criteria
+# Everything persists. Next session picks up exactly where you left off.
 ```
 
-## Core concepts
+## Core Concepts
 
 ### Task Store
 
-Every task in `~/.agency/task-store.db`. Schema:
-
-| Field | Purpose |
-|---|---|
-| `status` | `pending` \| `in_progress` \| `blocked` \| `done` \| `failed` |
-| `blocked_by` | JSON array of task IDs that must complete first |
-| `gate_status` | `open` \| `passed` \| `failed` — quality gate before done |
-| `retry_count` | Auto-retry up to `max_retries` times |
-
-Example:
+SQLite pipeline at `~/.claude/task-store.db`. Created automatically by `agency new`. Track progress with:
 
 ```bash
-sqlite3 ~/.agency/task-store.db \
-  "INSERT INTO tasks (project_slug, task_name, priority) VALUES ('my-app', 'Auth module', 'high');"
+agency status my-app          # see project status
+# or from inside Claude Code:
+/task-store                   # full task management via the /task-store skill
 ```
 
-### Memory System
+Schema:
+
+| Field | Values | What it means |
+|---|---|---|
+| `status` | `pending` \| `in_progress` \| `blocked` \| `done` \| `failed` | The PD moves tasks through these states |
+| `blocked_by` | `["task-id"]` | Task won't start until these finish first |
+| `gate_status` | `open` \| `passed` \| `failed` | QA gate — must pass before `done` |
+| `retry_count` | integer | Auto-retries up to `max_retries` on failure |
+
+> **Note:** `agency tasks` CLI commands are coming soon. In the current release, task management is handled by the PD and the `/task-store` skill.
+
+### Memory Layers
+
+Seven layers, each serving a different purpose:
 
 | Layer | Location | Created by |
 |---|---|---|
-| Sessions | `~/.agency/sessions/{project}/` | `/save-state` |
-| State | `~/.agency/projects/{project}/STATE.md` | PD |
-| Lessons | `~/.agency/lessons/{stack}.md` | After corrections |
-| Decisions | `~/.agency/decisions/` | Team Lead |
+| Sessions | `~/.claude/sessions/{project}/` | `/save-state` |
+| State | `~/.claude/projects/{project}/STATE.md` | PD auto-updates |
+| Lessons | `~/.claude/lessons/{stack}.md` | After corrections |
+| Decisions | `~/.claude/decisions/` | Team Lead |
+| Inter-PD tasks | `inter-spawn-tasks/` | Filesystem-based inter-PD coordination |
+| Live status | `pd-status-live.md` | Append-only status log (no ping loops) |
+| Agency Rooms | `agency-rooms/` | Persistent inter-agent chat and digests |
 
 ### NEXUS Protocol
 
-Six-phase coordination:
+Six-phase structured handoff for inter-agent coordination. **You never touch NEXUS files — the PD manages them.**
 
-1. **Register** — create project structure and first task
-2. **Brief** — assign work with full context
-3. **Work** — execute, document incrementally
-4. **Handoff** — transfer with evidence and acceptance criteria
-5. **Review** — gate against criteria, pass or fail
-6. **Archive** — close out and record lessons
-
-### Project Directors (PDs)
-
-Every project has a PD agent that owns it. The PD:
-- Creates tasks in the task store
-- Assigns to specialists
-- Monitors the pipeline
-- Escalates blockers
-- Persists state via `/save-state`
-
-PDs spawn on session start via `/recall {project}`.
-
-### Skills
-
-Skills are markdown files that define reusable workflows. They're invoked via slash command.
-
-Core skills — installed by default:
-- `/save-state` — persist session to memory
-- `/recall` — load project state from memory
-- `/pd-resume` — resume all active PDs at session start
-- `/swarm` — spawn parallel agents
-- `/delegate` — hand off to specialist
-- `/self-healing` — diagnose and fix broken workflows
-
-Expanded library (27+ skills, all in this repo):
-```bash
-agency skill install ship          # automated PR workflow
-agency skill install qa           # iterative QA + bug fix
-agency skill install canary       # post-deploy monitoring
-agency skill install plan-ceo-review   # CEO-level plan review
-agency skill install backend      # API and database design
-agency skill install frontend    # React/web UI
-agency skill install cso         # security audit
-# ...and 20 more
+```
+Register → Brief → Work → Handoff → Review → Archive
 ```
 
-## File structure
+Every handoff carries: what's done, what's next, health score, and acceptance evidence.
+
+### Project Directors
+
+Spawned via `/recall {project}`. Owns the project end-to-end:
+
+1. Decompose work into tasks
+2. Assign to specialists via Coord/Mini-Coord chain
+3. Gate completed work against QA criteria
+4. Escalate blockers
+5. Persist state via `/save-state`
+
+## Skills Library
+
+**Memory & Session**: `/save-state`, `/recall`, `/pd-resume`, `/wrap`, `/unwrap`, `/project-status`
+
+**Coordination**: `/swarm`, `/delegate`, `/pd-spawn`, `/room-manager`, `/room-manager-digest`, `/task-store`, `/task-handoff`, `/project-expansion-scout`
+
+**Planning**: `/autoplan`, `/plan-ceo-review`, `/plan-eng-review`, `/plan-design-review`, `/office-hours`, `/retro`
+
+**Execution**: `/ship`, `/land-and-deploy`, `/setup-deploy`, `/canary`, `/document-release`
+
+**Quality**: `/qa`, `/qa-only`, `/guard`, `/investigate`, `/self-healing`, `/codex`, `/cso`, `/design-review`
+
+**Engineering**: `/backend`, `/frontend`, `/tech-writer`, `/github-deploy`, `/railway-deploy`, `/vercel-deploy`, `/supabase-deploy`
+
+Full registry: `skills/INDEX.md` — 41 skills.
+
+## File Structure
 
 ```
 the-agency/
-├── core/               # Core system (owned by the agency)
-│   ├── agents/         # Agent templates (PD, Specialist, Team Lead)
-│   ├── memory/         # Memory system documentation
-│   ├── tasks/          # Task store schema and patterns
-│   ├── nexus/          # NEXUS coordination protocol
-│   ├── PD_PROTOCOL.md  # PD Standard Protocol (decompose/parallelize/report)
-│   └── bootstrap/      # Initialization system
-├── skills/             # Skills library (27+ skills, add yours here)
-│   ├── INDEX.md        # Skill registry
-│   ├── save-state.md
-│   ├── recall.md
-│   ├── pd-resume.md
-│   ├── ship.md
-│   └── ...
-├── docs/               # User documentation
-│   ├── ARCHITECTURE.md
-│   ├── SETUP.md
-│   ├── DEVELOPER.md
-│   ├── ROOMS.md        # Agency Rooms — file-based inter-agent chat
-│   └── ...
-├── cli/                # agency CLI tool
-│   ├── bin/agency.js
-│   └── commands/
-├── README.md            # This file
-└── README.simple.md    # Non-technical version
+├── core/
+│   ├── agents/          # PD/Coord/Exec/Mini-Coord templates
+│   ├── runbooks/        # Boot sequence, escalation, kickoff protocols
+│   ├── ORG.md           # Org chart and authority model
+│   ├── memory/          # Memory system specification
+│   ├── nexus/           # NEXUS coordination protocol
+│   ├── tasks/           # Task store pattern
+│   └── bootstrap/       # Init scripts
+├── cli/                 # Node.js CLI (agency init/new/tasks/skill/status)
+├── docs/                # User-facing documentation
+├── skills/              # 48 agency-core skills
+└── plans/               # Architecture decision records
 ```
 
-## Extending the system
+## Contributing
 
-### Add a skill
+New skills are just markdown files. Create `skills/my-skill.md`:
 
-Create `skills/my-skill.md`:
 ```markdown
 ---
 name: my-skill
@@ -247,32 +210,14 @@ category: tools
 
 # My Skill
 
-Use when you need to do X.
+Use when you need X.
 
 ## Steps
-
 1. First do this
 2. Then do that
 ```
 
 Register in `skills/INDEX.md`, then invoke with `/my-skill`.
-
-### Add an agent
-
-Create `core/agents/my-agent.md` with frontmatter + instructions. Spawn via `Agent()` in Claude Code.
-
-### Custom coordination
-
-Add rooms in `~/.agency/rooms/{project}/` with `messages.mdl` and `shared.md` for file-based inter-agent communication.
-
-## Technology
-
-- **Runtime**: Claude Code (Anthropic)
-- **Task Store**: SQLite (zero external dependencies)
-- **Memory**: Filesystem (markdown files)
-- **Coordination**: NEXUS file protocol
-- **Skills**: Markdown-based
-- **CLI**: Node.js 18+
 
 ## License
 

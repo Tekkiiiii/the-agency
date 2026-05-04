@@ -49,4 +49,4 @@ Some skills are built into Claude Code and available everywhere:
 
 If multiple skills match, the most specific one wins.
 
-Skills loaded from `~/.agency/skills/` override built-in skills.
+Skills loaded from `~/.claude/skills/` override built-in skills.

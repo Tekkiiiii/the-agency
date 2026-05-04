@@ -1,58 +1,132 @@
 ---
 name: swarm
-description: Spawn parallel agents for independent workstreams
-category: coordination
-trigger: "/swarm" | parallel workstreams identified
+description: >
+  Parallel dispatch to all Project Directors in the agency — one-shot status, blocker, or priority check across the entire portfolio without loading PD context into the parent session. Spawns each PD in a fully isolated subagent that reads only their heartbeat file and responds in one line. Trigger when: the user says "/swarm", "/swarm-blocker", "/swarm-continue", or "/swarm-all"; you need a portfolio-wide status across all active projects at once; the user asks "what is everyone working on" or "any blockers across the portfolio?"; doing a weekly check-in sweep; before a planning session to surface conflicts. Key capabilities: reads the agency-council team config to discover all PDs dynamically; dispatches all agents in parallel (not sequentially); handles silent PDs with one automatic respawn; formats a clean digest table per PD with their project and one-line response. Also for: cross-project priority conflicts, surfacing work that can continue without a blocked PD, getting a fast portfolio health snapshot before a client call. Parent session holds zero PD context until responses arrive — fast and cheap.
 ---
 
-# Swarm
+# /swarm — Portfolio-Wide PD Dispatch
 
-Use this skill when you have multiple independent workstreams that can run simultaneously.
+**What it does:** Spawns all active PDs in parallel, each in an isolated subagent context. The parent session only holds the digest — not the full PD briefs. Fast and cheap.
 
-## When to use
+## Command Variants
 
-- Features that don't depend on each other
-- Writing tests while building
-- Multiple files that can be changed in parallel
-- Research + implementation happening simultaneously
+| Command | Question sent to each PD |
+|---|---|
+| `/swarm` | What are you currently working on? Any blockers? ETA for next deliverable? |
+| `/swarm-blocker` | What is your current blocker? Who owns it? What's the workaround or path to resolution? |
+| `/swarm-continue` | What can continue without you? Any pre-reqs you need from others? |
+| `/swarm-priority` | What are your top 3 priorities right now? Any priority conflicts with other PDs? |
+| `/swarm-all` | Full status dump — current work, blockers, wins, decisions pending, next steps. |
 
-## When NOT to use
+## How It Works
 
-- Workstreams have dependencies → use `delegate` instead
-- Only one thing to do → do it yourself
-- Need sequential gates → do in order
+### Step 1 — Discover PDs
 
-## How to use
+Read `~/.claude/teams/agency-council/config.json`. Extract member names that end in `-pd` (Project Directors). These are the inbox names for SendMessage.
 
-1. Identify independent workstreams
-2. Spawn one agent per workstream with full context
-3. Collect results as they complete
-4. Integrate and gate
-
-## Spawning Parallel Agents
-
-```javascript
-// In Claude Code, spawn agents:
-Agent({
-  prompt: "Context: {describe workstream}\n\nTask: {specific goal}",
-  description: "workstream-name"
-})
+For each PD, derive their project directory:
+```
+~/.claude/projects/{project-name}/   (most PDs)
+~/Projects/{project-name}/memory/     (alternate locations)
 ```
 
-Run agents in parallel using multiple Agent calls in one message.
+If a PD has no known project, skip them.
 
-## Integration After Swarm
+### Step 2 — Dispatch All PDs in Parallel
 
-When all agents report back:
-1. Collect their session logs
-2. Check for conflicts
-3. Integrate into the main project
-4. Gate the completed work
-5. Update STATE.md
+Spawn one pd-coordinator subagent per PD. Each agent:
+- Sets `team_name: agency-council` (so it can send back via SendMessage)
+- Sets `run_in_background: true`
+- Receives only: their inbox name, project directory, and the question
+- Does NOT load the full PD-BRIEFING — only reads `heartbeat.md` and the question
+- Responds directly to `team-lead` via SendMessage with a one-line status
 
-## Anti-patterns
+**Agent prompt for each PD:**
+```
+You are checking in on {project-name} as a swarm dispatch from /swarm.
 
-**Bad**: "Let's build everything in parallel"
-**Good**: "Auth module and UI can be built in parallel. DB schema must come first."
+Do NOT load PD-BRIEFING.md or any other briefing files.
+Read only: {project-dir}/memory/heartbeat.md
 
-**Rule**: If A depends on B, they can't swarm. A waits for B.
+Answer this question in ONE LINE (under 80 chars for status/blocker, up to 2 lines for continue):
+{question}
+
+Include your PD name at the start of your response.
+Send your response via SendMessage to "team-lead".
+
+Example response format:
+{project}-pd: BLOCKED — auth needed from the operator; workaround is local dev
+```
+
+**Subagent config:**
+- `subagent_type`: Explore
+- `model`: sonnet
+
+### Step 3 — Wait for Responses
+
+Wait for all spawned agents to complete (they send back via SendMessage).
+
+### Step 4 — Handle Silent PDs
+
+If a PD does not respond within the agent's reasonable run time:
+1. Note: `⚠️ {pd-name} silent — respawned`
+2. Re-spawn the same PD agent once
+3. If still silent after respawn: note `❌ {pd-name} did not respond after respawn`
+
+### Step 5 — Present Digest
+
+Format the digest as:
+
+```
+## /swarm — {command-variant} — {timestamp}
+
+### Responding ({n})
+| PD | Project | Response |
+|----|---------|----------|
+| {pd-name} | {project} | {one-line status} |
+
+### Silent / Respawned ({n})
+| PD | Project | Status |
+|----|---------|--------|
+| {pd-name} | {project} | silent → respawned / no response |
+
+### Portfolio Summary
+{1-2 sentence synthesis}
+```
+
+## Dispatch Isolation
+
+Each PD agent runs in a completely isolated context:
+- Only reads `heartbeat.md` (not the full CLAUDE.md/PROJECT.md/PROJECT-BRIEFING)
+- No shared state between agents
+- No mutual blocking between agents
+- Parent session holds zero PD context until responses arrive
+
+## PD Standard Protocol — Also Applies Here
+
+Even for one-shot /swarm dispatches, PDs that receive work items must:
+1. **Decompose** tasks into smallest independent sub-tasks
+2. **Parallelize** — spawn one subagent per sub-task simultaneously
+3. **Report** every sub-task completion to "team-lead" via SendMessage immediately
+
+If a PD receives a task during a swarm check-in (not just a status query), apply the full
+PD Standard Protocol from `/pd-resume`.
+
+## PD Directory Map
+
+| PD | Project Directory |
+|---|---|
+| {project-a}-pd | `{project-a-directory}` |
+| {project-b}-pd | `{project-b-directory}` |
+
+(Populate from your medium-term.md — the SSOT for project paths.)
+
+If a project directory doesn't exist, skip that PD silently.
+
+## Anti-Patterns
+
+- DO NOT load all PD-BRIEFING files into the parent session before spawning
+- DO NOT run PDs sequentially — that defeats the purpose
+- DO NOT aggregate in the parent session — let each PD speak for themselves
+- DO NOT include CLAUDE.md or PROJECT.md content in the digest — heartbeat only
+- DO NOT chase silent PDs more than once — note and move on

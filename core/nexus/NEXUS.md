@@ -10,9 +10,9 @@ Every agent writes what it knows to a shared file. The next agent reads what it 
 
 ### Phase 0 — Register
 When a new project starts:
-1. Create `~/.agency/projects/{project}/`
-2. Create `~/.agency/sessions/{project}/`
-3. Create `~/.agency/projects/{project}/STATE.md`
+1. Create `~/.claude/projects/{project}/`
+2. Create `~/.claude/sessions/{project}/`
+3. Create `~/.claude/projects/{project}/STATE.md`
 4. Create a task in the task store
 
 ### Phase 1 — Brief
@@ -100,7 +100,7 @@ When passing work to another agent:
 For teams using file-based rooms:
 
 ```
-~/.agency/rooms/{project}/
+~/.claude/rooms/{project}/
 ├── messages.mdl   ← structured log (agent, timestamp, content)
 ├── shared.md      ← auto-extracted: DECIDED, ACTION, QUESTION
 └── handoffs/     ← pending handoff documents

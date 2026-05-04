@@ -120,7 +120,7 @@ agency skill install security
 
 ## Privacy
 
-Everything runs locally. Your task store, session logs, and project memory live in `~/.agency/` on your machine. Nothing is sent to any server except Claude Code.
+Everything runs locally. Your task store, session logs, and project memory live in `~/.claude/` on your machine. Nothing is sent to any server except Claude Code.
 
 ## Extending it
 

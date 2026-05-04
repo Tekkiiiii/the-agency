@@ -1,0 +1,30 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log
+
+# Secrets
+.env
+*.env
+.agency-config
+.agency-secrets
+.install-log
+secrets.json
+
+# Claude Code state (project-local)
+.claude/
+plans/
+
+# Compiled
+*.pyc
+__pycache__/
+
+# Large binaries
+*.db
+*.zip
+
+# Runtime
+*.log
