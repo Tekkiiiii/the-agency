@@ -3,10 +3,10 @@ name: save-state
 description: >
   Freezes the current session — reads project state, writes all session-end files,
   resets the turn counter, outputs a single confirmation. Fully autonomous, no user
-  interaction. Invoke as /save-state [project-slug]. When to trigger: at the end of
-  every working session before closing; before switching to a different project; when
+  interaction. Invoke as /save-state [slug], /save-state (auto-detects from cwd), or
+  /save-state all. When to trigger: at the end of every working session before closing; before switching to a different project; when
   mid-flight work needs to be preserved for the next session; after any significant
-  milestone or decision; and whenever the user says "save state" or "wrap up." Key
+  milestone or decision; and whenever the user says "save state." Key
   capabilities: spawns a fully autonomous subagent so zero work happens in the calling
   session, reads mid-flight files (src/, lib/, app/, backend/, etc.) to capture what
   was half-done, writes session logs, heartbeat updates, decisions records, next-session
@@ -28,6 +28,51 @@ calling session.
 
 The **primary source of truth** for project locations is `~/.claude/memory/medium-term.md`
 — the Active Projects table. Read it FIRST.
+
+## Auto-Detect Project (no-argument invocation)
+
+When invoked as `/save-state` with **NO slug argument**, resolve the project from the
+current working directory — never iterate all projects.
+
+1. **Read `medium-term.md`** — the Active Projects table lists `{slug}` and `{path}` per project.
+2. **Match cwd against project paths:**
+   - If cwd **equals** a project path → use that slug.
+   - If cwd **starts with** a project path (subdirectory) → use the parent project slug.
+3. **If no path match:** attempt to read `{cwd}/memory/heartbeat.md` or `{cwd}/STATE.md`.
+   - If found, treat the cwd root as the project and infer the slug from the directory name.
+4. **If nothing resolves:** output and stop:
+   ```
+   Cannot determine project. Pass a slug explicitly:
+   /save-state [project-slug]
+   Hint: Check ~/.claude/memory/medium-term.md for the current project list.
+   ```
+   **Stop. Do not read all medium-term entries. Do not iterate over all projects.**
+
+## Argument Resolution
+
+After auto-detect (or if a slug was provided), resolve the target:
+
+| Argument | Action |
+|---|---|
+| `all` | Save all active projects in `medium-term.md`, in parallel via spawned subagents |
+| `[slug]` | Save exactly one project — run the full ritual on that slug only |
+| no arg → cwd resolves | Save that one project — run the full ritual on the resolved slug |
+| no arg → cwd fails | Fail with message, stop |
+
+### If `all` — Parallel Multi-Project Save
+
+Read `medium-term.md` Active Projects table. For each project, spawn a save-state
+subagent in parallel. Wait for all to complete. Output:
+
+```
+save-state done! — {n} projects saved
+  {slug1} ✓
+  {slug2} ✓
+  ...
+```
+
+Subagent prompt per project: same as the single-project ritual below, scoped to
+`{project}/`. Step 12 (Pinecone upsert) fires per-project after each subagent reports.
 
 ## If Slug Not Found
 
@@ -58,6 +103,8 @@ PERMISSIONS: read-write-create on ALL paths below. No restrictions.
 - State tracking: `{project}/.claude/save-state-state.json`
 - Lessons root: `~/.claude/memory/lessons/`
 - Lessons dir: `{project}/memory/lessons/`
+- Task folder: `{project}/memory/tasks/`  # ongoing/, completed/, revisions/ subdirectories
+- Active tasks: `{project}/memory/tasks/ongoing/*.md`
 - Mid-flight scan dirs: `src/`, `lib/`, `app/`, `backend/`, `frontend/src/`, `components/`, `src-tauri/src/`, `web/src/`, `api/`, `tests/`, `spec/`
 - Optional project root files: `{project}/STATE.md`, `{project}/CLAUDE.md`
 
@@ -78,7 +125,22 @@ Scan: src/, lib/, app/, backend/, frontend/src/, components/, src-tauri/src/, we
 Look for TODO/FIXME comments, recently modified files, or anything half-done.
 Report file paths with one-line descriptions.
 
-## Step 3 — Write Session Log
+## Step 3 — Scan Active Tasks
+Read all files in {project}/memory/tasks/ongoing/*.md simultaneously.
+Collect per task: title, status, priority, description, next action, blockers.
+Report: how many active tasks, brief one-line per task.
+If no tasks/ongoing/ directory exists, skip silently.
+
+## Step 3b — Scan and Update Inter-Spawn Tasks Index
+Read `{project}/memory/inter-spawn-tasks/index.md` — it is the SSOT for inter-spawn tasks.
+Report: how many active inter-spawn tasks, brief one-line per task.
+Then OVERWRITE the Active Summary section in index.md — replace it entirely with current active tasks only.
+Completed tasks are NOT listed — moved to inter-spawn-tasks/completed/ and removed from the index.
+Format: one bullet per active task (task ID, sender PD, brief description).
+If no active inter-spawn tasks, replace with: "_(no active inter-spawn tasks)_"
+If no inter-spawn-tasks/index.md exists, skip silently.
+
+## Step 4 — Write Session Log
 Create or append to {project}/memory/sessions/YYYY-MM-DD.md:
 
 ## Session — YYYY-MM-DD HH:MM UTC
@@ -99,7 +161,7 @@ Create or append to {project}/memory/sessions/YYYY-MM-DD.md:
 ### Notes
 - [any context from this session]
 
-## Step 4 — Update Heartbeat (overwrite Session End only)
+## Step 5 — Update Heartbeat (overwrite Session End only)
 Read {project}/memory/heartbeat.md.
 OVERWRITE the Session End section. Keep Phase Status + Blockers intact.
 Append only the new Session End block below the existing Phase Status + Blockers.
@@ -121,10 +183,10 @@ Old Session End blocks are NOT carried forward — they live in sessions/YYYY-MM
 ### Blockers
 {format blockers list}
 
-## Step 5 — Decisions Record
+## Step 6 — Decisions Record
 Read {project}/memory/decisions.md. Append any new decisions not already recorded.
 
-## Step 5b — Decisions Archive (auto-prune)
+## Step 6b — Decisions Archive (auto-prune)
 After appending new decisions, count lines in {project}/memory/decisions.md.
 If it exceeds 50 lines and {project}/memory/decisions-archive.md does not exist:
 1. Create {project}/memory/decisions-archive.md from the existing decisions.md content
@@ -133,9 +195,9 @@ If it exceeds 50 lines and {project}/memory/decisions-archive.md does not exist:
 If decisions.md is already ≤50 lines, skip silently.
 If decisions-archive.md already exists, skip silently (archive created once, grows only if explicitly pruned).
 
-## Step 6 — Lessons Sync
+## Step 7 — Lessons Sync
 
-## Step 7 — Update STATE.md (overwrite Last Session only)
+## Step 8 — Update STATE.md (overwrite Last Session only)
 Read {project}/STATE.md (create if missing).
 OVERWRITE the Last Session section. Keep all prior Last Session blocks removed —
 only the most recent one exists. Old sessions live in sessions/YYYY-MM-DD.md.
@@ -155,7 +217,7 @@ only the most recent one exists. Old sessions live in sessions/YYYY-MM-DD.md.
 ### Mid-Flight Files
 {format mid_flight list}
 
-## Step 8 — Write next-session.md
+## Step 9 — Write next-session.md
 Overwrite {project}/memory/next-session.md (keep under 10 lines):
 
 # Next Session — {project}
@@ -172,44 +234,21 @@ Overwrite {project}/memory/next-session.md (keep under 10 lines):
 ## Mid-flight
 {format mid_flight list}
 
-## Step 9 — Reset Turn Counter
+## Step 10 — Reset Turn Counter
 Update {project}/.claude/save-state-state.json:
 
 { "turn_count": 0, "last_turn_at": "[current timestamp]", "last_saved_at": "[current timestamp]", "last_session_date": "YYYY-MM-DD" }
 
 Skip if the file doesn't exist.
 
-## Step 10 — Confirm
+## Step 11 — Confirm
+
 Output only: save-state done!
 Then stop. No further narration.
 
-## Step 11 — Fire Pinecone Upsert (background, fire-and-forget)
+## Step 12 — Fire Pinecone Upsert (caller-side, background, fire-and-forget)
 
-After saying "save-state done!", read the session files written by the subagent:
-- {project}/memory/sessions/YYYY-MM-DD.md
-- {project}/memory/decisions.md
-- {project}/memory/next-session.md
-- {project}/memory/heartbeat.md
+After the subagent says "save-state done!", the caller fires the Pinecone upsert.
+Read the session files written by the subagent, build the JSON blob, fire it with
+`run_in_background: true`. Best-effort — dies silently if the venv or script is missing.
 
-Build a JSON blob with: project_slug, session_date, session_log, decisions,
-next_action, blockers, mid_flight, status. Then fire the upsert in the background
-using Bash with `run_in_background: true`. Do NOT wait for it. Do NOT mention it
-in the save-state output. It is best-effort and fails silently:
-
-```bash
-/tmp/pinecone-env/bin/python3 ~/.claude/skills/save-state/pinecone_upsert.py \
-  "$(python3 -c "import json; print(json.dumps({
-    'project_slug': '<project slug>',
-    'session_date': '<YYYY-MM-DD HH:MM UTC>',
-    'session_log': '<full session log content>',
-    'decisions': '<decisions text>',
-    'next_action': '<next action text>',
-    'blockers': '<blockers text>',
-    'mid_flight': '<mid-flight files list>',
-    'status': '<current phase/status>'
-  }))")"
-```
-
-If the venv is missing or the script errors, the background process dies silently — no retry, no log, no notification.
-
-Wait for the subagent to complete. You (the caller) do nothing else.

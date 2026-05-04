@@ -8,17 +8,19 @@ const {
 const path = require('path');
 
 /**
- * agency init — Bootstrap the Agency system in ~/.agency/
+ * agency init — Bootstrap the Agency system in ~/.claude/
  *
  * Creates:
- *   ~/.agency/               — root
- *   ~/.agency/projects/      — per-project state
- *   ~/.agency/sessions/      — per-project session logs
- *   ~/.agency/skills/        — installed skills (copied from source)
- *   ~/.agency/tasks.db       — SQLite task store
+ *   ~/.claude/               — root
+ *   ~/.claude/projects/      — per-project state
+ *   ~/.claude/sessions/      — per-project session logs
+ *   ~/.claude/skills/        — installed skills (copied from source)
+ *   ~/.claude/task-store.db  — SQLite task store
  */
 module.exports = async function init({ args, AGENCY_ROOT, console }) {
-  const agencyRoot = process.env.AGENCY_HOME || AGENCY_ROOT;
+  const agencyRoot = process.env.AGENCY_HOME
+    ? process.env.AGENCY_HOME
+    : require('path').resolve(process.env.HOME, '.claude');
   const sourceSkills = path.join(__dirname, '../../skills');
 
   console.log(`\nInitializing The Agency at ${agencyRoot}\n`);
@@ -26,9 +28,9 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   // 1. Root directory
   if (!existsSync(agencyRoot)) {
     mkdirSync(agencyRoot, { recursive: true });
-    console.log('  ✓ Created ~/.agency/');
+    console.log('  ✓ Created ~/.claude/');
   } else {
-    console.log('  ✓ ~/.agency/ already exists');
+    console.log('  ✓ ~/.claude/ already exists');
   }
 
   // 2. Subdirectories
@@ -36,9 +38,9 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
     const d = `${agencyRoot}/${dir}`;
     if (!existsSync(d)) {
       mkdirSync(d, { recursive: true });
-      console.log(`  ✓ Created ~/.agency/${dir}/`);
+      console.log(`  ✓ Created ~/.claude/${dir}/`);
     } else {
-      console.log(`  ✓ ~/.agency/${dir}/ already exists`);
+      console.log(`  ✓ ~/.claude/${dir}/ already exists`);
     }
   }
 
@@ -56,7 +58,7 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
         }
       }
       console.log(
-        `  ✓ ${installed}/${skillFiles.length} new skills installed to ~/.agency/skills/`
+        `  ✓ ${installed}/${skillFiles.length} new skills installed to ~/.claude/skills/`
       );
       if (installed < skillFiles.length) {
         console.log(`       ${skillFiles.length - installed} skills already installed (preserved)`);
@@ -67,21 +69,21 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   }
 
   // 4. SQLite task store
-  const dbPath = `${agencyRoot}/tasks.db`;
+  const dbPath = `${agencyRoot}/task-store.db`;
   if (!existsSync(dbPath)) {
     try {
       const Database = require('better-sqlite3');
       const db = new Database(dbPath);
       db.exec(require('./schema.js'));
       db.close();
-      console.log('  ✓ Created ~/.agency/tasks.db');
+      console.log('  ✓ Created ~/.claude/task-store.db');
     } catch {
       writeFileSync(dbPath, '');
-      console.log('  ⚠ better-sqlite3 not installed — tasks.db is a placeholder');
+      console.log('  ⚠ better-sqlite3 not installed — task-store.db is a placeholder');
       console.log('       Run: npm install better-sqlite3');
     }
   } else {
-    console.log('  ✓ ~/.agency/tasks.db already exists');
+    console.log('  ✓ ~/.claude/task-store.db already exists');
   }
 
   console.log('\n✓ The Agency is ready.\n');

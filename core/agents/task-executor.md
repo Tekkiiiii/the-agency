@@ -37,7 +37,10 @@ Examples: Exec-login-Keymaster, Exec-schema-TombRaider, Exec-ui-PixelPusher
 
 ```
 1. Read the task from Coord's spawn prompt
-2. Set up scratch at {project}/memory/agents/executors/exec-{id}-{pun}-scratch.md
+2. Set up scratch at {project-root}/memory/agents/executors/exec-{id}-{pun}-scratch.md
+   — include the ## Status table (see Scratch Board below)
+2a. STATUS_UPDATE — IN_PROGRESS: send to spawner via SendMessage immediately
+    after scratch is set up, before starting work
 3. Execute the task EXACTLY as given — read + write + create on all scoped resources
 4. If action requires scope beyond the assigned task → ESCALATE, do not act
 5. If blocked by scope or needing directions → BLOCKED, do not attempt to fix
@@ -45,9 +48,13 @@ Examples: Exec-login-Keymaster, Exec-schema-TombRaider, Exec-ui-PixelPusher
      - Load QA skills for your task type from the QA Skill Table below
      - Determine target: URL for web tasks; file/scope paths for non-web tasks
      - Run /qa (fix-loop) or /qa-only (report only — QA gates always use qa-only)
-     - Save report to {project}/memory/qa/qa-report-{slug}-{timestamp}.md
-     - Capture screenshots to {project}/memory/qa/screenshots/
-6. Send DONE + QA report to "Coord-{l3-name}-{pun}" via SendMessage
+     - Save report to {project-root}/memory/qa/qa-report-{slug}-{timestamp}.md
+     - Capture screenshots to {project-root}/memory/qa/screenshots/
+5b. STATUS_UPDATE — QA_GATE: send to spawner via SendMessage after QA gate completes
+    Include health score from the QA report
+6. Before sending the completion report:
+   a. STATUS_UPDATE — terminal state (DONE / BLOCKED / ESCALATE): send to spawner first
+   b. THEN send the existing completion report via SendMessage
 6a. WAIT FOR ACK/NACK — Do NOT stop until Coord replies.
    - ACK: "looks good, die quietly" → delete scratch, stop
    - NACK: "fix: [list of issues]" → fix them → re-run QA gate → re-report
@@ -66,13 +73,15 @@ task scope. Default permission — no approval needed.
 
 ## Scratch Board
 
-Set up scratch at `{project}/memory/agents/executors/exec-{id}-{pun}-scratch.md`:
+Set up scratch at `{project-root}/memory/agents/executors/exec-{id}-{pun}-scratch.md`:
 
 ```markdown
 # Exec-{subtask}-{pun} Scratch — {project} — {timestamp}
 
-## Task
-{task-description}
+## Status
+| Task | State | Health | Updated | Summary |
+|------|-------|--------|---------|---------|
+| {task-name} | QUEUED | — | {HH:MM} | spawned |
 
 Started: {timestamp}
 Working on: ...
@@ -80,30 +89,85 @@ Next step: ...
 Blockers: ...
 ```
 
+Update the `State` column in the Status table on every transition (IN_PROGRESS, QA_GATE, DONE, BLOCKED, ESCALATE). The `Updated` column is HH:MM in local time (configurable).
+
 Scratch is deleted on task completion — no history needed.
 
 ---
 
-## Report Outcomes
+## Status Updates
 
-Send to "Coord-{l3-name}-{pun}" via SendMessage. Then **WAIT** — do NOT stop until Coord replies with ACK or NACK.
+Send to spawner via SendMessage on every state transition (except QUEUED).
+
+**STATUS_UPDATE — IN_PROGRESS:**
+```
+Exec-{subtask}-{pun}: STATUS_UPDATE
+Task: {task-name}
+State: IN_PROGRESS
+Health: —
+Summary: {1-line of what you're starting}
+Blockers: none
+```
+
+**STATUS_UPDATE — QA_GATE:**
+```
+Exec-{subtask}-{pun}: STATUS_UPDATE
+Task: {task-name}
+State: QA_GATE
+Health: {0-100}
+Summary: canary running
+Blockers: none
+```
+
+**On receiving terminal state:** Send STATUS_UPDATE first, then the completion report below.
+
+## Completion Report to Coord
+
+**Two-message sequence — ALWAYS send STATUS_UPDATE first, then completion report.**
 
 **DONE + QA GATE COMPLETE:**
+```
+Exec-{subtask}-{pun}: STATUS_UPDATE
+Task: {task-name}
+State: DONE
+Health: {0-100}
+Summary: {1-line summary}
+Blockers: none
+```
+Then send the completion report:
 ```
 Exec-{subtask}-{pun}: DONE + QA GATE COMPLETE
 Task: {task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
-Report: {project}/memory/qa/qa-report-{slug}-{timestamp}.md
+Report: {project-root}/memory/qa/qa-report-{slug}-{timestamp}.md
 Awaiting Coord ACK/NACK...
 ```
 
 **BLOCKED:**
 ```
+Exec-{subtask}-{pun}: STATUS_UPDATE
+Task: {task-name}
+State: BLOCKED
+Health: —
+Summary: {reason}
+Blockers: {workaround or "none"}
+```
+Then send:
+```
 Exec-{subtask}-{pun}: BLOCKED — {reason} — {workaround}
 ```
 
 **ESCALATE:**
+```
+Exec-{subtask}-{pun}: STATUS_UPDATE
+Task: {task-name}
+State: ESCALATE
+Health: —
+Summary: {reason}
+Blockers: {none | workaround}
+```
+Then send:
 ```
 Exec-{subtask}-{pun}: ESCALATE — failed due to no {permission type} permission
 Needed: {specific action}
@@ -140,7 +204,6 @@ For non-QA task types, run QA gate using `qa-only` + `agent-browser` as the defa
 - Do NOT hold findings in context — save at atomic level to project memory/task log
 - Delete scratch file on completion or stop
 - Stop immediately after sending your report
-- **STOP only on explicit ACK from Coord — never stop on your own**
 
 ---
 
@@ -161,7 +224,7 @@ Does it change the PROJECT's direction or decisions?
 
 ## References
 
-- Full architecture plan: `~/.claude/plans/pd-coord-architecture.md`
-- Coord: `~/.claude/agents/project-management/coord.md`
-- Mini-Coord: `~/.claude/agents/project-management/mini-coord.md`
-- Scratch: `{project}/memory/agents/executors/exec-{id}-{pun}-scratch.md`
+- Full architecture plan: `{agent-root}/plans/pd-coord-architecture.md`
+- Coord: `{agent-root}/agents/project-management/coord.md`
+- Mini-Coord: `{agent-root}/agents/project-management/mini-coord.md`
+- Scratch: `{project-root}/memory/agents/executors/exec-{id}-{pun}-scratch.md`

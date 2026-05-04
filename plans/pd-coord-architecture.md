@@ -16,10 +16,10 @@ This replaces the flat single-layer model.
 This architecture applies to **every Project Director** — existing and future.
 
 **Existing PDs** (must be updated):
-- `marketsenseapp-pd` → adopts `pd-coordinator.md` behavior
-- `amanicrm-pd` → adopts `pd-coordinator.md` behavior
-- `ltv-pd` → adopts `pd-coordinator.md` behavior
-- `website-pitch-pd` → adopts `pd-coordinator.md` behavior
+- `{project}-pd` → adopts `pd-coordinator.md` behavior
+- `{project}-pd` → adopts `pd-coordinator.md` behavior
+- `{project}-pd` → adopts `pd-coordinator.md` behavior
+- `{project}-pd` → adopts `pd-coordinator.md` behavior
 - `research-pd` → adopts `pd-coordinator.md` behavior
 
 When any existing PD is invoked via `/pd-resume` or `/swarm`, it uses the new architecture.
@@ -86,7 +86,7 @@ Constraints:
 - PD does NOT decompose below L3. That authority belongs to Coord.
 - PD does NOT do implementation.
 - Has approval permission within project scope.
-- Does NOT have approval permission for tasks delegated from other PDs — escalate to Tekki.
+- Does NOT have approval permission for tasks delegated from other PDs — escalate to the operator.
 
 ### Coord (spawned by PD, one per L3 task) — **Opus model, approval permission**
 
@@ -203,11 +203,11 @@ Task-Executor (Sonnet, no approval)
  └── ESCALATE → Coord (Opus, approval at L3 scope)
       └── If Coord lacks scope → ESCALATE → PD (Opus, approval at project scope)
            └── If PD lacks scope → ESCALATE → Parent Session (can approve within project scope)
-                └── If parent session also lacks scope → ESCALATE → Tekki (ultimate approver)
+                └── If parent session also lacks scope → ESCALATE → the operator (ultimate approver)
 ```
 
 **Parent session approval scope:** anything within the project's scope that exceeds PD's authority.
-**Tekki scope:** cross-project decisions, cost, irreversible actions, strategic choices.
+**the operator scope:** cross-project decisions, cost, irreversible actions, strategic choices.
 
 ### Escalation Message Format
 
@@ -223,8 +223,8 @@ Awaiting: {who needs to approve}
 
 - Executor: "login-ui: ESCALATE — failed due to no Railway env write permission. Needed: set OLLAMA_HOST. Scope: Railway production. Awaiting: Coord"
 - Coord: "Coord-auth-L3: ESCALATE — PD-level approval needed to delete legacy users table. Awaiting: PD"
-- PD: "PD-MarketSense: ESCALATE — cost approval needed for Neon branch create ($0.50/day). Scope: project. Awaiting: parent session"
-- PD: "PD-MarketSense: ESCALATE — irreversible action: delete all test DBs across 3 projects. Scope: multi-project. Awaiting: Tekki"
+- PD: "PD-{project}: ESCALATE — cost approval needed for Neon branch create ($0.50/day). Scope: project. Awaiting: parent session"
+- PD: "PD-{project}: ESCALATE — irreversible action: delete all test DBs across 3 projects. Scope: multi-project. Awaiting: the operator"
 
 ### On Approval
 
@@ -281,7 +281,7 @@ If parent session context grows too large during execution:
 
 ### Invoking a new PD while one is mid-flight
 
-If Tekki calls `/pd-resume [slug]` or gives new work to the project while existing Coords and Executors are still running:
+If the operator calls `/pd-resume [slug]` or gives new work to the project while existing Coords and Executors are still running:
 
 ```
 Existing agents (continue independently):
@@ -297,7 +297,7 @@ New PD spawns:
 
 **New PD is additive, not destructive.** It reads what is done, sees what is running, and fills the gaps. Existing Coords continue uninterrupted — they are not killed by a new PD spawn.
 
-If Tekki wants to override or cancel mid-flight work:
+If the operator wants to override or cancel mid-flight work:
 - Write a directive in `memory/next-session.md` before invoking the new PD
 - e.g. "cancel Coord-auth-L3 — auth approach changed, restart required"
 - New PD reads this and does not resume the cancelled Coord
@@ -313,18 +313,18 @@ Currently no hard kill mechanism. To stop agents mid-flight:
 
 ### Visibility without consuming context
 
-While agents run, Tekki can read these files without touching context:
+While agents run, the operator can read these files without touching context:
 - `memory/heartbeat.md` — PD writes progress tags here as Coords complete
 - `memory/decisions.md` — decisions locked during execution
 - `memory/next-session.md` — what remains open if session was cut
 
-This gives Tekki a live project view at any time without consuming context.
+This gives the operator a live project view at any time without consuming context.
 
 ---
 
 ## Agent Naming Convention
 
-Agents get punny, task-appropriate names. Names are memorable, scannable in logs, and give Tekki instant context without reading the full brief.
+Agents get punny, task-appropriate names. Names are memorable, scannable in logs, and give the operator instant context without reading the full brief.
 
 ### Naming Pattern
 
@@ -367,7 +367,7 @@ When reporting to team-lead or spawning, always use the punny name:
 ```
 Gatekeeper: DONE — auth endpoint written and tested
 Coord-auth-Gatekeeper: L3 COMPLETE — 5/5 executors done, login/register/logout all deployed
-PD-MarketSense: All L3s done. Digest: [Coord-feed-Digest: done, Coord-auth-Gatekeeper: done, ...]
+PD-{project}: All L3s done. Digest: [Coord-feed-Digest: done, Coord-auth-Gatekeeper: done, ...]
 ```
 
 Names travel with the agent throughout its lifecycle. PD scratch file, scratch file paths, and all reports use the same punny name.

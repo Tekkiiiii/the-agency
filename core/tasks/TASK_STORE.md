@@ -1,6 +1,6 @@
 # Task Store
 
-Every task in The Agency lives in the SQLite task store: `~/.agency/task-store.db`.
+Every task in The Agency lives in the SQLite task store: `~/.claude/task-store.db`.
 
 ## Schema
 
@@ -57,7 +57,7 @@ A task with `blocked_by = '["task-id-1", "task-id-2"]'` cannot move to `in_progr
 ## Example: Create a Task
 
 ```bash
-sqlite3 ~/.agency/task-store.db \
+sqlite3 ~/.claude/task-store.db \
   "INSERT INTO tasks (project_slug, task_name, description, priority) 
    VALUES ('my-project', 'Build auth', 'Add login flow', 'high');"
 ```
@@ -65,7 +65,7 @@ sqlite3 ~/.agency/task-store.db \
 ## Example: Check Blockers
 
 ```bash
-sqlite3 ~/.agency/task-store.db \
+sqlite3 ~/.claude/task-store.db \
   "SELECT task_name, status FROM tasks 
    WHERE id IN (SELECT value FROM tasks, json_each(blocked_by) 
    WHERE status != 'done');"

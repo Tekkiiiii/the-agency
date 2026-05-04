@@ -1,313 +1,87 @@
 ---
 name: backend
 description: >
-  Backend architecture and implementation — establishes patterns for REST API
-  design, authentication, database access, error handling, and deployment
-  configuration. Trigger when: building backend services from scratch,
-  reviewing existing backend architecture, or setting up backend infrastructure.
-  Key capability: architecture patterns consistent with gstack conventions,
-  including auth patterns, middleware, and database connection management.
-  Also for: backend code review, performance analysis, and scaling decisions.
+  Designs, builds, and reviews backend systems: APIs, databases, server-side logic, authentication, file handling, webhooks, and microservices. Triggers when the user asks to build an API, design a database schema, write server-side code, set up authentication, handle file uploads, build webhooks, design microservices, optimize queries, or work with Node.js, Python, Go, Java, or any server-side technology. Also triggers proactively when reviewing backend code for performance, scalability, or correctness issues — including N+1 queries, missing indexes, connection pool exhaustion, and missing pagination. Key capabilities: layered architecture patterns (routes/controllers/services/repositories), REST design with correct HTTP status codes, UUID-based public IDs with created_at/updated_at timestamps, JWT auth with short-lived access tokens + httpOnly refresh cookies, bcrypt password hashing at cost factor 12+, centralized error handling, structured JSON logging, parameterized queries only, and background job patterns. Ideal for backend engineers building from scratch or debugging existing systems. Also for: architecture reviews, query optimization, security audits on auth flows, and API contract design.
 ---
 
-# /backend — Backend Architecture
+# Backend Development Skill
 
-Backend service patterns using REST conventions, auth, and database access.
+## Before Building — Clarify:
+1. **Framework/Language**: Node.js (Express/Fastify/Hono), Python (FastAPI/Django), Go, Java Spring?
+2. **Database**: Relational (PostgreSQL/MySQL) or NoSQL (MongoDB/Redis)?
+3. **Auth method**: JWT, sessions, OAuth, API keys?
+4. **Deployment target**: Serverless, containers, VPS?
+5. **Scale expectations**: Requests/sec, data volume?
 
-## When to Activate
+## API Design Principles
 
-Trigger `/backend` when:
-- Building backend services from scratch
-- Reviewing existing backend architecture
-- Setting up backend infrastructure
-- Backend code review
-- Performance analysis
-
-## API Design Conventions
-
-### REST Resource Naming
-
-```
-RESOURCE NAMING — {project}
-════════════════════════════════
-
-Rules:
-  - Use nouns, not verbs: /users not /getUsers
-  - Plural resources: /users not /user
-  - Nested resources for relationships: /users/{id}/orders
-  - Use query params for filtering: /users?role=admin
-  - Version prefix: /api/v1/users
-
-Endpoints:
-  GET    /users          List users
-  POST   /users          Create user
-  GET    /users/{id}     Get user
-  PATCH  /users/{id}     Update user
-  DELETE /users/{id}     Delete user
-
-  GET    /users/{id}/orders       Get user's orders
-  POST   /users/{id}/orders       Create order for user
-```
-
-### Request/Response Shapes
-
-```typescript
-// Standard success response
-interface SuccessResponse<T> {
-  data: T;
-  meta?: {
-    page: number;
-    perPage: number;
-    total: number;
-  };
-}
-
-// Standard error response
-interface ErrorResponse {
-  error: {
-    code: string;      // e.g. "USER_NOT_FOUND"
-    message: string;  // Human-readable
-    details?: any;    // Optional additional context
-  };
-}
-
-// Pagination
-interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    perPage: number;
-    total: number;
-    totalPages: number;
-  };
+### REST Best Practices
+- Use nouns for resources, verbs for HTTP methods
+- `GET /users/:id` not `GET /getUser`
+- Consistent response envelope:
+```json
+{
+  "data": {},
+  "error": null,
+  "meta": { "page": 1, "total": 100 }
 }
 ```
+- Use correct HTTP status codes (200, 201, 400, 401, 403, 404, 422, 500)
+- Version your API: `/api/v1/...`
 
-### HTTP Status Codes
+### Request Validation
+- Validate and sanitize ALL inputs before processing
+- Return descriptive 422 errors with field-level messages
+- Use Zod (TS), Pydantic (Python), or class-validator
 
-```
-STATUS CODES — {project}
-════════════════════════════════
+## Database Patterns
 
-Success:
-  200 OK          — Standard success
-  201 Created     — Resource created
-  204 No Content  — Success with no body (DELETE)
+### Schema Design
+- Use UUIDs over sequential IDs for public-facing IDs
+- Always include `created_at`, `updated_at` timestamps
+- Index foreign keys and frequently queried columns
+- Soft deletes with `deleted_at` when data history matters
 
-Client errors:
-  400 Bad Request     — Invalid input
-  401 Unauthorized    — Not authenticated
-  403 Forbidden       — Authenticated but not authorized
-  404 Not Found       — Resource doesn't exist
-  409 Conflict        — State conflict (duplicate, etc.)
-  422 Unprocessable   — Validation failed
+### Query Optimization
+- Avoid N+1 queries — use JOINs or eager loading
+- Use `EXPLAIN ANALYZE` to debug slow queries
+- Paginate all list endpoints (cursor-based for large datasets)
+- Cache expensive queries with Redis (TTL based on data freshness)
 
-Server errors:
-  500 Internal Server Error — Unexpected error
-  503 Service Unavailable   — Degraded or unavailable
-```
-
-## Authentication
-
-### Auth Pattern (JWT)
-
-```typescript
-// Token structure
-interface JWTPayload {
-  sub: string;         // User ID
-  email: string;
-  role: string;
-  iat: number;
-  exp: number;          // Expiry (15m for access, 7d for refresh)
-}
-
-// Auth middleware
-async function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({
-      error: { code: 'UNAUTHORIZED', message: 'No token provided' }
-    });
-  }
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!);
-    req.user = payload;
-    next();
-  } catch (err) {
-    return res.status(401).json({
-      error: { code: 'INVALID_TOKEN', message: 'Token invalid or expired' }
-    });
-  }
-}
-
-// Role-based access
-function requireRole(...roles: string[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        error: { code: 'FORBIDDEN', message: 'Insufficient permissions' }
-      });
-    }
-    next();
-  };
-}
-```
-
-### Session Management
-
-```
-SESSION PATTERNS — {project}
-════════════════════════════════
-
-Short-lived sessions (sensitive ops):
-  - Access token: 15 minutes
-  - Refresh token: 7 days
-  - Rotate on use
-
-Long-lived sessions (remember me):
-  - Access token: 24 hours
-  - Refresh token: 30 days
-  - Strict refresh token rotation
-
-Session storage:
-  - Redis for production
-  - In-memory for development
-```
-
-## Database Access
-
-### Connection Management
-
-```typescript
-// Connection pool (Node.js / pg)
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20,             // Max connections
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
-
-// Query helper
-async function query<T = any>(
-  text: string,
-  params?: any[]
-): Promise<{ rows: T[]; rowCount: number }> {
-  const start = Date.now();
-  const result = await pool.query(text, params);
-  const duration = Date.now() - start;
-
-  // Log slow queries
-  if (duration > 100) {
-    console.warn(`Slow query (${duration}ms):`, text);
-  }
-
-  return result;
-}
-```
-
-### Query Patterns
-
-```typescript
-// Parameterized queries (always)
-const result = await query<User>(
-  'SELECT * FROM users WHERE id = $1 AND active = $2',
-  [userId, true]
-);
-
-// Transaction pattern
-async function createOrderWithUser(userId: string, items: Item[]) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    const order = await client.query(
-      'INSERT INTO orders (user_id, status) VALUES ($1, $2) RETURNING *',
-      [userId, 'pending']
-    );
-
-    for (const item of items) {
-      await client.query(
-        'INSERT INTO order_items (order_id, product_id, quantity) VALUES ($1, $2, $3)',
-        [order.rows[0].id, item.productId, item.quantity]
-      );
-    }
-
-    await client.query('COMMIT');
-    return order.rows[0];
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
-}
-```
+## Authentication & Sessions
+- Hash passwords with bcrypt (cost factor 12+)
+- JWT: short-lived access tokens (15min) + refresh tokens (7-30 days)
+- Store refresh tokens in httpOnly cookies, not localStorage
+- Always validate token on protected routes middleware-level
 
 ## Error Handling
+- Centralized error handler middleware
+- Never expose stack traces in production responses
+- Log errors with context (user ID, request ID, timestamp)
+- Use structured logging (JSON) for easy querying
 
-### Error Hierarchy
-
-```typescript
-// Base application error
-class AppError extends Error {
-  constructor(
-    public code: string,
-    message: string,
-    public statusCode: number = 500,
-    public details?: any
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
-}
-
-// Specific errors
-class NotFoundError extends AppError {
-  constructor(resource: string, id: string) {
-    super('NOT_FOUND', `${resource} ${id} not found`, 404);
-  }
-}
-
-class ValidationError extends AppError {
-  constructor(message: string, details?: any) {
-    super('VALIDATION_ERROR', message, 422, details);
-  }
-}
-
-class UnauthorizedError extends AppError {
-  constructor(message = 'Unauthorized') {
-    super('UNAUTHORIZED', message, 401);
-  }
-}
-
-// Error handler middleware
-function errorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
-  if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      error: {
-        code: err.code,
-        message: err.message,
-        details: err.details,
-      },
-    });
-  }
-
-  // Unknown error — don't leak details
-  console.error('Unhandled error:', err);
-  return res.status(500).json({
-    error: {
-      code: 'INTERNAL_ERROR',
-      message: 'An unexpected error occurred',
-    },
-  });
-}
+## Code Structure (Node.js example)
+```
+src/
+├── routes/        # Route definitions only
+├── controllers/   # Request/response handling
+├── services/      # Business logic
+├── repositories/  # Database queries
+├── middleware/    # Auth, validation, logging
+├── models/        # DB schemas/types
+└── utils/         # Shared helpers
 ```
 
-## Important Rules
+## Performance Checklist
+- [ ] Database connections pooled (not opened per request)
+- [ ] Async/await used correctly (no blocking the event loop)
+- [ ] Background jobs offloaded to queue (Bull, Celery, etc.)
+- [ ] Rate limiting on public endpoints
+- [ ] Response compression enabled (gzip/brotli)
+- [ ] Health check endpoint at `GET /health`
 
-- **Parameterized queries only.** Never concatenate user input into SQL.
-- **Auth middleware on every protected route.** No exceptions.
-- **Error responses are consistent.** Always `{ error: { code, message } }`.
-- **Connection pooling in production.** No connection-per-request.
-- **Log slow queries.** A query that takes 5s will take 5s for every user.
+## Security Reminders
+- Parameterized queries always (no string concatenation in SQL)
+- CORS configured restrictively
+- Helmet.js or equivalent security headers
+- Secrets in environment variables, never in code

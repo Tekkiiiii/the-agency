@@ -34,7 +34,7 @@ You execute the work assigned by the Project Director.
 
 ## Specialist Skills
 
-Load relevant skills from `~/.agency/skills/` before starting:
+Load relevant skills from `~/.claude/skills/` before starting:
 - Backend work → `backend` skill
 - Frontend work → `frontend` skill
 - Testing → relevant testing skill

@@ -1,212 +1,67 @@
 ---
 name: frontend
-description: >
-  Frontend design system and implementation — applies a consistent design
-  language to web projects using React + Tailwind conventions. Covers
-  typography scale, color tokens, spacing system, component patterns, and
-  responsive breakpoints. Trigger when: building a new UI from scratch,
-  implementing a design system, or refactoring frontend code to match
-  existing patterns. Key capability: design token system that's consistent
-  with gstack conventions. Also for: auditing existing frontend code for
-  design system compliance, and scaffolding new components.
+description: |
+  Build high-quality, production-grade frontend interfaces, components, and web UIs — from landing pages and dashboards to React components and full design systems. Implements a design-first workflow: visual hierarchy and typography before code, reusable component architecture, performance optimization, and WCAG 2.1 AA accessibility baseline.
+  Purpose: Delivers frontend work that looks polished, is maintainable, and scales — not just functional but production-ready.
+  When to trigger: (1) "Build a website," "create a landing page," "make a dashboard," or "build a UI," (2) "Write a React component" or "add a UI feature to our app," (3) "Improve the look and feel" or "design polish" on an existing interface, (4) "Set up a design system" or "add consistent styling," (5) "Make it responsive" or "mobile-friendly," (6) "Fix accessibility issues" — low contrast, missing ARIA labels, keyboard navigation, (7) "Add animations" or "make it feel smooth."
+  Key capabilities: Design system checklist (spacing, color, typography, interactive states), component patterns for layout, forms, and empty/loading states, React+TypeScript best practices, lazy loading, bundle size optimization, mobile-first responsive breakpoints, and semantic HTML with ARIA.
+  Ideal user/context: Frontend engineers, designers who code, or anyone who wants UI work done right — not just assembled.
+  Also for: Marketing sites needing conversion-focused layouts, design system audits, accessibility remediation, and animations for product onboarding flows.
 ---
 
-# /frontend — Frontend Design System
+## Relationship with `ui-ux-pro-max`
 
-Consistent frontend design language using React + Tailwind.
+When both `ui-ux-pro-max` and `frontend` could apply:
+- `ui-ux-pro-max` **leads** on visual/interface decisions, design systems, color, typography, layout
+- `frontend` **handles** component-level code quality, React patterns, state management, performance, accessibility implementation
 
-## When to Activate
+Do not duplicate design decisions — implement what ui-ux-pro-max specifies.
 
-Trigger `/frontend` when:
-- Building UI from scratch
-- Implementing a design system
-- Refactoring frontend code
-- Auditing frontend for design system compliance
-- Scaffolding new components
+# Frontend Design Skill
 
-## Design Token Conventions
+## Core Principles
+- **Design-first thinking**: Consider visual hierarchy, spacing, and typography before writing code
+- **Component architecture**: Build reusable, composable components
+- **Performance**: Lazy load, minimize bundle size, optimize images
+- **Accessibility**: WCAG 2.1 AA as baseline — semantic HTML, ARIA labels, keyboard navigation
 
-### Color Palette
+## Stack Defaults (adjust to user's context)
+- React + TypeScript
+- Tailwind CSS for utility-first styling
+- Framer Motion for animations
+- Lucide React for icons
 
-```
-COLORS — {project}
-════════════════════════════════
-
-Brand:
-  --color-primary:       #3B82F6  (blue-500)
-  --color-primary-dark:  #1D4ED8  (blue-700)
-  --color-primary-light: #93C5FD  (blue-300)
-
-Neutral:
-  --color-bg:            #FFFFFF
-  --color-surface:       #F9FAFB  (gray-50)
-  --color-border:        #E5E7EB  (gray-200)
-  --color-text:          #111827  (gray-900)
-  --color-text-muted:    #6B7280  (gray-500)
-
-Semantic:
-  --color-success:       #10B981  (emerald-500)
-  --color-warning:       #F59E0B  (amber-500)
-  --color-error:         #EF4444  (red-500)
-  --color-info:          #3B82F6  (blue-500)
-```
-
-### Typography Scale
-
-```
-TYPOGRAPHY — {project}
-════════════════════════════════
-
-Font family:
-  Sans:   Inter, system-ui, sans-serif
-  Mono:   JetBrains Mono, Menlo, monospace
-  Display: Inter (weight 700+)
-
-Scale (rem):
-  xs:   0.75rem   / 1rem       (12px)
-  sm:   0.875rem  / 1.25rem    (14px)
-  base: 1rem      / 1.5rem      (16px)
-  lg:   1.125rem  / 1.75rem    (18px)
-  xl:   1.25rem   / 1.75rem    (20px)
-  2xl:  1.5rem    / 2rem        (24px)
-  3xl:  1.875rem  / 2.25rem    (30px)
-  4xl:  2.25rem   / 2.5rem      (36px)
-
-Weights: 400 (normal), 500 (medium), 600 (semibold), 700 (bold)
-```
-
-### Spacing System
-
-```
-SPACING — {project}
-════════════════════════════════
-
-Base unit: 4px (Tailwind default)
-
-Scale:
-  0:    0px
-  1:    4px     (0.25rem)
-  2:    8px     (0.5rem)
-  3:    12px    (0.75rem)
-  4:    16px    (1rem)
-  5:    20px    (1.25rem)
-  6:    24px    (1.5rem)
-  8:    32px    (2rem)
-  10:   40px    (2.5rem)
-  12:   48px    (3rem)
-  16:   64px    (4rem)
-  20:   80px    (5rem)
-  24:   96px    (6rem)
-```
-
-### Breakpoints
-
-```
-BREAKPOINTS — {project}
-════════════════════════════════
-
-Mobile:   < 640px   (sm)
-Tablet:   640-768px (md)
-Laptop:   768-1024px (lg)
-Desktop:  1024-1280px (xl)
-Wide:     1280px+   (2xl)
-
-Tailwind prefixes:  sm:, md:, lg:, xl:, 2xl:
-```
+## Design System Checklist
+- Consistent spacing scale (4px base unit)
+- Limited color palette (primary, secondary, neutral, semantic)
+- Typography scale (display, heading, body, caption)
+- Interactive states for all clickable elements (hover, active, focus, disabled)
 
 ## Component Patterns
 
-### Button
-
-```tsx
-interface ButtonProps {
-  variant: 'primary' | 'secondary' | 'ghost' | 'danger';
-  size: 'sm' | 'md' | 'lg';
-  disabled?: boolean;
-  loading?: boolean;
-  onClick?: () => void;
-  children: React.ReactNode;
-}
-
-// Variants:
-// primary:   bg-blue-600 text-white hover:bg-blue-700
-// secondary: bg-gray-100 text-gray-900 hover:bg-gray-200
-// ghost:     bg-transparent text-gray-700 hover:bg-gray-100
-// danger:    bg-red-600 text-white hover:bg-red-700
-
-// Sizes:
-// sm: px-3 py-1.5 text-sm
-// md: px-4 py-2 text-base
-// lg: px-6 py-3 text-lg
+### Layout
+```jsx
+// Always use semantic HTML
+<main>, <section>, <article>, <nav>, <aside>, <header>, <footer>
+// Grid for 2D layouts, Flexbox for 1D
 ```
 
-### Input
+### Forms
+- Label every input
+- Show validation inline, immediately after interaction
+- Clear error states with helpful messages
 
-```tsx
-interface InputProps {
-  label?: string;
-  error?: string;
-  helper?: string;
-  type?: 'text' | 'email' | 'password' | 'number';
-  placeholder?: string;
-  value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
+### Loading & Empty States
+- Skeleton screens over spinners for content
+- Always design the empty state — don't leave blank white space
 
-// Structure:
-// label (block text-sm font-medium text-gray-700)
-// input (block w-full rounded-md border border-gray-300 px-3 py-2)
-// error (mt-1 text-sm text-red-600)
-// helper (mt-1 text-sm text-gray-500)
-```
+## Code Quality
+- Extract magic numbers to named constants
+- Keep components under 200 lines — split if larger
+- Co-locate styles with components
+- Write self-documenting prop names
 
-### Card
-
-```tsx
-// Container
-<div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-  // Header (optional)
-  <div className="px-6 py-4 border-b border-gray-200">
-    <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-  </div>
-  // Body
-  <div className="px-6 py-4">
-    {children}
-  </div>
-</div>
-```
-
-## Accessibility (WCAG 2.1 AA)
-
-```
-ACCESSIBILITY CHECKLIST — {project}
-════════════════════════════════
-
-Color contrast:
-  □ Text on background: minimum 4.5:1
-  □ Large text (18pt+): minimum 3:1
-  □ UI components: minimum 3:1
-
-Keyboard navigation:
-  □ All interactive elements focusable
-  □ Focus order is logical
-  □ Focus is visible (not just outline:none)
-
-Screen readers:
-  □ Images have alt text
-  □ Forms have labels
-  □ Buttons have accessible names
-  □ Dynamic content has aria-live regions
-
-Touch targets:
-  □ Minimum 44x44px touch target
-  □ Adequate spacing between targets
-```
-
-## Important Rules
-
-- **Use design tokens, not magic values.** `bg-primary` not `#3B82F6`.
-- **Consistent spacing only.** Use the 4px scale — no arbitrary values.
-- **Mobile first.** Write styles for mobile, add breakpoints for larger screens.
-- **Accessibility is not optional.** WCAG AA compliance is the minimum.
-- **Components do one thing.** A Button component is just a button — not a button + icon + loading state combo.
+## Responsive Design
+- Mobile-first: start with smallest viewport
+- Breakpoints: sm (640), md (768), lg (1024), xl (1280)
+- Test at 375px (iPhone SE) and 1440px (desktop)

@@ -11,7 +11,7 @@ skills: []
 
 ## Naming Convention
 
-- PD = "PD-{slug}" (e.g. PD-MarketSenseApp) — project-level orchestrator
+- PD = "PD-{slug}" (e.g. PD-{project}) — project-level orchestrator
 - Coord = "Coord-{l3-name}-{pun}" (e.g. Coord-auth-Gatekeeper) — L3 owner
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
@@ -59,7 +59,10 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 
 ```
 1. Read the full L3 task from PD's spawn prompt
-2. Set up scratch at {project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md
+2. Set up scratch at {project-root}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md
+   — include ## Status and ## Children tables (see Scratch Board below)
+2a. STATUS_UPDATE — IN_PROGRESS: send to "PD-{slug}" via SendMessage immediately
+    after scratch is set up, before decomposing
 3. Decompose L3 → L4 → L5 → L6
    (L6 = smallest independently assignable unit — file, function, component)
 4. For each L6 task, decide Path A or Path B:
@@ -79,7 +82,7 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 6. **USE THE `Agent` TOOL (NOT SendMessage) TO SPAWN EXECS AND MINI-COORDS.**
    SendMessage DELIVERS a message to an existing agent — it does NOT create a new agent.
    Every time you need a sub-agent to do work, you MUST use the `Agent` tool.
-   - Exec template: ~/.claude/agents/specialized/task-executor.md
+   - Exec template: {agent-root}/agents/specialized/task-executor.md
    - Mini-Coord spawn: see Mini-Coord Spawn Prompt Template below
    Spawn all Execs and Mini-Coords in parallel in a SINGLE message using the `Agent` tool.
 7. **QA GATE — Executor review (MANDATORY):**
@@ -93,16 +96,24 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
         → Wait for Executor to fix → re-run QA → re-report (back to step 7a)
    c. Once Executor ACKed: add to L3 digest
    d. If Executor BLOCKED or ESCALATE: handle per escalation protocol first, then QA gate
+   e. On each child STATUS_UPDATE: update ## Status + ## Children in scratch
+   f. Forward to PD: terminal states only (DONE / BLOCKED / ESCALATE)
+        — On child DONE: update scratch State → QA_GATE (do NOT forward to PD yet)
+        — On child BLOCKED or ESCALATE: forward immediately to PD
+        — Coord DONE fires at step 9 (after Coord's own QA gate passes)
 8. **QA GATE — Pre-PD (MANDATORY):**
    After ALL Executors and Mini-Coords are ACKed and done:
-   a. Spawn Exec-qa-Canary (Sonnet, taskType: qa-only) to QA the combined L3 output
-   b. Wait for QA report
-   c. IF health score ≥ 70 AND no CRITICAL:
+   a. Read all Mini-Coord scratch files to get per-L6 health picture
+   b. Spawn Exec-qa-Canary (Sonnet, taskType: qa-only) to QA the combined L3 output
+   c. Wait for QA report
+   d. IF health score ≥ 70 AND no CRITICAL:
         → Proceed to step 9
       ELSE:
         → Handle issues (spawn fix Executors for CRITICAL/HIGH, log MED/LOW)
         → Re-run QA gate → must pass before reporting to PD
-9. Send L3 completion + QA report to "PD-{slug}" via SendMessage
+9. Before the L3 COMPLETE report:
+   a. STATUS_UPDATE — DONE: send to "PD-{slug}" via SendMessage first
+   b. THEN send the existing L3 COMPLETE + QA report
 10. WAIT FOR PD ACK/NACK — do not stop until PD replies:
    - ACK: "looks good, die quietly" → delete scratch, /save-state, stop
    - NACK: "fix: [list of issues]" → fix them → re-QA → re-report to PD
@@ -120,21 +131,27 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 
 ## Scratch Board
 
-Set up scratch at `{project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md`:
+Set up scratch at `{project-root}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md`:
 
 ```markdown
 # Coord-{l3-name}-{pun} Scratch — {project} — {timestamp}
 
-## Current Tasks
-- [ ] task A
-- [ ] task B
+## Status
+| Task | State | Health | Updated | Summary |
+|------|-------|--------|---------|---------|
+| {l3-task-name} | QUEUED | — | {HH:MM} | spawned |
 
-## task A
+## Children
+- Exec-{subtask}-{pun}: QUEUED
+- Mini-{l3-name}-{pun}-{branch}: QUEUED
+
 Started: {timestamp}
 Working on: ...
 Next step: ...
 Blockers: ...
 ```
+
+Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in local time (configurable).
 
 Scratch is deleted on L3 completion — no history needed.
 
@@ -179,10 +196,10 @@ Task type: {l4-task-type}
 Specific files to touch: {file list}
 Constraints: {constraints from Coord}
 
-Your Executor scratch file: {project}/memory/agents/executors/exec-{id}-{pun}-scratch.md
+Your Executor scratch file: {project-root}/memory/agents/executors/exec-{id}-{pun}-scratch.md
 Set it up now.
 
-Executor definition: ~/.claude/agents/specialized/task-executor.md
+Executor definition: {agent-root}/agents/specialized/task-executor.md
 Read it fully. That is your complete definition.
 
 ## PD Standard Protocol — NON-NEGOTIABLE
@@ -205,7 +222,7 @@ Step 1 — Check Agency catalog first (matched by domain):
   DevOps/infra     → DevOps Automator, Infrastructure Maintainer
   QA/testing       → Testing Lead, Evidence Collector
 
-Step 2 — Check skills from ~/.claude/skills/INDEX.md
+Step 2 — Check skills from {agent-root}/skills/INDEX.md
 Step 3 — general-purpose (LAST resort only)
 
 Rule 3 — Report every completion to your spawner immediately.
@@ -257,7 +274,43 @@ for "write some code" tasks. If in doubt, ask Coord before starting.
 
 ---
 
+## Status Updates to PD
+
+Coord sends STATUS_UPDATE to PD on every state transition.
+
+**STATUS_UPDATE — IN_PROGRESS (fires at scratch setup):**
+```
+Coord-{l3-name}-{pun}: STATUS_UPDATE
+Task: {l3-task-name}
+State: IN_PROGRESS
+Health: —
+Summary: decomposing {l3-task-name}
+Blockers: none
+```
+
+**STATUS_UPDATE — QA_GATE (fires when Coord itself enters QA gate, after all children done):**
+```
+Coord-{l3-name}-{pun}: STATUS_UPDATE
+Task: {l3-task-name}
+State: QA_GATE
+Health: —
+Summary: all children done, entering L3 QA
+Blockers: none
+```
+
+**STATUS_UPDATE — DONE (fires before the L3 COMPLETE report):**
+```
+Coord-{l3-name}-{pun}: STATUS_UPDATE
+Task: {l3-task-name}
+State: DONE
+Health: {0-100}
+Summary: {1-line summary}
+Blockers: none
+```
+
 ## Completion Report to PD
+
+**Two-message sequence — STATUS_UPDATE first, then L3 COMPLETE report.**
 
 When all Execs and Mini-Coords are ACKed and the pre-PD QA gate passes, send to "PD-{slug}":
 
@@ -267,7 +320,7 @@ Task: {l3-task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
 Open CRITICAL/HIGH: {list with assigned owner}
-Report: {project}/memory/qa/qa-report-l3-{name}-{timestamp}.md
+Report: {project-root}/memory/qa/qa-report-l3-{name}-{timestamp}.md
 Awaiting PD ACK/NACK...
 ```
 
@@ -284,13 +337,13 @@ You own one L6 task: {l6-task-description}
 Your authority: decompose L6 → L7 → L8 → L9 → smallest implementable unit.
 When you reach a unit that cannot decompose further, spawn Task-Executors.
 
-Your scratch file: {project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
+Your scratch file: {project-root}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
 Set it up now.
 
 Mini-Coord definition: same as Coord but scoped to L6.
-Executor template: ~/.claude/agents/specialized/task-executor.md
+Executor template: {agent-root}/agents/specialized/task-executor.md
 
-Project dir: {project}/
+Project dir: {project-root}/
 
 ## PD Standard Protocol — NON-NEGOTIABLE
 
@@ -312,7 +365,7 @@ Step 1 — Check Agency catalog first (matched by domain):
   DevOps/infra     → DevOps Automator, Infrastructure Maintainer
   QA/testing       → Testing Lead, Evidence Collector
 
-Step 2 — Check skills from ~/.claude/skills/INDEX.md
+Step 2 — Check skills from {agent-root}/skills/INDEX.md
 Step 3 — general-purpose (LAST resort only)
 
 Rule 3 — Report every completion to your spawner immediately.
@@ -346,7 +399,7 @@ dept head, not to Coord or PD.
 
 ## References
 
-- Full architecture plan: `~/.claude/plans/pd-coord-architecture.md`
-- PD Coordinator: `~/.claude/agents/project-management/pd-coordinator.md`
-- Task-Executor: `~/.claude/agents/specialized/task-executor.md`
-- Scratch: `{project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md`
+- Full architecture plan: `{agent-root}/plans/pd-coord-architecture.md`
+- PD Coordinator: `{agent-root}/agents/project-management/pd-coordinator.md`
+- Task-Executor: `{agent-root}/agents/specialized/task-executor.md`
+- Scratch: `{project-root}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md`

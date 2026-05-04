@@ -5,7 +5,7 @@ The Agency self-bootstraps on first run. No manual setup required.
 ## What Bootstrap Creates
 
 ```
-~/.agency/                    # Root agency directory
+~/.claude/                    # Root agency directory
 ├── task-store.db             # SQLite task store
 ├── projects/                 # Project states
 ├── sessions/                # Session logs
@@ -18,11 +18,11 @@ The Agency self-bootstraps on first run. No manual setup required.
 
 These files are created by the `agency init` command:
 
-1. `~/.agency/task-store.db` — initialized with schema
-2. `~/.agency/projects/` — directory created
-3. `~/.agency/sessions/` — directory created
-4. `~/.agency/lessons/` — directory created
-5. `~/.agency/decisions/` — directory created
+1. `~/.claude/task-store.db` — initialized with schema
+2. `~/.claude/projects/` — directory created
+3. `~/.claude/sessions/` — directory created
+4. `~/.claude/lessons/` — directory created
+5. `~/.claude/decisions/` — directory created
 
 ## Bootstrapping a New Project
 
@@ -32,7 +32,7 @@ agency init --project my-project
 
 This creates:
 ```
-~/.agency/projects/my-project/
+~/.claude/projects/my-project/
 ├── STATE.md
 ├── ROADMAP.md
 └── decisions/
@@ -49,6 +49,8 @@ agency skill install save-state
 agency skill install recall
 agency skill install swarm
 ```
+
+Skills are installed to `~/.claude/skills/`.
 
 ## Upgrading
 

@@ -18,7 +18,7 @@ npx @the-agency/cli init
 
 ### `agency init`
 
-Initialize the agency system. Creates `~/.agency/`.
+Initialize the agency system. Creates `~/.claude/`.
 
 ```bash
 agency init

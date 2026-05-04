@@ -1,341 +1,453 @@
 ---
 name: vercel-deploy
+preamble-tier: 2
+version: 1.0.0
 description: >
-  Vercel deployment — sets up and manages Vercel CLI-based deployments,
-  environment variables, preview/production promotion, health checks, and
-  rollback. Trigger when: deploying to Vercel, configuring environment
-  variables, promoting a preview to production, or rolling back a broken
-  deploy. Key capability: complete workflow from first deploy to production
-  with health verification. Also for: Vercel project reconfiguration,
-  aliasing preview deploys, and domain setup.
+  Deploy to Vercel — link project, configure environment variables, trigger deploy
+  (preview or production), fetch logs, and validate health check.
+  Use when: "deploy to vercel", "vercel deploy", "vercel env vars",
+  "vercel link", "vercel production", "vercel preview".
+  Purpose: End-to-end Vercel deployment — detect existing setup, authenticate,
+  link or create the project, sync env vars, trigger a preview or production build,
+  pull deploy logs, and verify the deployment is live. When to trigger: (1) User types
+  /vercel-deploy or says "deploy to vercel". (2) Deploying a Next.js, Nuxt, Astro,
+  SvelteKit, or other Vercel-supported framework. (3) Linking a local project to
+  Vercel or creating a new Vercel project. (4) Syncing environment variables between
+  local .env files and Vercel environments. (5) Switching between preview and production
+  deploys. (6) Diagnosing a failed deploy by reading build or runtime logs.
+  (7) Validating that a new deploy is live at the expected URL. Key capabilities:
+  Auto-detects framework (Next.js, Nuxt, Astro, SvelteKit, Rust, Go). Handles CLI-
+  and Git-triggered deploys. Pulls and pushes env vars without exposing secret values.
+  Health-checks the deployment URL post-deploy. Idempotent — re-running triggers a new
+  deploy. Also for: Custom domain configuration, Vercel MCP setup, build error triage.
+  Ideal for: Developers who want one command to go from local code to a live URL.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Agent
+  - AskUserQuestion
+  - WebSearch
 ---
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: bun run gen:skill-docs -->
 
-# /vercel-deploy — Vercel Deployment Pipeline
-
-Deploy, configure, and manage Vercel projects.
-
-## When to Activate
-
-Trigger `/vercel-deploy` when:
-- First deploy to Vercel
-- Configuring environment variables
-- Promoting preview to production
-- Rolling back a broken deploy
-- Troubleshooting a Vercel deploy failure
-
-## Preamble
-
-Run at start:
-```bash
-git -C {target} log --oneline -1
-git -C {target} remote -v
-git -C {target} ls-files vercel.json .vercel 2>/dev/null
-```
-
-## Step 1: Initial Setup
-
-### Option A: Import existing project
+## Preamble (run first)
 
 ```bash
-cd {target}
-npx vercel login
-npx vercel link
-# Follow prompts to link to existing project
+_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD" || true
+mkdir -p ~/.gstack/sessions
+touch ~/.gstack/sessions/"$PPID"
+_SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d " ")
+find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
+_CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
+_PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+echo "BRANCH: $_BRANCH"
+echo "PROACTIVE: $_PROACTIVE"
+source <(~/.claude/skills/gstack/bin/gstack-repo-mode 2>/dev/null) || true
+REPO_MODE=${REPO_MODE:-unknown}
+echo "REPO_MODE: $REPO_MODE"
+_LAKE_SEEN=$([ -f ~/.gstack/.completeness-intro-seen ] && echo "yes" || echo "no")
+echo "LAKE_INTRO: $_LAKE_SEEN"
+_TEL=$(~/.claude/skills/gstack/bin/gstack-config get telemetry 2>/dev/null || true)
+_TEL_PROMPTED=$([ -f ~/.gstack/.telemetry-prompted ] && echo "yes" || echo "no")
+_TEL_START=$(date +%s)
+_SESSION_ID="$$-$(date +%s)"
+echo "TELEMETRY: ${_TEL:-off}"
+echo "TEL_PROMPTED: $_TEL_PROMPTED"
+mkdir -p ~/.gstack/analytics
+echo "{\"skill\":\"vercel-deploy\",\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"repo\":\"$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")\"}"  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
+for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name ".pending-*" 2>/dev/null); do [ -f "$_PF" ] && ~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true; break; done
 ```
 
-### Option B: Create new project
+If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
+them when the user explicitly asks. The user opted out of proactive suggestions.
+
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+
+If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
+Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
+thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
+Then offer to open the essay in their default browser:
 
 ```bash
-cd {target}
-npx vercel login
-npx vercel
-# First deploy creates the project
+open https://garryslist.org/posts/boil-the-ocean
+touch ~/.gstack/.completeness-intro-seen
 ```
 
-### Verify linked project
+Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
+
+If `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: After the lake intro is handled,
+ask the user about telemetry. Use AskUserQuestion:
+
+> Help gstack get better! Community mode shares usage data (which skills you use, how long
+> they take, crash info) with a stable device ID so we can track trends and fix bugs faster.
+> No code, file paths, or repo names are ever sent.
+> Change anytime with `gstack-config set telemetry off`.
+
+Options:
+- A) Help gstack get better! (recommended)
+- B) No thanks
+
+If A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
+
+If B: ask a follow-up AskUserQuestion:
+
+> How about anonymous mode? We just learn that *someone* used gstack — no unique ID,
+> no way to connect sessions. Just a counter that helps us know if anyone is out there.
+
+Options:
+- A) Sure, anonymous is fine
+- B) No thanks, fully off
+
+If B→A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
+If B→B: run `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
+
+Always run:
+```bash
+touch ~/.gstack/.telemetry-prompted
+```
+
+This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
+
+## AskUserQuestion Format
+
+**ALWAYS follow this structure for every AskUserQuestion call:**
+1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
+2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it is called.
+3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
+4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
+5. **One decision per question:** NEVER combine multiple independent decisions into a single AskUserQuestion. Each decision gets its own call with its own recommendation and focused options. Batching multiple AskUserQuestion calls in rapid succession is fine and often preferred. Only after all individual taste decisions are resolved should a final "Approve / Revise / Reject" gate be presented.
+
+Assume the user has not looked at this window in 20 minutes and does not have the code open. If you would need to read the source to understand your own explanation, it is too complex.
+
+Per-skill instructions may add additional formatting rules on top of this baseline.
+
+## Completeness Principle — Boil the Lake
+
+AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
+
+- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
+- **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you do not control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
+- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+
+| Task type | Human team | CC+gstack | Compression |
+|-----------|-----------|-----------|-------------|
+| Boilerplate / scaffolding | 2 days | 15 min | ~100x |
+| Test writing | 1 day | 15 min | ~50x |
+| Feature implementation | 1 week | 30 min | ~30x |
+| Bug fix + regression test | 4 hours | 15 min | ~20x |
+| Architecture / design | 2 days | 4 hours | ~5x |
+| Research / exploration | 1 day | 3 hours | ~3x |
+
+- This principle applies to test coverage, error handling, documentation, edge cases, and feature completeness. Do not skip the last 10% to "save time" — with AI, that 10% costs seconds.
+
+**Anti-patterns — DO NOT do this:**
+- BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
+- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
+- BAD: "Let us defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
+- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+
+## Repo Ownership Mode — See Something, Say Something
+
+`REPO_MODE` from the preamble tells you who owns issues in this repo:
+
+- **`solo`** — One person does 80%+ of the work. They own everything. When you notice issues outside the current branch change scope (test failures, deprecation warnings, security advisories, linting errors, dead code, env problems), **investigate and offer to fix proactively**. The solo dev is the only person who will fix it. Default to action.
+- **`collaborative`** — Multiple active contributors. When you notice issues outside the branch change scope, **flag them via AskUserQuestion** — it may be someone else responsibility. Default to asking, not fixing.
+- **`unknown`** — Treat as collaborative (safer default — ask before fixing).
+
+**See Something, Say Something:** Whenever you notice something that looks wrong during ANY workflow step — not just test failures — flag it briefly. One sentence: what you noticed and its impact. In solo mode, follow up with "Want me to fix it?" In collaborative mode, just flag it and move on.
+
+Never let a noticed issue silently pass. The whole point is proactive communication.
+
+## Search Before Building
+
+Before building infrastructure, unfamiliar patterns, or anything the runtime might have a built-in — **search first.** Read `~/.claude/skills/gstack/ETHOS.md` for the full philosophy.
+
+**Three layers of knowledge:**
+- **Layer 1** (tried and true — in distribution). Do not reinvent the wheel. But the cost of checking is near-zero, and once in a while, questioning the tried-and-true is where brilliance occurs.
+- **Layer 2** (new and popular — search for these). But scrutinize: humans are subject to mania. Search results are inputs to your thinking, not answers.
+- **Layer 3** (first principles — prize these above all). Original observations derived from reasoning about the specific problem. The most valuable of all.
+
+**Eureka moment:** When first-principles reasoning reveals conventional wisdom is wrong, name it:
+"EUREKA: Everyone does X because [assumption]. But [evidence] shows this is wrong. Y is better because [reasoning]."
+
+Log eureka moments:
+```bash
+jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" "{ts:$ts,skill:$skill,branch:$branch,insight:$insight}" >> ~/.gstack/analytics/eureka.jsonl 2>/dev/null || true
+```
+Replace SKILL_NAME and ONE_LINE_SUMMARY. Runs inline — do not stop the workflow.
+
+**WebSearch fallback:** If WebSearch is unavailable, skip the search step and note: "Search unavailable — proceeding with in-distribution knowledge only."
+
+## Contributor Mode
+
+If `_CONTRIB` is `true`: you are in **contributor mode**. You are a gstack user who also helps make it better.
+
+**At the end of each major workflow step** (not after every single command), reflect on the gstack tooling you used. Rate your experience 0 to 10. If it was not a 10, think about why. If there is an obvious, actionable bug OR an insightful, interesting thing that could have been done better by gstack code or skill markdown — file a field report. Maybe our contributor will help make us better!
+
+**Calibration — this is the bar:** For example, `$B js "await fetch(...)"` used to fail with `SyntaxError: await is only valid in async functions` because gstack did not wrap expressions in async context. Small, but the input was reasonable and gstack should have handled it — that is the kind of thing worth filing. Things less consequential than this, ignore.
+
+**NOT worth filing:** user app bugs, network errors to user URL, auth failures on user site, user own JS logic bugs.
+
+**To file:** write `~/.gstack/contributor-logs/{slug}.md` with **all sections below** (do not truncate — include every section through the Date/Version footer):
+
+```
+# {Title}
+
+Hey gstack team — ran into this while using /{skill-name}:
+
+**What I was trying to do:** {what the user/agent was attempting}
+**What happened instead:** {what actually happened}
+**My rating:** {0-10} — {one sentence on why it was not a 10}
+
+## Steps to reproduce
+1. {step}
+
+## Raw output
+```
+{paste the actual error or unexpected output here}
+```
+
+## What would make this a 10
+{one sentence: what gstack should have done differently}
+
+**Date:** {YYYY-MM-DD} | **Version:** {gstack version} | **Skill:** /{skill}
+```
+
+Slug: lowercase, hyphens, max 60 chars (e.g. `browse-js-no-await`). Skip if file already exists. Max 3 reports per session. File inline and continue — do not stop the workflow. Tell user: "Filed gstack field report: {title}"
+
+## Completion Status Protocol
+
+When completing a skill workflow, report status using one of:
+- **DONE** — All steps completed successfully. Evidence provided for each claim.
+- **DONE_WITH_CONCERNS** — Completed, but with issues the user should know about. List each concern.
+- **BLOCKED** — Cannot proceed. State what is blocking and what was tried.
+- **NEEDS_CONTEXT** — Missing information required to continue. State exactly what you need.
+
+### Escalation
+
+It is always OK to stop and say "this is too hard for me" or "I am not confident in this result."
+
+Bad work is worse than no work. You will not be penalized for escalating.
+- If you have attempted a task 3 times without success, STOP and escalate.
+- If you are uncertain about a security-sensitive change, STOP and escalate.
+- If the scope of work exceeds what you can verify, STOP and escalate.
+
+Escalation format:
+```
+STATUS: BLOCKED | NEEDS_CONTEXT
+REASON: [1-2 sentences]
+ATTEMPTED: [what you tried]
+RECOMMENDATION: [what the user should do next]
+```
+
+## Telemetry (run last)
+
+After the skill workflow completes (success, error, or abort), log the telemetry event.
+Determine the skill name from the `name:` field in this file YAML frontmatter.
+Determine the outcome from the workflow result (success if completed normally, error
+if it failed, abort if the user interrupted).
+
+**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
+`~/.gstack/analytics/` (user config directory, not project files). The skill
+preamble already writes to the same directory — this is the same pattern.
+Skipping this command loses session duration and outcome data.
+
+Run this bash:
 
 ```bash
-npx vercel project ls
-npx vercel teams
-cat vercel.json 2>/dev/null || echo "No vercel.json found"
+_TEL_END=$(date +%s)
+_TEL_DUR=$(( _TEL_END - _TEL_START ))
+rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+~/.claude/skills/gstack/bin/gstack-telemetry-log \
+  --skill "SKILL_NAME" --duration "$_TEL_DUR" --outcome "OUTCOME" \
+  --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" 2>/dev/null &
 ```
 
-## Step 2: Environment Variables
+Replace `SKILL_NAME` with the actual skill name from frontmatter, `OUTCOME` with
+success/error/abort, and `USED_BROWSE` with true/false based on whether `$B` was used.
+If you cannot determine the outcome, use "unknown". This runs in the background and
+never blocks the user.
 
-### Set environment variables
+## Plan Status Footer
+
+When you are in plan mode and about to call ExitPlanMode:
+
+1. Check if the plan file already has a `## GSTACK REVIEW REPORT` section.
+2. If it DOES — skip (a review skill already wrote a richer report).
+3. If it does NOT — run this command:
 
 ```bash
-# Production only
-npx vercel env add NODE_ENV production
-npx vercel env add DATABASE_URL
-
-# Preview and production
-npx vercel env add NEXT_PUBLIC_API_URL
-
-# Pull from .env file
-npx vercel env pull .env.local
+~/.claude/skills/gstack/bin/gstack-review-read
 ```
 
-### Environment variable types
+Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 
-| Type | Flag | Use |
-|------|------|-----|
-| Secret | (default) | Encrypted, hidden in UI |
-| Plaintext | `--plain` | Public values |
-| System | `--system` | Built-in (NODE_ENV, etc.) |
+- If the output contains review entries (JSONL lines before `---CONFIG---`): format the
+  standard report table with runs/status/findings per skill, same format as the review
+  skills use.
+- If the output is `NO_REVIEWS` or empty: write this placeholder table:
 
-### List and manage
+```markdown
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 0 | — | — |
+| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
+
+**VERDICT:** NO REVIEWS YET — run `/autoplan` for full review pipeline, or individual reviews above.
+```
+
+**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
+file you are allowed to edit in plan mode. The plan file review report is part of the
+plan living status.
+
+# /vercel-deploy — Deploy to Vercel
+
+You are helping the user deploy to Vercel. Vercel deploys can be:
+- **Git-triggered** — push to main and Vercel auto-deploys (recommended)
+- **CLI-triggered** — use `vercel` or `vercel --prod` directly
+- **Preview** — per-branch preview URLs on every push
+- **Production** — merges to main trigger production deploy
+
+Your job is to link the project, sync env vars, trigger a deploy, and confirm the URL.
+
+## User-invocable
+When the user types `/vercel-deploy` or says "deploy to vercel", run this skill.
+
+## Instructions
+
+### Step 1: Detect Vercel setup
 
 ```bash
-npx vercel env ls                    # List all env vars
-npx vercel env get VAR_NAME          # View a secret
-npx vercel env rm VAR_NAME          # Remove
-npx vercel env pull                 # Pull to .env.local
+# Vercel config
+[ -f vercel.json ] && echo "VERCEL_CONFIG:found" && cat vercel.json
+[ -d .vercel ] && echo "VERCEL_LINKED:yes" || echo "VERCEL_LINKED:no"
+
+# Vercel CLI
+which vercel 2>/dev/null && echo "VERCEL_CLI:installed" || echo "VERCEL_CLI:missing"
+vercel --version 2>/dev/null || true
+
+# Project type
+[ -f package.json ] && grep -q '"next"' package.json 2>/dev/null && echo "FRAMEWORK:next.js"
+[ -f package.json ] && grep -q '"nuxt"' package.json 2>/dev/null && echo "FRAMEWORK:nuxt"
+[ -f package.json ] && grep -q '"astro"' package.json 2>/dev/null && echo "FRAMEWORK:astro"
+[ -f package.json ] && grep -q '"svelte"' package.json 2>/dev/null && echo "FRAMEWORK:sveltekit"
+[ -f Cargo.toml ] && echo "FRAMEWORK:rust"
+[ -f go.mod ] && echo "FRAMEWORK:go"
 ```
 
-### Secrets rotation
+Also check for the Vercel MCP in your tool list.
+
+### Step 2: Authenticate and link project
+
+If Vercel CLI is not installed:
+
+1. Offer to install: `npm install -g vercel`
+2. Run `vercel login` to authenticate
+
+If not linked (no `.vercel/` directory):
+
+1. Run `vercel link` to connect to an existing Vercel project
+2. If the project does not exist on Vercel yet, run `vercel` (without --prod) to create it interactively
+3. Show the linked project name
+
+### Step 3: Configure environment variables
+
+If `.env`, `.env.local`, `.env.production`, or `.env.example` exists:
+
+1. List the env var keys (never expose values)
+2. Ask which environment to sync to: Production / Preview / Development
+3. Offer to pull existing vars from Vercel:
 
 ```bash
-# 1. Add new secret value
-npx vercel env add API_KEY production
-# Paste new value
-
-# 2. Redeploy with new secret
-npx vercel deploy --prod
-
-# 3. Verify works
-curl -sf $(npx vercel domain confirm) > /dev/null && echo "OK"
-
-# 4. Remove old secret (after verification)
-npx vercel env rm OLD_API_KEY
+vercel env pull .env.local          # pull Production vars to .env.local
+vercel env pull .env.production      # pull Production vars to .env.production
 ```
 
-## Step 3: Deploy
+Or push local vars:
+```bash
+vercel env add {VAR_NAME}           # interactive add
+```
 
-### Preview deploy
+### Step 4: Trigger deploy
+
+**Preview deploy (recommended for branches):**
+```bash
+vercel --yes
+```
+Returns a preview URL like `https://project-abc123.vercel.app`
+
+**Production deploy:**
+```bash
+vercel --prod --yes
+```
+Returns the production URL after deploy completes.
+
+**Custom scope:**
+```bash
+vercel --prod --yes --scope <team-or-user>
+```
+
+**Git-triggered:**
+If the project is Git-linked, Vercel deploys automatically on push to connected branches.
+No CLI needed — just: `git push` and Vercel picks it up.
+
+### Step 5: Fetch deploy logs
+
+While deploying or after:
+```bash
+vercel logs {deployment-url}
+```
+
+Watch for build errors, missing env vars, or runtime crashes.
+
+### Step 6: Validate health check
+
+Do an HTTP health check on the deployment URL:
 
 ```bash
-npx vercel                          # Preview URL
-npx vercel --prod                   # Production
+curl -sf "{deployment_url}" -o /dev/null -w "%{http_code}" 2>/dev/null || \
+curl -sf "{deployment_url}/api/health" -o /dev/null -w "%{http_code}" 2>/dev/null || \
+echo "UNREACHABLE"
 ```
 
-### Deploy with options
+For production deploys, also check the custom domain if one is configured.
+Report the HTTP status and confirm the deploy is live.
 
-```bash
-# Specific directory
-npx vercel /path/to/project
+### Step 7: Summary
 
-# With build command override
-npx vercel --build-command "npm run build:staging"
-
-# With environment
-npx vercel --environment preview
-npx vercel --environment production
-
-# Skip build
-npx vercel --no-build
 ```
+VERCEL DEPLOY — COMPLETE
+══════════════════════════════
+Project:   {project-name}
+URL:       {deployment-url}
+Type:      {preview / production}
+Framework: {framework}
+Status:    {HTTP status or "LIVE"}
 
-### Git-triggered deploys
+Preview deploys: https://vercel.com/{username}/{project}/_/previews
+Production:     https://{custom-domain}
 
-```bash
-# Connect GitHub repo via UI
-# Or use Vercel GitHub integration:
-npx vercel github connect
-```
-
-To configure in vercel.json:
-```json
-{
-  "github": {
-    "silent": true,
-    "autoJobCancelation": true
-  }
-}
-```
-
-## Step 4: Health Check
-
-```bash
-# Get deployment URL
-npx vercel ls
-
-# Check health
-URL=$(npx vercel ls --output json 2>/dev/null | jq -r '.deployments[0].url')
-curl -sf "https://$URL/health" && echo "HEALTHY" || echo "UNHEALTHY"
-curl -sf "https://$URL/api/health" && echo "API HEALTHY" || echo "API UNHEALTHY"
-
-# Check logs
-npx vercel logs "$URL"
-```
-
-### Add health endpoint
-
-```typescript
-// app/api/health/route.ts (Next.js)
-export async function GET() {
-  return Response.json({ status: 'ok', timestamp: Date.now() })
-}
-```
-
-## Step 5: Preview → Production Promotion
-
-### Option A: Instant promotion (if same build)
-
-```bash
-npx vercel alias $PREVIEW_URL production
-```
-
-### Option B: Promote via deploy
-
-```bash
-# Find the preview deployment
-npx vercel ls | grep preview
-
-# Promote specific deployment
-npx vercel alias dXXXXXXXX.vercel.app production
-```
-
-### Option C: Atomic swap
-
-```bash
-# Production deploy gets a stable URL
-npx vercel alias set d_NEW.vercel.app production
-
-# Old production becomes a rollback target
-# Rollback:
-npx vercel alias set d_OLD.vercel.app production
-```
-
-## Step 6: Rollback
-
-### Rollback to previous deployment
-
-```bash
-# List recent deployments
-npx vercel ls
-
-# Alias previous to production
-npx vercel alias d_YYYYYYYY.vercel.app production
-```
-
-### Rollback via CLI
-
-```bash
-# Quick rollback to last known good
-npx vercel rollback --environment production
-```
-
-### Rollback to specific Git ref
-
-```bash
-git checkout v1.2.3
-npx vercel deploy --prod
-git checkout main
-```
-
-## Step 7: Domain Configuration
-
-### Add custom domain
-
-```bash
-npx vercel domains add example.com
-npx vercel domains verify example.com
-```
-
-### Configure apex + www
-
-```bash
-# Add both
-npx vercel domains add example.com
-npx vercel domains add www.example.com
-
-# Redirect www to apex via vercel.json
-# Add to vercel.json:
-{
-  "redirects": [
-    {
-      "source": "/(.*)",
-      "destination": "https://example.com/$1",
-      "status": 307
-    }
-  ]
-}
-```
-
-## Step 8: CI/CD Integration
-
-### With GitHub Actions
-
-```yaml
-- name: Deploy to Vercel
-  uses: amondnet/vercel-action@v25
-  with:
-    vercel-token: ${{ secrets.VERCEL_TOKEN }}
-    vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-    vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-    vercel-args: '--prod'
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-### Get Vercel credentials
-
-```bash
-npx vercel token list
-# Create new token:
-npx vercel tokens create "GitHub Actions"
-```
-
-## Troubleshooting
-
-### Deploy failed
-
-```bash
-# Get detailed build output
-npx vercel deploy --debug
-
-# Check build logs
-npx vercel logs --follow
-```
-
-### Environment variable not found
-
-```bash
-# Verify it's set for correct scope
-npx vercel env ls production
-
-# Add to production
-npx vercel env add VAR_NAME production --token $VERCEL_TOKEN
-```
-
-### Build too slow
-
-```bash
-# Use caching
-# vercel.json:
-{
-  "buildCommand": "npm run build",
-  "installCommand": "npm ci --prefer-offline"
-}
-```
-
-### Build failed on Vercel but works locally
-
-```bash
-# Check Node.js version match
-node --version
-# Add engines to package.json:
-{
-  "engines": {
-    "node": "20.x"
-  }
-}
+Next steps:
+- Merge to main branch for automatic production deploy
+- Configure custom domain in Vercel dashboard
+- Run /vercel-deploy --prod to redeploy production
 ```
 
 ## Important Rules
 
-- **Always health check after deploy.** Don't assume success.
-- **Promote, don't rebuild.** Use `vercel alias` to promote preview → production for speed and reliability.
-- **Secrets are encrypted.** Don't put real values in vercel.json.
-- **One project per repo.** Multi-repo → multi-project.
-- **Rollback is aliasing.** Vercel rollback is instant because it's just DNS swap.
+- **Never expose secrets.** Do not print env var values or Vercel tokens.
+- **`--prod` is irreversible.** Production deploys are live immediately — confirm before running.
+- **Preview first.** Prefer `vercel` (without `--prod`) for non-production deploys.
+- **.vercel/ is gitignored.** Do not commit it — it contains local deploy metadata.
+- **Idempotent.** Running `/vercel-deploy` multiple times triggers a new deploy each time.

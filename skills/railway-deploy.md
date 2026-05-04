@@ -1,435 +1,429 @@
 ---
 name: railway-deploy
-description: >
-  Railway CLI deployment — manages Railway projects including environment
-  setup, service configuration, deployments, and rollback. Uses Railway MCP
-  tools for full lifecycle management. Trigger when: deploying to Railway,
-  configuring environment variables, rolling back a broken deployment, or
-  troubleshooting Railway infrastructure. Key capability: Railway MCP tools
-  for environment inspection, deployment management, and variable configuration.
-  Also for: multi-service setup, domain configuration, and team access setup.
+preamble-tier: 2
+version: 1.0.0
+description: "Deploy to Railway — link a project, set environment variables, trigger builds, fetch logs, generate a production URL, and validate health checks. Trigger when the user says 'deploy to railway', 'railway deploy', 'railway env vars', 'railway link', or 'railway production'. Key capabilities: detects Railway CLI and project config, authenticates and links via `railway init` or `railway link`, pushes env vars with `--dry-run` preview before applying, supports git-triggered auto-deploy and direct CLI (`railway up`) deploy, fetches build and runtime logs via Railway MCP or CLI, generates domains with `railway domain`, and performs HTTP health checks against the production URL. Also for: checking Railway status and version, configuring custom domains, connecting to existing Railway projects, and redeploying after environment changes."
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Agent
+  - AskUserQuestion
+  - WebSearch
 ---
+<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
+<!-- Regenerate: bun run gen:skill-docs -->
 
-# /railway-deploy — Railway Deployment Pipeline
-
-Deploy and manage Railway projects using Railway CLI and MCP tools.
-
-## When to Activate
-
-Trigger `/railway-deploy` when:
-- Deploying to Railway
-- Configuring environment variables
-- Rolling back a broken deployment
-- Troubleshooting Railway infrastructure
-- Multi-service setup
-- Team access configuration
-
-## Preamble
-
-```
-/railway-deploy {target}
-```
-
-**Run at start:**
-```bash
-git -C {target} log --oneline -1
-git -C {target} ls-files Railway.toml railway.toml docker-compose.yml Dockerfile* 2>/dev/null
-
-# Check Railway CLI
-railway --version
-
-# List current projects
-railway list
-```
-
-## Railway MCP Tools
-
-Railway has MCP tools available for project management. Use these when available:
-
-| Tool | Purpose |
-|------|---------|
-| `railway_list_projects` | List all Railway projects |
-| `railway_list_services` | List services in a project |
-| `railway_list_variables` | Show environment variables |
-| `railway_set_variables` | Set environment variables |
-| `railway_deploy` | Trigger deployment |
-| `railway_get_logs` | View deployment logs |
-| `railway_generate_domain` | Generate public domain |
-| `railway_link_environment` | Link to environment |
-| `railway_link_service` | Link to service |
-| `railway_create_environment` | Create new environment |
-| `railway_create_project` | Create new Railway project |
-
-## Step 1: Initial Setup
-
-### Create or link project
+## Preamble (run first)
 
 ```bash
-# Check Railway status
-railway status
-
-# Link to existing project
-railway init
-# Or link to specific project
-railway link {project-id}
-
-# Login if needed
-railway login
+_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD" || true
+mkdir -p ~/.gstack/sessions
+touch ~/.gstack/sessions/"$PPID"
+_SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d " ")
+find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
+_CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
+_PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+echo "BRANCH: $_BRANCH"
+echo "PROACTIVE: $_PROACTIVE"
+source <(~/.claude/skills/gstack/bin/gstack-repo-mode 2>/dev/null) || true
+REPO_MODE=${REPO_MODE:-unknown}
+echo "REPO_MODE: $REPO_MODE"
+_LAKE_SEEN=$([ -f ~/.gstack/.completeness-intro-seen ] && echo "yes" || echo "no")
+echo "LAKE_INTRO: $_LAKE_SEEN"
+_TEL=$(~/.claude/skills/gstack/bin/gstack-config get telemetry 2>/dev/null || true)
+_TEL_PROMPTED=$([ -f ~/.gstack/.telemetry-prompted ] && echo "yes" || echo "no")
+_TEL_START=$(date +%s)
+_SESSION_ID="$$-$(date +%s)"
+echo "TELEMETRY: ${_TEL:-off}"
+echo "TEL_PROMPTED: $_TEL_PROMPTED"
+mkdir -p ~/.gstack/analytics
+echo "{\"skill\":\"railway-deploy\",\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"repo\":\"$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")\"}"  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
+for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name ".pending-*" 2>/dev/null); do [ -f "$_PF" ] && ~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true; break; done
 ```
 
-### Create new project
+If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
+them when the user explicitly asks. The user opted out of proactive suggestions.
+
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+
+If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
+Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
+thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
+Then offer to open the essay in their default browser:
 
 ```bash
-# Create via CLI
-railway create {project-name}
-# Then link
-railway link {project-id}
-
-# Or use MCP:
-railway_create_project({projectName: "{project-name}", workspacePath: "{target}"})
+open https://garryslist.org/posts/boil-the-ocean
+touch ~/.gstack/.completeness-intro-seen
 ```
 
-## Step 2: Configure Service
+Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
 
-### Set up Railway.toml
+If `TEL_PROMPTED` is `no` AND `LAKE_INTRO` is `yes`: After the lake intro is handled,
+ask the user about telemetry. Use AskUserQuestion:
 
-```toml
-# Railway.toml
-[build]
-  builder = "nixpacks"
-  # Or specify Dockerfile:
-  # builder = "dockerfile"
+> Help gstack get better! Community mode shares usage data (which skills you use, how long
+> they take, crash info) with a stable device ID so we can track trends and fix bugs faster.
+> No code, file paths, or repo names are ever sent.
+> Change anytime with `gstack-config set telemetry off`.
 
-[deploy]
-  numReplicas = 1
-  restartPolicyType = "OnFailure"
-  restartPolicyMaxRetries = 10
+Options:
+- A) Help gstack get better! (recommended)
+- B) No thanks
 
-# Health check (optional)
-[healthcheck]
-  path = "/health"
-  port = 3000
+If A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry community`
+
+If B: ask a follow-up AskUserQuestion:
+
+> How about anonymous mode? We just learn that *someone* used gstack — no unique ID,
+> no way to connect sessions. Just a counter that helps us know if anyone is out there.
+
+Options:
+- A) Sure, anonymous is fine
+- B) No thanks, fully off
+
+If B→A: run `~/.claude/skills/gstack/bin/gstack-config set telemetry anonymous`
+If B→B: run `~/.claude/skills/gstack/bin/gstack-config set telemetry off`
+
+Always run:
+```bash
+touch ~/.gstack/.telemetry-prompted
 ```
 
-### Or use Dockerfile
+This only happens once. If `TEL_PROMPTED` is `yes`, skip this entirely.
 
-```dockerfile
-# Dockerfile
-FROM node:20-alpine
+## AskUserQuestion Format
 
-WORKDIR /app
+**ALWAYS follow this structure for every AskUserQuestion call:**
+1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
+2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it is called.
+3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
+4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
+5. **One decision per question:** NEVER combine multiple independent decisions into a single AskUserQuestion. Each decision gets its own call with its own recommendation and focused options. Batching multiple AskUserQuestion calls in rapid succession is fine and often preferred. Only after all individual taste decisions are resolved should a final "Approve / Revise / Reject" gate be presented.
 
-COPY package*.json ./
-RUN npm ci --only=production
+Assume the user has not looked at this window in 20 minutes and does not have the code open. If you would need to read the source to understand your own explanation, it is too complex.
 
-COPY . .
-RUN npm run build
+Per-skill instructions may add additional formatting rules on top of this baseline.
 
-EXPOSE 3000
-CMD ["node", "dist/index.js"]
+## Completeness Principle — Boil the Lake
+
+AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
+
+- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
+- **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you do not control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
+- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+
+| Task type | Human team | CC+gstack | Compression |
+|-----------|-----------|-----------|-------------|
+| Boilerplate / scaffolding | 2 days | 15 min | ~100x |
+| Test writing | 1 day | 15 min | ~50x |
+| Feature implementation | 1 week | 30 min | ~30x |
+| Bug fix + regression test | 4 hours | 15 min | ~20x |
+| Architecture / design | 2 days | 4 hours | ~5x |
+| Research / exploration | 1 day | 3 hours | ~3x |
+
+- This principle applies to test coverage, error handling, documentation, edge cases, and feature completeness. Do not skip the last 10% to "save time" — with AI, that 10% costs seconds.
+
+**Anti-patterns — DO NOT do this:**
+- BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
+- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
+- BAD: "Let us defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
+- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+
+## Repo Ownership Mode — See Something, Say Something
+
+`REPO_MODE` from the preamble tells you who owns issues in this repo:
+
+- **`solo`** — One person does 80%+ of the work. They own everything. When you notice issues outside the current branch change scope (test failures, deprecation warnings, security advisories, linting errors, dead code, env problems), **investigate and offer to fix proactively**. The solo dev is the only person who will fix it. Default to action.
+- **`collaborative`** — Multiple active contributors. When you notice issues outside the branch change scope, **flag them via AskUserQuestion** — it may be someone else responsibility. Default to asking, not fixing.
+- **`unknown`** — Treat as collaborative (safer default — ask before fixing).
+
+**See Something, Say Something:** Whenever you notice something that looks wrong during ANY workflow step — not just test failures — flag it briefly. One sentence: what you noticed and its impact. In solo mode, follow up with "Want me to fix it?" In collaborative mode, just flag it and move on.
+
+Never let a noticed issue silently pass. The whole point is proactive communication.
+
+## Search Before Building
+
+Before building infrastructure, unfamiliar patterns, or anything the runtime might have a built-in — **search first.** Read `~/.claude/skills/gstack/ETHOS.md` for the full philosophy.
+
+**Three layers of knowledge:**
+- **Layer 1** (tried and true — in distribution). Do not reinvent the wheel. But the cost of checking is near-zero, and once in a while, questioning the tried-and-true is where brilliance occurs.
+- **Layer 2** (new and popular — search for these). But scrutinize: humans are subject to mania. Search results are inputs to your thinking, not answers.
+- **Layer 3** (first principles — prize these above all). Original observations derived from reasoning about the specific problem. The most valuable of all.
+
+**Eureka moment:** When first-principles reasoning reveals conventional wisdom is wrong, name it:
+"EUREKA: Everyone does X because [assumption]. But [evidence] shows this is wrong. Y is better because [reasoning]."
+
+Log eureka moments:
+```bash
+jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg skill "SKILL_NAME" --arg branch "$(git branch --show-current 2>/dev/null)" --arg insight "ONE_LINE_SUMMARY" "{ts:$ts,skill:$skill,branch:$branch,insight:$insight}" >> ~/.gstack/analytics/eureka.jsonl 2>/dev/null || true
+```
+Replace SKILL_NAME and ONE_LINE_SUMMARY. Runs inline — do not stop the workflow.
+
+**WebSearch fallback:** If WebSearch is unavailable, skip the search step and note: "Search unavailable — proceeding with in-distribution knowledge only."
+
+## Contributor Mode
+
+If `_CONTRIB` is `true`: you are in **contributor mode**. You are a gstack user who also helps make it better.
+
+**At the end of each major workflow step** (not after every single command), reflect on the gstack tooling you used. Rate your experience 0 to 10. If it was not a 10, think about why. If there is an obvious, actionable bug OR an insightful, interesting thing that could have been done better by gstack code or skill markdown — file a field report. Maybe our contributor will help make us better!
+
+**Calibration — this is the bar:** For example, `$B js "await fetch(...)"` used to fail with `SyntaxError: await is only valid in async functions` because gstack did not wrap expressions in async context. Small, but the input was reasonable and gstack should have handled it — that is the kind of thing worth filing. Things less consequential than this, ignore.
+
+**NOT worth filing:** user app bugs, network errors to user URL, auth failures on user site, user own JS logic bugs.
+
+**To file:** write `~/.gstack/contributor-logs/{slug}.md` with **all sections below** (do not truncate — include every section through the Date/Version footer):
+
+```
+# {Title}
+
+Hey gstack team — ran into this while using /{skill-name}:
+
+**What I was trying to do:** {what the user/agent was attempting}
+**What happened instead:** {what actually happened}
+**My rating:** {0-10} — {one sentence on why it was not a 10}
+
+## Steps to reproduce
+1. {step}
+
+## Raw output
+```
+{paste the actual error or unexpected output here}
 ```
 
-## Step 3: Environment Variables
+## What would make this a 10
+{one sentence: what gstack should have done differently}
 
-### Set via CLI
+**Date:** {YYYY-MM-DD} | **Version:** {gstack version} | **Skill:** /{skill}
+```
+
+Slug: lowercase, hyphens, max 60 chars (e.g. `browse-js-no-await`). Skip if file already exists. Max 3 reports per session. File inline and continue — do not stop the workflow. Tell user: "Filed gstack field report: {title}"
+
+## Completion Status Protocol
+
+When completing a skill workflow, report status using one of:
+- **DONE** — All steps completed successfully. Evidence provided for each claim.
+- **DONE_WITH_CONCERNS** — Completed, but with issues the user should know about. List each concern.
+- **BLOCKED** — Cannot proceed. State what is blocking and what was tried.
+- **NEEDS_CONTEXT** — Missing information required to continue. State exactly what you need.
+
+### Escalation
+
+It is always OK to stop and say "this is too hard for me" or "I am not confident in this result."
+
+Bad work is worse than no work. You will not be penalized for escalating.
+- If you have attempted a task 3 times without success, STOP and escalate.
+- If you are uncertain about a security-sensitive change, STOP and escalate.
+- If the scope of work exceeds what you can verify, STOP and escalate.
+
+Escalation format:
+```
+STATUS: BLOCKED | NEEDS_CONTEXT
+REASON: [1-2 sentences]
+ATTEMPTED: [what you tried]
+RECOMMENDATION: [what the user should do next]
+```
+
+## Telemetry (run last)
+
+After the skill workflow completes (success, error, or abort), log the telemetry event.
+Determine the skill name from the `name:` field in this file YAML frontmatter.
+Determine the outcome from the workflow result (success if completed normally, error
+if it failed, abort if the user interrupted).
+
+**PLAN MODE EXCEPTION — ALWAYS RUN:** This command writes telemetry to
+`~/.gstack/analytics/` (user config directory, not project files). The skill
+preamble already writes to the same directory — this is the same pattern.
+Skipping this command loses session duration and outcome data.
+
+Run this bash:
 
 ```bash
-# Set single variable
-railway variables set NODE_ENV=production
-
-# Set multiple
-railway variables set DATABASE_URL=$DATABASE_URL API_KEY=$API_KEY
-
-# Set for specific environment
-railway variables --environment staging set DEBUG=true
+_TEL_END=$(date +%s)
+_TEL_DUR=$(( _TEL_END - _TEL_START ))
+rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+~/.claude/skills/gstack/bin/gstack-telemetry-log \
+  --skill "SKILL_NAME" --duration "$_TEL_DUR" --outcome "OUTCOME" \
+  --used-browse "USED_BROWSE" --session-id "$_SESSION_ID" 2>/dev/null &
 ```
 
-### Set via MCP
+Replace `SKILL_NAME` with the actual skill name from frontmatter, `OUTCOME` with
+success/error/abort, and `USED_BROWSE` with true/false based on whether `$B` was used.
+If you cannot determine the outcome, use "unknown". This runs in the background and
+never blocks the user.
+
+## Plan Status Footer
+
+When you are in plan mode and about to call ExitPlanMode:
+
+1. Check if the plan file already has a `## GSTACK REVIEW REPORT` section.
+2. If it DOES — skip (a review skill already wrote a richer report).
+3. If it does NOT — run this command:
 
 ```bash
-# Set variables
-railway_set_variables({
-  workspacePath: "{target}",
-  variables: ["NODE_ENV=production", "PORT=3000"]
-})
-
-# List variables (shows names, not values)
-railway_list_variables({workspacePath: "{target}"})
+~/.claude/skills/gstack/bin/gstack-review-read
 ```
 
-### Variable scoping
+Then write a `## GSTACK REVIEW REPORT` section to the end of the plan file:
 
-```
-ENVIRONMENT VARIABLE SCOPES
-════════════════════════════════
+- If the output contains review entries (JSONL lines before `---CONFIG---`): format the
+  standard report table with runs/status/findings per skill, same format as the review
+  skills use.
+- If the output is `NO_REVIEWS` or empty: write this placeholder table:
 
-Project-level:
-  - Shared across all environments
-  - Railway Dashboard → Project Settings → Variables
+```markdown
+## GSTACK REVIEW REPORT
 
-Environment-level:
-  - staging, production, etc.
-  - Railway Dashboard → Environment → Variables
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 0 | — | — |
+| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
 
-Service-level:
-  - Per-service overrides
-  - Railway Dashboard → Service → Variables
-
-Priority (highest first):
-  1. Service variables
-  2. Environment variables
-  3. Project variables
+**VERDICT:** NO REVIEWS YET — run `/autoplan` for full review pipeline, or individual reviews above.
 ```
 
-### Common variables
+**PLAN MODE EXCEPTION — ALWAYS RUN:** This writes to the plan file, which is the one
+file you are allowed to edit in plan mode. The plan file review report is part of the
+plan living status.
 
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `NODE_ENV` | Environment | `production` |
-| `PORT` | HTTP port Railway exposes | `3000` |
-| `DATABASE_URL` | Database connection | `postgresql://...` |
-| `RAILWAY_STATIC_URL` | Public URL (auto-set) | `https://xxx.up.railway.app` |
+# /railway-deploy — Deploy to Railway
 
-## Step 4: Deploy
+You are helping the user deploy to Railway. Railway supports both direct CLI deploys
+and Git-triggered auto-deploys. Your job is to link the project, configure env vars,
+trigger a deploy, and confirm the app is live.
 
-### Via CLI
+## User-invocable
+When the user types `/railway-deploy` or says "deploy to railway", run this skill.
+
+## Instructions
+
+### Step 1: Detect Railway setup
 
 ```bash
-# Deploy current directory
+# Railway config files
+[ -f railway.json ] && echo "RAILWAY_CONFIG:found" && cat railway.json
+[ -f railway.toml ] && echo "RAILWAY_CONFIG:found" && cat railway.toml
+
+# Railway CLI
+which railway 2>/dev/null && echo "RAILWAY_CLI:installed" || echo "RAILWAY_CLI:missing"
+railway --version 2>/dev/null || true
+
+# .railway/ directory (created after linking)
+[ -d .railway ] && echo "RAILWAY_LINKED:yes" || echo "RAILWAY_LINKED:no"
+```
+
+Also check if the Railway MCP is available in your tools (it may be — check tool list).
+
+### Step 2: Authenticate and link project
+
+If Railway CLI is not installed:
+
+1. Offer to install: `npm install -g @railway/cli` or see https://docs.railway.app/cli/installation
+2. Run `railway login` to authenticate
+
+If not linked (no `.railway/` directory):
+
+1. Run `railway init` to create a new Railway project, OR
+2. Run `railway link` to connect to an existing project (will prompt for project ID)
+3. Show the linked project name and ID
+
+### Step 3: Configure environment variables
+
+If `.env` or `.env.example` exists in the project root:
+
+1. Show which variables are in the env file (keys only — never expose values)
+2. Ask which environment to sync to: production / staging / development
+3. Offer to push all vars via Railway CLI:
+
+```bash
+railway env push --environment {env} --dry-run  # preview first
+railway env push --environment {env}             # apply after confirmation
+```
+
+Or use the Railway MCP `set-variables` tool if available.
+
+### Step 4: Trigger deploy
+
+**Option A — Git-triggered (recommended for auto-deploy):**
+Railway deploys automatically when you push to the connected git branch.
+If a remote is configured: `git push` and Railway picks it up automatically.
+
+**Option B — Direct CLI deploy:**
+```bash
+cd /path/to/project
 railway up
-
-# Deploy specific directory
-railway up ./api-service
-
-# Deploy to specific environment
-railway up --environment production
 ```
 
-### Via MCP
+**Option C — Via Railway MCP (if available):**
+Use `mcp__railway-mcp-server__deploy` with `workspacePath` set to the project root.
+
+### Step 5: Fetch deploy logs
+
+While the deploy runs (or after), optionally fetch logs:
 
 ```bash
-# Trigger deployment
-railway_deploy({workspacePath: "{target}"})
-
-# With specific environment
-railway_link_environment({workspacePath: "{target}", environmentName: "production"})
-railway_deploy({workspacePath: "{target}"})
+railway logs --environment {env}
 ```
 
-### Wait for healthy
+Or via MCP: `mcp__railway-mcp-server__get-logs`
+
+Watch for:
+- Build errors (npm/dependency issues, build script failures)
+- Runtime errors (port binding, missing env vars)
+- "Deployment completed" confirmation
+
+### Step 6: Generate production URL
+
+After a successful deploy, get the URL:
 
 ```bash
-# Watch deployment
-railway logs --follow
-
-# Check deployment status
-railway status
-
-# Get domain
 railway domain
 ```
 
-## Step 5: Generate Domain
+Or via MCP: `mcp__railway-mcp-server__generate-domain`
+
+Show the URL. If no domain is assigned, note that Railway assigns a `up.railway.app` subdomain automatically.
+
+### Step 7: Validate health check
+
+Do a quick HTTP health check on the production URL:
 
 ```bash
-# Via CLI
-railway domain
-
-# Via MCP
-railway_generate_domain({workspacePath: "{target}"})
-# Returns the public URL
-
-# Custom domain
-railway domains add example.com
-railway domains verify example.com
+curl -sf "{production_url}" -o /dev/null -w "%{http_code}" 2>/dev/null || \
+curl -sf "{production_url}/health" -o /dev/null -w "%{http_code}" 2>/dev/null || \
+echo "UNREACHABLE"
 ```
 
-## Step 6: View Logs
+If the app is a backend/API, also check the `/api/health` or similar endpoint.
+Report the HTTP status code and confirm the app is live.
 
-```bash
-# Recent logs
-railway logs
-
-# Follow logs in real time
-railway logs --follow
-
-# Filter logs
-railway logs --filter "ERROR"
-
-# Via MCP
-railway_get_logs({
-  workspacePath: "{target}",
-  logType: "deploy",
-  lines: 100,
-  filter: "ERROR"
-})
-```
-
-## Step 7: Rollback
-
-### Via CLI
-
-```bash
-# List recent deployments
-railway deployments list
-
-# Rollback to previous deployment
-railway rollback
-
-# Rollback to specific deployment
-railway rollback --deployment d{deployment-id}
-```
-
-### Rollback procedure
+### Step 8: Summary
 
 ```
-ROLLBACK PROCEDURE — Railway
-════════════════════════════════
+RAILWAY DEPLOY — COMPLETE
+══════════════════════════════
+Project:    {project-name}
+URL:        {production_url}
+Status:     {HTTP status or "LIVE"}
+Environment: {env}
 
-1. Identify broken deployment:
-   railway deployments list
-
-2. Rollback command:
-   railway rollback --deployment d{N}
-
-3. Verify health:
-   curl -sf https://$(railway domain)/health
-
-4. If still broken:
-   railway rollback --deployment d{N-1}
-```
-
-## Step 8: Multi-Service Setup
-
-### Monorepo structure
-
-```toml
-# Railway.toml (root)
-
-[build]
-  builder = "nixpacks"
-
-# api service
-[api]
-  path = "./services/api"
-  [api.healthcheck]
-    path = "/health"
-    port = 3000
-
-# web service
-[web]
-  path = "./services/web"
-  [web.healthcheck]
-    path = "/"
-    port = 8080
-```
-
-### Deploy specific service
-
-```bash
-railway up --service api
-railway up --service web
-```
-
-## Step 9: Team Access
-
-```bash
-# Invite team member (via dashboard)
-# Settings → Team → Invite by email
-
-# Transfer ownership
-# Settings → Team → Transfer Ownership
-
-# Check team members
-# Via Railway dashboard
-```
-
-## Step 10: CI/CD Integration
-
-### GitHub Actions
-
-```yaml
-name: Deploy to Railway
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway deploy
-
-      - name: Health Check
-        run: |
-          sleep 10
-          curl -sf ${{ vars.RAILWAY_URL }}/health || exit 1
-```
-
-### Get Railway token
-
-```bash
-# Via CLI
-railway login
-# Opens browser for OAuth
-
-# Via dashboard:
-# Project Settings → Deployments → New Token
-```
-
-## Troubleshooting
-
-### Deployment failed
-
-```bash
-# View detailed logs
-railway logs --json | jq '.message'
-
-# Check build output
-railway build output
-
-# Common issues:
-# - Build command failed: check Railway.toml build section
-# - Missing env vars: railway variables list
-# - Port mismatch: PORT env var vs Listen port
-```
-
-### Service not starting
-
-```bash
-# Check health check
-railway variables list | grep -E "PORT|HEALTH"
-
-# Verify PORT matches app.listen()
-# Railway sets PORT env var — use it:
-# const PORT = process.env.PORT || 3000
-
-# Check logs for crashes
-railway logs | grep -E "SIGKILL|SIGSEGV|exited"
-```
-
-### Environment variables not updating
-
-```bash
-# Redeploy after changing variables
-railway up
-
-# Force redeploy
-railway up --service {service} --force
+Next steps:
+- Push to main branch for auto-deploy on next push
+- Run /railway-deploy again to redeploy
+- Configure custom domain in Railway dashboard: https://railway.app
 ```
 
 ## Important Rules
 
-- **PORT is set by Railway.** Don't hardcode — use `process.env.PORT`.
-- **Health check is critical.** Railway uses it to determine when a deploy is ready.
-- **Variables are scoped.** Make sure you're setting them in the right environment.
-- **Rollback is instant.** Railway keeps previous deployments — rollback is a swap.
-- **Idempotent deploys.** `railway up` should succeed even if already deployed.
+- **Never expose secrets.** Do not print full API keys, tokens, or .env values.
+- **Preview before apply.** Always use `--dry-run` for env pushes.
+- **Confirm environment.** Ask before writing to production.
+- **Idempotent.** Running /railway-deploy multiple times is safe — it deploys the current state.
+- **Railway MCP is preferred.** If the Railway MCP tools are available, prefer them over CLI commands.

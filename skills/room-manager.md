@@ -1,162 +1,220 @@
 ---
 name: room-manager
 description: >
-  Polls all active agency rooms, routes escalations to the right team, and
-  throttles duplicate notifications so the same alert doesn't fire multiple
-  times in quick succession. Trigger: when starting a shift, running a periodic
-  health check, or integrating with monitoring tools (PagerDuty, Slack,
-  Datadog). Key capabilities: concurrent room polling (all rooms checked at
-  once), deduplication via 1-hour rolling window per alert fingerprint,
-  escalation routing to the right team based on alert type, and a clean
-  throttle report showing what fired, what was suppressed, and why. Also for:
-  dry-run mode (see what would fire without sending), and tuning the throttle
-  sensitivity based on alert type.
+  Poll all agency chat rooms for new messages, route escalations, handle NEXUS
+  handoffs, fan out PD statuses to department rooms, update shared context, throttle
+  member notifications, and generate 12-hour digests for dept heads. Run as a
+  background subagent on cron. Trigger with /room-manager or when new room activity
+  is suspected. When to trigger: every 10 minutes as a background loop; when a user
+  suspects new room activity; after a handoff file appears in a room handoffs/ dir;
+  when an ESCALATE: pattern is spotted in any message; and when a dept head hasn't
+  received their 12-hour digest yet. Key capabilities: offset-based message
+  checkpointing (never re-reads old messages), 30-minute per-member notification
+  throttle to prevent spam, idempotent digest sends, NEXUS handoff lifecycle
+  management (pending/routed/expired), and automatic DECIDED:/ACTION:/QUESTION:
+  extraction to shared agency context. Ideal for agency leads running multi-project
+  coordination who need a passive, always-on coordination layer. Also for on-call
+  subagents that need to stay informed about cross-project activity without
+  manually polling every room.
 ---
 
-# /room-manager — Agency Room Monitor
+# RoomManager Polling Cycle
 
-Polls all active agency rooms for alerts, routes escalations to the right
-team, and throttles duplicate notifications.
+Run this skill as a recurring background subagent. Default interval: every 10 minutes.
 
-## When to Activate
+The digest sub-skill (Step 9) fires every 12 hours and can be run independently via
+`/room-manager-digest`.
 
-Trigger `/room-manager` when:
-- Starting a monitoring shift
-- Running a periodic health check
-- Integrating with external monitoring tools (PagerDuty, Slack, Datadog)
+---
 
-## Prerequisites
+## Dept-to-Project Mapping
 
-Requires a configured `~/.claude/memory/agency-rooms.json` file listing all
-active rooms and their teams. Each room entry needs:
-- `room_id`: unique identifier
-- `team`: which team owns this room
-- `escalation_policy`: how to route critical alerts
-- `check_interval`: how often to poll (default: 5 minutes)
-
-## Instructions
-
-### Step 1: Load Room Configuration
-
-Read the agency rooms config:
-```bash
-cat ~/.claude/memory/agency-rooms.json
+```
+engineering   → (your projects)
+marketing     → (your projects)
+sales         → (your projects)
+specialized   → (your projects)
+operations    → (your projects)
+testing       → (your projects)
+product       → (your projects)
+project-management → (your projects)
 ```
 
-Parse the room list and escalation policies.
+---
 
-### Step 2: Poll All Rooms Concurrently
+## State File
 
-For each room, send a poll request simultaneously. Collect:
-- Current alert count
-- Alert fingerprints (hash of alert type + source + severity)
-- Room status (active, degraded, offline)
+Read `~/.claude/agency-rooms/.room-manager/state.json` for:
+- `last_poll`: ISO timestamp of last full cycle
+- `room_checkpoints.{room}.last_msg_offset`: last line read per room
+- `member_notifications.{room}.{member}`: last notification timestamp (for 30-min throttle)
+- `dept_room_offsets.{dept}`: last rolling.md line count per dept room
+- `last_digest`: ISO timestamp of last 12h digest run
 
-### Step 3: Deduplicate with 1-Hour Rolling Window
+---
 
-For each alert fingerprint received:
-1. Check `~/.claude/memory/agency-alert-history.jsonl`
-2. If the same fingerprint fired within the last 60 minutes → **suppress**
-3. If not seen in the last 60 minutes → **route**
+## Step 1: Discover Rooms
 
-Keep a running tally of:
-- Total alerts received
-- Alerts suppressed (throttled)
-- Alerts routed
-- Rooms affected
+Scan `~/.claude/agency-rooms/` for subdirectories. Each subdirectory = one room.
+Exclude `.room-manager/`.
 
-### Step 4: Route Escalations
+---
 
-For each non-suppressed alert, determine the escalation path:
+## Step 2: Check Each Room for New Messages
 
-| Alert Type | Severity | Route To |
-|-----------|----------|----------|
-| infra.critical | CRITICAL | on-call + PagerDuty |
-| infra.warning | HIGH | team Slack channel |
-| security | ANY | security team + audit log |
-| performance | MEDIUM | team Slack channel |
-| general | LOW | team backlog |
+For each room, read `messages.mdl` (or `messages.md`) from the last checkpoint offset.
+Update `last_msg_offset` in state.json after reading.
 
-Format the escalation message:
+Project rooms to check: Scan dynamically from `~/.claude/agency-rooms/` directory.
+Include agency-council, project-oversight, and all project-specific rooms.
+
+Department rooms: engineering, marketing, sales, specialized, operations, testing,
+product, project-management (read from offset 0 each cycle — no checkpoint needed for
+rolling.md reads, they are write-only from RM perspective)
+
+---
+
+## Step 3: Route Escalations
+
+Search all new messages for `ESCALATE:` patterns.
+If found, route immediately to council-chair via SendMessage.
+
+Pattern: any line containing `ESCALATE:` (case-insensitive).
+
+---
+
+## Step 4: Check NEXUS Handoffs
+
+See `~/.claude/agency-rooms/HANDOFF-PROTOCOL.md` for the full schema and lifecycle.
+
+Scan `~/.claude/agency-rooms/{room}/handoffs/` for `*.json` files where status is `pending`.
+- Check `expires_at` — if past, set status = `expired` and move to `handoffs/archive/`
+- If valid: set status = `routed`, send SendMessage to target_agent (or announce in
+  target_room), rewrite file
+- If priority = `high`: escalate to council-chair first
+- Move acknowledged/expired files to `handoffs/archive/` after processing
+- Increment `handoffs_routed` in state.json
+
+---
+
+## Step 5: Fan Out to Department Rooms
+
+For each project room with new messages, extract PD status blocks (the `## {Project} Status`
+sections) and push a summary to the appropriate dept room's `context/rolling.md`.
+
+**Dept assignment** from room.json of each project room, or fallback to the mapping above.
+
+**Rolling.md format per entry** (max 1 entry per PD per project per cycle — skip if
+the most recent entry is identical):
+
 ```
-ALERT: {alert_type}
-SOURCE: {room_id}
-SEVERITY: {severity}
-SUMMARY: {one-line alert summary}
-TIMESTAMP: {when detected}
-FINGERPRINT: {hash for deduplication}
-```
+### [{timestamp}] {pd-name} ({project})
 
-### Step 5: Send to Appropriate Channel
-
-Route the escalation via the configured method:
-- PagerDuty: trigger incident via API
-- Slack: send to team channel with `@team` mention
-- Email: send to distribution list
-- Log only: write to audit trail
-
-### Step 6: Update Alert History
-
-Append all alerts (suppressed and routed) to the rolling history log:
-```json
-{"ts":"ISO","fingerprint":"hash","room":"id","action":"routed|suppressed","alert_type":"type"}
-```
-
-Prune entries older than 2 hours (keep a buffer beyond the 1-hour throttle window).
-
-### Step 7: Throttle Report
-
-Output a summary:
-```
-ROOM MANAGER REPORT — {timestamp}
-════════════════════════════
-Rooms polled:      {N}
-Alerts received:   {N}
-  Routed:          {N}
-  Suppressed:      {N} (throttled)
-Rooms affected:   {N}
-
-ESCALATIONS ROUTED:
-  [Alert summary] → [team/channel]
-  [Alert summary] → [team/channel]
-
-SUPPRESSED (throttled):
-  [Alert fingerprint] — last fired {X}m ago
-
-VERDICT: {CLEAN | ACTION REQUIRED — N escalations routed}
+**Working On:** {bullets}
+**Blockers:** {bullets or "None"}
+**Wins:** {bullets or "None this cycle"}
+**Next:** {bullets}
 ```
 
-## Dry-Run Mode
+**Rules:**
+- Append new entries to the top of rolling.md (newest first)
+- Keep only the **last 3 entries per PD** — trim older entries beyond that
+- Deduplicate: if the "Working On" block is identical to the most recent entry for
+  this PD, skip the write (no duplicate noise)
+- If the project room has no status block in the new messages, skip fan-out for that room
+- Dept rooms accumulate history across cycles — no auto-clear
 
-Run with `--dry-run` to see what would fire without sending any notifications:
+---
+
+## Step 6: Update Shared Context (Agency-wide)
+
+Read all new messages and extract patterns:
+- `DECIDED:` → append to `~/.claude/agency-rooms/context/shared.md` under Decisions
+- `ACTION:` → append to `~/.claude/agency-rooms/context/shared.md` under Actions
+- `QUESTION:` → append to `~/.claude/agency-rooms/context/shared.md` under Questions
+
+---
+
+## Step 7: Throttled Member Notifications
+
+For each room with new messages, identify members who have unread messages.
+Send a SendMessage notification to each member, **throttled to 30 minutes per member
+per room**. Do NOT notify the sender of their own message.
+
+Update `member_notifications` in state.json with the current timestamp.
+
+---
+
+## Step 8: Update State
+
+Write updated `state.json`:
+- Set `last_poll` to current timestamp
+- Update `room_checkpoints.{room}.last_msg_offset` for each room
+- Increment `escalations_routed` if any
+- Increment `handoffs_routed` if any
+
+---
+
+## Step 9: 12-Hour Dept Head Digest (sub-skill)
+
+Check `state.json` — if `last_digest` is more than 12 hours ago OR missing,
+generate digests for all department heads.
+
+### Digest Generation
+
+For each dept room, read `context/rolling.md` and:
+1. Extract all entries from the last 12 hours (filter by timestamp)
+2. If no new entries: skip — no digest needed
+3. Generate a **one-paragraph summary per team member** (condense their entries)
+4. Generate a **one-line team status** (e.g. "3 active, 1 blocked, 0 idle")
+
+### Digest Format (SendMessage to dept head)
+
 ```
-/room-manager --dry-run
+Engineering Team Digest — {date}
+
+Overall: 3 active, 1 blocked, 0 idle
+
+### {member-name}
+{one-paragraph summary of their last 12h of work}
+
+---
+Sent by RoomManager digest. Check full status feed at:
+~/.claude/agency-rooms/engineering/context/rolling.md
 ```
 
-This polls rooms, deduplicates, and prints the full throttle report but skips
-Step 5 (no messages sent). Use when tuning the throttle sensitivity.
+### Digest Rules
+- Only send if there are **new entries** in the last 12 hours — don't send empty digests
+- Skip if `last_digest` is < 12 hours ago
+- After sending, update `last_digest` to now in state.json
 
-## Tuning Throttle Sensitivity
+---
 
-By default, alerts with the same fingerprint are suppressed if fired within 60
-minutes. Adjust by alert type:
+## Step 10: Log
 
-| Alert Type | Throttle Window |
-|-----------|----------------|
-| infra.critical | 15 minutes |
-| security | 5 minutes |
-| infra.warning | 60 minutes |
-| performance | 120 minutes |
-| general | 240 minutes |
+Append to `~/.claude/agency-rooms/.room-manager/log.md`:
+```markdown
+[YYYY-MM-DD HH:MM] Polled N rooms, X new messages, Y escalations, Z handoffs, W dept fans, Digest sent: {yes/no}
+```
 
-## Important Rules
+---
 
-- **Concurrent polling only.** Poll all rooms at once, not sequentially.
-- **Fingerprint-based deduplication.** Suppress on hash match, not string
-  match — allows grouping of similar alerts.
-- **1-hour rolling window minimum.** Never suppress an alert for more than
-  60 minutes without a clear escalation policy reason.
-- **Log everything.** Both routed and suppressed alerts go to the history log
-  — you need the full picture for tuning.
-- **Security alerts never throttled.** `security` type alerts route
-  immediately regardless of throttle window.
+## Run as Subagent
+
+**RoomManager (10 min cycle):**
+```
+/loop 10m /room-manager
+```
+
+**Digest only (12h cycle — fires inside /room-manager but can also run standalone):**
+```
+/loop 12h /room-manager-digest
+```
+Or invoke directly as a separate cron. The digest sub-skill (Step 9) checks `last_digest`
+internally, so running it standalone or alongside the main cycle is safe — it will
+only send when 12+ hours have passed.
+
+Or spawn as a persistent background agent:
+```
+Agent → room-manager (loop) → die on explicit shutdown
+```
