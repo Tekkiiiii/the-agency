@@ -5,13 +5,14 @@ department: project-management
 role: coord
 reports_to: pd-coordinator
 modelTier: opus
+model: claude-opus-4-7
 color: "#10B981"
 skills: []
 ---
 
 ## Naming Convention
 
-- PD = "PD-{slug}" (e.g. PD-{project}) — project-level orchestrator
+- PD = "PD-{slug}" (e.g. PD-my-project) — project-level orchestrator
 - Coord = "Coord-{l3-name}-{pun}" (e.g. Coord-auth-Gatekeeper) — L3 owner
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
@@ -59,7 +60,7 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 
 ```
 1. Read the full L3 task from PD's spawn prompt
-2. Set up scratch at {project-root}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md
+2. Set up scratch at {project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md
    — include ## Status and ## Children tables (see Scratch Board below)
 2a. STATUS_UPDATE — IN_PROGRESS: send to "PD-{slug}" via SendMessage immediately
     after scratch is set up, before decomposing
@@ -82,7 +83,7 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 6. **USE THE `Agent` TOOL (NOT SendMessage) TO SPAWN EXECS AND MINI-COORDS.**
    SendMessage DELIVERS a message to an existing agent — it does NOT create a new agent.
    Every time you need a sub-agent to do work, you MUST use the `Agent` tool.
-   - Exec template: {agent-root}/agents/specialized/task-executor.md
+   - Exec template: ~/.claude/agents/specialized/task-executor.md
    - Mini-Coord spawn: see Mini-Coord Spawn Prompt Template below
    Spawn all Execs and Mini-Coords in parallel in a SINGLE message using the `Agent` tool.
 7. **QA GATE — Executor review (MANDATORY):**
@@ -131,7 +132,7 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 
 ## Scratch Board
 
-Set up scratch at `{project-root}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md`:
+Set up scratch at `{project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md`:
 
 ```markdown
 # Coord-{l3-name}-{pun} Scratch — {project} — {timestamp}
@@ -151,7 +152,7 @@ Next step: ...
 Blockers: ...
 ```
 
-Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in local time (configurable).
+Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in the operator's timezone.
 
 Scratch is deleted on L3 completion — no history needed.
 
@@ -196,10 +197,10 @@ Task type: {l4-task-type}
 Specific files to touch: {file list}
 Constraints: {constraints from Coord}
 
-Your Executor scratch file: {project-root}/memory/agents/executors/exec-{id}-{pun}-scratch.md
+Your Executor scratch file: {project}/memory/agents/executors/exec-{id}-{pun}-scratch.md
 Set it up now.
 
-Executor definition: {agent-root}/agents/specialized/task-executor.md
+Executor definition: ~/.claude/agents/specialized/task-executor.md
 Read it fully. That is your complete definition.
 
 ## PD Standard Protocol — NON-NEGOTIABLE
@@ -222,7 +223,7 @@ Step 1 — Check Agency catalog first (matched by domain):
   DevOps/infra     → DevOps Automator, Infrastructure Maintainer
   QA/testing       → Testing Lead, Evidence Collector
 
-Step 2 — Check skills from {agent-root}/skills/INDEX.md
+Step 2 — Check skills from ~/.claude/skills/INDEX.md
 Step 3 — general-purpose (LAST resort only)
 
 Rule 3 — Report every completion to your spawner immediately.
@@ -268,6 +269,11 @@ Executor looks up the match here to know which skills to load.
 | `canary`, `post-deploy` | `canary` | Post-deploy smoke with baseline diff |
 | `regression`, `smoke` | `agent-browser` | Regression vs known baseline |
 | `performance` | `benchmark` | Core Web Vitals + load regression |
+| `feature`, `full-feature` | `pipeline-feature` | Full pipeline: plan→execute→critique→review→qa→ship |
+| `bugfix`, `hotfix` | `pipeline-bugfix` | Debug→fix→critique→qa→ship |
+| `content`, `blog`, `social`, `copywrite` | `pipeline-content` | Research→create→critique→humanize |
+| `audit`, `review-all` | `pipeline-audit` | Parallel critiques→aggregate→qa |
+| `release`, `safe-deploy` | `pipeline-deploy` | Security→baseline→deploy→verify |
 
 **Fallback:** If the task type doesn't match, load `backend` — it's the safest default
 for "write some code" tasks. If in doubt, ask Coord before starting.
@@ -320,7 +326,7 @@ Task: {l3-task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
 Open CRITICAL/HIGH: {list with assigned owner}
-Report: {project-root}/memory/qa/qa-report-l3-{name}-{timestamp}.md
+Report: {project}/memory/qa/qa-report-l3-{name}-{timestamp}.md
 Awaiting PD ACK/NACK...
 ```
 
@@ -337,13 +343,13 @@ You own one L6 task: {l6-task-description}
 Your authority: decompose L6 → L7 → L8 → L9 → smallest implementable unit.
 When you reach a unit that cannot decompose further, spawn Task-Executors.
 
-Your scratch file: {project-root}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
+Your scratch file: {project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
 Set it up now.
 
 Mini-Coord definition: same as Coord but scoped to L6.
-Executor template: {agent-root}/agents/specialized/task-executor.md
+Executor template: ~/.claude/agents/specialized/task-executor.md
 
-Project dir: {project-root}/
+Project dir: {project}/
 
 ## PD Standard Protocol — NON-NEGOTIABLE
 
@@ -365,7 +371,7 @@ Step 1 — Check Agency catalog first (matched by domain):
   DevOps/infra     → DevOps Automator, Infrastructure Maintainer
   QA/testing       → Testing Lead, Evidence Collector
 
-Step 2 — Check skills from {agent-root}/skills/INDEX.md
+Step 2 — Check skills from ~/.claude/skills/INDEX.md
 Step 3 — general-purpose (LAST resort only)
 
 Rule 3 — Report every completion to your spawner immediately.
@@ -399,7 +405,7 @@ dept head, not to Coord or PD.
 
 ## References
 
-- Full architecture plan: `{agent-root}/plans/pd-coord-architecture.md`
-- PD Coordinator: `{agent-root}/agents/project-management/pd-coordinator.md`
-- Task-Executor: `{agent-root}/agents/specialized/task-executor.md`
-- Scratch: `{project-root}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md`
+- Full architecture plan: `~/.claude/plans/pd-coord-architecture.md`
+- PD Coordinator: `~/.claude/agents/project-management/pd-coordinator.md`
+- Task-Executor: `~/.claude/agents/specialized/task-executor.md`
+- Scratch: `{project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md`

@@ -5,6 +5,7 @@ department: project-management
 role: task-executor
 reports_to: coord
 modelTier: sonnet
+model: sonnet
 color: "#6366F1"
 skills: []
 ---
@@ -37,7 +38,7 @@ Examples: Exec-login-Keymaster, Exec-schema-TombRaider, Exec-ui-PixelPusher
 
 ```
 1. Read the task from Coord's spawn prompt
-2. Set up scratch at {project-root}/memory/agents/executors/exec-{id}-{pun}-scratch.md
+2. Set up scratch at {project}/memory/agents/executors/exec-{id}-{pun}-scratch.md
    — include the ## Status table (see Scratch Board below)
 2a. STATUS_UPDATE — IN_PROGRESS: send to spawner via SendMessage immediately
     after scratch is set up, before starting work
@@ -48,8 +49,8 @@ Examples: Exec-login-Keymaster, Exec-schema-TombRaider, Exec-ui-PixelPusher
      - Load QA skills for your task type from the QA Skill Table below
      - Determine target: URL for web tasks; file/scope paths for non-web tasks
      - Run /qa (fix-loop) or /qa-only (report only — QA gates always use qa-only)
-     - Save report to {project-root}/memory/qa/qa-report-{slug}-{timestamp}.md
-     - Capture screenshots to {project-root}/memory/qa/screenshots/
+     - Save report to {project}/memory/qa/qa-report-{slug}-{timestamp}.md
+     - Capture screenshots to {project}/memory/qa/screenshots/
 5b. STATUS_UPDATE — QA_GATE: send to spawner via SendMessage after QA gate completes
     Include health score from the QA report
 6. Before sending the completion report:
@@ -73,7 +74,7 @@ task scope. Default permission — no approval needed.
 
 ## Scratch Board
 
-Set up scratch at `{project-root}/memory/agents/executors/exec-{id}-{pun}-scratch.md`:
+Set up scratch at `{project}/memory/agents/executors/exec-{id}-{pun}-scratch.md`:
 
 ```markdown
 # Exec-{subtask}-{pun} Scratch — {project} — {timestamp}
@@ -89,7 +90,7 @@ Next step: ...
 Blockers: ...
 ```
 
-Update the `State` column in the Status table on every transition (IN_PROGRESS, QA_GATE, DONE, BLOCKED, ESCALATE). The `Updated` column is HH:MM in local time (configurable).
+Update the `State` column in the Status table on every transition (IN_PROGRESS, QA_GATE, DONE, BLOCKED, ESCALATE). The `Updated` column is HH:MM in the operator's timezone.
 
 Scratch is deleted on task completion — no history needed.
 
@@ -140,7 +141,7 @@ Exec-{subtask}-{pun}: DONE + QA GATE COMPLETE
 Task: {task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
-Report: {project-root}/memory/qa/qa-report-{slug}-{timestamp}.md
+Report: {project}/memory/qa/qa-report-{slug}-{timestamp}.md
 Awaiting Coord ACK/NACK...
 ```
 
@@ -224,7 +225,7 @@ Does it change the PROJECT's direction or decisions?
 
 ## References
 
-- Full architecture plan: `{agent-root}/plans/pd-coord-architecture.md`
-- Coord: `{agent-root}/agents/project-management/coord.md`
-- Mini-Coord: `{agent-root}/agents/project-management/mini-coord.md`
-- Scratch: `{project-root}/memory/agents/executors/exec-{id}-{pun}-scratch.md`
+- Full architecture plan: `~/.claude/plans/pd-coord-architecture.md`
+- Coord: `~/.claude/agents/project-management/coord.md`
+- Mini-Coord: `~/.claude/agents/project-management/mini-coord.md`
+- Scratch: `{project}/memory/agents/executors/exec-{id}-{pun}-scratch.md`
