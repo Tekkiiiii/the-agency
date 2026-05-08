@@ -1,0 +1,3 @@
+---
+name: superpowers-systematic-debugging
+description: "Use when encountering any bug, test failure, crash, or technical issue — find root cause before any fix attempt. Systematic five-phase debugging: (1) root cause investigation, (2) scope lock, (3) pattern analysis, (4) hypothesis testing, (5) implementation and verification. Enforces the iron law: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST. Also for: intermittent failures, integration breakdowns, performance regressions, and state corruption issues where symptoms mask the underlying cause."
