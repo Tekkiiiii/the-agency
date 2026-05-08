@@ -37,7 +37,7 @@ Dept Head (Opus) ◄──────────────► Project Direct
 
 **Status reporting:** On-demand only. Dept heads request status from members/projects as needed. No automated loops. This keeps parent AI context at O(departments + exceptions) rather than O(agents).
 
-**Model tiering:** All 161 agents tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
+**Model tiering:** All 175 agents tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
 
 **Status loop policy:** Automated recurring loops are DISABLED. Use on-demand status checks only. Dept heads request status when needed — do not automate periodic pings. This avoids the token explosion risk of naive 15-30 min loop implementations (10k-21k reports/week without aggregation). See § on status reporting.
 
@@ -194,6 +194,7 @@ The **Agency Council** is the governing body for all cross-department decisions.
 | Infrastructure Maintainer | operations-lead | Operations | SendMessage to `operations-lead` |
 | Agents Orchestrator | specialized-lead | Specialized | SendMessage to `specialized-lead` |
 | XR Interface Architect | spatial-lead | Spatial Computing | SendMessage to `spatial-lead` |
+| career-ops PD | career-lead | Career | SendMessage to `career-lead` |
 
 ### Council Communication Protocol
 
@@ -246,7 +247,7 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 
 | Team | Purpose | Members | Created By |
 |------|---------|---------|------------|
-| **Agency Council** | Governing body for cross-dept strategy and approval | All 12 leaders + Council Chair | See below |
+| **Agency Council** | Governing body for cross-dept strategy and approval | All 14 leaders + Council Chair | See below |
 | **Project Teams** | Temporary teams for specific deliverables | Relevant leaders + members per project type | Run kickoff protocol |
 | **Department Teams** | Standing teams within each department | Leader + their members | Implicit; members exist at department paths |
 
@@ -275,7 +276,7 @@ Human / Parent AI
        │         └──► Department Member (executes)
        │
        ▼ (council assembly for cross-dept problems)
-  Agency Council (all 12 leaders)
+  Agency Council (all 14 leaders)
 ```
 
 Leaders message the Council Chair. Members report to their leader. Cross-dept requests go through leaders to the Council Chair for routing.
@@ -316,8 +317,8 @@ For focused teams, the trigger phrases include project type:
 2. Spawn leaders in TWO WAVES to avoid team config race conditions:
    Wave 1 (6 agents): engineering-lead, design-lead, game-development-lead,
                        marketing-lead, content-creation-lead, sales-lead
-   Wave 2 (7 agents): paid-media-lead, product-lead, pm-lead, testing-lead,
-                       operations-lead, specialized-lead, spatial-lead
+   Wave 2 (8 agents): paid-media-lead, product-lead, pm-lead, testing-lead,
+                       operations-lead, specialized-lead, spatial-lead, career-lead
    Wait for Wave 1 to join (~30s) before spawning Wave 2.
 3. Each spawn: Load the leader's agent definition file and instruct them to
    join "agency-council" and send their intro to "team-lead"
@@ -380,4 +381,4 @@ Each project directory follows this memory structure:
 
 ---
 
-*Last updated: 2026-05-02*
+*Last updated: 2026-05-05*
