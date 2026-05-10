@@ -72,6 +72,7 @@ Skills are reusable workflows. Invoke them in Claude Code with `/skill-name`.
 | `backend` | Design APIs, DB schemas, server logic | engineering |
 | `frontend` | Build React/web interfaces | engineering |
 | `tech-writer` | Write developer documentation | engineering |
+| `ffmpeg` | FFmpeg/FFprobe command reference — transcode, probe, extract, concat, filter, HW accel (Apple Silicon) | media |
 | `github-deploy` | Deploy via GitHub Actions | deployment |
 | `vercel-deploy` | Deploy to Vercel | deployment |
 | `railway-deploy` | Deploy to Railway | deployment |

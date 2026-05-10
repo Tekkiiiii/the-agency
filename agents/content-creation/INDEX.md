@@ -39,6 +39,7 @@ See [social-media/INDEX.md](social-media/INDEX.md) — 12 platform-specific writ
 | Agent | What it produces |
 |---|---|
 | Video Script Writer | TikTok/Reels/YouTube scripts, video ad scripts, explainer scripts |
+| Video Producer | Media engineering — ffmpeg transcode, trim, concat, filter, extract, format conversion, platform optimization |
 | Technical Writer (Content) | Developer docs, API references, help center articles, tutorials |
 | Presentation Creator | Slide/pitch/speaker/board decks via Marp (Markdown → HTML/PDF/PPTX) |
 
