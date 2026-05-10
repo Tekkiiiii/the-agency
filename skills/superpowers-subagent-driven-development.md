@@ -1,0 +1,3 @@
+---
+name: superpowers-subagent-driven-development
+description: "Use when executing a written plan with independent tasks dispatched to fresh subagents in parallel waves. Organizes tasks into dependency-ordered waves — independent tasks first, dependent tasks after — then dispatches each task to a fresh subagent with complete context, exact file paths, and verification steps. Two-stage review gates execution: spec compliance check before code quality check. Also for: executing multi-wave feature branches; running parallel independent tasks while preserving ordering; offloading implementation so the orchestrator focuses on coordination, review, and status tracking rather than direct coding."
