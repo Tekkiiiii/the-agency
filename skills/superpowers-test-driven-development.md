@@ -1,0 +1,3 @@
+---
+name: superpowers-test-driven-development
+description: "Use when writing any new code, fixing bugs, or changing behavior — enforces the RED-GREEN-REFACTOR cycle. Write the failing test first, watch it fail for the right reason, write the minimal code to pass it, then refactor. The iron law: no production code without a failing test first. Also for: regression-proofing existing code, driving design via tests, and ensuring bug fixes are captured as test cases. Skipping TDD even once is rationalization — always invoke when code will be written."

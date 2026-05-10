@@ -1,0 +1,3 @@
+---
+name: superpowers-using-git-worktrees
+description: "Use after design approval and before starting implementation — creates an isolated Git worktree with verified clean test baseline so new work cannot affect main. Selects directory (.worktrees/ preferred, worktrees/ alternative), verifies Git-ignore safety for project-local paths, auto-detects project setup from package.json/Cargo.toml/go.mod, and runs baseline tests to confirm the worktree is production-clean. Also for: parallel feature work without branch juggling; enabling subagent worktrees for independent tasks; and keeping main branch pristine during experimental or risky work."
