@@ -3,8 +3,8 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude%20Code-yellow)
 ![Cloud: Zero dependencies](https://img.shields.io/badge/Cloud-Zero%20Dependencies-green)
-![Skills: 48](https://img.shields.io/badge/Skills-48-orange)
-![Agents: 245+](https://img.shields.io/badge/Agents-245%2B-purple)
+![Skills: 244](https://img.shields.io/badge/Skills-244-orange)
+![Agents: 200+](https://img.shields.io/badge/Agents-200%2B-purple)
 ![QA: Gates on every handoff](https://img.shields.io/badge/QA-Gates%20%2B%20Health%20Scores-red)
 
 **Self-running AI workforce. PD-driven task decomposition, mandatory QA gates, SQLite persistence — no servers, no API keys.**
@@ -14,16 +14,27 @@
 ## TL;DR — Get started in 60 seconds
 
 ```bash
-git clone https://github.com/the-agency/the-agency.git
-cd the-agency && npx agency init
+git clone https://github.com/Tekkiiiii/the-agency.git
+cd the-agency
 
-agency new my-app "Build a task manager"
+# macOS / Linux
+./install.sh
 
-# In Claude Code, open your project directory and type:
-/recall my-app
+# Windows (PowerShell)
+.\install.ps1
+
+# Or via Node.js CLI
+node cli/bin/agency.js init
 ```
 
-That's it. The PD loads and asks what to build. You supervise; it executes.
+That's it. 244 skills and 200+ agents are installed to `~/.claude/`. Open Claude Code and they're ready.
+
+```
+agency new my-app "Build a task manager"
+# In Claude Code: /recall my-app
+```
+
+The PD loads and asks what to build. You supervise; it executes.
 
 ---
 
@@ -55,7 +66,7 @@ PD:   "Phase 1 complete. Phase 2 in progress — 2 of 5 tasks done. Continuing."
 - **4-tier autonomous chain**: PD → Coord → Mini-Coord → Task-Executor decomposes any project to atomic units. Mini-Coords keep drilling L6→L7→L8 without escalating to PD.
 - **QA gates on every handoff**: No work gets ACK'd without a health-score pass. Gate: score ≥ 70 + zero CRITICALs. Example: 70 = tests pass but docs missing; 90+ = ship-ready.
 - **Explicit ACK/NACK protocol**: Agents wait for approval before stopping. NACKs return a fix list. Rejected work loops back through QA. Traceability is built into the protocol.
-- **40+ production-ready skills**: Memory, execution, QA, engineering, governance — all invoked via `/skill-name`. Full project lifecycle covered.
+- **244 production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, cloud (Cloudflare, Netlify, Terraform), and more — all invoked via `/skill-name`.
 - **SQLite task store — nothing leaves your machine**: Task pipeline, gates, retries, blocking in `~/.claude/`. No servers. No API keys.
 - **Session persistence**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where it left off.
 - **Agency Rooms** — file-based inter-agent chat with persistent rooms, RoomManager polling, NEXUS JSON handoffs, and 12-hour department digests.
@@ -90,14 +101,19 @@ QA gates at every level:
 ## Quick Start
 
 ```bash
-# 1. Install (requires Node.js 18+ and Claude Code)
-git clone https://github.com/the-agency/the-agency.git
-cd the-agency && npx agency init
+# 1. Clone
+git clone https://github.com/Tekkiiiii/the-agency.git
+cd the-agency
 
-# 2. Create a project
-agency new my-app "Build a task manager"
+# 2. Install (copies skills + agents to ~/.claude/)
+./install.sh          # macOS / Linux
+.\install.ps1         # Windows PowerShell
+node cli/bin/agency.js init   # Node.js alternative
 
-# 3. Open Claude Code in your project directory, then type:
+# 3. Create a project
+node cli/bin/agency.js new my-app "Build a task manager"
+
+# 4. Open Claude Code in your project directory, then type:
 /recall my-app
 # The PD loads. Tell it what to build.
 
@@ -177,7 +193,7 @@ Spawned via `/recall {project}`. Owns the project end-to-end:
 
 **Engineering**: `/backend`, `/frontend`, `/tech-writer`, `/github-deploy`, `/railway-deploy`, `/vercel-deploy`, `/supabase-deploy`
 
-Full registry: `skills/INDEX.md` — 41 skills.
+Full registry: `skills/INDEX.md` — 244 skills across 20+ categories.
 
 ## File Structure
 
@@ -193,7 +209,8 @@ the-agency/
 │   └── bootstrap/       # Init scripts
 ├── cli/                 # Node.js CLI (agency init/new/tasks/skill/status)
 ├── docs/                # User-facing documentation
-├── skills/              # 48 agency-core skills
+├── agents/              # 200+ agent definitions (14 departments)
+├── skills/              # 244 reusable workflow skills
 └── plans/               # Architecture decision records
 ```
 

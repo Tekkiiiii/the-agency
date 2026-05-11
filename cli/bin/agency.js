@@ -6,7 +6,9 @@
  */
 
 const { resolve } = require('path');
-const AGENCY_ROOT = process.env.AGENCY_HOME || resolve(process.env.HOME, '.claude');
+const os = require('os');
+
+const AGENCY_ROOT = process.env.AGENCY_HOME || resolve(os.homedir(), '.claude');
 
 const COMMANDS = {
   init:    require('../commands/init.js'),

@@ -1,25 +1,29 @@
-const { existsSync, readdirSync, copyFileSync } = require('fs');
-const { join, basename } = require('path');
+const { existsSync, readdirSync, copyFileSync, mkdirSync } = require('fs');
+const { join } = require('path');
 
 module.exports = async function skill({ args, AGENCY_ROOT, console }) {
   const [subcmd, ...rest] = args;
   const skillsSrc = join(__dirname, '../../skills');
-  const skillsDest = `${AGENCY_ROOT}/skills`;
+  const skillsDest = join(AGENCY_ROOT, 'skills');
 
   if (subcmd === 'list') {
     if (!existsSync(skillsDest)) {
-      console.log('No skills installed.');
+      console.log('No skills installed. Run: agency init');
       return;
     }
-    const files = readdirSync(skillsDest).filter(f => f.endsWith('.md'));
-    if (files.length === 0) {
-      console.log('No skills installed. Run: agency skill install <name>');
+    const entries = readdirSync(skillsDest, { withFileTypes: true });
+    const skills = entries
+      .filter(e => e.isDirectory() && existsSync(join(skillsDest, e.name, 'SKILL.md')))
+      .map(e => e.name)
+      .sort();
+
+    if (skills.length === 0) {
+      console.log('No skills installed. Run: agency init');
       return;
     }
-    console.log('Installed skills:\n');
-    for (const f of files.sort()) {
-      const name = f.replace('.md', '');
-      console.log(`  ${name}`);
+    console.log(`Installed skills (${skills.length}):\n`);
+    for (const s of skills) {
+      console.log(`  ${s}`);
     }
     console.log('');
     return;
@@ -32,8 +36,9 @@ module.exports = async function skill({ args, AGENCY_ROOT, console }) {
       process.exit(1);
     }
 
-    const srcFile = `${skillsSrc}/${name}.md`;
-    const destFile = `${skillsDest}/${name}.md`;
+    const srcFile = join(skillsSrc, `${name}.md`);
+    const destDir = join(skillsDest, name);
+    const destFile = join(destDir, 'SKILL.md');
 
     if (!existsSync(skillsSrc)) {
       console.error(`Skill source not found: ${skillsSrc}`);
@@ -41,7 +46,6 @@ module.exports = async function skill({ args, AGENCY_ROOT, console }) {
     }
 
     if (!existsSync(srcFile)) {
-      // Check if it's already installed
       if (existsSync(destFile)) {
         console.log(`Skill "${name}" already installed.`);
         return;
@@ -50,10 +54,7 @@ module.exports = async function skill({ args, AGENCY_ROOT, console }) {
       process.exit(1);
     }
 
-    if (!existsSync(skillsDest)) {
-      require('fs').mkdirSync(skillsDest, { recursive: true });
-    }
-
+    mkdirSync(destDir, { recursive: true });
     copyFileSync(srcFile, destFile);
     console.log(`\n✅ Skill "${name}" installed.\n`);
     console.log(`  Source: ${srcFile}`);
