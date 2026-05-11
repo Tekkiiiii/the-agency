@@ -98,22 +98,50 @@ QA gates at every level:
   Gate criteria: health score ≥ 70 + zero CRITICALs before ACK
 ```
 
+## Installation
+
+The installer copies skills and agents into `~/.claude/` — the Claude Code configuration directory. On Windows, this is `%USERPROFILE%\.claude\`.
+
+```bash
+git clone https://github.com/Tekkiiiii/the-agency.git
+cd the-agency
+```
+
+| Platform | Command | Requirements |
+|----------|---------|-------------|
+| macOS / Linux | `./install.sh` | bash |
+| Windows | `.\install.ps1` | PowerShell |
+| Any (Node.js) | `node cli/bin/agency.js init` | Node.js 18+ |
+
+**What gets installed:**
+
+```
+~/.claude/
+├── skills/              ← 244 skills as {name}/SKILL.md directories
+│   ├── backend/SKILL.md
+│   ├── frontend/SKILL.md
+│   ├── ship/SKILL.md
+│   └── ...
+├── agents/              ← 200+ agents organized by department
+│   ├── engineering/
+│   ├── design/
+│   ├── content-creation/
+│   └── ...
+├── projects/            ← per-project state (created by `agency new`)
+├── sessions/            ← session logs (created by `/save-state`)
+├── memory/              ← persistent memory layer
+└── task-store.db        ← SQLite task pipeline (Node.js install only)
+```
+
+Override the install location with `AGENCY_HOME=/custom/path ./install.sh`.
+
 ## Quick Start
 
 ```bash
-# 1. Clone
-git clone https://github.com/Tekkiiiii/the-agency.git
-cd the-agency
-
-# 2. Install (copies skills + agents to ~/.claude/)
-./install.sh          # macOS / Linux
-.\install.ps1         # Windows PowerShell
-node cli/bin/agency.js init   # Node.js alternative
-
-# 3. Create a project
+# 1. Create a project
 node cli/bin/agency.js new my-app "Build a task manager"
 
-# 4. Open Claude Code in your project directory, then type:
+# 2. Open Claude Code in your project directory, then type:
 /recall my-app
 # The PD loads. Tell it what to build.
 
@@ -179,21 +207,47 @@ Spawned via `/recall {project}`. Owns the project end-to-end:
 4. Escalate blockers
 5. Persist state via `/save-state`
 
-## Skills Library
+## Skills Library — 244 Skills
 
-**Memory & Session**: `/save-state`, `/recall`, `/pd-resume`, `/wrap`, `/unwrap`, `/project-status`
+**Memory & Session**: `save-state`, `recall`, `pd-resume`, `wrap`, `unwrap`, `project-status`, `context-save`, `context-restore`, `freeze`, `unfreeze`
 
-**Coordination**: `/swarm`, `/delegate`, `/pd-spawn`, `/room-manager`, `/room-manager-digest`, `/task-store`, `/task-handoff`, `/project-expansion-scout`
+**Coordination**: `swarm`, `delegate`, `pd-spawn`, `task-handoff`, `task-store`, `room-manager`, `room-manager-digest`, `nexus-gatekeeper`, `sync-md-json`
 
-**Planning**: `/autoplan`, `/plan-ceo-review`, `/plan-eng-review`, `/plan-design-review`, `/office-hours`, `/retro`
+**Planning**: `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review`, `plan-devex-review`, `plan-tune`, `office-hours`, `retro`, `seed`, `project-expansion-scout`
 
-**Execution**: `/ship`, `/land-and-deploy`, `/setup-deploy`, `/canary`, `/document-release`
+**Pipelines** (multi-stage workflows): `pipeline-feature`, `pipeline-bugfix`, `pipeline-content`, `pipeline-audit`, `pipeline-deploy`, `pipeline-seo-geo-aeo`
 
-**Quality**: `/qa`, `/qa-only`, `/guard`, `/investigate`, `/self-healing`, `/codex`, `/cso`, `/design-review`
+**Execution**: `ship`, `land-and-deploy`, `setup-deploy`, `canary`, `qa`, `qa-only`, `run-acceptance-tests`
 
-**Engineering**: `/backend`, `/frontend`, `/tech-writer`, `/github-deploy`, `/railway-deploy`, `/vercel-deploy`, `/supabase-deploy`
+**Quality & Critique**: `design-review`, `review`, `codex`, `cso`, `document-release`, `backend-critique`, `design-critique`, `content-critique`, `marketing-critique`, `operations-critique`, `product-critique`, `security-critique`, `workflow-critique`, `devex-review`, `careful`
 
-Full registry: `skills/INDEX.md` — 244 skills across 20+ categories.
+**Content & Writing**: `humanizer`, `proofreader`, `content-polish`, `content-creator`, `content-strategy`, `copywriting`, `stop-slop`, `tech-writer`, `marp`, `markitdown`, `make-pdf`, `promt-engineering`, `xlsx-toolkit`, `vietnamese-language`
+
+**Engineering — Backend**: `backend`, `security`, `webhook-security`, `postgresql-schema`, `supabase-sql`, `multi-role-auth`, `laravel-builder`, `admin-shell-foundation`
+
+**Engineering — Frontend**: `frontend`, `shadcn-ui`, `cult-ui`, `tailwind`, `next-best-practices`, `css-animations`, `image-to-code`, `svgl`, `extract-design`, `excalidraw-diagram`
+
+**Design & UI/UX**: `ui-ux-pro-max`, `impeccable`, `design-html`, `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`, `emil-design-eng`, `gpt-taste`, `brandkit`, `figma-ui-ux-consistency`
+
+**Video & Media**: `ffmpeg`, `video-use`, `hyperframes`, `hyperframes-cli`, `hyperframes-media`, `remotion-best-practices`, `lottie`, `animejs`, `gsap`, `waapi`, `three`, `gpt-image-prompts`, `imagegen-frontend-web`, `imagegen-frontend-mobile`
+
+**Deployment**: `github-deploy`, `vercel-deploy`, `railway-deploy`, `supabase-deploy`, `netlify-deploy`
+
+**Cloud — Cloudflare**: `cloudflare`, `workers-best-practices`, `wrangler`, `durable-objects`, `agents-sdk`, `cloudflare-email-service`
+
+**Cloud — Netlify**: `netlify-config`, `netlify-functions`, `netlify-edge-functions`, `netlify-forms`, `netlify-blobs`, `netlify-db`, `netlify-caching`, `netlify-image-cdn`, `netlify-frameworks`, `netlify-ai-gateway`
+
+**Cloud — Terraform**: `terraform-style-guide`, `terraform-test`, `terraform-stacks`, `terraform-search-import`, `new-terraform-provider`, `provider-actions`, `provider-resources`, `refactor-module`, `azure-verified-modules`, `finops`
+
+**Ops & Debugging**: `self-healing`, `investigate`, `guard`, `health`, `web-perf`, `webapp-testing`
+
+**Browser & Scraping**: `browse`, `agent-browser`, `lightpanda`, `scrape`, `firecrawl-agent`, `firecrawl-crawl`, `firecrawl-scrape`, `pair-agent`
+
+**Superpowers** (28 gstack workflow skills): `superpowers-brainstorming`, `superpowers-systematic-debugging`, `superpowers-dispatching-parallel-agents`, `superpowers-executing-plans`, `superpowers-writing-plans`, `superpowers-test-driven-development`, and 22 more.
+
+**Domain-Specific**: `hotel-pms`, `restaurant-pos`, `reservation-booking`, `stripe-best-practices`, `better-auth-best-practices`, `legal-contract-review`, `n8n-automation`, `sanity-best-practices`, `tech-stack`
+
+Full categorized registry: [`skills/INDEX.md`](skills/INDEX.md)
 
 ## File Structure
 
