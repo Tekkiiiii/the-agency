@@ -5,5 +5,6 @@ department: Specialized
 role: member
 reports_to: specialized-lead
 modelTier: sonnet
+model: opus
 color: blue
 ---
