@@ -162,6 +162,8 @@ room-utils.sh complete-handoff <room> <handoff-id>
 - Dependencies
 - What the recipient needs to know
 
+See `agents/strategy/nexus-strategy.md` §11.1 for the full NEXUS handoff template.
+
 ---
 
 ## Shared Context Files
