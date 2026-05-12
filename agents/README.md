@@ -359,7 +359,7 @@ Building worlds, systems, and experiences across every major engine.
 
 ### Scenario 4: Full Agency Product Discovery
 
-**Your Team**: All 12 departments working in parallel on a single mission.
+**Your Team**: All 14 departments working in parallel on a single mission.
 
 See the **[Nexus Spatial Discovery Exercise](examples/nexus-spatial-discovery.md)** -- a complete example where 8 agents (Product Trend Researcher, Backend Architect, Brand Guardian, Growth Hacker, Support Responder, UX Researcher, Project Shepherd, and XR Interface Architect) were deployed simultaneously to evaluate a software opportunity and produce a unified product plan covering market validation, technical architecture, brand strategy, go-to-market, support systems, UX research, project execution, and spatial UI design.
 
@@ -448,8 +448,8 @@ Each agent is designed with:
 
 ## 📊 Stats
 
-- 🎭 **119 Specialized Agents** across 12 departments
-- 📝 **10,000+ lines** of personality, process, and code examples
+- 🎭 **175 Specialized Agents** across 14 departments
+- 📝 **46,000+ lines** of personality, process, and code examples
 - ⏱️ **Months of iteration** from real-world usage
 - 🌟 **Battle-tested** in production environments
 - 💬 **50+ requests** in first 12 hours on Reddit
