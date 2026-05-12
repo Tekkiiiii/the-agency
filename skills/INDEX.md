@@ -392,7 +392,7 @@ In Claude Code, invoke any skill with:
 /skill-name
 ```
 
-Or combine with context:
+Common combinations:
 
 ```
 /autoplan
