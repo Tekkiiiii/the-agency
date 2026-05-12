@@ -3,7 +3,7 @@ name: PD Boot Sequence
 description: Standard startup sequence for all Project Directors. Two-mode: thin discover on spawn, lazy routing on demand.
 type: template
 owner: agency-council
-lastUpdated: 2026-04-29
+lastUpdated: 2026-04-01
 ---
 
 # PD Boot Sequence
@@ -22,7 +22,7 @@ lastUpdated: 2026-04-29
 
 **Step 1:** Read project briefing doc:
 ```
-{project-root}/.claude/PD-BRIEFING.md
+{project}/.claude/PD-BRIEFING.md
 ```
 If it doesn't exist, skip to Step 2.
 
@@ -34,7 +34,7 @@ The briefing doc is pre-built by the Agency Council and contains:
 
 **Step 2:** Read heartbeat:
 ```
-{project-root}/memory/heartbeat.md
+{project}/memory/heartbeat.md
 ```
 Log session start at the bottom.
 
@@ -58,9 +58,9 @@ Blockers: [none / list]
 
 **Step 2:** If not in briefing, load the relevant department INDEX:
 ```
-{agency-root}/agents/{department}/INDEX.md
+~/.claude/agents/{department}/INDEX.md
 ```
-Only load the one department you need. Not all of them.
+Only load the one department you need. Not all 8.
 
 **Step 3:** Spawn the agent directly. Use SendMessage to the department lead if you need them to dispatch.
 
@@ -78,7 +78,7 @@ Only load the one department you need. Not all of them.
    NO  → step 3
 
 3. Is this a workflow task (planning, verification, QA, retro)?
-   YES → use a skill from {agency-root}/skills/INDEX.md
+   YES → use a skill from ~/.claude/skills/INDEX.md
    NO  → step 4
 
 4. Can you do it directly (Tier 1: <10 line edits, docs, analysis)?
@@ -95,7 +95,7 @@ Load the relevant INDEX.md only when routing, not on every spawn.
 | Task | Department | File to Load |
 |---|---|---|
 | Frontend / React / Next.js | engineering | `engineering/INDEX.md` |
-| Backend / API | engineering | `engineering/INDEX.md` |
+| Backend / Rust / Tauri | engineering | `engineering/INDEX.md` |
 | Database / SQL | engineering | `engineering/INDEX.md` |
 | CI/CD / DevOps | engineering | `engineering/INDEX.md` |
 | QA / testing | testing | `testing/INDEX.md` |
@@ -105,16 +105,18 @@ Load the relevant INDEX.md only when routing, not on every spawn.
 | Brand / visual | design | `design/INDEX.md` |
 | Copywriting / content | marketing | `marketing/INDEX.md` |
 | Social / growth | marketing | `marketing/INDEX.md` |
+| China market | marketing/china | `marketing/china/INDEX.md` |
 | Sales strategy | sales | `sales/INDEX.md` |
 | Project scheduling | project-management | `project-management/INDEX.md` |
 | Data extraction | specialized | `specialized/INDEX.md` |
+| Cultural intelligence | specialized | `specialized/INDEX.md` |
 | Compliance / legal | specialized | `specialized/INDEX.md` |
 
 ---
 
 ## PD-BRIEFING Template
 
-Create at `{project-root}/.claude/PD-BRIEFING.md`:
+Create at `{project}/.claude/PD-BRIEFING.md`:
 
 ```markdown
 # PD Briefing — [project-name]
@@ -151,7 +153,7 @@ PD: [pd-name]
 
 ## How to Apply to a New PD
 
-1. Create the PD-BRIEFING doc at `{project-root}/.claude/PD-BRIEFING.md`
+1. Create the PD-BRIEFING doc at `{project}/.claude/PD-BRIEFING.md`
 2. Paste Mode 1 (Spawn) + Mode 2 (Route) into the PD agent file, before `## Identity`
 3. Paste Agent Dispatch Priority as a reference block (no file reads on spawn)
 4. Paste Department Agent Routing table as a reference block (lazy load only)
