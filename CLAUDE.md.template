@@ -1,0 +1,187 @@
+# CLAUDE.md Template
+
+> **Template** — Copy this to your project's `.claude/CLAUDE.md` and customize the `## User Preferences` section and any project-specific entries.
+
+---
+
+## Core Workflow
+
+### Plan Mode Default
+Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions).
+If something goes sideways, STOP and re-plan immediately.
+
+### Subagent Dispatch Rules (ENFORCED — NO EXCEPTIONS)
+
+**Spawn an agent ONLY when all 4 conditions are met:**
+1. The task is genuinely parallelizable — two or more things happening simultaneously
+2. The task is deep in a specialized domain (legal, financial, compliance, security, etc.)
+3. The task requires memory or persistent state across multiple sessions
+4. A skill does not exist for it
+
+**Default to direct action:** If I have the tool (Read, Grep, WebSearch, Edit, Write, Bash), I use it myself.
+
+**Agents first, skills second:** Check `{agency-root}/memory/agency-dispatch.md` first. Only open `{agency-root}/skills/INDEX.md` when I need to find or create a skill.
+
+**Anti-patterns (NEVER do):**
+- "Let me spawn an agent to analyze X" when I have Read/Grep/WebSearch
+- "I'll delegate this" when the task is < 5 lines of code or a single file read
+- "Spawn and forget" — if I spawn it, I own the outcome
+- "Spawn for routing decisions" — routing is my job, not a subagent's
+- Default to general-purpose — always check Agency catalog first
+- Write CLAUDE.md content that duplicates a skill
+- Create a skill without updating INDEX.md immediately after
+
+### Natural Language → PD Spawn
+When the operator says something matching these patterns, invoke the `pd-spawn` skill
+immediately — do NOT do the work yourself:
+- `"work with {slug}-pd to do {task}"`
+- `"have {slug}-pd do {task}"`
+- `"{slug}-pd, work on {task}"`
+- `"{slug}-pd, can you {task}"`
+
+### Self-Improvement Loop
+After ANY correction from the user: append a lesson to `{agency-root}/memory/lessons/{stack}.md`.
+- **Append immediately**: one-off mistake, clear root cause
+- **Full elegance review** (Demand Elegance below): the same mistake has happened 2+
+  times, the fix feels hacky, or it touches an architectural decision
+- Never rewrite history — always append
+
+### Verification Before Done
+Never mark a task complete without proving it works. Run tests. Check logs.
+Demonstrate correctness. Ask: "Would a staff engineer approve this?"
+
+### Demand Elegance
+For non-trivial changes: pause and ask "is there a more elegant way?"
+If a fix feels hacky: "Knowing everything I know now, implement the elegant solution."
+Skip this for simple, obvious fixes — don't over-engineer.
+
+### Agent / PD Failure Protocol
+If an agent or PD goes **stuck** (not making progress, not blocked by an external dependency):
+1. **Nudge** — send a message prompting next action
+2. **Check status** — look at coord logs, exec logs, working files, task output
+3. **Respawn** — if still stuck, spawn a replacement with the same briefing
+4. **Do it myself** — if the respawn also fails, handle the task directly
+
+Note: if the agent is blocked on an external dependency (waiting on user, API, another agent), do NOT respawn — help unblock it instead.
+
+### Agent Problem-Fixing Protocol (Fix Before Fallback)
+When an agent reports a problem (missing toolset, missing access, missing dependency, wrong environment, etc.):
+1. **Fix the problem** — install the missing tool, grant the access, configure the environment, pass the right parameters
+2. **Retry the agent** — re-send or respawn with the fix applied
+3. **Only then fall back** — if the problem is unfixable (fundamental architecture mismatch, tool doesn't exist), then do it yourself
+
+Never skip straight to "I'll do it myself" when the agent's environment can be repaired.
+
+### Autonomous Bug Fixing (Escalation Ladder)
+When given a bug report: just fix it with subagents. Don't ask for hand-holding.
+Escalation: `superpowers-systematic-debugging` agent → parallel domain specialists →
+direct escalation. Keep escalating until resolved.
+
+---
+
+## Quality & Review
+
+3-round review protocol: every task goes through Correctness → Design → Polish rounds. After 5 failures on same task, mandatory critique agent review.
+
+### Content Humanization (MANDATORY)
+On ANY content creation task (blog posts, marketing copy, emails, social media posts,
+ad copy, landing page text, newsletters, documentation prose, LinkedIn posts, video
+scripts, briefs, reports — anything meant to be read by humans), run `/content-polish`
+on the draft BEFORE presenting the final version to the user.
+
+Workflow: Draft content → apply `/content-polish` pass (humanizer → anti-fragmentation → proofreader) → present final to user.
+For quick edits or single sentences, `/humanizer` alone is fine.
+This is a default behavior, not optional. Skip only if the user explicitly says
+"skip humanizer" or "raw output".
+
+## Session & Task Lifecycle
+
+### Session Start
+- **Primary:** `/pd-resume [slug]` or `/pd-resume all` — reads next-session.md directly, spawns autonomous PD(s) in background
+- **Quick check:** `/recall [slug]` — reads next-session.md, outputs briefing, does NOT spawn a PD
+- **No project:** `/unwrap` or `/unwrap all` to resume inbox tasks
+- `/pd-resume` reads only `next-session.md` per project (no subagents, no temp files), then spawns PD coordinators with lean briefings
+- `/recall` and `/save-state` operate freely on `{project}/memory/` files — never ask for permission on these reads or writes
+
+### Session End
+- Run `/save-state [slug]`, `/save-state` (auto-detects from cwd), or `/save-state all`
+- Run `/wrap` — freezes and archives any ongoing inbox tasks after project work is saved
+- The `next-session.md` output is the only thing you carry forward to the next session
+
+### During a Session
+Plan first. Track progress. Document results. Capture lessons immediately after correction.
+
+### Inbox Task Management (Default — No Project)
+
+Unless a PD is spawned for a task, all work goes into the inbox:
+
+```
+{agency-root}/tasks/inbox/
+├── ongoing/           ← tasks being worked on
+│   └── {slug}/TASK.md
+├── completed/         ← tasks finished this session
+│   └── {slug}/TASK.md
+└── archived/         ← abandoned / won't-do tasks
+    └── {slug}/TASK.md
+```
+
+**Rules:**
+- At **session end**: move active inbox tasks to `ongoing/`, completed tasks to `completed/`, abandoned tasks to `archived/`
+- **Every new task** (no PD, no project): create `inbox/ongoing/{slug}/TASK.md` immediately at session start
+- The `TASK.md` format is defined in `inbox/index.md` — always follow it
+- If a task later maps to a project, move its folder into that project's task list
+- PD-spawned tasks belong to the PD's project — do NOT put them in the inbox
+
+---
+
+## Context Files (On-Demand — Do Not Pre-Load)
+
+These files are NOT loaded into context proactively. Read them only when the trigger event occurs.
+
+| Trigger | When to read |
+|---------|-------------|
+| `.gitnexus/` exists in cwd | `memory/gitnexus.md` |
+| WebSearch or WebFetch called in a project | `memory/obsidian.md` |
+| "BOD", "assemble", or "council" mentioned | `memory/agency-council.md` |
+| `/recall` or `/pd-resume` called | Skill handles it internally — no manual read needed |
+
+No other context files are loaded unconditionally from root.
+
+---
+
+## User Preferences
+<!-- Customize these for your setup -->
+- Critical/questioning feedback preferred over blind agreement
+- No permission approval needed unless critical
+- Set your timezone preference (e.g., "All times in US Eastern" or "GMT+1")
+
+---
+
+## Core Principles
+- **Simplicity First**: make every change as simple as possible
+- **No Laziness**: find root causes. No temporary fixes. Senior developer standards
+- **Minimal Impact**: only touch what's necessary. No side effects with new bugs
+
+## Output Convention
+Project outputs: `{project}/outputs/{skill}/{YYYY-MM-DD}-{descriptor}/`.
+Global (no project): `{agency-root}/outputs/global/`.
+
+## Memory — Cross-Linking Rule
+When writing a memory file that relates to 2 or more existing memories, add a `See also:` line at the bottom linking to them:
+```
+See also: [Title A](file-a.md), [Title B](file-b.md)
+```
+
+## Memory — Skill Triggers
+- `/lint-memory` → health check for the memory system
+
+# Skill Pipelines
+Multi-stage workflows that chain existing skills with quality gates between stages.
+
+- `/pipeline-feature [description]` — Full feature: plan → execute → critique → review → QA → ship → deploy
+- `/pipeline-bugfix [bug/error]` — Bug fix: investigate → fix → critique → QA → ship
+- `/pipeline-content [topic]` — Content: research → create → critique → humanize → knowledge
+- `/pipeline-audit [path]` — Audit: parallel critiques → aggregate → QA → report
+- `/pipeline-deploy [railway|vercel]` — Deploy: security → baseline → deploy → canary + benchmark
+
+When the user types any of these, invoke `Skill({ skill: "pipeline-{name}" })` immediately.
