@@ -95,11 +95,34 @@ if (Test-Path $CoreSrc) {
     Write-Host "  ✓ Core docs installed"
 }
 
+# --- CLI command ---
+$CliSrc = Join-Path $ScriptDir "cli\bin\agency.js"
+if (Test-Path $CliSrc) {
+    # Create a batch shim in a directory on PATH
+    $ShimDir = Join-Path $env:USERPROFILE ".local\bin"
+    if (-not (Test-Path $ShimDir)) {
+        New-Item -ItemType Directory -Path $ShimDir -Force | Out-Null
+    }
+
+    $ShimPath = Join-Path $ShimDir "agency.cmd"
+    Set-Content -Path $ShimPath -Value "@node `"$CliSrc`" %*"
+    Write-Host "  ✓ CLI shim created → $ShimPath"
+
+    # Add to user PATH if not already there
+    $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    if ($UserPath -notlike "*$ShimDir*") {
+        [Environment]::SetEnvironmentVariable("Path", "$ShimDir;$UserPath", "User")
+        $env:Path = "$ShimDir;$env:Path"
+        Write-Host "  ✓ Added $ShimDir to user PATH"
+        Write-Host "    (restart your terminal for PATH changes to take effect)"
+    }
+}
+
 Write-Host ""
 Write-Host "✓ The Agency installed to $ClaudeHome"
 Write-Host ""
 Write-Host "Next steps:"
-Write-Host "  1. Open Claude Code in any project"
-Write-Host "  2. Skills are available as /skill-name"
-Write-Host '  3. Run: agency new my-app "description"'
+Write-Host "  agency onboard                      Interactive setup wizard"
+Write-Host '  agency new my-app "description"      Create your first project'
+Write-Host "  agency status                       See all projects"
 Write-Host ""

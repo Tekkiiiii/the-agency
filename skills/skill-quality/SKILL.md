@@ -77,7 +77,7 @@ Extract description with:
 ```python
 import yaml
 from pathlib import Path
-content = Path('/Users/Tekki/.claude/skills/[skill]/SKILL.md').read_text()
+content = Path('~/.claude/skills/[skill]/SKILL.md').expanduser().read_text()
 fm = yaml.safe_load('---\n' + content.split('---', 2)[1])
 desc = fm['description']
 ```

@@ -27,7 +27,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   console.log('Repo: ' + repoDir);
   console.log('');
 
-  // 2. Git fetch + pull
+  // 2. Git fetch + pull (stash local changes if needed)
   console.log('Fetching origin/main...');
   try {
     execFileSync('git', ['-C', repoDir, 'fetch', 'origin', 'main'], { stdio: 'pipe' });
@@ -36,12 +36,36 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     process.exit(1);
   }
 
+  // Check for local changes that would block pull
+  let stashed = false;
+  try {
+    const status = execFileSync('git', ['-C', repoDir, 'status', '--porcelain'], { stdio: 'pipe' }).toString().trim();
+    if (status) {
+      console.log('Stashing local changes...');
+      execFileSync('git', ['-C', repoDir, 'stash', '--include-untracked'], { stdio: 'pipe' });
+      stashed = true;
+    }
+  } catch (_) {}
+
   try {
     const pullOutput = execFileSync('git', ['-C', repoDir, 'pull', '--rebase', 'origin', 'main'], { stdio: 'pipe' }).toString().trim();
     console.log(pullOutput || 'Already up to date.');
   } catch (err) {
     console.error('git pull --rebase failed: ' + (err.stderr ? err.stderr.toString().trim() : err.message));
+    if (stashed) {
+      console.log('Restoring your local changes...');
+      try { execFileSync('git', ['-C', repoDir, 'stash', 'pop'], { stdio: 'pipe' }); } catch (_) {}
+    }
     process.exit(1);
+  }
+
+  if (stashed) {
+    console.log('Restoring local changes...');
+    try {
+      execFileSync('git', ['-C', repoDir, 'stash', 'pop'], { stdio: 'pipe' });
+    } catch (_) {
+      console.log('  Note: stash pop had conflicts — run "git stash pop" manually to resolve.');
+    }
   }
 
   console.log('');
