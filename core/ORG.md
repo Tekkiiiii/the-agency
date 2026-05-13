@@ -8,28 +8,31 @@
 
 ## Executive Summary
 
-The Agency operates on a **4-level matrix model** with two parallel authority tracks:
+The Agency operates on a **5-level matrix model** with three parallel authority tracks:
 
 1. **Parent AI (Level 1 — Opus)** — Central orchestrator. Resolves matrix conflicts, allocates resources, and approves cross-project/shared-infra decisions. Weighted by task severity and project financial importance.
-2. **Dept Heads + Project Directors (Level 2 — Opus)** — Parallel authority lines. Dept Heads own skill quality. Project Directors own project delivery.
-3. **Assistants (Level 3 — Sonnet)** — Context synthesizers. One per Dept Head (capacity tracking) or per active project (status synthesis). NOT relays.
-4. **Members (Level 4 — Sonnet)** — Task execution. Belong to departments, work on projects under PD direction.
+2. **Dept Heads + Project Directors (Level 2 — Opus)** — Parallel authority lines. Dept Heads own skill quality + department operations. Project Directors own project delivery.
+3. **Dept-Coords + Coords (Level 3 — Sonnet/Opus)** — Autonomous work owners. Dept-Coords (Sonnet) own D3 department-operational tracks. Coords (Opus) own L3 project delivery tracks.
+4. **Assistants (Level 3b — Sonnet)** — Context synthesizers. One per Dept Head (capacity tracking) or per active project (status synthesis). NOT relays.
+5. **Members (Level 4 — Sonnet)** — Task execution. Belong to departments, work on projects under PD direction or department initiatives under Dept-Coord direction.
 
-### Matrix Model: Two Authority Tracks
+### Matrix Model: Three Authority Tracks
 
 ```
-VERTICAL (Functional Track)          HORIZONTAL (Project Track)
-─────────────────────────────────    ─────────────────────────────────
-Dept Head (Opus) ◄──────────────► Project Director (Opus)
-     │                                    │
-  Assistant                          Assistant
-     │                                    │
-  Member                            Member
-     │                                    │
-  Member                            Member
+VERTICAL (Functional Track)          HORIZONTAL (Project Track)          DEPT-OPS (Internal Track)
+─────────────────────────────────    ─────────────────────────────────    ─────────────────────────
+Dept Head (Opus) ◄──────────────► Project Director (Opus)                Dept Head (Opus)
+     │                                    │                                    │
+  Assistant                          Coord (Opus)                       Dept-Coord (Sonnet)
+     │                                    │                                    │
+  Member                            Exec (Sonnet)                       Dept-Member (Sonnet)
 ```
 
 **Resource allocation:** PDs request agents from Dept Heads → Dept Heads dispatch members → Members work on projects under PD direction → Dept Heads retain skill quality ownership.
+
+**Dept-Coord system:** Dept Heads decompose department-operational work (D1→D3) and spawn Dept-Coords to own D3 tracks. Dept-Coords decompose D3→D6 and dispatch dept members. Used for pipeline management, protocol improvement, member development — not project delivery. See `core/runbooks/dept-coord-protocol.md`.
+
+**Inter-spawn protocol:** PDs and Dept Heads can spawn work into each other's domains via `state/incoming/` directories. PD→DeptHead tasks go to `agents/{dept}/state/incoming/`. DeptHead→PD tasks go to `{project}/memory/inter-spawn-tasks/incoming/`.
 
 **Conflict resolution:** PD ↔ Dept Head conflicts escalate to Parent AI (Level 1), weighted by severity and financial importance.
 
@@ -336,6 +339,62 @@ For a project-specific team, use the kickoff protocol in `runbooks/project-kicko
 
 ---
 
+## Department Operations (Dept-Coord System)
+
+Each department has a persistent operational state at `{dept}/state/`, `{dept}/pipelines/`, `{dept}/protocols/`, and `{dept}/memory/`. This enables department heads to manage pipelines, improve protocols, and track member utilization across sessions.
+
+### Department Decomposition Levels (D-Levels)
+
+| Level | Owner | Ceiling | Example |
+|-------|-------|---------|---------|
+| D1 | Dept Head | — | "Improve content production pipeline" |
+| D2 | Dept Head | — | "Writer briefing", "Quality gate automation" |
+| D3 | Dept Head breaks, Dept-Coord takes | Hard stop for Dept Head | "Redesign writer briefing" |
+| D4-D5 | Dept-Coord | — | "Draft brief sections", "Create example" |
+| D6 | Dept-Coord assigns, Dept-Member executes | Hard stop for Dept-Coord | "Write the template — one file" |
+
+### Department State Structure
+
+```
+{dept}/
+├── state/
+│   ├── dept-state.md          # Live snapshot (max 20 lines) — read on every spawn
+│   ├── member-roster.md       # Utilization + skill tracking
+│   ├── active-coords.md       # DC status log
+│   └── incoming/              # Inter-spawn tasks from PDs
+├── pipelines/
+│   ├── INDEX.md               # Pipeline registry (name, version, status)
+│   └── {name}/pipeline.md     # Versioned pipeline definition
+├── protocols/
+│   ├── INDEX.md               # Protocol registry
+│   └── {name}.md              # Versioned protocol definition
+├── memory/
+│   ├── decisions.md           # Dept-level decisions (append-only)
+│   ├── lessons.md             # Dept-level lessons (append-only)
+│   └── retros/                # Monthly retrospective records
+└── scratch/
+    ├── dept-scratch.md        # Active session scratch
+    └── coords/                # DC-* scratch files
+```
+
+### Key Dept-Ops Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/dept-resume [dept]` | Read dept-state.md, spawn dept head with lean briefing |
+| `/dept-save-state [dept]` | Write dept-state.md + member-roster.md at session end |
+| `/dept-status [dept]` | Read-only status digest (no spawns) |
+
+### Key Runbooks
+
+| Runbook | Purpose |
+|---------|---------|
+| `core/runbooks/dept-coord-protocol.md` | Full operational manual for the dept-coord system |
+| `core/runbooks/dept-boot-sequence.md` | Two-mode dept head startup (spawn + route) |
+| `core/runbooks/protocol-registry.md` | Cross-department protocol index |
+
+---
+
 ## Project Scope Management
 
 Every active project has a `scope.json` defining its boundaries. This is the contract between the Project Director and the parent AI.
@@ -381,4 +440,4 @@ Each project directory follows this memory structure:
 
 ---
 
-*Last updated: 2026-05-08*
+*Last updated: 2026-05-14*

@@ -218,23 +218,19 @@ Mini-Coord template: ~/.claude/agents/project-management/mini-coord.md
 Rule 1 — Decompose First: Break every task into smallest independent sub-tasks
 before doing any work. If two sub-tasks can run independently, split them.
 
-Rule 2 — Agent Selection Hierarchy (MANDATORY):
-When spawning a subagent, follow this order — NEVER default to general-purpose:
+Rule 2 — Delegator Routing (MANDATORY):
+When you need to spawn a subagent and the right agent is not obvious, spawn the Delegator first:
 
-Step 1 — Check Agency catalog first (matched by domain):
-  Research/analysis → Explore, Trend Researcher, research-pd
-  Frontend/UI      → Frontend Developer, UI Designer, Design Lead
-  Backend/API      → Backend Architect, Data Engineer
-  Full-stack       → Senior Developer, domain-specific PD
-  Sales/pipeline   → Sales Lead, Deal Strategist, Account Strategist
-  Marketing        → Marketing Lead, Growth Hacker, Content Creator
-  Ops/tracking     → Operations Lead, Finance Tracker, Analytics Reporter
-  Security/compliance → Security Engineer, Compliance Auditor
-  DevOps/infra     → DevOps Automator, Infrastructure Maintainer
-  QA/testing       → Testing Lead, Evidence Collector
+Agent({
+  subagent_type: "general-purpose",
+  model: "sonnet",
+  description: "Delegator — route: {task-summary}",
+  prompt: "Read ~/.agency/agents/specialized/delegator.md fully.\n\nRouting question: {task}\nCaller: {your name}\nContext: {relevant context}"
+})
 
-Step 2 — Check skills from ~/.claude/skills/INDEX.md
-Step 3 — general-purpose (LAST resort only)
+The Delegator reads the agency catalog, protocol registry, and skill index to return the best route. Use its recommendation directly.
+
+Only skip the Delegator when you already know the exact agent or skill (e.g., routing a known frontend task to Frontend Developer). When in doubt, delegate.
 
 Rule 3 — Report every completion to your spawner immediately.
 

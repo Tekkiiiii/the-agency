@@ -81,7 +81,9 @@ The system is designed to be extended:
 
 ## Tiered Agent Architecture
 
-The system uses a 4-tier chain. Each agent stops at its termination level.
+The system has two parallel execution chains: project delivery (PD-Coord) and department operations (Dept-Coord).
+
+### Project Delivery Chain (PD-Coord)
 
 ```
 PD  (L1→L3 decomposition, spawns Coords)
@@ -96,6 +98,24 @@ PD  (L1→L3 decomposition, spawns Coords)
 | L3–L6 | Coord | L3 → L4 → L5 → L6 | Exec or Mini-Coord | Opus |
 | L6+ | Mini-Coord | L6 → L7 → L8 → L9... | Exec | Opus |
 | Atomic | Task-Executor | No | — | Sonnet |
+
+### Department Operations Chain (Dept-Coord)
+
+```
+Dept Head  (D1→D3 decomposition, spawns Dept-Coords)
+ └── Dept-Coord × N  (D3→D4→D5→D6, spawns Dept Members, owns one D3 track)
+      └── Dept Member × K  (executes one D6 atomic task, reports to Dept-Coord)
+```
+
+| Layer | Agent | Decomposes | Spawns | Model |
+|-------|-------|-----------|--------|-------|
+| D1–D3 | Dept Head | D1 → D2 → D3 | Dept-Coord | Opus |
+| D3–D6 | Dept-Coord | D3 → D4 → D5 → D6 | Dept Member | Sonnet |
+| D6 | Dept Member | No | — | Sonnet |
+
+**Hard boundary:** Dept-Coord handles department-operational work only (pipelines, protocols, member development). PD-Coord handles project delivery only. These chains never cross.
+
+See `core/runbooks/dept-coord-protocol.md` for the full operational manual.
 
 ### Naming Convention
 
@@ -122,6 +142,32 @@ Every Project Director follows a mandatory 3-rule protocol:
 3. **Report** — send each completion to team-lead immediately (not at the end)
 
 This protocol applies to every PD spawn, every time, without exception.
+
+---
+
+## Delegator — Agency Routing Agent
+
+The Delegator is a stateless Sonnet agent that routes work to the correct agent, skill, pipeline, or protocol. Any agent (PD, Coord, Dept Head) can spawn the Delegator when the right route is not obvious.
+
+```
+Agent({
+  subagent_type: "general-purpose",
+  model: "sonnet",
+  description: "Delegator — route: {task-summary}",
+  prompt: "Read ~/.agency/agents/specialized/delegator.md fully.\n\nRouting question: {task}\nCaller: {your name}"
+})
+```
+
+The Delegator:
+- Reads the agency catalog, org chart, protocol registry, and skill index
+- Returns a structured routing recommendation (AGENT | DEPARTMENT | SKILL | PIPELINE | PROTOCOL | INTER-SPAWN)
+- Dies immediately after returning the recommendation — it holds no state
+
+**Routing exceptions** — spawn Delegator is NOT required when:
+- The correct agent or skill is already known (e.g. Frontend Developer for a UI task)
+- The task is a curator spawn (memory retrieval — always fire-and-forget)
+
+Definition: `agents/specialized/delegator.md`
 
 ---
 
@@ -157,6 +203,7 @@ The repo ships with ~45 agency-core skills (domain skills install separately) co
 | Category | Skills |
 |----------|--------|
 | Memory | `save-state`, `recall`, `pd-resume`, `project-status`, `wrap` |
+| Dept Ops | `dept-resume`, `dept-save-state`, `dept-status` |
 | Coordination | `swarm`, `delegate`, `room-manager`, `nexus-gatekeeper` |
 | Ops | `self-healing`, `investigate`, `guard`, `task-store` |
 | Planning | `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review`, `office-hours`, `retro` |
