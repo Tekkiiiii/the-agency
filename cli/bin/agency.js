@@ -13,6 +13,8 @@ const AGENCY_ROOT = process.env.AGENCY_HOME || resolve(os.homedir(), '.claude');
 const COMMANDS = {
   init:    require('../commands/init.js'),
   new:     require('../commands/new.js'),
+  onboard: require('../commands/onboard.js'),
+  setup:   require('../commands/onboard.js'),
   status:  require('../commands/status.js'),
   skill:   require('../commands/skill.js'),
   tasks:   require('../commands/tasks.js'),
@@ -26,6 +28,7 @@ async function main() {
     console.log('The Agency CLI');
     console.log('');
     console.log('Commands:');
+    console.log('  agency onboard                      Interactive setup wizard (start here)');
     console.log('  agency init                         Initialize the system');
     console.log('  agency new <proj> <desc>            Create a project');
     console.log('  agency status                       Show project states');
