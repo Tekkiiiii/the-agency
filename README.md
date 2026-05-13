@@ -24,17 +24,23 @@ cd the-agency
 
 # Windows (PowerShell)
 .\install.ps1
-
-# Or via Node.js CLI
-node cli/bin/agency.js init
 ```
 
-That's it. 244 skills and 200+ agents are installed to `~/.claude/`. Open Claude Code and they're ready.
+That's it. 244 skills and 200+ agents are installed to `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
 
-```
+```bash
+agency onboard                        # Interactive setup wizard (start here)
 agency new my-app "Build a task manager"
 # In Claude Code: /recall my-app
 ```
+
+**Already cloned but haven't set up?** Run this from inside the repo:
+
+```bash
+node cli/bin/agency.js onboard
+```
+
+It does everything — installs skills and agents, puts `agency` on your PATH, creates your first project and agent, and verifies the setup.
 
 The PD loads and asks what to build. You supervise; it executes.
 

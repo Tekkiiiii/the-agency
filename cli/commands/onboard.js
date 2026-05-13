@@ -1,5 +1,5 @@
 const { existsSync, mkdirSync, writeFileSync, readdirSync } = require('fs');
-const { join, resolve } = require('path');
+const { join, resolve, dirname } = require('path');
 const { execFileSync, execSync } = require('child_process');
 const os = require('os');
 const readline = require('readline');
@@ -177,6 +177,57 @@ function createProject(agencyRoot, slug, description) {
   return newFn({ args: [slug, description], AGENCY_ROOT: agencyRoot, console });
 }
 
+// ─── cli link ─────────────────────────────────────────────────────────────
+
+function linkCli(cliSrc) {
+  if (os.platform() === 'win32') {
+    const shimDir = join(os.homedir(), '.local', 'bin');
+    mkdirSync(shimDir, { recursive: true });
+    const shimPath = join(shimDir, 'agency.cmd');
+    if (!existsSync(shimPath)) {
+      writeFileSync(shimPath, `@node "${cliSrc}" %*`);
+      ok(`CLI shim created → ${shimPath}`);
+      info('You may need to add ~/.local/bin to your PATH');
+    } else {
+      ok('CLI shim already exists');
+    }
+    return;
+  }
+
+  // macOS / Linux — symlink
+  try { execFileSync('chmod', ['+x', cliSrc], { stdio: 'pipe' }); } catch (_) {}
+
+  // Check if `agency` already resolves
+  try {
+    execFileSync('which', ['agency'], { stdio: 'pipe' });
+    ok('agency command already on PATH');
+    return;
+  } catch (_) {}
+
+  // Try /usr/local/bin first
+  const targets = ['/usr/local/bin/agency', join(os.homedir(), '.local', 'bin', 'agency')];
+  for (const target of targets) {
+    try {
+      mkdirSync(dirname(target), { recursive: true });
+      const { symlinkSync, unlinkSync } = require('fs');
+      try { unlinkSync(target); } catch (_) {}
+      symlinkSync(cliSrc, target);
+      ok(`CLI linked → ${target}`);
+      if (target.includes('.local/bin') && !(process.env.PATH || '').includes('.local/bin')) {
+        info('Add ~/.local/bin to your PATH:');
+        const shell = existsSync(join(os.homedir(), '.zshrc')) ? '.zshrc' : '.bashrc';
+        info(`  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/${shell} && source ~/${shell}`);
+      }
+      return;
+    } catch (_) {
+      continue;
+    }
+  }
+
+  warn('Could not create symlink — run with sudo or add this to your PATH:');
+  info(cliSrc);
+}
+
 // ─── main ──────────────────────────────────────────────────────────────────
 
 module.exports = async function onboard({ args, AGENCY_ROOT, console }) {
@@ -234,6 +285,10 @@ module.exports = async function onboard({ args, AGENCY_ROOT, console }) {
     process.stdout.write('\n');
     await runInit(agencyRoot);
   }
+
+  // Ensure CLI is on PATH
+  const cliSrc = resolve(__dirname, '../bin/agency.js');
+  linkCli(cliSrc);
 
   // ── Step 3: Create first project ─────────────────────────────────────────
   step(3, TOTAL_STEPS, 'Create your first project');

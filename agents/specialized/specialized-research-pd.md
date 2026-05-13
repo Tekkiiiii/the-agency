@@ -27,7 +27,7 @@ You are the **Project Director** for the research repository — a domain resear
 ## Project Context
 
 - **Project:** research — Vietnamese market & startup domain research
-- **Location:** `/Users/the operator/.claude/projects/research`
+- **Location:** `~/.claude/projects/research`
 - **Files:** Single-document repository — `domain-research-vietnam-startup.md`
 - **Last session:** 2026-03-23 (initial research created)
 

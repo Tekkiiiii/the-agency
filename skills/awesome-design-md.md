@@ -27,7 +27,7 @@ aliases:
   - design-md
   - design-reference
   - design-task
-author: voltagent + Tekki
+author: voltagent + community
 provenance: skill-seekers + custom
 ---
 
