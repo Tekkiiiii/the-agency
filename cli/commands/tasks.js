@@ -21,9 +21,7 @@ module.exports = async function tasks({ args, AGENCY_ROOT, console }) {
     return;
   }
 
-  const dbPath = process.env.AGENCY_HOME
-    ? resolve(process.env.AGENCY_HOME, 'task-store.db')
-    : resolve(process.env.HOME, '.claude', 'task-store.db');
+  const dbPath = resolve(AGENCY_ROOT, 'task-store.db');
 
   let db;
   try {

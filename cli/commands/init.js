@@ -1,29 +1,10 @@
-const {
-  existsSync,
-  mkdirSync,
-  copyFileSync,
-  readdirSync,
-  writeFileSync,
-  statSync,
-} = require('fs');
+const { existsSync, mkdirSync, writeFileSync } = require('fs');
 const path = require('path');
-const os = require('os');
+const { syncSkills, syncAgents } = require('./sync-assets.js');
 
-/**
- * agency init — Bootstrap The Agency into ~/.claude/
- *
- * Installs:
- *   ~/.claude/skills/{name}/SKILL.md  — one directory per skill
- *   ~/.claude/agents/{dept}/{name}.md — agent definitions by department
- *   ~/.claude/projects/               — per-project state
- *   ~/.claude/sessions/               — per-project session logs
- *   ~/.claude/task-store.db           — SQLite task store
- */
 module.exports = async function init({ args, AGENCY_ROOT, console }) {
-  const agencyRoot = process.env.AGENCY_HOME || path.resolve(os.homedir(), '.claude');
+  const agencyRoot = AGENCY_ROOT;
   const repoRoot = path.resolve(__dirname, '../..');
-  const sourceSkills = path.join(repoRoot, 'skills');
-  const sourceAgents = path.join(repoRoot, 'agents');
 
   console.log(`\nInitializing The Agency at ${agencyRoot}\n`);
 
@@ -46,95 +27,31 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
     }
   }
 
-  // 3. Skills — copy as {name}/SKILL.md directories
-  const destSkills = path.join(agencyRoot, 'skills');
-  mkdirSync(destSkills, { recursive: true });
+  // 3. Skills
+  const skillsDest = path.join(agencyRoot, 'skills');
+  const skills = syncSkills(repoRoot, skillsDest, console);
+  console.log(`  ✓ ${skills.updated.length} skills installed, ${skills.preserved.length} preserved`);
 
-  if (existsSync(sourceSkills)) {
-    const skillFiles = readdirSync(sourceSkills).filter(
-      f => f.endsWith('.md') && f !== 'INDEX.md' && f !== 'README.md'
-    );
-    let installed = 0;
-    let preserved = 0;
+  // 4. Agents
+  const agentsDest = path.join(agencyRoot, 'agents');
+  const agents = syncAgents(repoRoot, agentsDest, console);
+  console.log(`  ✓ ${agents.updated} agents installed, ${agents.preserved} preserved`);
 
-    for (const file of skillFiles) {
-      const name = file.replace('.md', '');
-      const skillDir = path.join(destSkills, name);
-      const destFile = path.join(skillDir, 'SKILL.md');
-      const srcFile = path.join(sourceSkills, file);
-
-      mkdirSync(skillDir, { recursive: true });
-
-      if (!existsSync(destFile)) {
-        copyFileSync(srcFile, destFile);
-        installed++;
-      } else {
-        const srcMtime = statSync(srcFile).mtimeMs;
-        const destMtime = statSync(destFile).mtimeMs;
-        if (srcMtime > destMtime) {
-          copyFileSync(srcFile, destFile);
-          installed++;
-        } else {
-          preserved++;
-        }
-      }
+  // 5. Core docs
+  const coreSrc = path.join(repoRoot, 'core');
+  const coreDest = path.join(agencyRoot, 'core');
+  if (existsSync(coreSrc)) {
+    mkdirSync(coreDest, { recursive: true });
+    const { execFileSync } = require('child_process');
+    try {
+      execFileSync('cp', ['-r', coreSrc + '/.', coreDest + '/'], { stdio: 'pipe' });
+      console.log('  ✓ Core docs installed');
+    } catch (_) {
+      console.log('  ⚠ Could not copy core docs');
     }
-
-    // Copy INDEX.md to skills root
-    const indexSrc = path.join(sourceSkills, 'INDEX.md');
-    if (existsSync(indexSrc)) {
-      copyFileSync(indexSrc, path.join(destSkills, 'INDEX.md'));
-    }
-
-    console.log(`  ✓ ${installed} skills installed, ${preserved} preserved (${skillFiles.length} total)`);
-  } else {
-    console.log('  ⚠ No skills/ directory in repo — skipping');
   }
 
-  // 4. Agents — copy preserving department structure
-  const destAgents = path.join(agencyRoot, 'agents');
-  mkdirSync(destAgents, { recursive: true });
-
-  if (existsSync(sourceAgents)) {
-    let agentCount = 0;
-    let agentPreserved = 0;
-
-    const copyAgentDir = (srcDir, destDir) => {
-      if (!existsSync(srcDir)) return;
-      const entries = readdirSync(srcDir, { withFileTypes: true });
-
-      for (const entry of entries) {
-        const srcPath = path.join(srcDir, entry.name);
-        const destPath = path.join(destDir, entry.name);
-
-        if (entry.isDirectory()) {
-          mkdirSync(destPath, { recursive: true });
-          copyAgentDir(srcPath, destPath);
-        } else if (entry.name.endsWith('.md')) {
-          if (!existsSync(destPath)) {
-            copyFileSync(srcPath, destPath);
-            agentCount++;
-          } else {
-            const srcMtime = statSync(srcPath).mtimeMs;
-            const destMtime = statSync(destPath).mtimeMs;
-            if (srcMtime > destMtime) {
-              copyFileSync(srcPath, destPath);
-              agentCount++;
-            } else {
-              agentPreserved++;
-            }
-          }
-        }
-      }
-    };
-
-    copyAgentDir(sourceAgents, destAgents);
-    console.log(`  ✓ ${agentCount} agents installed, ${agentPreserved} preserved`);
-  } else {
-    console.log('  ⚠ No agents/ directory in repo — skipping');
-  }
-
-  // 5. SQLite task store
+  // 6. SQLite task store
   const dbPath = path.join(agencyRoot, 'task-store.db');
   if (!existsSync(dbPath)) {
     try {
@@ -152,7 +69,7 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
     console.log('  ✓ task-store.db exists');
   }
 
-  console.log(`\n✓ The Agency is ready — ${destSkills}\n`);
+  console.log(`\n✓ The Agency is ready — ${skillsDest}\n`);
   console.log('Next steps:');
   console.log('  agency new <project-slug> "<description>"  Create your first project');
   console.log('  agency status                             Show all projects');

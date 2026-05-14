@@ -166,8 +166,7 @@ Add agent-specific context here.
   return filePath;
 }
 
-function runInit(agencyRoot, repoRoot) {
-  // Delegate to the init command
+function runInit(agencyRoot) {
   const initFn = require('./init.js');
   return initFn({ args: [], AGENCY_ROOT: agencyRoot, console });
 }
@@ -466,12 +465,4 @@ async function continueWithAgent(rl, agencyRoot, projectSlug, TOTAL_STEPS, isExi
   process.stdout.write(`    - Use /pd-resume ${projectSlug} in Claude Code to resume a session\n`);
   process.stdout.write(`    - Use /save-state ${projectSlug} at the end of each session\n\n`);
   process.stdout.write('  Setup complete. Welcome to The Agency.\n\n');
-}
-
-function readdirSync_safe(dir) {
-  try {
-    return readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return [];
-  }
 }
