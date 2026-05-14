@@ -11,14 +11,14 @@ const os = require('os');
 const AGENCY_ROOT = process.env.AGENCY_HOME || resolve(os.homedir(), '.claude');
 
 const COMMANDS = {
-  init:    require('../commands/init.js'),
-  new:     require('../commands/new.js'),
-  onboard: require('../commands/onboard.js'),
-  setup:   require('../commands/onboard.js'),
-  status:  require('../commands/status.js'),
-  skill:   require('../commands/skill.js'),
-  tasks:   require('../commands/tasks.js'),
-  upgrade: require('../commands/upgrade.js'),
+  init:    () => require('../commands/init.js'),
+  new:     () => require('../commands/new.js'),
+  onboard: () => require('../commands/onboard.js'),
+  setup:   () => require('../commands/onboard.js'),
+  status:  () => require('../commands/status.js'),
+  skill:   () => require('../commands/skill.js'),
+  tasks:   () => require('../commands/tasks.js'),
+  upgrade: () => require('../commands/upgrade.js'),
 };
 
 async function main() {
@@ -42,13 +42,13 @@ async function main() {
     process.exit(0);
   }
 
-  const handler = COMMANDS[cmd];
-  if (!handler) {
+  const loader = COMMANDS[cmd];
+  if (!loader) {
     console.error(`Unknown command: ${cmd}`);
     process.exit(1);
   }
 
-  await handler({ args, AGENCY_ROOT, console });
+  await loader()({ args, AGENCY_ROOT, console });
 }
 
 main().catch(err => {

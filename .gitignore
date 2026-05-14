@@ -18,6 +18,11 @@ secrets.json
 .claude/
 plans/
 
+# OpenSpec generated files (session artifacts)
+openspec/changes/
+openspec/specs/
+openspec/archive/
+
 # Compiled
 *.pyc
 __pycache__/

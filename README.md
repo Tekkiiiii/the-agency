@@ -44,6 +44,16 @@ It does everything — installs skills and agents, puts `agency` on your PATH, c
 
 The PD loads and asks what to build. You supervise; it executes.
 
+**Stuck? `agency upgrade` failing?** Run this one-liner from anywhere inside the repo:
+
+```bash
+# If you already have rescue.sh locally:
+cd the-agency && bash rescue.sh
+
+# If rescue.sh doesn't exist yet (first-time fix):
+cd the-agency && curl -fsSL https://raw.githubusercontent.com/Tekkiiiii/the-agency/main/rescue.sh | bash
+```
+
 ---
 
 ## What The Agency Does
