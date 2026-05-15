@@ -20,15 +20,39 @@ Navigate to the department that fits your task. Each department has its own `IND
 | [Specialized](specialized/INDEX.md) | `specialized/` | Agents infra, audits, data extraction, ZK knowledge, Vietnamese text processing, misc |
 | [Spatial Computing](spatial-computing/INDEX.md) | `spatial-computing/` | AR/VR/XR, visionOS, Metal, Apple platform spatial |
 
+## Department Coordination (Dept-Coord System)
+
+Each department has a Dept-Coord agent for department-operational work (pipeline management, protocol improvement, member development). See [ORG.md § Department Operations](ORG.md) for the full architecture.
+
+| Dept-Coord Agent | Department | File |
+|-----------------|-----------|------|
+| career-coord | Career | `career/career-coord.md` |
+| content-creation-coord | Content Creation | `content-creation/content-creation-coord.md` |
+| design-coord | Design | `design/design-coord.md` |
+| engineering-coord | Engineering | `engineering/engineering-coord.md` |
+| game-development-coord | Game Development | `game-development/game-development-coord.md` |
+| marketing-coord | Marketing | `marketing/marketing-coord.md` |
+| operations-coord | Operations | `operations/operations-coord.md` |
+| paid-media-coord | Paid Media | `paid-media/paid-media-coord.md` |
+| product-coord | Product | `product/product-coord.md` |
+| project-management-coord | Project Management | `project-management/project-management-coord.md` |
+| sales-coord | Sales | `sales/sales-coord.md` |
+| spatial-computing-coord | Spatial Computing | `spatial-computing/spatial-computing-coord.md` |
+| specialized-coord | Specialized | `specialized/specialized-coord.md` |
+| testing-coord | Testing | `testing/testing-coord.md` |
+
 ## Runbooks
 
 - [Department Lead Protocol](runbooks/department-lead-protocol.md) — how dept leaders communicate
 - [Escalation Protocol](runbooks/escalation-protocol.md) — Tier 1/2/3 decision routing
 - [Content Request Protocol](runbooks/content-request-protocol.md) — how content gets requested, produced, and distributed
+- [Dept-Coord Protocol](runbooks/dept-coord-protocol.md) — full dept-coord operational manual
+- [Dept Boot Sequence](runbooks/dept-boot-sequence.md) — two-mode dept head startup
+- [Protocol Registry](runbooks/protocol-registry.md) — cross-department protocol index
 - [Project Kickoff Protocol](runbooks/project-kickoff-protocol.md) — how to spin up a project team
 - [Project Team Templates](runbooks/project-team-templates.md) — pre-built team compositions
 
 ## Reference
 
-- [ORG.md](ORG.md) — full org chart, leadership table, council protocol
+- [ORG.md](ORG.md) — full org chart, leadership table, council protocol, dept-coord system
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to add new agents
