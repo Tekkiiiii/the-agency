@@ -3,13 +3,13 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude%20Code-yellow)
 ![Cloud: Zero dependencies](https://img.shields.io/badge/Cloud-Zero%20Dependencies-green)
-![Skills: 244](https://img.shields.io/badge/Skills-244-orange)
-![Agents: 200+](https://img.shields.io/badge/Agents-200%2B-purple)
+![Skills: 270+](https://img.shields.io/badge/Skills-270%2B-orange)
+![Agents: 204+](https://img.shields.io/badge/Agents-204%2B-purple)
 ![QA: Gates on every handoff](https://img.shields.io/badge/QA-Gates%20%2B%20Health%20Scores-red)
 
 **Your AI agents remember everything, coordinate like a real team, and ship while you sleep.**
 
-A multi-agent orchestration system built on Claude Code. 175+ specialist agents across 14 departments. Autonomous project execution with persistent memory, quality gates on every handoff, and intelligent model routing — all running on your machine, with no servers and no extra API keys.
+A multi-agent orchestration system built on Claude Code. 204+ specialist agents across 14 departments. Autonomous project execution with persistent memory, quality gates on every handoff, and intelligent model routing — all running on your machine, with no servers and no extra API keys.
 
 ---
 
@@ -96,11 +96,14 @@ You didn't explain anything the second day. The agent remembered.
 - **4-tier autonomous chain**: PD → Coord → Mini-Coord → Task-Executor decomposes any project to atomic units. Mini-Coords keep drilling L6→L7→L8 without escalating to PD.
 - **QA gates on every handoff**: No work gets ACK'd without a health-score pass. Gate: score ≥ 70 + zero CRITICALs. Example: 70 = tests pass but docs missing; 90+ = ship-ready.
 - **Explicit ACK/NACK protocol**: Agents wait for approval before stopping. NACKs return a fix list. Rejected work loops back through QA. Traceability is built into the protocol.
-- **244 production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, cloud (Cloudflare, Netlify, Terraform), and more — all invoked via `/skill-name`.
+- **270+ production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, cloud (Cloudflare, Netlify, Terraform), and more — all invoked via `/skill-name`.
 - **SQLite task store — nothing leaves your machine**: Task pipeline, gates, retries, blocking in `~/.claude/`. No servers. No API keys.
 - **Session persistence**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where it left off.
 - **Agency Rooms** — file-based inter-agent chat with persistent rooms, RoomManager polling, NEXUS JSON handoffs, and 12-hour department digests.
 - **Inter-PD Protocol** — PDs coordinate via filesystem, not messaging. Delegation through `inter-spawn-tasks/` directories with completion tracking.
+- **Delegator Agent** — routing-as-a-service. Every agent spawns the Delegator before picking a subagent; it reads the full agency catalog and returns the right route. No hardcoded selection hierarchies.
+- **Curator Agent** — context retrieval on demand. PDs and Coords spawn curator to query per-project knowledge graphs, Pinecone, and NotebookLM. Never reads full memory files into context.
+- **Dept-Coord System** — department operations run as a parallel chain: Dept Head → Dept-Coord → Dept Member. Handles pipeline management, protocol improvement, and member development without mixing with project delivery.
 - **PD Boot Sequence** — lazy-loading spawn targeting <500 tokens. Per-project PD-BRIEFING.md for instant routing.
 - **Status Loop Prohibition** — no automated ping loops. On-demand status via append-only `pd-status-live.md`.
 - **Project Scope Management** — `scope.json` per project with 3-tier authority model (PD self-approve → parent AI → human).
@@ -252,7 +255,7 @@ Spawned via `/recall {project}`. Owns the project end-to-end:
 4. Escalate blockers
 5. Persist state via `/save-state`
 
-## Skills Library — 244 Skills
+## Skills Library — 270+ Skills
 
 **Memory & Session**: `save-state`, `recall`, `pd-resume`, `wrap`, `unwrap`, `project-status`, `context-save`, `context-restore`, `freeze`, `unfreeze`
 
@@ -299,17 +302,17 @@ Full categorized registry: [`skills/INDEX.md`](skills/INDEX.md)
 ```
 the-agency/
 ├── core/
-│   ├── agents/          # PD/Coord/Exec/Mini-Coord templates
-│   ├── runbooks/        # Boot sequence, escalation, kickoff protocols
-│   ├── ORG.md           # Org chart and authority model
+│   ├── agents/          # PD/Coord/Mini-Coord/Exec/Delegator/Curator templates
+│   ├── runbooks/        # Boot, escalation, kickoff, dept-coord, protocol registry
+│   ├── ORG.md           # Org chart, authority model, dept-coord system
+│   ├── PD_PROTOCOL.md   # PD quick reference
 │   ├── memory/          # Memory system specification
 │   ├── nexus/           # NEXUS coordination protocol
-│   ├── tasks/           # Task store pattern
-│   └── bootstrap/       # Init scripts
+│   └── tasks/           # Task store pattern
 ├── cli/                 # Node.js CLI (agency init/new/tasks/skill/status)
 ├── docs/                # User-facing documentation
-├── agents/              # 200+ agent definitions (14 departments)
-├── skills/              # 244 reusable workflow skills
+├── agents/              # 204+ agent definitions (14 departments + dept-coords)
+├── skills/              # 270+ reusable workflow skills
 └── plans/               # Architecture decision records
 ```
 
@@ -388,8 +391,9 @@ PD  (L1→L3 decomposition, spawns Coords)
 Every Project Director follows 3 mandatory rules on every spawn, without exception:
 
 1. **Decompose** — break every task into the smallest independent sub-tasks before acting
-2. **Parallelize** — spawn one subagent per sub-task simultaneously
-3. **Report** — send each completion to team-lead immediately, not at the end
+2. **Agent Selection via Delegator** — when spawning a subagent, spawn the Delegator first. It reads the full agency catalog and returns the right agent, department, skill, or protocol. Never default to general-purpose — always route through Delegator.
+3. **Parallelize** — spawn one subagent per sub-task simultaneously
+4. **Report** — send each completion immediately, not at the end
 
 ### ACK/NACK Quality Gates
 
@@ -407,35 +411,36 @@ Every agent-to-agent handoff passes through a mandatory QA gate:
 
 After all Coords report DONE, PD spawns `Coord-qa-Canary` (Sonnet, Testing Lead) to QA the combined L3 output before reporting to root. Deliverables: health score (0–100), issues by severity (CRITICAL/HIGH/MEDIUM/LOW), screenshots at `{project}/memory/qa/screenshots/`, report at `{project}/memory/qa/qa-report-final-{timestamp}.md`.
 
-### Memory System (4 Layers)
+### Memory System
 
-| Layer | Location | Written by | Purpose |
-|-------|----------|-----------|---------|
-| Sessions | `~/.claude/sessions/{project}/` | `/save-state` | Per-session logs, resumable |
-| State | `~/.claude/projects/{project}/STATE.md` | PD continuously | Current phase, blockers, next-session prompt |
-| Lessons | `~/.claude/lessons/{stack}.md` | After corrections | Root-cause → lesson → avoid pattern; append-only |
-| Decisions | `~/.claude/decisions/` | Team-lead | Cross-cutting architectural decisions |
+The memory system uses `next-session.md` as the SSOT for PD startup. `/save-state` writes it; `/recall` reads it. This keeps the startup payload small (15 lines max) and avoids loading stale state.
 
-Initialization (`agency init` creates):
-```
-~/.claude/
-├── sessions/
-├── projects/
-├── lessons/
-├── decisions/
-└── memory/
-```
+| File | Location | Purpose |
+|------|----------|---------|
+| `next-session.md` | `{project}/memory/` | PD startup SSOT — phase, next action, blockers, decisions (max 15 lines) |
+| `sessions/YYYY-MM-DD.md` | `{project}/memory/sessions/` | Full session logs — append-only |
+| `decisions.md` | `{project}/memory/` | Architectural decisions — append-only |
+| `heartbeat.md` | `{project}/memory/` | Live phase status — updated each session |
+| `lessons/*.md` | `~/.claude/memory/lessons/` | Root-cause lessons by stack — append-only |
 
-Each project also carries its own memory structure:
+Each project carries its own memory structure:
 ```
-{project}/
-├── scope.json
-├── approvals/
-└── memory/
-    ├── sessions/
-    ├── decisions.md
-    ├── lessons/
-    └── status/
+{project}/memory/
+├── next-session.md      # PD startup SSOT — read on every /recall
+├── heartbeat.md         # Phase status — updated each session
+├── decisions.md         # Architectural decisions (append-only)
+├── sessions/            # Session logs by date
+├── lessons/             # Per-stack lessons (synced from root)
+├── tasks/
+│   ├── ongoing/         # Active task files
+│   └── completed/       # Completed task archive
+├── agents/
+│   ├── pd-scratch.md    # PD working scratch
+│   ├── pd-status-live.md# Append-only status log (zero-cost on-demand reads)
+│   └── coords/          # Coord scratch files
+└── qa/
+    ├── qa-report-final-{timestamp}.md
+    └── screenshots/
 ```
 
 ### NEXUS Protocol (6 Phases)
@@ -471,6 +476,50 @@ NEXUS is the handoff doctrine. Core principle: every agent writes what it knows;
 Handoff artifacts are JSON files placed in `{room}/handoffs/`. RoomManager processes them automatically and routes to the receiving agent.
 
 </details>
+
+### Delegator — Routing Layer
+
+The Delegator is a stateless service agent. Any agent (PD, Coord, dept head) spawns it when they need to pick the right agent, skill, department, or protocol for a task.
+
+```
+Agent({
+  subagent_type: "general-purpose",
+  model: "sonnet",
+  description: "Delegator — route: {task-summary}",
+  prompt: "Read ~/.claude/agents/specialized/delegator.md fully.\n\nRouting question: {task}\nCaller: {your name}"
+})
+```
+
+The Delegator reads the agency catalog (`memory/agency-dispatch.md`), org chart, department INDEX files, protocol registry, and skill index. It returns a structured `DELEGATOR ROUTING` recommendation. It never executes work, never writes files, never holds state.
+
+**Routing rules:** Skills before agents (cheaper), department leads for department-scoped work, PDs for project deliverables, Dept-Coord for department-operational work, inter-spawn for cross-authority tasks.
+
+### Curator — Context Retrieval
+
+The Curator is a read-only retrieval agent. PDs and Coords spawn it when they need project context not available in their briefing.
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Retrieval order: per-project graph → unified graph (MCP) → NotebookLM → Pinecone → raw file reads. Returns a `CURATOR ANSWER` block with source references and confidence level. Never fabricates. Never appears in Children tables — it's a service call.
+
+### Dept-Coord System
+
+Departments run their own operational work through a parallel chain that mirrors the PD-Coord chain but is scoped to department initiatives (pipeline management, protocol improvement, member development).
+
+```
+Dept Head (Opus)       — decomposes D1 → D2 → D3, dispatches Dept-Coords
+  └── Dept-Coord (Sonnet)  — owns D3 track, decomposes D3 → D6, dispatches members
+        └── Dept Member (Sonnet)  — executes one D6 atomic task
+```
+
+Each department has a `{dept}-coord.md` agent in its directory. Dept-Coords use identical patterns to project Coords: scratch files, QA gates, ACK/NACK handshakes, curator for memory retrieval, and hard authority ceilings.
 
 ### Inter-PD Filesystem Protocol
 

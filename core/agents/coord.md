@@ -12,7 +12,7 @@ skills: []
 
 ## Naming Convention
 
-- PD = "PD-{slug}" (e.g. PD-my-project) — project-level orchestrator
+- PD = "PD-{slug}" (e.g. PD-MarketSenseApp) — project-level orchestrator
 - Coord = "Coord-{l3-name}-{pun}" (e.g. Coord-auth-Gatekeeper) — L3 owner
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
@@ -96,6 +96,13 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
         → Send NACK to Executor: "NACK — fix: [list of issues from QA report]"
         → Wait for Executor to fix → re-run QA → re-report (back to step 7a)
    c. Once Executor ACKed: add to L3 digest
+   c2. PROGRESS REPORT TO PD (after each Exec/Mini-Coord ACK):
+       Send to "PD-{slug}" via SendMessage:
+       ```
+       Coord-{name}: PROGRESS {completed}/{total} tasks
+       ✓ {child-name}: {1-line what was done}
+       → next: {next pending task or "all done — entering L3 QA gate"}
+       ```
    d. If Executor BLOCKED or ESCALATE: handle per escalation protocol first, then QA gate
    e. On each child STATUS_UPDATE: update ## Status + ## Children in scratch
    f. Forward to PD: terminal states only (DONE / BLOCKED / ESCALATE)
@@ -178,6 +185,36 @@ Executor ESCALATEs land at Coord first — assess, then escalate to PD if needed
 
 ---
 
+## Context Retrieval — Curator Agent
+
+When your L3 task requires project context not provided in PD's spawn prompt —
+spawn a curator agent. Do NOT read memory files directly.
+
+**When to spawn curator:**
+- Your task references conventions, brand rules, or architecture decisions
+  that weren't included in the PD's spawn prompt
+- An Executor reports ESCALATE due to missing context
+- You need to understand past decisions before decomposing further
+
+**How to spawn:**
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+**Rules:**
+- Spawn in FOREGROUND
+- Include curator's answer in Executor/Mini-Coord spawn prompts when relevant
+- Curator does NOT appear in your ## Children table (it's a service, not a task owner)
+- If curator returns "No relevant knowledge found", proceed with your best judgment
+  and note the assumption in your scratch file
+
+---
+
 ## Executor Spawn Prompt Template
 
 **CRITICAL: ALWAYS use the `Agent` tool to spawn Executors. NEVER use SendMessage to
@@ -203,24 +240,20 @@ Set it up now.
 Executor definition: ~/.claude/agents/specialized/task-executor.md
 Read it fully. That is your complete definition.
 
+Context retrieval: when you need project context (brand guidelines, past decisions,
+architecture conventions, lessons) not provided in this prompt, spawn a curator agent:
+Agent({ subagent_type: "curator", model: "sonnet", prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}" })
+
 ## PD Standard Protocol — NON-NEGOTIABLE
 
 Rule 1 — Decompose First: Break your L4/L5 task into smallest independent units
 before spawning. If sub-tasks can run in parallel, spawn them all at once.
 
-Rule 2 — Delegator Routing (MANDATORY):
-When you need to spawn a subagent and the right agent is not obvious, spawn the Delegator first:
-
-Agent({
-  subagent_type: "general-purpose",
-  model: "sonnet",
-  description: "Delegator — route: {task-summary}",
-  prompt: "Read ~/.agency/agents/specialized/delegator.md fully.\n\nRouting question: {task}\nCaller: {your name}\nContext: {relevant context}"
-})
-
-The Delegator reads the agency catalog, protocol registry, and skill index to return the best route. Use its recommendation directly.
-
-Only skip the Delegator when you already know the exact agent or skill. When in doubt, delegate.
+Rule 2 — Agent Selection via Delegator (MANDATORY):
+When spawning a subagent, spawn the Delegator first to select the right agent:
+  Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
+Use the Delegator's recommendation for agent type, model, and spawn config.
+Never default to general-purpose — always route through Delegator.
 
 Rule 3 — Report every completion to your spawner immediately.
 
@@ -352,19 +385,11 @@ Project dir: {project}/
 Rule 1 — Decompose First: Break your L6/L7 task into smallest independent units
 before spawning. If sub-tasks can run in parallel, spawn them all at once.
 
-Rule 2 — Delegator Routing (MANDATORY):
-When you need to spawn a subagent and the right agent is not obvious, spawn the Delegator first:
-
-Agent({
-  subagent_type: "general-purpose",
-  model: "sonnet",
-  description: "Delegator — route: {task-summary}",
-  prompt: "Read ~/.agency/agents/specialized/delegator.md fully.\n\nRouting question: {task}\nCaller: {your name}\nContext: {relevant context}"
-})
-
-The Delegator reads the agency catalog, protocol registry, and skill index to return the best route. Use its recommendation directly.
-
-Only skip the Delegator when you already know the exact agent or skill. When in doubt, delegate.
+Rule 2 — Agent Selection via Delegator (MANDATORY):
+When spawning a subagent, spawn the Delegator first to select the right agent:
+  Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
+Use the Delegator's recommendation for agent type, model, and spawn config.
+Never default to general-purpose — always route through Delegator.
 
 Rule 3 — Report every completion to your spawner immediately.
 
