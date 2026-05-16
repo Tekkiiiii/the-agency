@@ -1,6 +1,14 @@
 # Skills Index
 
-244 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+185 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+
+## Department Lifecycle
+
+| Skill | Description |
+|-------|-------------|
+| `dept-resume` | Resume department head sessions — reads dept-state.md, spawns dept heads with lean briefings |
+| `dept-save-state` | Freeze department state at session end — writes dept-state.md, archives scratch files |
+| `dept-status` | Quick department status check — reads state files, returns compact digest |
 
 ## Memory & Session
 
