@@ -32,7 +32,7 @@ fi
 
 # b) Check common install locations
 if [ -z "$REPO_DIR" ]; then
-    for loc in "$HOME/the-agency" "$HOME/.claude/the-agency" "$HOME/.agency/the-agency"; do
+    for loc in "$HOME/.claude" "$HOME/the-agency" "$HOME/.agency/the-agency"; do
         if [ -d "$loc" ] && is_agency_repo "$loc"; then
             REPO_DIR="$loc"
             break
@@ -42,20 +42,36 @@ fi
 
 # c) Not found — clone it
 if [ -z "$REPO_DIR" ]; then
-    echo "  The Agency repo not found locally. Cloning..."
-    CLONE_TARGET="$HOME/the-agency"
-    if git clone "$AGENCY_REPO" "$CLONE_TARGET" 2>&1; then
+    echo "  The Agency repo not found locally. Cloning to ~/.claude/ ..."
+    CLONE_TARGET="$HOME/.claude"
+
+    if [ -d "$CLONE_TARGET" ] && [ "$(ls -A "$CLONE_TARGET" 2>/dev/null)" ]; then
+        # ~/.claude/ exists with files — clone into it without overwriting
+        TEMP_DIR="$(mktemp -d)"
+        if git clone "$AGENCY_REPO" "$TEMP_DIR/the-agency" 2>&1; then
+            cp -rn "$TEMP_DIR/the-agency/"* "$CLONE_TARGET/" 2>/dev/null || true
+            cp -rn "$TEMP_DIR/the-agency/".git "$CLONE_TARGET/" 2>/dev/null || true
+            rm -rf "$TEMP_DIR"
+            REPO_DIR="$CLONE_TARGET"
+            echo "  Merged into existing $REPO_DIR"
+        else
+            rm -rf "$TEMP_DIR"
+            echo "  Error: git clone failed. Check your network connection."
+            exit 1
+        fi
+    elif git clone "$AGENCY_REPO" "$CLONE_TARGET" 2>&1; then
         REPO_DIR="$CLONE_TARGET"
         echo "  Cloned to $REPO_DIR"
-        echo ""
-        echo "  First-time install — run the installer next:"
-        echo "    cd $REPO_DIR && ./install.sh"
-        echo ""
-        exit 0
     else
         echo "  Error: git clone failed. Check your network connection."
         exit 1
     fi
+
+    echo ""
+    echo "  First-time install — run the installer next:"
+    echo "    cd $REPO_DIR && ./install.sh"
+    echo ""
+    exit 0
 fi
 
 echo "  Repo: $REPO_DIR"
