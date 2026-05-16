@@ -3,24 +3,57 @@ set -euo pipefail
 
 # The Agency — Rescue Script
 # Safely pulls the latest code when `agency upgrade` is broken.
-# Pure bash + git. Zero Node dependency. Works from any directory inside the repo.
+# Pure bash + git. Zero Node dependency.
+# Works from inside the repo, from anywhere via curl | bash, or as a first-time clone.
+
+AGENCY_REPO="https://github.com/Tekkiiiii/the-agency.git"
 
 echo ""
 echo "The Agency — Rescue"
 echo "==================="
 echo ""
 
-# 1. Find repo root
-REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+is_agency_repo() {
+    local dir="$1"
+    [ -d "$dir/.git" ] || return 1
+    local url
+    url="$(git -C "$dir" remote get-url origin 2>/dev/null || true)"
+    [[ "$url" == *"Tekkiiiii/the-agency"* ]] || [[ "$url" == *"the-agency/the-agency"* ]]
+}
+
+# 1. Find the-agency repo (verify by remote URL, not just any git repo)
+REPO_DIR=""
+
+# a) Check if we're already inside the-agency repo
+CANDIDATE="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -n "$CANDIDATE" ] && is_agency_repo "$CANDIDATE"; then
+    REPO_DIR="$CANDIDATE"
+fi
+
+# b) Check common install locations
 if [ -z "$REPO_DIR" ]; then
-    # Try the script's own directory
-    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-    if [ -d "$SCRIPT_DIR/.git" ]; then
-        REPO_DIR="$SCRIPT_DIR"
+    for loc in "$HOME/the-agency" "$HOME/.claude/the-agency" "$HOME/.agency/the-agency"; do
+        if [ -d "$loc" ] && is_agency_repo "$loc"; then
+            REPO_DIR="$loc"
+            break
+        fi
+    done
+fi
+
+# c) Not found — clone it
+if [ -z "$REPO_DIR" ]; then
+    echo "  The Agency repo not found locally. Cloning..."
+    CLONE_TARGET="$HOME/the-agency"
+    if git clone "$AGENCY_REPO" "$CLONE_TARGET" 2>&1; then
+        REPO_DIR="$CLONE_TARGET"
+        echo "  Cloned to $REPO_DIR"
+        echo ""
+        echo "  First-time install — run the installer next:"
+        echo "    cd $REPO_DIR && ./install.sh"
+        echo ""
+        exit 0
     else
-        echo "  Error: not inside a git repository."
-        echo "  Run this from inside the-agency repo, or:"
-        echo "    cd /path/to/the-agency && bash rescue.sh"
+        echo "  Error: git clone failed. Check your network connection."
         exit 1
     fi
 fi
