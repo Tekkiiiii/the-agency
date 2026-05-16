@@ -7,13 +7,19 @@ const readline = require('readline');
 /**
  * agency onboard — Interactive setup wizard
  *
+ * The single entry point for new users. Wraps `agency init` internally —
+ * do not run both; onboard calls init for you.
+ *
  * Walks a new user through:
  *   1. Checking prerequisites (Node.js version, Claude Code)
- *   2. Running agency init (if not already done)
+ *   2. Running agency init (installs skills, agents, core docs, task store)
  *   3. Creating their first project
  *   4. Creating their first agent definition
  *   5. Smoke test
  *   6. What's next summary
+ *
+ * Returning users: onboard is idempotent — re-running it is safe. init is
+ * only re-run if the agency root is not yet initialized.
  */
 
 const REQUIRED_NODE = 18;
@@ -270,17 +276,20 @@ module.exports = async function onboard({ args, AGENCY_ROOT, console }) {
   }
 
   // ── Step 2: Initialize ───────────────────────────────────────────────────
-  step(2, TOTAL_STEPS, 'Initializing The Agency');
+  // onboard calls `agency init` internally — there is no need to run both.
+  step(2, TOTAL_STEPS, 'Initializing The Agency (agency init)');
   hr();
 
   if (isInitialized(agencyRoot)) {
     ok(`Already initialized at ${agencyRoot}`);
+    ok('Skills and agents are up to date (agency init was previously run)');
     const projects = listProjects(agencyRoot);
     if (projects.length > 0) {
       ok(`${projects.length} existing project(s): ${projects.join(', ')}`);
     }
   } else {
     info(`Target directory: ${agencyRoot}`);
+    info('Running agency init — installs skills, agents, core docs, and task store');
     process.stdout.write('\n');
     await runInit(agencyRoot);
   }
@@ -415,18 +424,6 @@ async function continueWithAgent(rl, agencyRoot, projectSlug, TOTAL_STEPS, isExi
   } else {
     fail('Agent file missing');
     smokeOk = false;
-  }
-
-  // Check skills installed
-  const skillsDir = join(agencyRoot, 'skills');
-  if (existsSync(skillsDir)) {
-    const skillCount = readdirSync(skillsDir, { withFileTypes: true })
-      .filter(e => e.isDirectory()).length;
-    if (skillCount > 0) {
-      ok(`${skillCount} skills available`);
-    } else {
-      warn('No skills installed — run: agency init');
-    }
   }
 
   if (smokeOk) {

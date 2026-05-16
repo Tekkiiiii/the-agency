@@ -16,10 +16,19 @@ cd the-agency
 ## 2. Initialize
 
 ```bash
-npx agency init
+agency onboard
 ```
 
-This creates `~/.claude/` with the task store and memory directories.
+`onboard` is the single entry point for new users. It checks prerequisites, runs
+`agency init` internally (creates directories, installs all skills, installs agent
+templates, and sets up the task store), then guides you through creating your first
+project and agent definition. You do not need to run `agency init` separately.
+
+If you prefer a non-interactive setup:
+
+```bash
+agency init   # lower-level: directories + skills + agents + task store, no wizard
+```
 
 ## 3. Start a project
 
@@ -27,7 +36,8 @@ This creates `~/.claude/` with the task store and memory directories.
 agency new my-project "Build a task manager app"
 ```
 
-This creates the project structure and registers it with the agency.
+This creates the project structure and registers it with the agency. Skip this step
+if you used `agency onboard` — it already created a project for you.
 
 ## 4. Spawn your first agent
 
@@ -45,23 +55,19 @@ Project: my-project
 Goal: Build a task manager app with React and Supabase.
 ```
 
-## 5. Set up your first skill
+## 5. Install individual skills (optional)
+
+`agency init` installs all bundled skills automatically. Use `agency skill install`
+only if you want to install a skill that was added after your initial setup:
 
 ```bash
-agency skill install save-state
-agency skill install recall
-agency skill install swarm
+agency skill install save-state   # install a specific skill by name
+agency skill list                 # see what is installed
 ```
 
-## 6. Copy agent templates
+Running `agency init` again re-syncs all skills without losing existing ones.
 
-```bash
-cp -r ~/the-agency/core/agents/* ~/.claude/agents/
-```
-
-This copies agent templates organized by department into `~/.claude/agents/{department}/`.
-
-## 7. Create PD-BRIEFING.md for each project
+## 6. Create PD-BRIEFING.md for each project
 
 For each project, create a per-project routing doc using the template in
 `core/runbooks/pd-boot-sequence.md`. Place it at:
@@ -73,7 +79,7 @@ For each project, create a per-project routing doc using the template in
 This file is the first thing a PD reads on spawn (~500 tokens) and contains
 pre-written routing entries so the PD can delegate without loading the full agent catalog.
 
-## 8. Initialize agency-rooms
+## 7. Initialize agency-rooms
 
 ```bash
 mkdir -p ~/.claude/agency-rooms/project-oversight/handoffs
