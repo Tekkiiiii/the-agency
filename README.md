@@ -16,17 +16,16 @@ A multi-agent orchestration system built on Claude Code. 204+ specialist agents 
 ## The Problem
 
 ```bash
-git clone https://github.com/Tekkiiiii/the-agency.git
-cd the-agency
+git clone https://github.com/Tekkiiiii/the-agency.git ~/.claude
 
 # macOS / Linux
-./install.sh
+cd ~/.claude && ./install.sh
 
 # Windows (PowerShell)
-.\install.ps1
+cd $HOME\.claude; .\install.ps1
 ```
 
-That's it. 270+ skills and 200+ agents are installed to `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
+That's it. 270+ skills and 200+ agents are live in `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
 
 ```bash
 agency onboard                        # Interactive setup wizard (start here)
@@ -50,7 +49,7 @@ The PD loads and asks what to build. You supervise; it executes.
 curl -fsSL https://raw.githubusercontent.com/Tekkiiiii/the-agency/main/rescue.sh | bash
 ```
 
-It finds your existing clone (checks `~/the-agency/`, `~/.claude/the-agency/`), pulls the latest, and recovers from broken states. If you don't have the repo yet, it clones it for you.
+It finds your existing clone (checks `~/.claude/`, `~/the-agency/`), pulls the latest, and recovers from broken states. If you don't have the repo yet, it clones it to `~/.claude/` for you.
 
 ---
 
@@ -125,11 +124,11 @@ PD:   All three workstreams complete. QA gate passed.
 
 ## Installation
 
-The installer copies skills and agents into `~/.claude/` — the Claude Code configuration directory. On Windows, this is `%USERPROFILE%\.claude\`.
+Clone directly into `~/.claude/` — the Claude Code configuration directory. On Windows, this is `%USERPROFILE%\.claude\`. The repo becomes your config directory.
 
 ```bash
-git clone https://github.com/Tekkiiiii/the-agency.git
-cd the-agency
+git clone https://github.com/Tekkiiiii/the-agency.git ~/.claude
+cd ~/.claude
 ```
 
 | Platform | Command | Requirements |
