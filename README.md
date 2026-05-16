@@ -584,7 +584,7 @@ Anti-patterns:
 
 ### Agency Council and Governance
 
-The Agency Council is the governing body for all cross-department decisions. All 14 department leaders report to the Council Chair (the parent AI).
+The Agency Council is the governing body for all cross-department decisions. All 19 department leaders report to the Council Chair (the parent AI).
 
 Council members:
 
