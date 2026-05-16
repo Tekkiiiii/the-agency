@@ -9,7 +9,7 @@
 
 **Your AI agents remember everything, coordinate like a real team, and ship while you sleep.**
 
-A multi-agent orchestration system built on Claude Code. 204+ specialist agents across 14 departments. Autonomous project execution with persistent memory, quality gates on every handoff, and intelligent model routing — all running on your machine, with no servers and no extra API keys.
+A multi-agent orchestration system built on Claude Code. 204+ specialist agents across 19 departments. Autonomous project execution with persistent memory, quality gates on every handoff, and intelligent model routing — all running on your machine, with no servers and no extra API keys.
 
 ---
 
@@ -26,7 +26,7 @@ cd the-agency
 .\install.ps1
 ```
 
-That's it. 244 skills and 200+ agents are installed to `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
+That's it. 270+ skills and 200+ agents are installed to `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
 
 ```bash
 agency onboard                        # Interactive setup wizard (start here)
@@ -44,15 +44,13 @@ It does everything — installs skills and agents, puts `agency` on your PATH, c
 
 The PD loads and asks what to build. You supervise; it executes.
 
-**Stuck? `agency upgrade` failing?** Run this one-liner from anywhere inside the repo:
+**Stuck? `agency upgrade` failing? Don't have the repo?** Run this one-liner from anywhere:
 
 ```bash
-# If you already have rescue.sh locally:
-cd the-agency && bash rescue.sh
-
-# If rescue.sh doesn't exist yet (first-time fix):
-cd the-agency && curl -fsSL https://raw.githubusercontent.com/Tekkiiiii/the-agency/main/rescue.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Tekkiiiii/the-agency/main/rescue.sh | bash
 ```
+
+It finds your existing clone (checks `~/the-agency/`, `~/.claude/the-agency/`), pulls the latest, and recovers from broken states. If you don't have the repo yet, it clones it for you.
 
 ---
 
@@ -62,7 +60,7 @@ Four things make it different from a conversation with an AI:
 
 **1. Memory that persists.** You run `/save-state` before you close Claude Code. Tomorrow you run `/recall`. The agent picks up exactly where it left off — open tasks, decisions made, what was blocked, what shipped. No re-explaining. No context collapse.
 
-**2. A real team structure.** 175+ specialist agents are organized across 14 departments: Engineering, Design, Marketing, Content Creation, Sales, Testing, Game Development, Paid Media, Product, Project Management, Operations, Career, Specialized, and Spatial Computing. The right agent gets the right task automatically.
+**2. A real team structure.** 200+ specialist agents are organized across 19 departments: Engineering, Design, Marketing, Content Creation, Sales, Testing, Game Development, Paid Media, Product, Project Management, Operations, Career, Specialized, Spatial Computing, Strategy, Integrations, and more. The right agent gets the right task automatically.
 
 **3. Autonomous coordination.** You give direction to a Project Director. The PD decomposes the work, assigns it to specialists, runs the tasks in parallel, checks the output at every handoff, and reports back. You don't coordinate. You supervise.
 
@@ -144,7 +142,7 @@ cd the-agency
 
 ```
 ~/.claude/
-├── skills/              ← 244 skills as {name}/SKILL.md directories
+├── skills/              ← 270+ skills as {name}/SKILL.md directories
 │   ├── backend/SKILL.md
 │   ├── frontend/SKILL.md
 │   ├── ship/SKILL.md
@@ -311,7 +309,7 @@ the-agency/
 │   └── tasks/           # Task store pattern
 ├── cli/                 # Node.js CLI (agency init/new/tasks/skill/status)
 ├── docs/                # User-facing documentation
-├── agents/              # 204+ agent definitions (14 departments + dept-coords)
+├── agents/              # 204+ agent definitions (19 departments + dept-coords)
 ├── skills/              # 270+ reusable workflow skills
 └── plans/               # Architecture decision records
 ```
