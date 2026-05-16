@@ -19,6 +19,9 @@ Navigate to the department that fits your task. Each department has its own `IND
 | [Operations](operations/INDEX.md) | `operations/` | Analytics, finance, infrastructure, legal/compliance, support |
 | [Specialized](specialized/INDEX.md) | `specialized/` | Agents infra, audits, data extraction, ZK knowledge, Vietnamese text processing, misc |
 | [Spatial Computing](spatial-computing/INDEX.md) | `spatial-computing/` | AR/VR/XR, visionOS, Metal, Apple platform spatial |
+| [Career](career/INDEX.md) | `career/` | Job search pipeline, CV generation, offer evaluation, application tracking |
+| [Integrations](integrations/INDEX.md) | `integrations/` | Third-party integrations, webhooks, API connectors |
+| [Strategy](strategy/INDEX.md) | `strategy/` | Business strategy, competitive analysis, go-to-market planning |
 
 ## Department Coordination (Dept-Coord System)
 
