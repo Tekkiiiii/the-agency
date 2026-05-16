@@ -1,5 +1,7 @@
-const { existsSync, mkdirSync, writeFileSync } = require('fs');
+const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync } = require('fs');
 const path = require('path');
+const os = require('os');
+const { execFileSync } = require('child_process');
 const { syncSkills, syncAgents } = require('./sync-assets.js');
 
 module.exports = async function init({ args, AGENCY_ROOT, console }) {
@@ -69,9 +71,57 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
     console.log('  ✓ task-store.db exists');
   }
 
+  // 7. CLI link
+  const cliSrc = path.resolve(__dirname, '../bin/agency.js');
+  linkCli(cliSrc, console);
+
   console.log(`\n✓ The Agency is ready — ${skillsDest}\n`);
   console.log('Next steps:');
+  console.log('  agency onboard                            Guided introduction');
   console.log('  agency new <project-slug> "<description>"  Create your first project');
   console.log('  agency status                             Show all projects');
   console.log('  agency skill list                         View installed skills\n');
 };
+
+function linkCli(cliSrc, console) {
+  if (os.platform() === 'win32') {
+    const shimDir = path.join(os.homedir(), '.local', 'bin');
+    mkdirSync(shimDir, { recursive: true });
+    const shimPath = path.join(shimDir, 'agency.cmd');
+    if (!existsSync(shimPath)) {
+      writeFileSync(shimPath, `@node "${cliSrc}" %*`);
+      console.log(`  ✓ CLI shim created → ${shimPath}`);
+    } else {
+      console.log('  ✓ CLI shim already exists');
+    }
+    return;
+  }
+
+  try { execFileSync('chmod', ['+x', cliSrc], { stdio: 'pipe' }); } catch (_) {}
+
+  try {
+    execFileSync('which', ['agency'], { stdio: 'pipe' });
+    console.log('  ✓ agency command already on PATH');
+    return;
+  } catch (_) {}
+
+  const targets = ['/usr/local/bin/agency', path.join(os.homedir(), '.local', 'bin', 'agency')];
+  for (const target of targets) {
+    try {
+      mkdirSync(path.dirname(target), { recursive: true });
+      try { unlinkSync(target); } catch (_) {}
+      symlinkSync(cliSrc, target);
+      console.log(`  ✓ CLI linked → ${target}`);
+      if (target.includes('.local/bin') && !(process.env.PATH || '').includes('.local/bin')) {
+        const shell = existsSync(path.join(os.homedir(), '.zshrc')) ? '.zshrc' : '.bashrc';
+        console.log(`    Add to PATH: echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/${shell}`);
+      }
+      return;
+    } catch (_) {
+      continue;
+    }
+  }
+
+  console.log('  ⚠ Could not create symlink — add this to your PATH:');
+  console.log(`    ${cliSrc}`);
+}

@@ -28,8 +28,8 @@ async function main() {
     console.log('The Agency CLI');
     console.log('');
     console.log('Commands:');
-    console.log('  agency onboard                      Interactive setup wizard — runs init + guides first project (start here)');
-    console.log('  agency init                         Initialize or re-sync skills and agents (called by onboard)');
+    console.log('  agency init                         Install skills, agents, core docs, task store, and CLI link');
+    console.log('  agency onboard                      Guided introduction — creates first project + agent (run after init)');
     console.log('  agency new <proj> <desc>            Create a project');
     console.log('  agency status                       Show project states');
     console.log('  agency skill install <n>            Install a single skill by name');

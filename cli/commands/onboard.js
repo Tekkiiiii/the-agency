@@ -1,32 +1,29 @@
 const { existsSync, mkdirSync, writeFileSync, readdirSync } = require('fs');
-const { join, resolve, dirname } = require('path');
-const { execFileSync, execSync } = require('child_process');
-const os = require('os');
+const { join } = require('path');
+const { execFileSync } = require('child_process');
 const readline = require('readline');
 
 /**
- * agency onboard — Interactive setup wizard
+ * agency onboard — Guided introduction to The Agency
  *
- * The single entry point for new users. Wraps `agency init` internally —
- * do not run both; onboard calls init for you.
+ * Assumes `agency init` was already run. Does NOT install anything.
+ * Walks a new user through the system, creates their first project
+ * and agent, and shows them how to start working.
  *
- * Walks a new user through:
- *   1. Checking prerequisites (Node.js version, Claude Code)
- *   2. Running agency init (installs skills, agents, core docs, task store)
- *   3. Creating their first project
- *   4. Creating their first agent definition
+ * Steps:
+ *   1. Check prerequisites are met
+ *   2. Verify init was already run (bail if not)
+ *   3. Create first project
+ *   4. Create first agent definition
  *   5. Smoke test
  *   6. What's next summary
- *
- * Returning users: onboard is idempotent — re-running it is safe. init is
- * only re-run if the agency root is not yet initialized.
  */
 
 const REQUIRED_NODE = 18;
 const HEADER = `
 ╔══════════════════════════════════════════════════════╗
-║          The Agency — Setup Wizard                   ║
-║    From clone to first agent run in 5 minutes        ║
+║          The Agency — Welcome Tour                   ║
+║    Get oriented and create your first project        ║
 ╚══════════════════════════════════════════════════════╝
 `;
 
@@ -172,66 +169,11 @@ Add agent-specific context here.
   return filePath;
 }
 
-function runInit(agencyRoot) {
-  const initFn = require('./init.js');
-  return initFn({ args: [], AGENCY_ROOT: agencyRoot, console });
-}
-
 function createProject(agencyRoot, slug, description) {
   const newFn = require('./new.js');
   return newFn({ args: [slug, description], AGENCY_ROOT: agencyRoot, console });
 }
 
-// ─── cli link ─────────────────────────────────────────────────────────────
-
-function linkCli(cliSrc) {
-  if (os.platform() === 'win32') {
-    const shimDir = join(os.homedir(), '.local', 'bin');
-    mkdirSync(shimDir, { recursive: true });
-    const shimPath = join(shimDir, 'agency.cmd');
-    if (!existsSync(shimPath)) {
-      writeFileSync(shimPath, `@node "${cliSrc}" %*`);
-      ok(`CLI shim created → ${shimPath}`);
-      info('You may need to add ~/.local/bin to your PATH');
-    } else {
-      ok('CLI shim already exists');
-    }
-    return;
-  }
-
-  // macOS / Linux — symlink
-  try { execFileSync('chmod', ['+x', cliSrc], { stdio: 'pipe' }); } catch (_) {}
-
-  // Check if `agency` already resolves
-  try {
-    execFileSync('which', ['agency'], { stdio: 'pipe' });
-    ok('agency command already on PATH');
-    return;
-  } catch (_) {}
-
-  // Try /usr/local/bin first
-  const targets = ['/usr/local/bin/agency', join(os.homedir(), '.local', 'bin', 'agency')];
-  for (const target of targets) {
-    try {
-      mkdirSync(dirname(target), { recursive: true });
-      const { symlinkSync, unlinkSync } = require('fs');
-      try { unlinkSync(target); } catch (_) {}
-      symlinkSync(cliSrc, target);
-      ok(`CLI linked → ${target}`);
-      if (target.includes('.local/bin') && !(process.env.PATH || '').includes('.local/bin')) {
-        info('Add ~/.local/bin to your PATH:');
-        const shell = existsSync(join(os.homedir(), '.zshrc')) ? '.zshrc' : '.bashrc';
-        info(`  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/${shell} && source ~/${shell}`);
-      }
-      return;
-    } catch (_) {
-      continue;
-    }
-  }
-
-  warn('Could not create symlink — run with sudo or add this to your PATH:');
-  info(cliSrc);
-}
 
 // ─── main ──────────────────────────────────────────────────────────────────
 
@@ -275,28 +217,22 @@ module.exports = async function onboard({ args, AGENCY_ROOT, console }) {
     process.exit(1);
   }
 
-  // ── Step 2: Initialize ───────────────────────────────────────────────────
-  // onboard calls `agency init` internally — there is no need to run both.
-  step(2, TOTAL_STEPS, 'Initializing The Agency (agency init)');
+  // ── Step 2: Verify init was already run ──────────────────────────────────
+  step(2, TOTAL_STEPS, 'Verifying installation');
   hr();
 
-  if (isInitialized(agencyRoot)) {
-    ok(`Already initialized at ${agencyRoot}`);
-    ok('Skills and agents are up to date (agency init was previously run)');
-    const projects = listProjects(agencyRoot);
-    if (projects.length > 0) {
-      ok(`${projects.length} existing project(s): ${projects.join(', ')}`);
-    }
-  } else {
-    info(`Target directory: ${agencyRoot}`);
-    info('Running agency init — installs skills, agents, core docs, and task store');
-    process.stdout.write('\n');
-    await runInit(agencyRoot);
+  if (!isInitialized(agencyRoot)) {
+    fail('The Agency is not initialized yet.');
+    info('Run `agency init` first to install skills, agents, and the task store.');
+    info('Then re-run `agency onboard` to get the guided tour.');
+    process.exit(1);
   }
 
-  // Ensure CLI is on PATH
-  const cliSrc = resolve(__dirname, '../bin/agency.js');
-  linkCli(cliSrc);
+  ok(`Initialized at ${agencyRoot}`);
+  const projects = listProjects(agencyRoot);
+  if (projects.length > 0) {
+    ok(`${projects.length} existing project(s): ${projects.join(', ')}`);
+  }
 
   // ── Step 3: Create first project ─────────────────────────────────────────
   step(3, TOTAL_STEPS, 'Create your first project');
