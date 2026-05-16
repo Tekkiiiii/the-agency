@@ -189,6 +189,212 @@ For the full setup walkthrough, see `docs/SETUP.md`.
 
 ---
 
+## End-to-End Demo Walkthrough
+
+This is a complete run-through from clone to shipped feature, using a real project as the example. Takes about 15 minutes to follow along.
+
+### Part 1: Install
+
+```bash
+# Clone into ~/.claude — this IS the Claude Code config directory
+git clone https://github.com/Tekkiiiii/the-agency.git ~/.claude
+cd ~/.claude
+
+# One command sets everything up: checks prerequisites, installs all
+# skills and agents, creates ~/.agency/, and walks you through first project
+agency onboard
+```
+
+`agency onboard` guides you through each step interactively. At the end, you have:
+- `~/.agency/` — your persistent workspace (projects, skills, sessions)
+- `agency` on your PATH
+- A first project and agent definition
+
+If you already have Claude Code set up and want just the skills/agents:
+
+```bash
+agency init   # non-interactive: directories + skills + agents + task store
+```
+
+### Part 2: Create Your First Project
+
+```bash
+agency new saas-app "Build a task manager with auth and billing"
+```
+
+This creates:
+
+```
+~/.agency/projects/saas-app/
+├── STATE.md          ← current phase, blockers, decisions
+├── memory/           ← sessions, heartbeat, next-session brief
+└── agents/           ← per-project agent definitions
+```
+
+### Part 3: Start Working
+
+Open Claude Code in your project directory:
+
+```bash
+cd ~/.agency/projects/saas-app
+claude
+```
+
+In Claude Code, start the PD:
+
+```
+/recall saas-app
+```
+
+**First session:** The PD reads the project state and asks what you want to build.
+
+```
+PD-saas-app: No prior session found. What's the goal?
+
+You: Build user authentication — email/password signup, login, logout,
+     JWT sessions, password reset via email. Supabase backend.
+
+PD-saas-app: Understood. Decomposing into 3 workstreams:
+  - Auth Coord-Gatekeeper: JWT + session management
+  - DB Coord-TombRaider: Supabase schema + migrations
+  - Email Coord-Postmaster: password reset email flow
+
+Spawning now. I'll report back when all three complete.
+```
+
+The three Coords run in parallel. Each decomposes further and spawns Task-Executors. You see output as each unit completes:
+
+```
+Auth Coord: JWT middleware complete. Health score 89. ACKed.
+DB Coord: Schema migrated, seed data loaded. Health score 91. ACKed.
+Email Coord: Password reset flow complete. Health score 84. ACKed.
+
+PD-saas-app: QA gate running across all workstreams...
+QA gate passed. Overall health: 88.
+Auth: signup, login, logout, and JWT refresh all working.
+DB: users and sessions tables with RLS policies.
+Email: reset email fires within 2 seconds in staging.
+
+Ready for your review. Awaiting ACK.
+
+You: ACK — looks good.
+
+PD-saas-app: All done. Next session: run /save-state first.
+```
+
+### Part 4: End the Session
+
+Before closing Claude Code:
+
+```
+/save-state saas-app
+```
+
+What this writes:
+
+```
+~/.agency/projects/saas-app/memory/
+├── next-session.md    ← what the PD reads at startup next time
+├── heartbeat.md       ← current phase and top priorities  
+├── decisions.md       ← locked decisions that affect future work
+└── sessions/
+    └── 2026-05-17.md  ← full session log
+```
+
+The `next-session.md` is one file, under 15 lines:
+
+```
+# saas-app
+Phase: Auth complete — billing next
+Next: Implement Stripe checkout — monthly/annual plans, webhook handling
+Blockers: none
+Decisions: D1 — Supabase for DB; D2 — JWT in HTTP-only cookies (not localStorage)
+Mid-flight: none
+Last saved: 2026-05-17
+```
+
+### Part 5: Resume the Next Day
+
+```bash
+cd ~/.agency/projects/saas-app
+claude
+```
+
+```
+/recall saas-app
+```
+
+```
+PD-saas-app: Auth complete. Next: Stripe billing.
+  Decisions locked: Supabase, JWT in HTTP-only cookies.
+  Starting billing workstream now.
+
+Spawning Billing Coord-CashRegister...
+```
+
+No re-explaining. No context collapse. The PD picks up the exact next action.
+
+### Part 6: Install an Individual Skill
+
+After initial setup, all bundled skills are already installed. To add a skill that shipped after your install:
+
+```bash
+agency skill install ship     # automated PR creation + test run
+agency skill install cso      # security audit (OWASP Top 10)
+agency skill list             # see everything installed
+```
+
+Use it in Claude Code:
+
+```
+/ship
+```
+
+`/ship` reads the diff, runs tests, creates the PR, and writes a review report.
+
+### Part 7: Add a Parallel Project
+
+You can run multiple projects simultaneously. Each has its own PD:
+
+```bash
+agency new marketing-site "Redesign the marketing site"
+agency new data-pipeline "Build ETL pipeline for user analytics"
+```
+
+Check all projects at once:
+
+```bash
+agency status
+```
+
+```
+Projects:
+  saas-app          Phase: billing — in progress
+  marketing-site    Phase: new — not started
+  data-pipeline     Phase: new — not started
+```
+
+Resume all active PDs in one shot:
+
+```
+/pd-resume all
+```
+
+Each PD spawns independently, runs its workstream, and reports back.
+
+### What You Now Have
+
+After this walkthrough:
+
+- **`~/.agency/projects/`** — project state that persists across sessions
+- **`~/.agency/skills/`** — 270+ skills ready to invoke
+- **`~/.agency/agents/`** — 200+ specialist agents organized by department
+- **`~/.agency/task-store.db`** — SQLite task pipeline with gate tracking
+
+The PD handles decomposition, delegation, QA gating, and state persistence. You give direction and review results.
+
+---
+
 ## Works With 9 Tools
 
 The Agency runs natively in Claude Code. It also works as an agent layer inside other tools:
