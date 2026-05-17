@@ -13,7 +13,7 @@ echo "========================================="
 echo ""
 
 # Create directories
-mkdir -p "$CLAUDE_HOME"/{skills,agents,projects,sessions,memory}
+mkdir -p "$CLAUDE_HOME"/{skills,agents,hooks,projects,sessions,memory}
 
 # --- Skills ---
 SKILLS_SRC="$SCRIPT_DIR/skills"
@@ -63,6 +63,75 @@ if [ -d "$AGENTS_SRC" ]; then
     echo "  ✓ $agent_count agents installed"
 else
     echo "  ⚠ No agents/ directory found"
+fi
+
+# --- Hooks ---
+HOOKS_SRC="$SCRIPT_DIR/hooks"
+HOOKS_DEST="$CLAUDE_HOME/hooks"
+hook_count=0
+
+if [ -d "$HOOKS_SRC" ]; then
+    for f in "$HOOKS_SRC"/*.sh; do
+        [ ! -f "$f" ] && continue
+        cp "$f" "$HOOKS_DEST/$(basename "$f")"
+        chmod +x "$HOOKS_DEST/$(basename "$f")"
+        hook_count=$((hook_count + 1))
+    done
+
+    # Install default profile if not already set
+    if [ ! -f "$CLAUDE_HOME/.hook-profile" ] && [ -f "$HOOKS_SRC/.hook-profile.template" ]; then
+        cp "$HOOKS_SRC/.hook-profile.template" "$CLAUDE_HOME/.hook-profile"
+    fi
+
+    echo "  ✓ $hook_count hook scripts installed"
+else
+    echo "  ⚠ No hooks/ directory found"
+fi
+
+# --- Wire hooks into settings.json ---
+SETTINGS="$CLAUDE_HOME/settings.json"
+if [ -f "$SETTINGS" ]; then
+    # Check if hooks already wired
+    if ! grep -q "gate-guard.sh" "$SETTINGS" 2>/dev/null; then
+        echo "  ℹ Hook wiring: add the hooks block from docs/HOOKS.md to $SETTINGS"
+        echo "    (Automatic wiring skipped — settings.json exists and may have custom config)"
+    else
+        echo "  ✓ Hooks already wired in settings.json"
+    fi
+else
+    # Create minimal settings.json with hooks wired
+    python3 -c "
+import json
+hooks_config = {
+    'hooks': {
+        'PreToolUse': [
+            {'matcher': 'Edit|Write', 'hooks': [
+                {'type': 'command', 'command': 'bash ~/.claude/hooks/gate-guard.sh'},
+                {'type': 'command', 'command': 'bash ~/.claude/hooks/config-protection.sh'}
+            ]},
+            {'matcher': 'Bash', 'hooks': [
+                {'type': 'command', 'command': 'bash ~/.claude/hooks/secret-scanner.sh'}
+            ]}
+        ],
+        'PostToolUse': [
+            {'matcher': 'Edit|Write', 'hooks': [
+                {'type': 'command', 'command': 'bash ~/.claude/hooks/track-edits.sh'}
+            ]}
+        ],
+        'SessionStart': [
+            {'matcher': '', 'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/startup-sync.sh'}]},
+            {'matcher': '', 'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/check-settings-secrets.sh'}]},
+            {'matcher': '', 'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/check-session-state.sh'}]}
+        ],
+        'Stop': [
+            {'matcher': '', 'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/session-end.sh && bash ~/.claude/hooks/batch-check.sh && bash ~/.claude/hooks/cost-tracker.sh'}]}
+        ]
+    }
+}
+with open('$SETTINGS', 'w') as f:
+    json.dump(hooks_config, f, indent=2)
+    f.write('\n')
+" 2>/dev/null && echo "  ✓ settings.json created with hooks wired" || echo "  ⚠ Could not create settings.json — wire hooks manually (see docs/HOOKS.md)"
 fi
 
 # --- Core docs ---

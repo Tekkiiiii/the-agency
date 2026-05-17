@@ -93,6 +93,7 @@ You didn't explain anything the second day. The agent remembered.
 - **4-tier autonomous chain**: PD → Coord → Mini-Coord → Task-Executor decomposes any project to atomic units. Mini-Coords keep drilling L6→L7→L8 without escalating to PD.
 - **QA gates on every handoff**: No work gets ACK'd without a health-score pass. Gate: score ≥ 70 + zero CRITICALs. Example: 70 = tests pass but docs missing; 90+ = ship-ready.
 - **Explicit ACK/NACK protocol**: Agents wait for approval before stopping. NACKs return a fix list. Rejected work loops back through QA. Traceability is built into the protocol.
+- **10-hook lifecycle system**: 10 shell scripts across 4 lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop) — security gating, secret scanning, config protection, crash detection, cost tracking. Profile-aware (`standard` / `strict` / `minimal`). See `docs/HOOKS.md`.
 - **270+ production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, cloud (Cloudflare, Netlify, Terraform), and more — all invoked via `/skill-name`.
 - **SQLite task store — nothing leaves your machine**: Task pipeline, gates, retries, blocking in `~/.claude/`. No servers. No API keys.
 - **Session persistence**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where it left off.
@@ -150,6 +151,11 @@ cd ~/.claude
 │   ├── engineering/
 │   ├── design/
 │   ├── content-creation/
+│   └── ...
+├── hooks/               ← 10 lifecycle hook scripts (security, cost tracking, crash detection)
+│   ├── gate-guard.sh
+│   ├── secret-scanner.sh
+│   ├── cost-tracker.sh
 │   └── ...
 ├── projects/            ← per-project state (created by `agency new`)
 ├── sessions/            ← session logs (created by `/save-state`)
@@ -514,6 +520,19 @@ the-agency/
 │   └── tasks/           # Task store pattern
 ├── cli/                 # Node.js CLI (agency init/new/tasks/skill/status)
 ├── docs/                # User-facing documentation
+│   ├── HOOKS.md         # Hook system reference
+│   └── ecc-patterns.md  # ECC pattern library (adopted design patterns)
+├── hooks/               # 10 lifecycle hook scripts
+│   ├── gate-guard.sh    # PreToolUse: gate writes to sensitive files
+│   ├── secret-scanner.sh# PreToolUse: scan bash commands for credentials
+│   ├── config-protection.sh # PreToolUse: block linter config modification
+│   ├── track-edits.sh   # PostToolUse: buffer edited file paths
+│   ├── startup-sync.sh  # SessionStart: auto-pull config from remote
+│   ├── check-settings-secrets.sh # SessionStart: warn on plaintext tokens
+│   ├── check-session-state.sh    # SessionStart: detect unclean exit
+│   ├── session-end.sh   # Stop: mark session clean
+│   ├── batch-check.sh   # Stop: typecheck + shellcheck edited files
+│   └── cost-tracker.sh  # Stop: compute session token cost
 ├── agents/              # 204+ agent definitions (19 departments + dept-coords)
 ├── skills/              # 270+ reusable workflow skills
 └── plans/               # Architecture decision records
@@ -562,6 +581,8 @@ Everything above describes what the system does. This section describes how it w
 **Memory System** — four filesystem layers (see Memory System below).
 
 **NEXUS Protocol** — file-based 6-phase handoff doctrine for inter-agent coordination. Handoff artifacts are JSON files, processed by RoomManager.
+
+**Hook System** — 10 shell scripts wired into Claude Code's 4 lifecycle events. Installed at `~/.claude/hooks/` by `agency init`. Profile-aware (`standard` / `strict` / `minimal`).
 
 **Skills** — markdown-based reusable workflows loaded from `~/.claude/skills/`, registered in `INDEX.md`.
 
@@ -737,6 +758,35 @@ Background agents cannot receive messages. PDs coordinate via the filesystem ins
 5. On next `/pd-resume`, PD-A reads completion and marks task done
 
 Use `/pd-spawn` for the full protocol.
+
+### Hook System
+
+10 bash scripts across 4 lifecycle events, installed at `~/.claude/hooks/`. `agency init` wires them into `~/.claude/settings.json` automatically.
+
+| Script | Event | What it does |
+|--------|-------|-------------|
+| `startup-sync.sh` | SessionStart | Auto-pull `~/.claude` from GitHub — every session starts fresh |
+| `check-settings-secrets.sh` | SessionStart | Warn if `settings.json` has plaintext tokens in MCP env blocks |
+| `check-session-state.sh` | SessionStart | Detect unclean prior exit (crash/Ctrl+C) |
+| `gate-guard.sh` | PreToolUse (Edit/Write) | Gate writes to settings, agents, hooks, and SKILL.md files |
+| `secret-scanner.sh` | PreToolUse (Bash) | Block shell commands containing JWTs, API keys, GitHub tokens |
+| `config-protection.sh` | PreToolUse (Edit/Write) | Block modification of existing linter/formatter configs |
+| `track-edits.sh` | PostToolUse (Edit/Write) | Buffer edited file paths for session-end batch check |
+| `session-end.sh` | Stop | Mark session cleanly ended; `check-session-state.sh` reads this |
+| `batch-check.sh` | Stop | Typecheck TypeScript, shellcheck shell scripts edited this session |
+| `cost-tracker.sh` | Stop | Compute session token usage and estimated USD cost |
+
+**Profile system** — hooks read `~/.claude/.hook-profile` at runtime:
+- `standard` — warnings on gate-guard and secret-scanner matches (`permissionDecision: ask`)
+- `strict` — block on any match (`permissionDecision: deny`)
+- `minimal` — all safety hooks disabled (useful inside CI or trusted automation)
+
+```bash
+echo "strict" > ~/.claude/.hook-profile   # tighten up
+echo "minimal" > ~/.claude/.hook-profile  # loosen for automation
+```
+
+Full reference: [`docs/HOOKS.md`](docs/HOOKS.md)
 
 ### Model Routing Table
 
