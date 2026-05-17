@@ -59,7 +59,8 @@ The skill lives in `video-use/`. User footage lives wherever they put it. All se
 
 First-time install lives in `install.md` (clone, deps, ffmpeg, skill registration, API key). Don't re-run it every session; on cold start just verify:
 
-- `ELEVENLABS_API_KEY` resolves — either in the environment or in `.env` at the video-use repo root. If missing, ask the user to paste one and write it to `.env` (never to the user's `<videos_dir>`).
+- `whisper` on PATH (default transcription backend — local, free, no API key needed). Model default: `turbo`. Supports `--language` auto-detect and `--word_timestamps`.
+- `ELEVENLABS_API_KEY` resolves (optional — only needed when `--backend elevenlabs` is passed for speaker diarization and audio event tagging). Either in the environment or in `.env` at the video-use repo root.
 - `ffmpeg` + `ffprobe` on PATH.
 - Python deps installed (`uv sync` or `pip install -e .` inside the repo).
 - Node.js + npm available if the session needs HyperFrames or Remotion slots. HyperFrames currently requires Node.js 22+.
@@ -71,8 +72,8 @@ Helpers (`helpers/transcribe.py`, `helpers/render.py`, etc.) live alongside this
 
 ## Helpers
 
-- **`transcribe.py <video>`** — single-file Scribe call. `--num-speakers N` optional. Cached.
-- **`transcribe_batch.py <videos_dir>`** — 4-worker parallel transcription. Use for multi-take.
+- **`transcribe.py <video>`** — single-file transcription. Default: local Whisper (`turbo` model). `--backend elevenlabs` for Scribe (diarization + audio events). `--model <size>` to pick Whisper model. `--num-speakers N` (ElevenLabs only). Cached.
+- **`transcribe_batch.py <videos_dir>`** — 4-worker parallel transcription. Same `--backend` and `--model` flags. Use for multi-take.
 - **`pack_transcripts.py --edit-dir <dir>`** — `transcripts/*.json` → `takes_packed.md` (phrase-level, break on silence ≥ 0.5s).
 - **`timeline_view.py <video> <start> <end>`** — filmstrip + waveform PNG. On-demand visual drill-down. **Not a scan tool** — use it at decision points, not constantly.
 - **`render.py <edl.json> -o <out>`** — per-segment extract → concat → overlays (PTS-shifted) → subtitles LAST. `--preview` for 720p fast. `--build-subtitles` to generate master.srt inline.
@@ -310,7 +311,7 @@ Things that consistently fail regardless of style:
 - **Hierarchical pre-computed codec formats** with USABILITY / tone tags / shot layers. Over-engineering. Derive from the transcript at decision time.
 - **Hand-tuned moment-scoring functions.** The LLM picks better than any heuristic you'll write.
 - **Whisper SRT / phrase-level output.** Loses sub-second gap data. Always word-level verbatim.
-- **Running Whisper locally on CPU.** Slow and it normalizes fillers. Use hosted Scribe.
+- **Using ElevenLabs when you don't need diarization.** Local Whisper is free, fast on Apple Silicon, and sufficient for single-speaker content. Reserve Scribe for multi-speaker diarization or audio event tagging.
 - **Burning subtitles into base before compositing overlays.** Overlays hide them. (Hard Rule 1.)
 - **Single-pass filtergraph when you have overlays.** Double re-encodes. Use per-segment extract → concat.
 - **Linear animation easing.** Looks robotic. Always cubic.
