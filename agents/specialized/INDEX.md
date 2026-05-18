@@ -29,6 +29,7 @@
 | Vietnamese Text Agent | Vietnamese text → URL slugs and markdown-safe formats via correct Unicode NFD decomposition |
 | Paperclip Control Plane | Zero-human company orchestration via Paperclip — manages agent workforce, org charts, heartbeats, budgets, and governance. The 2nd in command under you. |
 | Task-Executor | Leaf implementation agent — executes exactly what Coord assigns, no decomposition authority, Sonnet model |
+| Codebase Search | Fast read-only search agent — finds files, symbols, patterns across ~/.claude/, active projects, and skill library |
 
 ## Infra Sub-team
 
