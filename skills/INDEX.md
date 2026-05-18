@@ -1,6 +1,6 @@
 # Skills Index
 
-208 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+253 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 ## Department Lifecycle
 
@@ -103,6 +103,9 @@
 | `workflow-critique` | Workflow optimization critique |
 | `devex-review` | Developer experience review |
 | `careful` | Extra-careful review mode |
+| `requesting-code-review` | Protocol for requesting structured code reviews |
+| `receiving-code-review` | Protocol for receiving and processing code review feedback |
+| `feedback-pipeline` | User feedback collection and processing pipeline |
 
 ## Content & Writing
 
@@ -130,6 +133,8 @@
 |-------|-------------|
 | `backend` | Design APIs, DB schemas, server logic, auth, webhooks, microservices |
 | `security` | Apply security best practices to code, architecture, workflows |
+| `compile` | Code compilation orchestration |
+| `new-project` | New project scaffolding — directory structure, PD setup, registries |
 | `webhook-security` | Webhook signature verification (Paymob, Stripe, Resend, HMAC) |
 | `postgresql-schema` | PostgreSQL schemas: multi-tenant SaaS, reservations, CRM, e-commerce |
 | `supabase-sql` | SQL for Supabase PostgreSQL engine |
@@ -296,6 +301,11 @@
 | `firecrawl-scrape` | Firecrawl page scraping |
 | `pair-agent` | Pair a remote AI agent with your browser |
 | `connect-chrome` | Connect to Chrome browser |
+| `browser-domain-skills` | Domain-specific browser skill patterns |
+| `browser-harness` | Browser automation harness for agent tasks |
+| `open-gstack-browser` | Open gstack browser interface |
+| `setup-browser-cookies` | Browser cookie setup for authenticated agent sessions |
+| `setup-gbrain` | GBrain knowledge graph setup and configuration |
 
 ## Skill Management
 
@@ -305,15 +315,18 @@
 | `skill-import` | Import skills from library into project CLAUDE.md |
 | `skill-quality` | Rate and rewrite skill descriptions |
 | `skillify` | Convert workflow to skill |
+| `skill-tracker` | Track skill usage patterns and quality metrics |
 
 ## SEO & Marketing
 
 | Skill | Description |
 |-------|-------------|
 | `seo-aeo-best-practices` | SEO, GEO, AEO knowledge base — 7 reference files |
+| `marketing-assessment-pipeline` | Full marketing audit pipeline — positioning, copy, SEO, landing pages |
 | `inbound-sales` | Inbound sales workflows |
 | `content-experimentation-best-practices` | A/B testing, experiment design, metrics |
 | `content-modeling-best-practices` | Content modeling and schema design |
+| `landing-report` | Landing page audit report — conversion, copy, UX analysis |
 
 ## Domain — Payments & E-Commerce
 
@@ -321,6 +334,7 @@
 |-------|-------------|
 | `stripe-best-practices` | Stripe integration best practices |
 | `upgrade-stripe` | Upgrade Stripe API versions and SDKs |
+| `paymob-integrator` | Paymob payment gateway integration |
 
 ## Domain — Auth
 
