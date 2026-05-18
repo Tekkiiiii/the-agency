@@ -16,7 +16,7 @@ You are orchestrating a full system audit. All applicable critique skills run in
 
 ## Pipeline State
 
-Create a tracker at `{project-path}/.pipeline/pipeline-audit-{date}.md`.
+Create a tracker at `.gstack/pipeline-audit-{date}.md`.
 
 ```markdown
 ## Pipeline: System Audit
@@ -63,6 +63,8 @@ Each subagent receives:
 
 **Gate:** All subagents complete. Collect all reports.
 
+**On pass:** Update tracker → PASS with individual grades.
+
 ---
 
 ## Stage 2: AGGREGATE
@@ -78,16 +80,16 @@ Cross-reference findings across critiques. Common overlaps:
 - Operations critique + security critique: both may flag secrets exposure
 - Design critique + product critique: both may flag UX issues
 
-Merge duplicate findings, keeping the higher severity.
+Merge duplicate findings, keeping the higher severity and combining the descriptions.
 
 ### 2c: Priority sort
 Sort unified findings by severity: Critical → High → Medium → Low.
 
 ### 2d: Cross-cutting themes
 Identify patterns across critiques:
-- Systemic issues (e.g., "no error handling anywhere")
-- Architectural concerns flagged by multiple critiques
-- Quick wins that appear in multiple reports
+- Are there systemic issues (e.g., "no error handling anywhere")?
+- Are there architectural concerns flagged by multiple critiques?
+- Are there quick wins that appear in multiple reports?
 
 **Gate:** Aggregated report produced with deduplicated, priority-sorted findings.
 
@@ -150,7 +152,10 @@ Scope: {scope}
 {QA findings confirming or disputing critique findings, with screenshots}
 ```
 
-Save report to `{project-path}/.pipeline/audit-reports/audit-{date}.md`.
+### Persist
+- Save report to `.gstack/audit-reports/audit-{date}.md`
+- Invoke `/obsidian-vault` to persist audit results (background)
+- Invoke `/graphify` on the audit report to map risk areas (background)
 
 ---
 

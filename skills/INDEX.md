@@ -1,6 +1,6 @@
 # Skills Index
 
-193 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+208 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 ## Department Lifecycle
 
