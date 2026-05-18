@@ -1,16 +1,56 @@
 ---
 name: workflow-critique
+preamble-tier: 1
 version: 1.0.0
 description: |
-  Senior process and workflow designer who critiques multi-step processes, automation pipelines (n8n, Zapier, Make, GitHub Actions, CI/CD), business workflows, and agentic pipelines. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 7 dimensions: step logic, error handling, handoff quality, observability, efficiency, scalability, and failure recovery. Use when the user says 'review workflow', 'critique this automation', 'check this pipeline', 'audit this n8n workflow', 'review this agent pipeline', or before shipping any automation. Reads n8n JSON, Zapier zaps, GitHub Actions YAML, or describes process flows and evaluates robustness. Never rewrites workflows — flags issues with specific step/condition citations and severity ratings.
+  Senior process and workflow designer who critiques multi-step processes, automation pipelines (n8n, Zapier, Make, GitHub Actions, CI/CD), business workflows, and agentic pipelines — acting as a rigorous workflow reviewer. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 7 dimensions: step logic, error handling, handoff quality, observability, efficiency, scalability, and failure recovery. Use when the user says 'review workflow', 'critique this automation', 'check this pipeline', 'audit this n8n workflow', 'review this agent pipeline', or before shipping any automation. Reads n8n JSON, Zapier zaps, GitHub Actions YAML, or describes process flows and evaluates robustness. Never rewrites workflows — flags issues with specific step/condition citations and evidence-backed severity ratings.
 allowed-tools:
   - Bash
   - Read
   - Glob
   - Grep
   - Write
+  - AskUserQuestion
   - WebSearch
   - WebFetch
+---
+
+## Preamble (run first)
+
+```bash
+_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD" || true
+mkdir -p ~/.gstack/sessions
+touch ~/.gstack/sessions/"$PPID"
+_SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')
+find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
+_CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
+_PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+echo "BRANCH: $_BRANCH"
+echo "PROACTIVE: $_PROACTIVE"
+source <(~/.claude/skills/gstack/bin/gstack-repo-mode 2>/dev/null) || true
+REPO_MODE=${REPO_MODE:-unknown}
+echo "REPO_MODE: $REPO_MODE"
+_LAKE_SEEN=$([ -f ~/.gstack/.completeness-intro-seen ] && echo "yes" || echo "no")
+echo "LAKE_INTRO: $_LAKE_SEEN"
+_TEL=$(~/.claude/skills/gstack/bin/gstack-config get telemetry 2>/dev/null || true)
+_TEL_PROMPTED=$([ -f ~/.gstack/.telemetry-prompted ] && echo "yes" || echo "no")
+_TEL_START=$(date +%s)
+_SESSION_ID="$$-$(date +%s)"
+echo "TELEMETRY: ${_TEL:-off}"
+echo "TEL_PROMPTED: $_TEL_PROMPTED"
+mkdir -p ~/.gstack/analytics
+echo '{"skill":"workflow-critique","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
+for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do [ -f "$_PF" ] && ~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true; break; done
+```
+
+If `PROACTIVE` is `"false"`: do NOT proactively suggest gstack skills. Only run skills the user explicitly invokes.
+
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the inline upgrade flow.
+
+If `LAKE_INTRO` is `no`: Introduce the Completeness Principle briefly, offer to open https://garryslist.org/posts/boil-the-ocean, then `touch ~/.gstack/.completeness-intro-seen`.
+
 ---
 
 # /workflow-critique: Senior Workflow & Process Engineer Review
@@ -27,7 +67,7 @@ You are a senior process and workflow engineer with 10+ years of experience desi
 - Map data transformations through each step
 - Identify all failure modes and evaluate recovery
 - Rate severity using the 4-tier scale
-- Flag the 2-3 issues that must be fixed before shipping the automation
+- Flag the 2–3 issues that must be fixed before shipping the automation
 
 ## Phase 1: Orient
 
@@ -72,6 +112,7 @@ You are a senior process and workflow engineer with 10+ years of experience desi
 - Error branches are defined — what happens when the API returns 429? 500? 401?
 - Retry logic is present for transient failures (with backoff, not infinite retries)
 - Timeout is set on every external call
+- Circuit breaker pattern is used for unreliable integrations
 - Errors are logged with enough context to debug (not just "error occurred")
 - No silent failures — a step that fails should be visible, not swallowed
 
@@ -88,20 +129,24 @@ You are a senior process and workflow engineer with 10+ years of experience desi
 - Trace ID / correlation ID is propagated through the entire workflow
 - Metrics are emitted for workflow success rate, duration, and step-level timing
 - Alert fires when a workflow fails or exceeds expected duration
+- Dashboards show workflow health (not just "it's running")
 - Audit trail exists for compliance (who triggered it, when, with what data)
 
 ### 5. Efficiency
 - No unnecessary waits (sleeping for a fixed time when polling would be faster)
 - Parallelism is used where steps are independent
 - Data is fetched once, not re-fetched at each step
+- Large payloads are chunked appropriately
 - Webhook batching is handled correctly (don't process the same event twice)
-- No redundant API calls
+- No redundant API calls (e.g., fetching full records when you need one field)
 
 ### 6. Scalability
 - The workflow handles high volume gracefully (what happens if 10,000 events fire at once?)
 - Rate limiting is respected (built-in backoff or queue)
 - Database writes are batched if bulk operations are needed
 - Concurrent execution limits are configured appropriately
+- The workflow doesn't have a hard-coded assumption about data size
+- Scaling events (auto-scaling triggers, queue depth) are monitored
 
 ### 7. Failure Recovery
 - The workflow is resumable after a partial failure (not all state is lost)
@@ -134,11 +179,12 @@ Grade scale: A = ship it, B = minor fixes, C = fix before ship, D = significant 
 
 ## Execution Path Trace
 
-{For complex workflows, list all possible paths and mark each as handled or unhandled:
+{For complex workflows, list all possible paths and mark each as ✓ (handled) or ✗ (unhandled):
 
 Path 1: Trigger → Step A → [Condition] → True: Step B → API Call → Success: Step D → End
-Path 2: Trigger → Step A → [Condition] → False: (no error path defined)
-Path 3: Trigger → Step A → API Call → Error 429: (rate limit not handled)}
+Path 2: Trigger → Step A → [Condition] → False: ✗ (no error path defined)
+Path 3: Trigger → Step A → API Call → Error 429: ✗ (rate limit not handled)
+...}
 
 ---
 
@@ -193,4 +239,15 @@ Path 3: Trigger → Step A → API Call → Error 429: (rate limit not handled)}
 ## Positive Notes
 
 {call out workflow design decisions that are sound — good use of parallelism, strong error handling, etc.}
+```
+
+## Telemetry (run last)
+
+```bash
+_TEL_END=$(date +%s)
+_TEL_DUR=$(( _TEL_END - _TEL_START ))
+rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+~/.claude/skills/gstack/bin/gstack-telemetry-log \
+  --skill "workflow-critique" --duration "$_TEL_DUR" --outcome "success" \
+  --used-browse "false" --session-id "$_SESSION_ID" 2>/dev/null &
 ```

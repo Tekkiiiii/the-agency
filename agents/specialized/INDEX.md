@@ -30,6 +30,7 @@
 | Paperclip Control Plane | Zero-human company orchestration via Paperclip — manages agent workforce, org charts, heartbeats, budgets, and governance. The 2nd in command under you. |
 | Task-Executor | Leaf implementation agent — executes exactly what Coord assigns, no decomposition authority, Sonnet model |
 | Codebase Search | Fast read-only search agent — finds files, symbols, patterns across ~/.claude/, active projects, and skill library |
+| Project Scaffolder | Autonomous project + PD scaffolding — creates directory structure, memory files, PD agent file, and updates all registries |
 
 ## Infra Sub-team
 

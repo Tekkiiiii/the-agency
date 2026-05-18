@@ -1,7 +1,7 @@
 ---
 name: pipeline-content
 version: 1.0.0
-description: "Content creation pipeline — research, strategy, create, critique, humanize, knowledge capture. Chains auto-researcher, content-strategy, content-creator/copywriting/tech-writer, content-critique, humanizer, graphify into a quality-gated content workflow."
+description: "Content creation pipeline — research, strategy, create, critique, humanize, knowledge capture. Chains auto-researcher, content-strategy, content-creator/copywriting/tech-writer, content-critique, humanizer, graphify, and obsidian-vault into a quality-gated content workflow."
 ---
 
 # Pipeline: Content Creation
@@ -10,7 +10,7 @@ You are orchestrating a content creation pipeline. Every piece of content goes t
 
 ## Input Parameters
 
-Collect these before starting (ask for any missing):
+Collect these before starting (use AskUserQuestion for any missing):
 
 - **topic**: What the content is about
 - **type**: `blog` | `social` | `email` | `docs` | `landing` | `ad` | `video-script`
@@ -21,7 +21,7 @@ Collect these before starting (ask for any missing):
 
 ## Pipeline State
 
-Create a tracker at `{project-path}/.pipeline/pipeline-content-{date}.md`.
+Create a tracker at `.gstack/pipeline-content-{date}.md`.
 
 ```markdown
 ## Pipeline: Content Creation
@@ -36,7 +36,7 @@ Platform: {platform}
 | 2 | STRATEGY | pending | — | — |
 | 3 | CREATE | pending | — | — |
 | 4 | CRITIQUE | pending | — | — |
-| 5 | POLISH | pending | — | — |
+| 5 | HUMANIZE | pending | — | — |
 | 6 | KNOWLEDGE | pending | — | — |
 ```
 
@@ -96,12 +96,44 @@ Pass to the selected skill:
 
 ---
 
+## Stage 3.5: COMPLIANCE (fintech only)
+
+**Trigger condition:** Run this stage ONLY when ANY of these are true:
+- `preset=banking-finance` or `preset=crypto` is active
+- Content type involves financial products or services
+- Product type is `neobank`, `payments`, `lending`, `insurance`, `wealthtech`, or `crypto`
+- Target audience is in a regulated financial jurisdiction
+
+**Skip if:** Content is general business/tech content with no financial product claims.
+
+Invoke `/fintech-compliance-gate` with:
+- The draft content from Stage 3
+- Product type (infer from preset or ask user)
+- Target jurisdiction(s)
+- Distribution platform
+
+The compliance gate runs a 20-item checklist and produces RED/AMBER/GREEN findings.
+
+**Gate logic:**
+- **All RED items resolved** → must return to Stage 3 CREATE with compliance requirements attached
+- **AMBER items** → add required disclosures to the draft, then proceed
+- **All GREEN** → proceed to Stage 4
+
+Update tracker:
+
+```markdown
+| 3.5 | COMPLIANCE | fintech-compliance-gate | {PASS/FAIL/PASS_WITH_DISCLOSURES} | {RED count}/{AMBER count}/{GREEN count} | {notes} |
+```
+
+---
+
 ## Stage 4: CRITIQUE
 
 Invoke `/content-critique` on the draft.
 
 The critique skill:
 - Grades A-F across 6 dimensions (Clarity, Accuracy, Tone, Structure, SEO/Value, Consistency)
+- Runs `/stop-slop` internally for AI pattern detection
 - Produces severity-tiered findings with exact locations
 
 **Gate:** Grade **B or above** → proceed to Stage 5.
@@ -120,13 +152,16 @@ If grade C or below:
 Invoke `/content-polish` on the critique-approved draft.
 
 The content-polish skill orchestrates three passes in sequence:
-1. **Humanizer** — removes AI patterns, calibrated to the document type
-2. **Anti-fragmentation pass** — catches over-fragmentation, restores connective tissue
-3. **Proofreader** — catches typos, grammar, lost specifics, broken flow
+1. **Humanizer** (format-calibrated) — removes AI patterns, calibrated to the document type
+2. **Anti-fragmentation pass** — catches over-fragmentation, restores connective tissue, preserves parallelism
+3. **Proofreader** (post-humanizer mode) — catches typos, grammar, lost specifics, broken flow
 
-This stage is MANDATORY. Never skip.
+This stage is MANDATORY per the Marketing→CCO content pipeline. Never skip.
 
-**Gate:** Content-polish delivers a polished final version that passes humanizer, anti-fragmentation, and proofreader checks.
+**Gate:** Content-polish delivers a final "Version C" that passes:
+- Humanizer's two-pass self-audit (30 AI-pattern categories)
+- Anti-fragmentation check (no 3-short-sentences-in-a-row)
+- Proofreader's format-calibrated review (spelling, grammar, clarity, flow)
 
 ---
 
@@ -135,10 +170,14 @@ This stage is MANDATORY. Never skip.
 Run these as background tasks after delivering the final content to the user:
 
 ### 6a: Knowledge graph
-Invoke `/graphify` with the final content to capture entities, relationships, and topics.
+Invoke `/graphify` with the final content to capture entities, relationships, and topics in the knowledge graph.
 
-### 6b: Memory persistence
-Save content metadata (topic, type, platform, audience, research sources, critique grade, final location) to project memory.
+### 6b: Obsidian vault
+Invoke `/obsidian-vault` to persist the content metadata:
+- Topic, type, platform, audience
+- Research sources used
+- Critique grade achieved
+- Final content location
 
 These are fire-and-forget — don't block the pipeline report on them.
 
@@ -159,9 +198,13 @@ Run: {timestamp}
 | 2 | STRATEGY | content-strategy | {result/SKIPPED} | {brief approved} | — |
 | 3 | CREATE | {skill used} | {result} | Draft produced | {angle/formula used} |
 | 4 | CRITIQUE | content-critique | {result} | Grade: {letter} | {revision cycles} |
-| 5 | POLISH | content-polish | {result} | Self-audit: PASS | — |
-| 6 | KNOWLEDGE | graphify | {result} | — | background |
+| 5 | HUMANIZE | humanizer | {result} | Self-audit: PASS | — |
+| 6 | KNOWLEDGE | graphify, obsidian | {result} | — | background |
 
 Overall: {PASS / PASS_WITH_REVISIONS}
 Final content: {delivered inline or file path}
 ```
+
+## Vietnamese Content Pipeline
+
+When target is Vietnamese (`language=vi`), load matching files from `skills/vietnamese-language/` at each stage: STRATEGY loads `seo-content-marketing.md` or `viral-content.md`; CREATE loads the relevant platform file and `gen-z-slang.md` if targeting under-25; CRITIQUE checks register consistency and AI-tells; HUMANIZE applies Vietnamese AI-tell patterns.
