@@ -2,7 +2,7 @@
 
 The Agency ships a lifecycle hook system that runs shell scripts at key Claude Code events. Hooks are installed at `~/.claude/hooks/` and wired into `~/.claude/settings.json` by `agency init`.
 
-This is a significant security and observability upgrade over a bare Claude Code install: 2 → 10 hooks across 4 lifecycle events.
+This is a significant security and observability upgrade over a bare Claude Code install: 2 → 11 hooks across 4 lifecycle events.
 
 ---
 
@@ -17,6 +17,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 | `secret-scanner.sh` | PreToolUse | Bash | Scan shell commands for credential-looking patterns |
 | `config-protection.sh` | PreToolUse | Edit, Write | Block modification of existing linter/formatter configs |
 | `track-edits.sh` | PostToolUse | Edit, Write | Buffer edited file paths for batch checking at session end |
+| `loop-detector.sh` | PostToolUse | all tools | Detect stall loops — 5 identical tool calls in a row triggers warning + stall marker |
 | `session-end.sh` | Stop | always | Mark session as cleanly ended (idempotent) |
 | `batch-check.sh` | Stop | always | Run typecheck + shellcheck on files edited this session |
 | `cost-tracker.sh` | Stop | always | Compute token usage and estimated cost; append to `~/.claude/metrics/costs.jsonl` |
@@ -50,6 +51,12 @@ After `agency init`, your `~/.claude/settings.json` contains:
         "matcher": "Edit|Write",
         "hooks": [
           { "type": "command", "command": "bash ~/.claude/hooks/track-edits.sh" }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bash ~/.claude/hooks/loop-detector.sh" }
         ]
       }
     ],
@@ -146,6 +153,20 @@ Reads `~/.claude/.edit-buffer.txt`, deduplicates, then:
 - For shell scripts: runs `shellcheck -S warning` if shellcheck is on PATH
 
 Clears the buffer after running. Skipped in `minimal` profile.
+
+### loop-detector.sh (PostToolUse: all tools)
+
+Tracks the last 10 tool calls in `~/.claude/.tool-call-tracker.jsonl`. If 5 identical tool+input signatures appear consecutively, prints a stall warning to stderr visible to the running agent and writes a `stall_detected` marker to `session-state.json`.
+
+The warning instructs the agent to:
+1. Restate its objective in one sentence
+2. Verify the actual world state (read the file, check git status)
+3. Try a different approach
+4. If still blocked, `/save-state` and stop
+
+Skipped in `minimal` profile. Clears the tracker file after detecting a stall to give one fresh chance.
+
+**Effect:** Prevents runaway infinite loops from exhausting context or budget without any useful progress.
 
 ### cost-tracker.sh (Stop)
 
