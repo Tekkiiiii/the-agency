@@ -36,10 +36,9 @@ agency new my-app "Build a task manager"
 **Already cloned but haven't set up?** Run this from inside the repo:
 
 ```bash
-node cli/bin/agency.js onboard
+node cli/bin/agency.js init      # installs skills, agents, CLI link
+agency onboard                   # guided tour + first project
 ```
-
-It does everything — installs skills and agents, puts `agency` on your PATH, creates your first project and agent, and verifies the setup.
 
 The PD loads and asks what to build. You supervise; it executes.
 
