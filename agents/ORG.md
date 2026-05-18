@@ -129,7 +129,7 @@ THE AGENCY
 │       Pipeline Strategist, Batch Processing Lead,
 │       Pattern Analysis Specialist, Application Form Assistant
 │
-├── SPECIALIZED ───────────────── 17 agents ── Agents Orchestrator ★
+├── SPECIALIZED ───────────────── 18 agents ── Agents Orchestrator ★
 │   ├── Sub-groups: infra | audit | advisory
 │   ├── Infra team (5): Agents Orchestrator, Identity Graph Operator,
 │       Agentic Identity & Trust Architect, LSP/Index Engineer,
@@ -137,6 +137,7 @@ THE AGENCY
 │   ├── Audit team (3): Compliance Auditor, Blockchain Security Auditor,
 │       Model QA Specialist
 │   ├── Advisory team (1): Efficiency Advisor Loop
+│   ├── Service agents (1): Codebase Search (read-only file/symbol search)
 │   └── Members: Sales Data Extraction Agent, Data Consolidation Agent,
 │       Report Distribution Agent, ZK Steward, Cultural Intelligence
 │       Strategist, Developer Advocate, Vietnamese Text Agent,
