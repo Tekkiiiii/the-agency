@@ -4,12 +4,12 @@
 ![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude%20Code-yellow)
 ![Cloud: Zero dependencies](https://img.shields.io/badge/Cloud-Zero%20Dependencies-green)
 ![Skills: 270+](https://img.shields.io/badge/Skills-270%2B-orange)
-![Agents: 204+](https://img.shields.io/badge/Agents-204%2B-purple)
+![Agents: 225+](https://img.shields.io/badge/Agents-225%2B-purple)
 ![QA: Gates on every handoff](https://img.shields.io/badge/QA-Gates%20%2B%20Health%20Scores-red)
 
 **Your AI agents remember everything, coordinate like a real team, and ship while you sleep.**
 
-A multi-agent orchestration system built on Claude Code. 204+ specialist agents across 19 departments. Autonomous project execution with persistent memory, quality gates on every handoff, and intelligent model routing — all running on your machine, with no servers and no extra API keys.
+A multi-agent orchestration system built on Claude Code. 225+ specialist agents across 19 departments. Autonomous project execution with persistent memory, quality gates on every handoff, and intelligent model routing — all running on your machine, with no servers and no extra API keys.
 
 ---
 
