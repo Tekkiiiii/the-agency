@@ -1,6 +1,6 @@
 # Skills Index
 
-185 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+193 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 ## Department Lifecycle
 
@@ -26,6 +26,10 @@
 | `freeze` | Freeze current state |
 | `unfreeze` | Unfreeze and resume |
 | `learn` | Capture lessons from corrections |
+| `lint-memory` | Audit and clean memory files — dead links, duplicates, outdated entries |
+| `lessons-sync` | Sync lessons learned across projects and global memory |
+| `obsidian-vault` | Obsidian vault integration — read, write, link notes |
+| `notebooklm-memory` | NotebookLM notebook management — source ingestion, queries, memory sync |
 
 ## Coordination & Orchestration
 
@@ -66,6 +70,7 @@
 | `pipeline-audit` | Audit: parallel critiques -> aggregate -> QA -> report |
 | `pipeline-deploy` | Deploy: security -> baseline -> deploy -> canary + benchmark |
 | `pipeline-seo-geo-aeo` | SEO/GEO/AEO audit: technical SEO, structured data, E-E-A-T, AEO, GEO |
+| `blog-pipeline` | End-to-end blog post: research -> outline -> write -> SEO -> humanize -> publish |
 
 ## Execution & Shipping
 
@@ -385,6 +390,14 @@
 | `openspec-propose` | Propose a new change with all artifacts |
 | `openspec-apply-change` | Implement tasks from an OpenSpec change |
 | `openspec-archive-change` | Archive a completed change |
+
+## Career
+
+| Skill | Description |
+|-------|-------------|
+| `career-ops` | Full job search pipeline — JD scraping, CV tailoring, application tracking |
+| `cover-letter-gen` | ATS-optimized cover letters — company-specific, 4-paragraph structure |
+| `resume-bod` | Board of Directors resume format — achievements-first, executive narrative |
 
 ## Research
 
