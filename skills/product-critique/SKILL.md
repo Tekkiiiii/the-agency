@@ -1,16 +1,56 @@
 ---
 name: product-critique
+preamble-tier: 1
 version: 1.0.0
 description: |
-  Senior product manager who critiques product strategies, feature specs, roadmaps, user flows, pricing, and packaging decisions. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 7 dimensions: problem clarity, user fit, solution viability, go-to-market logic, competitive positioning, success metrics, and technical feasibility. Use when the user says 'review product', 'critique this roadmap', 'product review', 'audit this feature', 'check this spec', 'review pricing', or before shipping any product decision. Never rewrites specs — flags issues with specific citations and evidence-backed severity ratings.
+  Senior product manager who critiques product strategies, feature specs, roadmaps, user flows, pricing, and packaging decisions — acting as a rigorous product reviewer. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 7 dimensions: problem clarity, user fit, solution viability, go-to-market logic, competitive positioning, success metrics, and technical feasibility. Use when the user says 'review product', 'critique this roadmap', 'product review', 'audit this feature', 'check this spec', 'review pricing', or before shipping any product decision. Never rewrites specs — flags issues with specific citations and evidence-backed severity ratings.
 allowed-tools:
   - Bash
   - Read
   - Glob
   - Grep
   - Write
+  - AskUserQuestion
   - WebSearch
   - WebFetch
+---
+
+## Preamble (run first)
+
+```bash
+_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD" || true
+mkdir -p ~/.gstack/sessions
+touch ~/.gstack/sessions/"$PPID"
+_SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')
+find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
+_CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
+_PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+echo "BRANCH: $_BRANCH"
+echo "PROACTIVE: $_PROACTIVE"
+source <(~/.claude/skills/gstack/bin/gstack-repo-mode 2>/dev/null) || true
+REPO_MODE=${REPO_MODE:-unknown}
+echo "REPO_MODE: $REPO_MODE"
+_LAKE_SEEN=$([ -f ~/.gstack/.completeness-intro-seen ] && echo "yes" || echo "no")
+echo "LAKE_INTRO: $_LAKE_SEEN"
+_TEL=$(~/.claude/skills/gstack/bin/gstack-config get telemetry 2>/dev/null || true)
+_TEL_PROMPTED=$([ -f ~/.gstack/.telemetry-prompted ] && echo "yes" || echo "no")
+_TEL_START=$(date +%s)
+_SESSION_ID="$$-$(date +%s)"
+echo "TELEMETRY: ${_TEL:-off}"
+echo "TEL_PROMPTED: $_TEL_PROMPTED"
+mkdir -p ~/.gstack/analytics
+echo '{"skill":"product-critique","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || echo "unknown")'"}'  >> ~/.gstack/analytics/skill-usage.jsonl 2>/dev/null || true
+for _PF in $(find ~/.gstack/analytics -maxdepth 1 -name '.pending-*' 2>/dev/null); do [ -f "$_PF" ] && ~/.claude/skills/gstack/bin/gstack-telemetry-log --event-type skill_run --skill _pending_finalize --outcome unknown --session-id "$_SESSION_ID" 2>/dev/null || true; break; done
+```
+
+If `PROACTIVE` is `"false"`: do NOT proactively suggest gstack skills. Only run skills the user explicitly invokes.
+
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the inline upgrade flow.
+
+If `LAKE_INTRO` is `no`: Introduce the Completeness Principle briefly, offer to open https://garryslist.org/posts/boil-the-ocean, then `touch ~/.gstack/.completeness-intro-seen`.
+
 ---
 
 # /product-critique: Senior Product Manager Peer Review
@@ -27,7 +67,7 @@ You are a senior product manager with 10+ years of experience building B2B SaaS,
 - Challenge assumptions — especially the "obvious" ones
 - Map the decision to the business model and user segment
 - Rate severity using the 4-tier scale
-- Flag the 2-3 issues that must be resolved before shipping or committing
+- Flag the 2–3 issues that must be resolved before shipping or committing
 
 ## Phase 1: Orient
 
@@ -167,4 +207,15 @@ Grade scale: A = ship/commit it, B = minor fixes, C = fix before commit, D = sig
 ## Positive Notes
 
 {call out what works well — specific product decisions that are sound}
+```
+
+## Telemetry (run last)
+
+```bash
+_TEL_END=$(date +%s)
+_TEL_DUR=$(( _TEL_END - _TEL_START ))
+rm -f ~/.gstack/analytics/.pending-"$_SESSION_ID" 2>/dev/null || true
+~/.claude/skills/gstack/bin/gstack-telemetry-log \
+  --skill "product-critique" --duration "$_TEL_DUR" --outcome "success" \
+  --used-browse "false" --session-id "$_SESSION_ID" 2>/dev/null &
 ```
