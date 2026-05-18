@@ -8,28 +8,31 @@
 
 ## Executive Summary
 
-The Agency operates on a **4-level matrix model** with two parallel authority tracks:
+The Agency operates on a **5-level matrix model** with three parallel authority tracks:
 
 1. **Parent AI (Level 1 — Opus)** — Central orchestrator. Resolves matrix conflicts, allocates resources, and approves cross-project/shared-infra decisions. Weighted by task severity and project financial importance.
-2. **Dept Heads + Project Directors (Level 2 — Opus)** — Parallel authority lines. Dept Heads own skill quality. Project Directors own project delivery.
-3. **Assistants (Level 3 — Sonnet)** — Context synthesizers. One per Dept Head (capacity tracking) or per active project (status synthesis). NOT relays.
-4. **Members (Level 4 — Sonnet)** — Task execution. Belong to departments, work on projects under PD direction.
+2. **Dept Heads + Project Directors (Level 2 — Opus)** — Parallel authority lines. Dept Heads own skill quality + department operations. Project Directors own project delivery.
+3. **Dept-Coords + Coords (Level 3 — Sonnet/Opus)** — Autonomous work owners. Dept-Coords (Sonnet) own D3 department-operational tracks. Coords (Opus) own L3 project delivery tracks.
+4. **Assistants (Level 3b — Sonnet)** — Context synthesizers. One per Dept Head (capacity tracking) or per active project (status synthesis). NOT relays.
+5. **Members (Level 4 — Sonnet)** — Task execution. Belong to departments, work on projects under PD direction or department initiatives under Dept-Coord direction.
 
-### Matrix Model: Two Authority Tracks
+### Matrix Model: Three Authority Tracks
 
 ```
-VERTICAL (Functional Track)          HORIZONTAL (Project Track)
-─────────────────────────────────    ─────────────────────────────────
-Dept Head (Opus) ◄──────────────► Project Director (Opus)
-     │                                    │
-  Assistant                          Assistant
-     │                                    │
-  Member                            Member
-     │                                    │
-  Member                            Member
+VERTICAL (Functional Track)          HORIZONTAL (Project Track)          DEPT-OPS (Internal Track)
+─────────────────────────────────    ─────────────────────────────────    ─────────────────────────
+Dept Head (Opus) ◄──────────────► Project Director (Opus)                Dept Head (Opus)
+     │                                    │                                    │
+  Assistant                          Coord (Opus)                       Dept-Coord (Sonnet)
+     │                                    │                                    │
+  Member                            Exec (Sonnet)                       Dept-Member (Sonnet)
 ```
 
 **Resource allocation:** PDs request agents from Dept Heads → Dept Heads dispatch members → Members work on projects under PD direction → Dept Heads retain skill quality ownership.
+
+**Dept-Coord system:** Dept Heads decompose department-operational work (D1→D3) and spawn Dept-Coords to own D3 tracks. Dept-Coords decompose D3→D6 and dispatch dept members. Used for pipeline management, protocol improvement, member development — not project delivery. See `runbooks/dept-coord-protocol.md`.
+
+**Inter-spawn protocol:** PDs and Dept Heads can spawn work into each other's domains via `state/incoming/` directories. PD→DeptHead tasks go to `agents/{dept}/state/incoming/`. DeptHead→PD tasks go to `{project}/memory/inter-spawn-tasks/incoming/`.
 
 **Conflict resolution:** PD ↔ Dept Head conflicts escalate to Parent AI (Level 1), weighted by severity and financial importance.
 
@@ -37,7 +40,7 @@ Dept Head (Opus) ◄──────────────► Project Direct
 
 **Status reporting:** On-demand only. Dept heads request status from members/projects as needed. No automated loops. This keeps parent AI context at O(departments + exceptions) rather than O(agents).
 
-**Model tiering:** All 200+ agents tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
+**Model tiering:** All 161 agents tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
 
 **Status loop policy:** Automated recurring loops are DISABLED. Use on-demand status checks only. Dept heads request status when needed — do not automate periodic pings. This avoids the token explosion risk of naive 15-30 min loop implementations (10k-21k reports/week without aggregation). See § on status reporting.
 
@@ -129,7 +132,7 @@ THE AGENCY
 │       Pipeline Strategist, Batch Processing Lead,
 │       Pattern Analysis Specialist, Application Form Assistant
 │
-├── SPECIALIZED ───────────────── 18 agents ── Agents Orchestrator ★
+├── SPECIALIZED ───────────────── 17 agents ── Agents Orchestrator ★
 │   ├── Sub-groups: infra | audit | advisory
 │   ├── Infra team (5): Agents Orchestrator, Identity Graph Operator,
 │       Agentic Identity & Trust Architect, LSP/Index Engineer,
@@ -137,7 +140,6 @@ THE AGENCY
 │   ├── Audit team (3): Compliance Auditor, Blockchain Security Auditor,
 │       Model QA Specialist
 │   ├── Advisory team (1): Efficiency Advisor Loop
-│   ├── Service agents (1): Codebase Search (read-only file/symbol search)
 │   └── Members: Sales Data Extraction Agent, Data Consolidation Agent,
 │       Report Distribution Agent, ZK Steward, Cultural Intelligence
 │       Strategist, Developer Advocate, Vietnamese Text Agent,
@@ -176,7 +178,7 @@ THE AGENCY
 
 ## Agency Council
 
-The **Agency Council** is the governing body for all cross-department decisions. It consists of all 19 department leaders reporting to the Council Chair (the parent AI).
+The **Agency Council** is the governing body for all cross-department decisions. It consists of all 14 department leaders reporting to the Council Chair (the parent AI).
 
 ### Council Members
 
@@ -195,7 +197,6 @@ The **Agency Council** is the governing body for all cross-department decisions.
 | Infrastructure Maintainer | operations-lead | Operations | SendMessage to `operations-lead` |
 | Agents Orchestrator | specialized-lead | Specialized | SendMessage to `specialized-lead` |
 | XR Interface Architect | spatial-lead | Spatial Computing | SendMessage to `spatial-lead` |
-| career-ops PD | career-lead | Career | SendMessage to `career-lead` |
 
 ### Council Communication Protocol
 
@@ -248,7 +249,7 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 
 | Team | Purpose | Members | Created By |
 |------|---------|---------|------------|
-| **Agency Council** | Governing body for cross-dept strategy and approval | All 14 leaders + Council Chair | See below |
+| **Agency Council** | Governing body for cross-dept strategy and approval | All 12 leaders + Council Chair | See below |
 | **Project Teams** | Temporary teams for specific deliverables | Relevant leaders + members per project type | Run kickoff protocol |
 | **Department Teams** | Standing teams within each department | Leader + their members | Implicit; members exist at department paths |
 
@@ -277,7 +278,7 @@ Human / Parent AI
        │         └──► Department Member (executes)
        │
        ▼ (council assembly for cross-dept problems)
-  Agency Council (all 14 leaders)
+  Agency Council (all 12 leaders)
 ```
 
 Leaders message the Council Chair. Members report to their leader. Cross-dept requests go through leaders to the Council Chair for routing.
@@ -293,6 +294,62 @@ Reference `runbooks/escalation-protocol.md` for the full detail.
 | **Tier 1** | Department Leader | File edits <10 lines, read-only commands, documentation, code review | Immediate |
 | **Tier 2** | Council Chair (parent AI) | New files, code changes >10 lines, config changes, deps, migrations | Within session |
 | **Tier 3** | Human | Destructive ops, deployments, external comms, secrets, financial | Human availability |
+
+---
+
+## Department Operations (Dept-Coord System)
+
+Each department has a persistent operational state at `{dept}/state/`, `{dept}/pipelines/`, `{dept}/protocols/`, and `{dept}/memory/`. This enables department heads to manage pipelines, improve protocols, and track member utilization across sessions.
+
+### Department Decomposition Levels (D-Levels)
+
+| Level | Owner | Ceiling | Example |
+|-------|-------|---------|---------|
+| D1 | Dept Head | — | "Improve content production pipeline" |
+| D2 | Dept Head | — | "Writer briefing", "Quality gate automation" |
+| D3 | Dept Head breaks, Dept-Coord takes | Hard stop for Dept Head | "Redesign writer briefing" |
+| D4-D5 | Dept-Coord | — | "Draft brief sections", "Create example" |
+| D6 | Dept-Coord assigns, Dept-Member executes | Hard stop for Dept-Coord | "Write the template — one file" |
+
+### Department State Structure
+
+```
+{dept}/
+├── state/
+│   ├── dept-state.md          # Live snapshot (max 20 lines) — read on every spawn
+│   ├── member-roster.md       # Utilization + skill tracking
+│   ├── active-coords.md       # Append-only DC status log
+│   └── incoming/              # Inter-spawn tasks from PDs
+├── pipelines/
+│   ├── INDEX.md               # Pipeline registry (name, version, status)
+│   └── {name}/pipeline.md     # Versioned pipeline definition
+├── protocols/
+│   ├── INDEX.md               # Protocol registry
+│   └── {name}.md              # Versioned protocol definition
+├── memory/
+│   ├── decisions.md           # Dept-level decisions (append-only)
+│   ├── lessons.md             # Dept-level lessons (append-only)
+│   └── retros/                # Monthly retrospective records
+└── scratch/
+    ├── dept-scratch.md        # Active session scratch
+    └── coords/                # DC-* scratch files
+```
+
+### Key Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/dept-resume [slug]` | Read dept-state.md, spawn dept head with lean briefing |
+| `/dept-save-state [slug]` | Write dept-state.md + member-roster.md at session end |
+| `/dept-status [slug]` | Read-only status digest (no spawns) |
+
+### Key Runbooks
+
+| Runbook | Purpose |
+|---------|---------|
+| `dept-coord-protocol.md` | Full operational manual for the dept-coord system |
+| `dept-boot-sequence.md` | Two-mode dept head startup (spawn + route) |
+| `protocol-registry.md` | Cross-department protocol index |
 
 ---
 
@@ -318,8 +375,8 @@ For focused teams, the trigger phrases include project type:
 2. Spawn leaders in TWO WAVES to avoid team config race conditions:
    Wave 1 (6 agents): engineering-lead, design-lead, game-development-lead,
                        marketing-lead, content-creation-lead, sales-lead
-   Wave 2 (8 agents): paid-media-lead, product-lead, pm-lead, testing-lead,
-                       operations-lead, specialized-lead, spatial-lead, career-lead
+   Wave 2 (7 agents): paid-media-lead, product-lead, pm-lead, testing-lead,
+                       operations-lead, specialized-lead, spatial-lead
    Wait for Wave 1 to join (~30s) before spawning Wave 2.
 3. Each spawn: Load the leader's agent definition file and instruct them to
    join "agency-council" and send their intro to "team-lead"
@@ -382,4 +439,4 @@ Each project directory follows this memory structure:
 
 ---
 
-*Last updated: 2026-05-05*
+*Last updated: 2026-05-02*
