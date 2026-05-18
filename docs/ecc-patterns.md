@@ -139,13 +139,104 @@ JSONL at `~/.claude/metrics/costs.jsonl`. Each row: timestamp, session_id, model
 
 ---
 
+## Skill-Level Patterns (from 230 ECC skills analyzed)
+
+### 21. Agent Architecture Audit — 12-Layer Diagnostic
+
+Formalized diagnostic stack for agent systems. When an agent misbehaves, check these layers in order:
+
+| # | Layer | What Goes Wrong |
+|---|-------|----------------|
+| 1 | System prompt | Conflicting instructions, instruction bloat |
+| 2 | Session history | Stale context from previous turns |
+| 3 | Long-term memory | Pollution across sessions |
+| 4 | Distillation | Compressed artifacts re-entering as pseudo-facts |
+| 5 | Active recall | Redundant re-summary wasting context |
+| 6 | Tool selection | Wrong tool routing |
+| 7 | Tool execution | Hallucinated execution — claims to call but doesn't |
+| 8 | Tool interpretation | Misread or ignored tool output |
+| 9 | Answer shaping | Format corruption in final response |
+| 10 | Platform rendering | Transport-layer mutation |
+| 11 | Hidden repair loops | Silent fallback/retry agents running second pass |
+| 12 | Persistence | Expired state reused as live evidence |
+
+**Quick diagnostic (7 questions):**
+1. Can the model skip a required tool and still answer? → Tool not code-gated
+2. Does old conversation content appear in new turns? → Memory contamination
+3. Is the same info in system prompt AND memory AND history? → Context duplication
+4. Does the platform run a second LLM pass before delivery? → Hidden repair loop
+5. Does output differ between internal generation and user delivery? → Rendering corruption
+6. Are "must use tool X" rules only in prompt text? → Tool discipline failure
+7. Can the agent's own monologue become persistent memory? → Memory poisoning
+
+### 22. Agent Self-Debugging — Recovery Heuristics
+
+When an agent is stuck, follow this ordered recovery:
+1. Restate the real objective in one sentence
+2. Verify the world state instead of trusting memory
+3. Shrink the failing scope to one file/test/command
+4. Run one discriminating check (not a full re-run)
+5. Only then retry
+
+**Output standard:** Never end with "I fixed it" alone. Always provide: failure pattern, root-cause hypothesis, recovery action, evidence of improvement or continued block.
+
+### 23. Autonomous Loop Patterns
+
+**De-Sloppify:** Add a dedicated cleanup agent in a SEPARATE context window after implementation. Never combine implementation and cleanup. "Two focused agents outperform one constrained agent."
+
+**SHARED_TASK_NOTES.md:** Bridges independent context windows. Agent reads at iteration start, updates at end. The standard solution for fresh context per `claude -p` call.
+
+**Completion signal:** Agent outputs a magic phrase N consecutive times → loop stops. Prevents wasted runs on finished work.
+
+**Separate context per pipeline stage:** Reviewer never wrote the code it reviews. Author bias eliminated by architectural separation.
+
+### 24. Knowledge Operations — 6-Layer Architecture
+
+| Layer | What | When |
+|-------|------|------|
+| 1 | GitHub/Linear | Active execution truth — roadmaps, releases, issues |
+| 2 | Memory files | Quick-access markdown with frontmatter |
+| 3 | MCP memory / knowledge graph | Semantic search and relationships |
+| 4 | Knowledge base repo | Curated durable documents |
+| 5 | External data store | Large documents (Supabase/PostgreSQL) |
+| 6 | Local archive | Human-facing notes |
+
+**Key rule:** If something affects an active engineering plan, put it in GitHub/Linear FIRST, not a local note.
+
+### 25. Workspace Surface Audit — Gap Classification
+
+When auditing system capabilities, classify each gap into the right ECC shape:
+
+| Gap Type | Preferred Shape |
+|----------|----------------|
+| Repeatable operator workflow | Skill |
+| Automatic enforcement or side-effect | Hook |
+| Specialized delegated role | Agent |
+| External tool bridge | MCP server |
+| Install/bootstrap guidance | Setup skill |
+
+---
+
+## Cross-Cutting Insights
+
+1. **"Hooks fire 100%, skills fire 50-80%"** — All observation/enforcement should live in hooks, not skill instructions
+2. **"Two focused agents > one constrained agent"** — Cleanup pass beats negative instructions
+3. **Anti-anchoring:** Decision subagents get ONLY the question, never conversation history
+4. **Cold-start briefs:** Each plan step should be self-contained for a fresh agent with zero prior context
+5. **"The investigation itself creates context that changes the output"** — GateGuard's core insight
+
+---
+
 ## Usage Guide for Agents
 
 - Designing a new hook → read sections 1 (Hookify), 14 (Chief-of-Staff), 20 (Config Protection)
 - Making architectural decisions → read sections 2 (Council), 5 (Model Routing)
 - Authoring a new skill → read sections 6 (EDD), 7 (Context Modes)
 - Reviewing code or plans → read section 15 (Confidence-Gated Review)
-- Running autonomous loops → read section 3 (Loop Operator)
+- Running autonomous loops → read sections 3 (Loop Operator), 23 (Loop Patterns)
 - Optimizing costs → read sections 13 (CLI-over-MCP), 17 (Context Budget), 19 (Cost Tracking)
+- Debugging agent failures → read sections 21 (12-Layer Audit), 22 (Self-Debugging)
+- Classifying system gaps → read section 25 (Workspace Surface Audit)
+- Knowledge storage decisions → read section 24 (6-Layer Architecture)
 
 See also: [[video_use_skill]], [[feedback_agent_fix_before_fallback]]

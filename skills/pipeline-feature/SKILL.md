@@ -10,7 +10,7 @@ You are orchestrating a full feature development pipeline. Execute each stage se
 
 ## Pipeline State
 
-Create a pipeline tracker at `{project-path}/.pipeline/pipeline-feature-{date}.md` at the start. Update it after each stage completes.
+Create a pipeline tracker at `.gstack/pipeline-feature-{date}.md` at the start. Update it after each stage completes.
 
 ```markdown
 ## Pipeline: Feature Development
@@ -47,15 +47,35 @@ This runs CEO review, design review (if UI scope), and eng review internally.
 
 Read the approved plan file. Determine execution method:
 
-- **If the plan has 3+ independent waves:** use parallel subagent execution
-- **Otherwise:** use sequential in-session execution
+- **If the plan has 3+ independent waves:** invoke `/superpowers-subagent-driven-development` (parallel subagent execution)
+- **Otherwise:** invoke `/superpowers-executing-plans` (sequential in-session execution)
 
-Handle verification checkpoints internally.
+Both skills handle their own verification checkpoints internally.
 
 **Gate:** All plan tasks must be marked completed. Run the project's test suite (`npm test`, `pytest`, `mix test`, etc.) — all tests must pass.
 
-**On pass:** Update tracker row 2 → PASS, proceed to Stage 3.
+**On pass:** Update tracker row 2 → PASS, proceed to Stage 2b.
 **On fail:** If tests fail, fix failures before proceeding. If blocked, update tracker row 2 → BLOCKED.
+
+---
+
+## Stage 2b: DE-SLOPPIFY
+
+After implementation passes, spawn a SEPARATE cleanup agent (fresh context, no shared history with the implementer). This is NOT optional — the cleanup agent sees dead code the implementer is blind to.
+
+Spawn prompt:
+```
+Review and clean the changes on this branch (git diff main...HEAD).
+Remove: defensive checks for impossible states, over-tested language/framework
+behavior, console.log/debug statements, commented-out code, redundant type
+assertions, unnecessary abstractions added "just in case".
+Run the full test suite after cleanup. Do not change functionality.
+```
+
+**Gate:** Tests still pass after cleanup. If cleanup broke tests → revert cleanup, proceed anyway.
+
+**On pass:** Update tracker row 2b → PASS, proceed to Stage 3.
+**On skip:** If no meaningful cleanup found, mark SKIPPED.
 
 ---
 
@@ -91,7 +111,7 @@ If no files match any condition, skip this stage (update tracker → SKIPPED).
 
 Invoke `/review` on the current branch.
 
-This runs structural analysis, scope drift detection, plan completion audit, test coverage, and adversarial review.
+This runs structural analysis, scope drift detection, plan completion audit, test coverage diagram, and adversarial review (Codex + subagent).
 
 **Gate:** No P1 (critical) issues. All AUTO-FIX items applied. ASK items presented to user for decision.
 
@@ -110,7 +130,8 @@ The QA skill runs browser testing, finds bugs, fixes them atomically with regres
 
 **Gate:** Health score >= 70. If score < 70:
 1. Report the QA findings
-2. If score is still < 70 after fixes → report to user, ask whether to proceed
+2. The `/qa` skill's internal fix loop should have addressed fixable issues
+3. If score is still < 70 after fixes → report to user, ask whether to proceed
 
 **On pass:** Update tracker row 5 → PASS (include health score), proceed to Stage 6.
 
@@ -120,7 +141,7 @@ The QA skill runs browser testing, finds bugs, fixes them atomically with regres
 
 Invoke `/ship`.
 
-This merges base branch, runs tests, generates coverage, bumps version, updates CHANGELOG, creates commits, pushes, and creates a PR.
+This merges base branch, runs tests, generates coverage, bumps version, updates CHANGELOG, creates bisectable commits, pushes, and creates a PR.
 
 **Gate:** PR created successfully. All CI checks pass (or no CI configured).
 
@@ -138,18 +159,24 @@ If user says skip → update tracker row 7 → SKIPPED, go to Final Report.
 If deploying:
 
 ### 7a: Baseline capture
-Capture production baseline (errors, load times, screenshots) before deploying.
+```
+/canary --baseline {production-url}
+/benchmark --baseline {production-url}
+```
 
 ### 7b: Deploy
 Invoke `/railway-deploy` or `/vercel-deploy` based on user's choice.
 
 ### 7c: Post-deploy verification (parallel subagents)
-Run canary monitoring and performance benchmark against pre-deploy baseline.
+```
+/canary {production-url} --duration 5m
+/benchmark {production-url} --diff
+```
 
 **Gate:** Canary verdict is HEALTHY. No benchmark REGRESSION.
 
 **On pass:** Update tracker row 7 → PASS.
-**On fail:** Report findings. DEGRADED or REGRESSION may warrant a rollback — ask the user.
+**On fail:** Report findings. Canary DEGRADED or benchmark REGRESSION may warrant a rollback — ask the user.
 
 ---
 
@@ -176,3 +203,5 @@ Duration: {total elapsed}
 Overall: {PASS / PASS_WITH_OVERRIDES / BLOCKED}
 Artifacts: {list of PR URLs, report paths, deploy URLs}
 ```
+
+Append the report to the pipeline tracker file. Print it to the user.
