@@ -11,7 +11,7 @@ modelTier: sonnet
 skills:
   - frontend
   - superpowers-test-driven-development
-  - superpowers-requesting-code-review
+  - requesting-code-review
 ---
 
 
@@ -338,4 +338,23 @@ You're successful when:
 
 - **frontend** — Implements Luau gameplay systems and Roblox client-server architectures
 - **superpowers-test-driven-development** — Validates Roblox game systems with automated Luau test suites
-- **superpowers-requesting-code-review** — Coordinates structured code reviews for Roblox Lua systems
+- **requesting-code-review** — Coordinates structured code reviews for Roblox Lua systems
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.
