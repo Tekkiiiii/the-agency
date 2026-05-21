@@ -14,6 +14,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
 | `gate-guard.sh` | PreToolUse | Edit, Write | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
+| `spawn-gate.sh` | PreToolUse | Agent | Enforce Delegator-first dispatch — block non-allowlisted subagent_type spawns that lack Delegator consultation |
 | `secret-scanner.sh` | PreToolUse | Bash | Scan shell commands for credential-looking patterns |
 | `config-protection.sh` | PreToolUse | Edit, Write | Block modification of existing linter/formatter configs |
 | `track-edits.sh` | PostToolUse | Edit, Write | Buffer edited file paths for batch checking at session end |
@@ -37,6 +38,12 @@ After `agency init`, your `~/.claude/settings.json` contains:
         "hooks": [
           { "type": "command", "command": "bash ~/.claude/hooks/gate-guard.sh" },
           { "type": "command", "command": "bash ~/.claude/hooks/config-protection.sh" }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          { "type": "command", "command": "~/.agency/hooks/spawn-gate.sh" }
         ]
       },
       {
@@ -129,6 +136,38 @@ Checks the target file path against four categories:
 - Skill entry points (`SKILL.md`)
 
 Also scans write content for JWT/API key patterns. Returns `permissionDecision: ask` (standard) or `deny` (strict) with a message. Returns `{}` (pass-through) if no match.
+
+### spawn-gate.sh (PreToolUse: Agent)
+
+Enforces the Delegator-first dispatch rule. Every Agent tool call is intercepted; the hook decides whether the spawn is pre-approved or must demonstrate Delegator consultation.
+
+**Allowlisted subagent_type values (exact match — pass through immediately):**
+
+- `curator`
+- `Delegator`
+- `codebase-search`
+- `Explore`
+- `Plan`
+- `general-purpose`
+- `statusline-setup`
+- `pd-coordinator`
+- `coord`
+- `mini-coord`
+- `task-executor`
+
+**PD spawn prefix detection:** If the agent `prompt` starts with `You are PD-`, the spawn is unconditionally allowed. This covers PD boot sequences triggered by `/pd-spawn` and `/pd-resume`.
+
+**DELEGATOR ROUTING compliance marker:** If the prompt contains the string `DELEGATOR ROUTING`, the hook treats the spawn as compliant and passes through. The Delegator writes this block into the calling agent's context; well-behaved agents copy it into the downstream prompt.
+
+**Block behavior:** Any spawn that does not match the allowlist, lacks the PD prefix, and contains no `DELEGATOR ROUTING` marker receives `permissionDecision: deny` with a message explaining the required workflow:
+
+1. Spawn `Delegator` with a task description and project context.
+2. Wait for its routing recommendation.
+3. Include the recommendation block in the downstream agent prompt.
+
+The deny message also lists all pre-approved subagent_type values and references `~/.agency/memory/agency-dispatch.md` Step 1.5 for the full allowlist.
+
+Respects the `.hook-profile` system: in `minimal` profile, the hook exits immediately with `{}` (all spawns allowed).
 
 ### secret-scanner.sh (PreToolUse: Bash)
 
