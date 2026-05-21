@@ -42,7 +42,7 @@ esac
 if [ -z "$WARN" ]; then
   case "$FILE_PATH" in
     */.claude/agents/*.md|*/agents/*.md)
-      WARN="Writing to agent definition: $(basename "$FILE_PATH"). Verify: modelTier matches role, spawn rules follow CLAUDE.md 4-condition gate."
+      WARN="Writing to agent definition: $(basename "$FILE_PATH"). Verify: modelTier matches role, skills list is accurate."
       ;;
   esac
 fi
