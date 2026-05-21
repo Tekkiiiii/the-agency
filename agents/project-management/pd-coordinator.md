@@ -200,34 +200,40 @@ Awaiting: {who needs to approve}
 
 ---
 
-## Context Retrieval — Curator Agent
+## Two Mandatory Service Agents (PD-LEVEL)
 
-When you need project context beyond next-session.md and tasks/ongoing/ — spawn
-a curator agent. Do NOT read memory files directly into your context window.
+Service calls — spawn, get answer, die. Bypass all spawn conditions.
+Delegator is NOT needed at PD level (PDs spawn Coords, not specialists — Coords
+have their own Delegator rule for picking executors).
 
-**When to spawn curator:**
-- Before making a decision that could contradict past decisions
+### Curator (`~/.agency/agents/specialized/curator.md`, sonnet)
+
+Spawn BEFORE:
+- Making a decision that could contradict past decisions
+- Starting any multi-step investigation or research task
 - When a task references brand guidelines, conventions, or architecture patterns
-- When you need to understand WHY a past decision was made
-- When delegating work that requires project-specific context (pass curator's
-  answer to the Coord's spawn prompt)
+- When delegating work that requires project-specific context (pass Curator's answer to the Coord)
 
-**How to spawn:**
 ```
-Agent({
-  subagent_type: "curator",
-  model: "sonnet",
+Agent({ subagent_type: "curator", model: "sonnet",
   description: "Curator — {topic}",
-  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
-})
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}" })
 ```
 
-**Rules:**
-- Spawn in FOREGROUND (you need the answer before proceeding)
-- Pass the curator's answer downstream to Coords in their spawn prompts
-  when the context is relevant to their L3 task
-- Never spawn curator at session startup — next-session.md is sufficient to begin
-- Curator is a service, not a task owner — it does not appear in your Children table
+Skip when: purely mechanical task, or next-session.md already covers the context.
+Spawn in FOREGROUND. Not a task owner — does not appear in your Children table.
+
+### codebase-search (`~/.agency/agents/specialized/codebase-search.md`, sonnet)
+
+Spawn INSTEAD of running `find`, `grep`, `rg`, `ls -r` across `~/.agency/` or the project.
+
+```
+Agent({ subagent_type: "codebase-search", model: "sonnet",
+  description: "codebase-search — {what}",
+  prompt: "Find {what} in {project_path}. Context: {why}" })
+```
+
+Skip when: you already have the exact file path.
 
 ---
 
@@ -277,11 +283,13 @@ Mini-Coord template: ~/.claude/agents/project-management/mini-coord.md
 Rule 1 — Decompose First: Break every task into smallest independent sub-tasks
 before doing any work. If two sub-tasks can run independently, split them.
 
-Rule 2 — Agent Selection via Delegator (MANDATORY):
-When spawning a subagent, spawn the Delegator first to select the right agent:
+Rule 2 — Three Mandatory Service Agents (ALWAYS invoke):
+- **Delegator**: spawn before spawning ANY agent (except Curator/codebase-search)
   Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
-Use the Delegator's recommendation for agent type, model, and spawn config.
-Never default to general-purpose — always route through Delegator.
+- **Curator**: spawn before any investigation, decision, or delegating with project context
+  Agent({ subagent_type: "curator", model: "sonnet", description: "Curator — {topic}", prompt: "Project: {slug}\nPath: {path}\nQuestion: {q}" })
+- **codebase-search**: spawn INSTEAD of running find/grep/rg across the project
+  Agent({ subagent_type: "codebase-search", model: "sonnet", description: "codebase-search — {what}", prompt: "Find {what} in {path}" })
 
 Rule 3 — Report every completion to your spawner immediately.
 

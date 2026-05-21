@@ -54,7 +54,7 @@ dept-resume done — {dept}
 
 ## Notes
 
-- If `dept-state.md` doesn't exist, output: `No dept-state found for {dept}. Run /dept-save-state to initialize.`
+- If `dept-state.md` doesn't exist, output: `No dept-state found for {dept}. Run /dept-wrap to initialize.`
 - Dept Heads do NOT start their session by reading every pipeline and protocol file — that is lazy-loaded
 - The incoming check is part of the boot sequence and runs before any other dept work
 

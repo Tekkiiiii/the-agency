@@ -1,13 +1,14 @@
 # Skills Index
 
-253 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+254 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 ## Department Lifecycle
 
 | Skill | Description |
 |-------|-------------|
 | `dept-resume` | Resume department head sessions — reads dept-state.md, spawns dept heads with lean briefings |
-| `dept-save-state` | Freeze department state at session end — writes dept-state.md, archives scratch files |
+| `dept-wrap` | Freeze department state at session end — pairs with /dept-resume (renamed from dept-save-state) |
+| `dept-save-state` | RENAMED → use `dept-wrap` instead |
 | `dept-status` | Quick department status check — reads state files, returns compact digest |
 
 ## Memory & Session
@@ -436,6 +437,9 @@ Common combinations:
 /save-state
 /save-state [slug]
 /save-state all
+/dept-resume [dept-slug]
+/dept-wrap [dept-slug]
+/dept-wrap all
 /swarm
 /pipeline-feature [description]
 /pipeline-bugfix [bug]
