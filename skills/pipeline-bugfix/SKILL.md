@@ -1,7 +1,7 @@
 ---
 name: pipeline-bugfix
 version: 1.0.0
-description: "Bug fix pipeline — investigate root cause, apply fix with scope lock, critique, QA verification, ship. Chains investigate, verification, critique skills, qa-only, and ship into a disciplined fix workflow."
+description: "Bug fix pipeline — investigate root cause, apply fix with scope lock, critique, QA verification, ship. Chains investigate, guard, verification, critique skills, qa-only, and ship into a disciplined fix workflow."
 ---
 
 # Pipeline: Bug Fix
@@ -10,7 +10,7 @@ You are orchestrating a bug fix pipeline. The iron law: no fix without root caus
 
 ## Pipeline State
 
-Create a pipeline tracker at `{project-path}/.pipeline/pipeline-bugfix-{date}.md` at the start.
+Create a pipeline tracker at `.gstack/pipeline-bugfix-{date}.md` at the start.
 
 ```markdown
 ## Pipeline: Bug Fix
@@ -35,6 +35,7 @@ Invoke `/investigate` with the bug description, error message, or reproduction s
 The investigate skill enforces:
 - Root cause identification before any fix
 - 3-strike rule: 3 failed hypotheses → STOP and escalate
+- PreToolUse hooks lock the debug scope via `/freeze`
 
 **Gate:** Root cause must be identified. A DEBUG REPORT must be produced with:
 - Symptom (what the user observed)
@@ -48,12 +49,18 @@ The investigate skill enforces:
 
 ## Stage 2: FIX
 
-### 2a: Apply the fix
+### 2a: Scope lock
+Identify the directory containing the affected files. Invoke `/guard {directory}` to activate:
+- Edit/Write boundary lock (freeze)
+- Destructive command interception (careful)
+
+### 2b: Apply the fix
 Implement the fix identified in Stage 1. Write a regression test that:
 1. Fails WITHOUT the fix (red)
 2. Passes WITH the fix (green)
 
-### 2b: Verify
+### 2c: Verify
+Invoke `/superpowers-verification-before-completion`:
 - Run the regression test → must pass
 - Run the full test suite → must pass
 - Demonstrate the fix with evidence (command output, not assertions)
@@ -100,7 +107,7 @@ Invoke `/qa-only` (report-only mode — no additional fixes at this stage).
 
 If the project has a running dev server, use it. Otherwise start one.
 
-Focus on:
+The QA skill runs browser testing and produces a health score. Since this is a bugfix, focus on:
 1. The specific area where the bug was found (regression check)
 2. Adjacent features that could be affected
 3. Overall health score
@@ -127,6 +134,23 @@ For bugfixes, the ship skill should produce:
 
 ---
 
+## Stage 5.5: QUALITY GATE (code changes with documentation)
+
+**Trigger:** Run if the fix includes any user-facing documentation, error messages, release notes, or commit message descriptions that will be seen outside the team.
+
+**Skip if:** Pure code-only fix with no user-visible text changes.
+
+Invoke `/quality-loop-router` with:
+- `task_type`: `code` (for code quality gate)
+- `pipeline_context`: "pipeline-bugfix — internal Claude run" (Mode A)
+- `artifact`: the fix diff + any documentation changed
+
+The quality-loop-router runs critique-code + receiving-code-review in Mode A.
+
+Update tracker: add row `| 5.5 | QUALITY GATE | quality-loop-router | {PASS/SKIPPED} | {score or "n/a"} | — |`
+
+---
+
 ## Final Report
 
 ```markdown
@@ -140,7 +164,7 @@ Duration: {total elapsed}
 | # | Stage | Skill(s) | Result | Gate | Duration |
 |---|-------|----------|--------|------|----------|
 | 1 | INVESTIGATE | investigate | {result} | Root cause: {found/blocked} | {time} |
-| 2 | FIX | verification | {result} | Red-green: {pass/fail} | {time} |
+| 2 | FIX | guard, verification | {result} | Red-green: {pass/fail} | {time} |
 | 3 | CRITIQUE | {critique skill} | {result} | Grade: {letter} | {time} |
 | 4 | QA | qa-only | {result} | Score: {N}/100 | {time} |
 | 5 | SHIP | ship | {result} | {PR URL} | {time} |

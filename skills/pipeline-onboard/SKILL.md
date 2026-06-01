@@ -2,8 +2,8 @@
 name: pipeline-onboard
 description: >
   New project onboarding pipeline: tech-stack (profile) → CLAUDE.md setup → memory init →
-  skill-routing.md check. Brings a new or inherited project into the Agency system in one
-  command. Trigger when: starting work on a project that has no {agency-root}/projects/{slug}/
+  skill-routing.md check. Brings a new or inherited project into the Tekki system in one
+  command. Trigger when: starting work on a project that has no ~/.claude/projects/{slug}/
   memory structure yet; taking over an existing codebase; setting up a new repo for
   PD-managed development; when /new-project alone is insufficient (it creates scaffolding
   but doesn't profile the stack, verify CLAUDE.md completeness, or link skill-routing).
@@ -15,7 +15,7 @@ description: >
 
 # Pipeline: Onboard
 
-Bring a project into the Agency system. One command, four stages.
+Bring a project into the Tekki system. One command, four stages.
 
 **Anti-redundancy:** This pipeline calls tech-stack (profiler mode) in Stage 1.
 Do NOT add a separate `/tech-stack` call after running this pipeline.
@@ -38,7 +38,7 @@ Optional:
 
 Invoke `/tech-stack` in **profiler mode**:
 - Project: {project-path}
-- Output: `{agency-root}/projects/{slug}/memory/tech-profile.md`
+- Output: `~/.claude/projects/{slug}/memory/tech-profile.md`
 
 This scans package.json, CLAUDE.md, docker-compose.yml, deployment configs, and
 source structure. Output is a structured tech-profile.md.
@@ -75,7 +75,7 @@ fields pre-filled from tech-profile.md. Include a header:
 
 ## Stage 3 — Memory Init
 
-Create the standard memory structure at `{agency-root}/projects/{slug}/memory/`:
+Create the standard memory structure at `~/.claude/projects/{slug}/memory/`:
 
 ```
 memory/
@@ -150,7 +150,7 @@ _(no active inter-spawn tasks)_
 
 ## Stage 4 — Skill Routing Check
 
-Read `{agency-root}/memory/skill-routing.md`.
+Read `~/.claude/memory/skill-routing.md`.
 
 From tech-profile.md, identify the relevant tech domains:
 - If Next.js detected: note `pipeline-feature`, `pipeline-deploy`, `pipeline-content` are relevant
@@ -166,7 +166,7 @@ Key anti-redundancy rules:
   - Use autoplan only (not autoplan + plan-ceo-review separately)
   - Use pipeline-deploy only (not security-critique + canary alongside it)
   - Quality gate: content-critique → content-polish (not atomics)
-Full rules: {agency-root}/memory/skill-routing.md
+Full rules: ~/.claude/memory/skill-routing.md
 ```
 
 ---
@@ -175,7 +175,7 @@ Full rules: {agency-root}/memory/skill-routing.md
 
 If PD needed = `yes`:
 
-Read `{agency-root}/memory/medium-term.md`. In the Active Projects table, add:
+Read `~/.claude/memory/medium-term.md`. In the Active Projects table, add:
 
 ```
 | {slug} | {description} | {project-path} | ACTIVE |
@@ -190,9 +190,9 @@ If the project is already in the table: skip.
 ```
 PIPELINE-ONBOARD COMPLETE — {slug}
 
-Stage 1 — Tech Profile:    {agency-root}/projects/{slug}/memory/tech-profile.md
+Stage 1 — Tech Profile:    ~/.claude/projects/{slug}/memory/tech-profile.md
 Stage 2 — CLAUDE.md:       {project-path}/CLAUDE.md ({N fields verified, M added})
-Stage 3 — Memory:          {agency-root}/projects/{slug}/memory/ ({N dirs created, M skipped)
+Stage 3 — Memory:          ~/.claude/projects/{slug}/memory/ ({N dirs created, M skipped)
 Stage 4 — Skill Routing:   {N relevant rules identified}
 Stage 5 — medium-term.md:  {added / skipped / not requested}
 
