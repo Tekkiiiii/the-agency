@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plan Title — Project Name</title>
+  <!--
+    html-plan-style — the-agency palette
+    Single source of truth: {agency-root}/skills/html-plan-style/style.css
+    DO NOT override CSS variables outside :root.
+    DO NOT change font-size on body (must stay 22px per CLAUDE.md rule).
+  -->
+  <style>
+    /* ============================================================
+       PALETTE — CSS VARIABLES (the-agency house palette)
+       ============================================================ */
+    :root {
+      /* Forest (primary) */
+      --color-primary:        #1E3A2F;
+      --color-primary-dark:   #1a3028;
+      --color-primary-medium: #264E41;
+      --color-primary-light:  #3d7a62;
+      --color-primary-soft:   #b3d1c5;
+      --color-primary-pale:   #d4e9e2;
+      --color-primary-bg:     #f0f5f3;
+
+      /* Gold (accent) */
+      --color-accent:         #D4A853;
+      --color-accent-dark:    #b8922e;
+      --color-accent-pale:    #f5e5b5;
+      --color-accent-bg:      #fdfaf0;
+
+      /* Terracotta (secondary / warning) */
+      --color-secondary:      #C4785A;
+      --color-secondary-dark: #9a5339;
+      --color-secondary-pale: #f5d5c8;
+      --color-secondary-bg:   #fdf6f3;
+
+      /* Stone (neutrals) */
+      --color-text:           #292524;
+      --color-text-muted:     #78716c;
+      --color-text-faint:     #a8a29e;
+      --color-border:         #d4e9e2;
+      --color-border-subtle:  #e7e5e4;
+      --color-bg:             #f0f5f3;
+      --color-surface:        #ffffff;
+      --color-surface-alt:    #fdf6f3;
+
+      /* Semantic */
+      --color-success:        #3d7a62;
+      --color-success-bg:     #f0f5f3;
+      --color-warning:        #C4785A;
+      --color-warning-bg:     #fdf6f3;
+      --color-info:           #264E41;
+      --color-info-bg:        #d4e9e2;
+      --color-decision:       #b8922e;
+      --color-decision-bg:    #fdfaf0;
+      --color-text-on-primary: #ffffff;
+
+      /* Gradients */
+      --gradient-hero: linear-gradient(135deg, #1E3A2F 0%, #1a3028 60%, #292524 100%);
+
+      /* Typography — web-safe fallbacks included */
+      --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+      --font-sans:    'Plus Jakarta Sans', 'DM Sans', system-ui, -apple-system, sans-serif;
+      --font-mono:    'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+      /* 22px base — CLAUDE.md rule. Children use rem. */
+      --font-base: 22px;
+      --font-xs:   0.72rem;
+      --font-sm:   0.82rem;
+      --font-md:   1rem;
+      --font-lg:   1.18rem;
+      --font-xl:   1.45rem;
+      --font-2xl:  1.8rem;
+      --font-3xl:  2.27rem;
+      --font-4xl:  2.73rem;
+
+      /* Spacing */
+      --space-xs:  0.36rem;
+      --space-sm:  0.73rem;
+      --space-md:  1.45rem;
+      --space-lg:  2.9rem;
+      --space-xl:  4.36rem;
+
+      /* Radius */
+      --radius-sm:  6px;
+      --radius:     12px;
+      --radius-lg:  16px;
+      --radius-xl:  24px;
+      --radius-2xl: 32px;
+      --radius-full: 9999px;
+
+      /* Shadow */
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow:    0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.12);
+
+      /* Layout */
+      --max-width:    900px;
+      --content-pad:  2rem;
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: var(--font-sans);
+      font-size: var(--font-base);   /* 22px */
+      line-height: 1.65;
+      color: var(--color-text);
+      background-color: var(--color-bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ============================================================
+       TYPOGRAPHY
+       ============================================================ */
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-display);
+      color: var(--color-primary);
+      line-height: 1.25;
+      font-weight: 700;
+    }
+    h1 { font-size: var(--font-4xl); margin-bottom: var(--space-sm); }
+    h2 { font-size: var(--font-2xl); margin-bottom: var(--space-sm); margin-top: var(--space-lg); }
+    h3 { font-size: var(--font-xl);  margin-bottom: var(--space-xs); margin-top: var(--space-md); }
+    h4 { font-size: var(--font-lg);  margin-bottom: var(--space-xs); margin-top: var(--space-md); }
+    h5 { font-size: var(--font-md);  margin-bottom: var(--space-xs); margin-top: var(--space-sm); font-family: var(--font-sans); font-weight: 600; }
+    h6 { font-size: var(--font-sm);  margin-bottom: var(--space-xs); margin-top: var(--space-sm); font-family: var(--font-sans); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); }
+
+    p { margin-bottom: var(--space-sm); max-width: 72ch; }
+    a { color: var(--color-primary-light); text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.2s; }
+    a:hover { text-decoration-color: currentColor; }
+    strong, b { font-weight: 700; color: var(--color-primary); }
+    em, i { font-style: italic; }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: var(--font-sm);
+      background: var(--color-primary-bg);
+      color: var(--color-primary);
+      padding: 0.1em 0.4em;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+    }
+
+    pre {
+      font-family: var(--font-mono);
+      font-size: var(--font-sm);
+      background: var(--color-primary-bg);
+      border: 1px solid var(--color-border);
+      border-left: 4px solid var(--color-primary-light);
+      border-radius: var(--radius);
+      padding: var(--space-sm) var(--space-md);
+      overflow-x: auto;
+      margin-bottom: var(--space-md);
+      line-height: 1.5;
+    }
+    pre code { background: none; border: none; padding: 0; color: var(--color-text); }
+
+    blockquote {
+      border-left: 4px solid var(--color-accent);
+      background: var(--color-accent-bg);
+      padding: var(--space-sm) var(--space-md);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: var(--space-md) 0;
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+
+    hr { border: none; border-top: 1px solid var(--color-border); margin: var(--space-lg) 0; }
+
+    /* ============================================================
+       LISTS
+       ============================================================ */
+    ul, ol { padding-left: 1.5rem; margin-bottom: var(--space-sm); }
+    li { margin-bottom: var(--space-xs); }
+
+    ul.checklist { list-style: none; padding-left: 0; }
+    ul.checklist li { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.3rem 0; }
+    ul.checklist li::before { content: '\25A1'; font-size: 1rem; color: var(--color-border-subtle); flex-shrink: 0; margin-top: 0.1rem; }
+    ul.checklist li.done::before { content: '\2713'; color: var(--color-success); }
+    ul.checklist li.in-progress::before { content: '\25CB'; color: var(--color-accent); }
+    ul.checklist li.done { color: var(--color-text-muted); text-decoration: line-through; text-decoration-color: var(--color-border-subtle); }
+
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .plan-container { max-width: var(--max-width); margin: 0 auto; padding: 0 var(--content-pad) var(--space-xl); }
+    .plan-section { margin-bottom: var(--space-lg); }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-md); }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-md); }
+
+    /* ============================================================
+       PLAN HEADER
+       ============================================================ */
+    .plan-header {
+      background: var(--gradient-hero);
+      color: var(--color-text-on-primary);
+      padding: var(--space-xl) var(--content-pad);
+      margin-bottom: var(--space-lg);
+    }
+    .plan-header-inner { max-width: var(--max-width); margin: 0 auto; }
+    .plan-header h1 { font-size: var(--font-3xl); color: var(--color-text-on-primary); margin-bottom: var(--space-xs); line-height: 1.15; }
+    .plan-header .subtitle { font-size: var(--font-lg); color: rgba(255,255,255,0.75); max-width: 60ch; margin-bottom: var(--space-sm); }
+    .header-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); font-size: var(--font-sm); color: rgba(255,255,255,0.6); margin-top: var(--space-sm); }
+
+    /* ============================================================
+       SECTION LABEL
+       ============================================================ */
+    .section-label { display: inline-block; font-family: var(--font-sans); font-size: var(--font-xs); font-weight: 700; color: var(--color-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--space-xs); }
+    .plan-header .section-label { color: var(--color-accent); }
+
+    /* ============================================================
+       CARDS
+       ============================================================ */
+    .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--space-md); box-shadow: var(--shadow); margin-bottom: var(--space-md); }
+    .card-accent { background: var(--color-secondary-bg); border: 1px solid var(--color-secondary-pale); border-radius: var(--radius-xl); padding: var(--space-md); margin-bottom: var(--space-md); }
+    .card-gold { background: var(--color-accent-bg); border: 1px solid var(--color-accent-pale); border-radius: var(--radius-xl); padding: var(--space-md); margin-bottom: var(--space-md); }
+    .card-dark { background: var(--color-primary-dark); border: 1px solid var(--color-primary-medium); border-radius: var(--radius-xl); padding: var(--space-md); color: var(--color-text-on-primary); margin-bottom: var(--space-md); }
+    .card-dark h1, .card-dark h2, .card-dark h3, .card-dark h4 { color: var(--color-text-on-primary); }
+    .card-dark p, .card-dark li { color: rgba(255,255,255,0.8); }
+
+    /* ============================================================
+       CALLOUTS
+       ============================================================ */
+    .callout { padding: var(--space-sm) var(--space-md); border-radius: var(--radius); margin-bottom: var(--space-md); font-size: var(--font-sm); border-left-width: 4px; border-left-style: solid; }
+    .callout p { max-width: 100%; margin-bottom: 0; }
+    .callout strong { display: block; margin-bottom: 0.25rem; font-size: var(--font-md); }
+    .callout-info { background: var(--color-info-bg); border-left-color: var(--color-info); color: var(--color-info); }
+    .callout-warning { background: var(--color-warning-bg); border-left-color: var(--color-warning); color: var(--color-secondary-dark); }
+    .callout-success { background: var(--color-success-bg); border-left-color: var(--color-success); color: var(--color-primary); }
+    .callout-decision { background: var(--color-decision-bg); border-left-color: var(--color-decision); color: var(--color-primary); }
+
+    /* ============================================================
+       BADGES
+       ============================================================ */
+    .badge { display: inline-flex; align-items: center; font-family: var(--font-sans); font-size: var(--font-xs); font-weight: 600; padding: 0.2em 0.7em; border-radius: var(--radius-full); white-space: nowrap; }
+    .badge-done { background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-primary-pale); }
+    .badge-in-progress { background: var(--color-accent-bg); color: var(--color-accent-dark); border: 1px solid var(--color-accent-pale); }
+    .badge-blocked { background: var(--color-secondary-bg); color: var(--color-secondary-dark); border: 1px solid var(--color-secondary-pale); }
+    .badge-pending { background: var(--color-surface); color: var(--color-text-muted); border: 1px solid var(--color-border-subtle); }
+    .badge-priority { background: var(--color-primary); color: var(--color-text-on-primary); border: 1px solid var(--color-primary-dark); }
+
+    /* ============================================================
+       TABLES
+       ============================================================ */
+    table { width: 100%; border-collapse: collapse; font-size: var(--font-sm); margin-bottom: var(--space-md); background: var(--color-surface); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+    th { background: var(--color-primary); color: var(--color-text-on-primary); font-family: var(--font-sans); font-size: var(--font-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.8rem 1rem; text-align: left; }
+    td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--color-border-subtle); color: var(--color-text); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: var(--color-bg); }
+    tr:hover td { background: var(--color-primary-bg); }
+
+    /* ============================================================
+       PRINT
+       ============================================================ */
+    @media print {
+      body { background: white; font-size: 16px; color: #000; }
+      .plan-header { background: var(--color-primary); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .plan-header h1, .plan-header .subtitle, .plan-header .section-label, .plan-header .header-meta,
+      .card, .callout, .card-accent, .card-gold, .card-dark { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .card, .callout, .card-accent, .card-gold, .card-dark { break-inside: avoid; }
+      h2, h3 { break-after: avoid; }
+      a { color: inherit; text-decoration: none; }
+      pre, table { font-size: 0.8em; }
+      .plan-container { max-width: 100%; padding: 0 1cm; }
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 640px) {
+      body { font-size: 18px; }
+      .plan-header { padding: var(--space-md) var(--space-sm); }
+      .plan-header h1 { font-size: var(--font-2xl); }
+      .plan-container { padding: 0 var(--space-sm) var(--space-lg); }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      th, td { padding: 0.5rem 0.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PLAN HEADER — Replace all placeholder text -->
+  <header class="plan-header">
+    <div class="plan-header-inner">
+      <span class="section-label">Project Name</span>
+      <h1>Plan Title Goes Here</h1>
+      <p class="subtitle">One-line description of what this plan covers and what outcome it drives.</p>
+      <div class="header-meta">
+        <span>Date: 2026-05-22</span>
+        <span>Author: System-Improvement PD</span>
+        <span>Project: system-improvement</span>
+        <span class="badge badge-in-progress">In Progress</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="plan-container">
+
+    <!-- ============================================================
+         SECTION: OVERVIEW / EXECUTIVE SUMMARY
+         ============================================================ -->
+    <section class="plan-section">
+      <span class="section-label">Overview</span>
+      <h2>Executive Summary</h2>
+      <p>
+        Brief summary of this plan's goal, scope, and the outcome it drives. Keep this to
+        2-3 sentences. Anyone reading this section should know immediately what we are doing
+        and why.
+      </p>
+
+      <div class="callout callout-info">
+        <strong>Context</strong>
+        <p>Optional: additional context, linked decisions, or background the reader needs before diving in.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION: STATUS SNAPSHOT
+         ============================================================ -->
+    <section class="plan-section">
+      <span class="section-label">Status</span>
+      <h2>Current Status</h2>
+
+      <div class="grid-3">
+        <div class="card">
+          <h5>Phase</h5>
+          <p>Implementation</p>
+          <span class="badge badge-in-progress">Active</span>
+        </div>
+        <div class="card">
+          <h5>Blockers</h5>
+          <p>None</p>
+          <span class="badge badge-done">Clear</span>
+        </div>
+        <div class="card">
+          <h5>Next Action</h5>
+          <p>Specific next step in one sentence.</p>
+          <span class="badge badge-pending">Pending</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION: TASKS / STEPS
+         ============================================================ -->
+    <section class="plan-section">
+      <span class="section-label">Tasks</span>
+      <h2>Implementation Steps</h2>
+      <p>Ordered list of tasks. Each task has a clear owner, status, and acceptance criterion.</p>
+
+      <ul class="checklist">
+        <li class="done">Task 1 — Completed item with clear description of what was done.</li>
+        <li class="in-progress">Task 2 — Active task being worked on right now.</li>
+        <li>Task 3 — Pending task not yet started.</li>
+        <li>Task 4 — Pending task not yet started.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================
+         SECTION: DECISIONS
+         ============================================================ -->
+    <section class="plan-section">
+      <span class="section-label">Decisions</span>
+      <h2>Key Decisions</h2>
+
+      <div class="callout callout-decision">
+        <strong>Decision: [Decision title]</strong>
+        <p>We chose [option A] over [option B] because [reason]. This is locked — do not reopen without new evidence.</p>
+      </div>
+
+      <div class="callout callout-decision">
+        <strong>Decision: [Another decision]</strong>
+        <p>Explanation of the decision and the rationale.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION: RISKS / BLOCKERS
+         ============================================================ -->
+    <section class="plan-section">
+      <span class="section-label">Risks</span>
+      <h2>Risks and Blockers</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Risk / Blocker</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Mitigation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Risk description goes here</td>
+            <td><span class="badge badge-blocked">High</span></td>
+            <td><span class="badge badge-in-progress">Monitoring</span></td>
+            <td>Mitigation plan description</td>
+          </tr>
+          <tr>
+            <td>Another risk</td>
+            <td><span class="badge badge-pending">Low</span></td>
+            <td><span class="badge badge-done">Resolved</span></td>
+            <td>Already resolved by X</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================
+         SECTION: CODE / TECHNICAL NOTES (optional)
+         ============================================================ -->
+    <section class="plan-section">
+      <span class="section-label">Technical</span>
+      <h2>Technical Notes</h2>
+
+      <h3>Example Code Block</h3>
+      <pre><code># Replace with actual code or commands
+git commit -m "feat: implement html-plan-style skill"</code></pre>
+
+      <div class="callout callout-warning">
+        <strong>Warning</strong>
+        <p>Any important technical caution goes here. This callout catches the eye.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION: NEXT STEPS (footer block)
+         ============================================================ -->
+    <section class="plan-section">
+      <div class="card-dark">
+        <span class="section-label">Next Steps</span>
+        <h3>What Happens After This</h3>
+        <ul>
+          <li>Next step 1 — specific action with owner</li>
+          <li>Next step 2 — specific action with owner</li>
+          <li>Next step 3 — specific action with owner</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>
