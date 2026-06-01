@@ -19,9 +19,8 @@ Navigate to the department that fits your task. Each department has its own `IND
 | [Operations](operations/INDEX.md) | `operations/` | Analytics, finance, infrastructure, legal/compliance, support |
 | [Specialized](specialized/INDEX.md) | `specialized/` | Agents infra, audits, data extraction, ZK knowledge, Vietnamese text processing, misc |
 | [Spatial Computing](spatial-computing/INDEX.md) | `spatial-computing/` | AR/VR/XR, visionOS, Metal, Apple platform spatial |
-| [Career](career/INDEX.md) | `career/` | Job search pipeline, CV generation, offer evaluation, application tracking |
-| [Integrations](integrations/INDEX.md) | `integrations/` | Third-party integrations, webhooks, API connectors |
-| [Strategy](strategy/INDEX.md) | `strategy/` | Business strategy, competitive analysis, go-to-market planning |
+| [Critiques](critiques/INDEX.md) | `critiques/` | Scored critique of any deliverable — design, content, marketing, pedagogy, SEO, product, security, brand |
+| [Video Studio](video-studio/INDEX.md) | `video-studio/` | All video production — scripted or AI-generated. Pre-production, production, post-production, distribution, QA |
 
 ## Department Coordination (Dept-Coord System)
 
@@ -43,17 +42,20 @@ Each department has a Dept-Coord agent for department-operational work (pipeline
 | spatial-computing-coord | Spatial Computing | `spatial-computing/spatial-computing-coord.md` |
 | specialized-coord | Specialized | `specialized/specialized-coord.md` |
 | testing-coord | Testing | `testing/testing-coord.md` |
+| video-studio-coord | Video Studio | `video-studio/video-studio-coord.md` |
 
 ## Runbooks
 
 - [Department Lead Protocol](runbooks/department-lead-protocol.md) — how dept leaders communicate
-- [Escalation Protocol](runbooks/escalation-protocol.md) — Tier 1/2/3 decision routing
-- [Content Request Protocol](runbooks/content-request-protocol.md) — how content gets requested, produced, and distributed
 - [Dept-Coord Protocol](runbooks/dept-coord-protocol.md) — full dept-coord operational manual
 - [Dept Boot Sequence](runbooks/dept-boot-sequence.md) — two-mode dept head startup
 - [Protocol Registry](runbooks/protocol-registry.md) — cross-department protocol index
+- [Escalation Protocol](runbooks/escalation-protocol.md) — Tier 1/2/3 decision routing
+- [Content Request Protocol](runbooks/content-request-protocol.md) — how content gets requested, produced, and distributed
 - [Project Kickoff Protocol](runbooks/project-kickoff-protocol.md) — how to spin up a project team
 - [Project Team Templates](runbooks/project-team-templates.md) — pre-built team compositions
+- [Content → Video Protocol](runbooks/content-to-video-protocol.md) — script handoff from Content Creation to Video Studio, end-to-end video pipeline
+- [Quality Loop Protocol](runbooks/quality-loop-protocol.md) — agency-wide quality gate protocol; quality-loop-router is the terminal step for all creative pipelines
 
 ## Reference
 
