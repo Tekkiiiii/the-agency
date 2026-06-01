@@ -243,6 +243,18 @@ Graph context: <node1>, <node2>, <node3>, <node4>, <node5>
 
 If the graphify MCP tool is unavailable, skip silently.
 
+## Step 3.6 — Check Showcase Mode
+
+Before spawning, test whether `{agency-root}/state/pd-showcase.flag` exists.
+
+- **If absent (default):** background spawn, no narration injection.
+- **If present (showcase ON):** foreground spawn + Showcase Narration Directive
+  appended to every PD briefing. Toggled via `/pd-showcase`.
+
+Record this as `showcase_on = true | false` for use in Step 4. NOTE: if
+multiple targets were resolved in Step 1 and showcase is ON, spawn them
+**sequentially** (foreground spawns block) — not in parallel.
+
 ## Step 4 — Spawn PD Coordinator(s)
 
 **If a single slug was given:** spawn exactly one PD coordinator with that briefing only.
@@ -290,11 +302,30 @@ Model: Opus (pd-coordinator uses Opus, Coords use Opus, Executors use Sonnet)
 
 Start immediately on 'Next'. Do not re-read project docs unless the briefing says to.
 When a task block is complete or you are blocked, run /save-state [{slug}] then stop.
+
+{IF showcase_on, append:}
+
+--- SHOWCASE MODE ---
+A live audience is watching this session. Optimize for comprehension over speed:
+
+1. Before each tool call, write ONE short sentence explaining what you're
+   about to do and why.
+2. After each tool result, write ONE short sentence summarizing what you
+   learned before choosing the next step.
+3. When deciding between approaches, narrate the trade-off out loud
+   ("I could either X or Y — going with X because...").
+4. When you finish a phase (research, planning, implementation, verification),
+   call it out explicitly so the audience knows where you are.
+
+Keep narration tight — one sentence each, no lectures. The audience reads
+your tool calls; you just connect the dots.
+--- END SHOWCASE MODE ---
 ```
 
 **Subagent config — MANDATORY HIERARCHY:**
 - `subagent_type`: pd-coordinator (from Agency catalog — match domain first)
 - `model`: opus
+- `run_in_background`: `false` if `showcase_on`, else `true`
 - **Never use general-purpose as default. Only fall back to general-purpose when no named or domain agent fits the task.**
 - When spawning subagents FOR the PD coordinator's tasks, follow Rule 2 Agent Selection Hierarchy (check domain match first from the Agency catalog).
 

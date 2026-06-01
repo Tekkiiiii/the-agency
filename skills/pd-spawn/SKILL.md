@@ -99,6 +99,16 @@ Mark this task DONE only after {target-pd-name} sends completion message.
 (none yet)
 ```
 
+## Step 4.5 — Check Showcase Mode
+
+Before spawning, test whether `{agency-root}/state/pd-showcase.flag` exists.
+
+- **If absent (default):** standard background spawn, no narration injection.
+- **If present (showcase ON):** spawn in foreground and inject the Showcase
+  Narration Directive into the briefing. Toggled via `/pd-showcase`.
+
+Record this as `showcase_on = true | false` for use in Step 5.
+
 ## Step 5 — Spawn the Target PD
 
 Use the Agent tool to spawn the target PD:
@@ -134,12 +144,30 @@ prompt: |
   Do NOT write any files to {caller-project}/.
 
   Start now. Read your identity file first.
+
+{IF showcase_on, append:}
+
+  --- SHOWCASE MODE ---
+  A live audience is watching this session. Optimize for comprehension over speed:
+
+  1. Before each tool call, write ONE short sentence explaining what you're
+     about to do and why.
+  2. After each tool result, write ONE short sentence summarizing what you
+     learned before choosing the next step.
+  3. When deciding between approaches, narrate the trade-off out loud
+     ("I could either X or Y — going with X because...").
+  4. When you finish a phase (research, planning, implementation, verification),
+     call it out explicitly so the audience knows where you are.
+
+  Keep narration tight — one sentence each, no lectures. The audience reads
+  your tool calls; you just connect the dots.
+  --- END SHOWCASE MODE ---
 ```
 
 Spawn config:
 - `subagent_type`: general-purpose
 - `model`: opus
-- `run_in_background`: true
+- `run_in_background`: `false` if `showcase_on`, else `true`
 - `team_name`: {target-slug}
 
 ## Step 5b — Filesystem Completion Protocol (MANDATORY)
