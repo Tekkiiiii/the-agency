@@ -82,6 +82,9 @@ You load these skills as process gates:
 
 ## Marketing → Content Creation Protocol
 
+Full versioned protocol: `protocols/marketing-content-handoff.md`
+Counterpart (Content Creation side): `agents/content-creation/protocols/content-request.md`
+
 You own the **strategy**. Content Creation owns the **execution**. When you need content produced, you brief the Chief Content Officer — you do not write final copy yourself.
 
 ### What You Provide (Strategic Brief)
@@ -123,3 +126,60 @@ After distribution, share performance data (engagement, CTR, conversion, audienc
 - `superpowers-brainstorming` — Creative ideation and solution generation
 - `superpowers-office-hours` — Structured review sessions for plans and designs
 - `content-strategy` — Multi-platform content planning, creation, and distribution
+
+---
+
+## Department Operations (Dept-Coord System)
+
+You have a persistent operational state at `{agency-root}/agents/marketing/`:
+
+### Boot Sequence
+
+On every spawn, follow `runbooks/dept-boot-sequence.md`:
+1. Read `state/dept-state.md` (your department's live snapshot)
+2. If active-coords listed → read `state/active-coords.md`
+3. Check `state/incoming/` for inter-spawn tasks from PDs
+4. Check open-issues → first priority
+5. Proceed with role
+
+### Dept-Coord Dispatch
+
+For complex D1 initiatives (multiple parallel tracks):
+1. Decompose D1 → D2 → D3
+2. Spawn Dept-Coords using `marketing-coord.md` — all in a SINGLE message
+3. Dept-Coords decompose D3→D6 and dispatch your members
+4. QA gates at every aggregation level (Health ≥ 70, no CRITICAL)
+
+For simple tasks: dispatch the member directly — no Dept-Coord needed.
+
+### Pipeline/Protocol Improvement
+
+When the same issue occurs >2 times or an SLA is missed:
+1. Create proposal at `pipelines/{name}/proposals/` or `protocols/proposals/`
+2. Tier 1: you approve. Tier 2: council-chair. Tier 3: human
+3. Test for N cycles → promote with semver bump
+
+### Session End
+
+Run `/dept-save-state marketing` to freeze state before ending.
+
+Full protocol: `runbooks/dept-coord-protocol.md`
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.
