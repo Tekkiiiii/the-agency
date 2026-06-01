@@ -145,10 +145,28 @@ THE AGENCY
 │       Strategist, Developer Advocate, Vietnamese Text Agent,
 │       Paperclip Control Plane ★
 │
-└── SPATIAL COMPUTING ───────────── 6 agents ── XR Interface Architect ★
-    └── Members: macOS Spatial/Metal Engineer, XR Immersive Developer,
-        XR Cockpit Interaction Specialist, visionOS Spatial Engineer,
-        Terminal Integration Specialist
+├── CRITIQUES ───────────────────── 9 agents ── Curmudgeon-in-Chief ★
+│   └── Members: critique-design (Playwright, visual/contrast/layout),
+│       critique-content (copy/voice/diacritics/AI-slop),
+│       critique-marketing (positioning/funnel/ICP/CTA),
+│       critique-pedagogy (teaching effectiveness/scaffolding/demo ratio),
+│       critique-seo (SEO/GEO/AEO), critique-product (UX/IA/usability),
+│       critique-security (injection/auth/misconfig),
+│       critique-brand (voice/visual identity/positioning drift)
+│
+├── SPATIAL COMPUTING ───────────── 6 agents ── XR Interface Architect ★
+│   └── Members: macOS Spatial/Metal Engineer, XR Immersive Developer,
+│       XR Cockpit Interaction Specialist, visionOS Spatial Engineer,
+│       Terminal Integration Specialist
+│
+└── VIDEO STUDIO ────────────────── 17 agents ── Video Studio Director ★
+    ├── Sub-groups: pre-production (3) | production (3) | post-production (5) | distribution (3) | qa (2)
+    ├── Pre-production: Storyboard Artist, Shot Planner, Voice & Cast Director
+    ├── Production: Screen Recording Director, AI Video Producer, Animation Director
+    ├── Post-production: Video Editor, VFX & Motion Designer, Colorist & Audio Engineer,
+    │   Captioning Specialist, Thumbnail Designer
+    ├── Distribution: Platform Formatter, Video SEO Specialist, Upload Automator
+    └── QA: Video Quality Reviewer, Video Accessibility Auditor
 ```
 
 ---
@@ -173,6 +191,8 @@ THE AGENCY
 | 14 | XR Interface Architect | Spatial Computing | — | XR/AR/VR strategy, visionOS, Apple platform spatial experiences |
 | 15 | Paperclip Control Plane | Specialized | — | Zero-human company orchestration, agent workforce management, cost governance |
 | 16 | RoomManager | Specialized | infra | Multi-agent chat rooms, active polling, member notifications, shared context management |
+| 17 | Video Studio Director | Video Studio | pre-production, production, post-production, distribution, qa | Video quality standards, production workflows, platform distribution, script-to-screen pipeline |
+| 17 | Curmudgeon-in-Chief | Critiques | — | Scored multi-axis critique of any deliverable; routes to specialist critics |
 
 ---
 
@@ -197,6 +217,7 @@ The **Agency Council** is the governing body for all cross-department decisions.
 | Infrastructure Maintainer | operations-lead | Operations | SendMessage to `operations-lead` |
 | Agents Orchestrator | specialized-lead | Specialized | SendMessage to `specialized-lead` |
 | XR Interface Architect | spatial-lead | Spatial Computing | SendMessage to `spatial-lead` |
+| Curmudgeon-in-Chief | critiques-lead | Critiques | SendMessage to `critiques-lead` |
 
 ### Council Communication Protocol
 
@@ -236,7 +257,7 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 | Operations | `operations/` |
 | Specialized | `specialized/` |
 | Specialized (Infra sub-team) | `specialized/infra/` |
-| **Rooms Infrastructure** | `~/.claude/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
+| **Rooms Infrastructure** | `{agency-root}/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
 | **RoomManager** | `specialized/infra/room-manager.md` — always-on via 15-min cron polling |
 | Specialized (Audit sub-team) | `specialized/audit/` |
 | Spatial Computing | `spatial-computing/` |
@@ -340,7 +361,7 @@ Each department has a persistent operational state at `{dept}/state/`, `{dept}/p
 | Skill | Purpose |
 |-------|---------|
 | `/dept-resume [slug]` | Read dept-state.md, spawn dept head with lean briefing |
-| `/dept-save-state [slug]` | Write dept-state.md + member-roster.md at session end |
+| `/dept-wrap [slug]` | Write dept-state.md + member-roster.md at session end |
 | `/dept-status [slug]` | Read-only status digest (no spawns) |
 
 ### Key Runbooks
