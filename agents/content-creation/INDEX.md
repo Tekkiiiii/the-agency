@@ -39,7 +39,7 @@ See [social-media/INDEX.md](social-media/INDEX.md) — 12 platform-specific writ
 | Agent | What it produces |
 |---|---|
 | Video Script Writer | TikTok/Reels/YouTube scripts, video ad scripts, explainer scripts |
-| Video Producer | Media engineering — ffmpeg transcode, trim, concat, filter, extract, format conversion, platform optimization |
+| Video Producer | Direct ffmpeg/ffprobe media ops — transcode, extract, concat, filter, optimize |
 | Technical Writer (Content) | Developer docs, API references, help center articles, tutorials |
 | Presentation Creator | Slide/pitch/speaker/board decks via Marp (Markdown → HTML/PDF/PPTX) |
 
@@ -54,11 +54,13 @@ See [social-media/INDEX.md](social-media/INDEX.md) — 12 platform-specific writ
 
 **Standalone**: content-creator, copywriting, content-strategy, content-critique, content-polish, humanizer, proofreader, tech-writer, stop-slop
 
-**Pipeline**: pipeline-content (research → strategy → create → critique → humanize → knowledge)
+**Pipeline**: pipeline-content (research → strategy → create → critique → humanize → knowledge), pipeline-research (deep 4-stage research)
+
+**Quality gate**: quality-loop-router — **mandatory terminal step** for all content deliverables; invoke after content-polish pass
 
 **Reference layers**: seo-aeo-best-practices, content-experimentation-best-practices, content-modeling-best-practices, vietnamese-language
 
-**Vietnamese market**: 01-lich-noi-dung, 04-script-video, 05-copy-quang-cao, 06-brief-ugc-egc, 14-email-marketing
+**Video handoff**: Video scripts complete here → use `content-to-video-protocol` (`agents/runbooks/content-to-video-protocol.md`) to hand off to Video Studio dept for production
 
 ## How Content Gets Requested
 
