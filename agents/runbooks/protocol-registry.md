@@ -22,6 +22,7 @@ Any protocol listed here has passed cross-dept sign-off and is considered active
 |---|---|---|---|---|---|
 | content-request | content-creation | marketing | v1.0 | active | `agents/content-creation/protocols/content-request.md` |
 | marketing-content-handoff | marketing | content-creation | v1.0 | active | `agents/marketing/protocols/marketing-content-handoff.md` |
+| quality-loop | critiques | content-creation, marketing, design, engineering, video-studio | v1.0 | active | `agents/runbooks/quality-loop-protocol.md` |
 
 **Column definitions:**
 - **Protocol** — machine-readable slug, kebab-case, unique across the registry
@@ -29,7 +30,7 @@ Any protocol listed here has passed cross-dept sign-off and is considered active
 - **Participants** — other departments that consume or implement the protocol
 - **Version** — semver, starts at v1.0 on first activation
 - **Status** — `proposed` | `testing` | `active` | `deprecated`
-- **File Path** — relative to `~/.claude/`, always the owner dept's `protocols/` directory
+- **File Path** — relative to `{agency-root}/`, always the owner dept's `protocols/` directory
 
 ---
 
@@ -66,7 +67,7 @@ proposed → testing → active → deprecated
 
 1. Create the protocol file in the owning dept's `protocols/` directory:
    ```
-   ~/.claude/agents/{owner-dept}/protocols/{protocol-slug}.md
+   {agency-root}/agents/{owner-dept}/protocols/{protocol-slug}.md
    ```
 
 2. Notify all participant dept heads via SendMessage with:
@@ -74,7 +75,7 @@ proposed → testing → active → deprecated
    TYPE: coordination_request
    SUBJECT: New cross-dept protocol — {protocol-slug}
    STATUS: proposed
-   FILE: ~/.claude/agents/{owner-dept}/protocols/{protocol-slug}.md
+   FILE: {agency-root}/agents/{owner-dept}/protocols/{protocol-slug}.md
    ---
    [Brief description and request for review]
    ```
@@ -130,8 +131,8 @@ The agency-council reviews this registry quarterly and deprecates protocols that
 
 ## References
 
-- Dept-Coord protocol: `~/.claude/agents/runbooks/dept-coord-protocol.md`
-- Dept boot sequence: `~/.claude/agents/runbooks/dept-boot-sequence.md`
-- Dept lead protocol: `~/.claude/agents/runbooks/department-lead-protocol.md`
-- Content request protocol: `~/.claude/agents/content-creation/protocols/content-request.md`
-- Marketing-content handoff: `~/.claude/agents/marketing/protocols/marketing-content-handoff.md`
+- Dept-Coord protocol: `{agency-root}/agents/runbooks/dept-coord-protocol.md`
+- Dept boot sequence: `{agency-root}/agents/runbooks/dept-boot-sequence.md`
+- Dept lead protocol: `{agency-root}/agents/runbooks/department-lead-protocol.md`
+- Content request protocol: `{agency-root}/agents/content-creation/protocols/content-request.md`
+- Marketing-content handoff: `{agency-root}/agents/marketing/protocols/marketing-content-handoff.md`
