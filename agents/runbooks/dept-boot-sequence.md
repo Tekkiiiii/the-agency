@@ -22,18 +22,18 @@ lastUpdated: 2026-05-13
 
 **Step 1:** Read dept-state from spawn prompt. `/dept-resume` passes dept-state.md content inline — no file read needed. If spawned manually without a briefing, read:
 ```
-~/.claude/agents/{dept}/state/dept-state.md
+{agency-root}/agents/{dept}/state/dept-state.md
 ```
 
 **Step 2:** If `active-coords` field is non-empty, read:
 ```
-~/.claude/agents/{dept}/state/active-coords.md
+{agency-root}/agents/{dept}/state/active-coords.md
 ```
 This gives you the current DC names, their D3 tracks, and last-known states. Skip if field is empty.
 
 **Step 3:** Check for incoming inter-spawn tasks from PDs:
 ```
-~/.claude/agents/{dept}/state/incoming/
+{agency-root}/agents/{dept}/state/incoming/
 ```
 If files exist, read each one. Prioritize by the `Priority` field. High-priority items become first-session actions before any other department work.
 
@@ -56,7 +56,7 @@ active-pipelines: [pipeline-name, ...]
 
 **Step 2:** If a matching pipeline exists, read:
 ```
-~/.claude/agents/{dept}/pipelines/{pipeline-name}.md
+{agency-root}/agents/{dept}/pipelines/{pipeline-name}.md
 ```
 Only load the pipeline you need. Not all pipelines.
 
@@ -78,7 +78,7 @@ Is this a D1 initiative that spans multiple D2 areas?
 
 ## dept-state.md Format
 
-Path: `~/.claude/agents/{dept}/state/dept-state.md`
+Path: `{agency-root}/agents/{dept}/state/dept-state.md`
 
 This is the department's equivalent of `next-session.md`. Max 20 lines. Key:value format.
 
@@ -105,7 +105,7 @@ notes: {freeform, max 2 lines}
 
 ## active-coords.md Format
 
-Path: `~/.claude/agents/{dept}/state/active-coords.md`
+Path: `{agency-root}/agents/{dept}/state/active-coords.md`
 
 Read only when `active-coords` field is non-empty.
 
@@ -173,8 +173,8 @@ Never let dept-state go stale across sessions. The `/dept-save-state` skill hand
 
 ## How to Apply to a New Dept Head
 
-1. Create `~/.claude/agents/{dept}/state/dept-state.md` with the format above.
-2. Create `~/.claude/agents/{dept}/state/incoming/` directory (empty, for PD inter-spawn tasks).
+1. Create `{agency-root}/agents/{dept}/state/dept-state.md` with the format above.
+2. Create `{agency-root}/agents/{dept}/state/incoming/` directory (empty, for PD inter-spawn tasks).
 3. Paste Mode 1 (Spawn) + Mode 2 (Route) reference into the Dept Head agent file.
 4. Paste Dispatch Priority as a reference block (no file reads on spawn).
 
@@ -184,7 +184,7 @@ Total added to Dept Head agent file: ~50 lines. Single file read on spawn (dept-
 
 ## References
 
-- Dept-Coord lifecycle: `~/.claude/agents/runbooks/dept-coord-protocol.md`
-- Dept lead protocol: `~/.claude/agents/runbooks/department-lead-protocol.md`
-- PD boot sequence (mirror): `~/.claude/agents/runbooks/pd-boot-sequence.md`
-- Protocol registry: `~/.claude/agents/runbooks/protocol-registry.md`
+- Dept-Coord lifecycle: `{agency-root}/agents/runbooks/dept-coord-protocol.md`
+- Dept lead protocol: `{agency-root}/agents/runbooks/department-lead-protocol.md`
+- PD boot sequence (mirror): `{agency-root}/agents/runbooks/pd-boot-sequence.md`
+- Protocol registry: `{agency-root}/agents/runbooks/protocol-registry.md`
