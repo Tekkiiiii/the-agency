@@ -1,9 +1,9 @@
 ---
 name: curator
 description: >
-  Project knowledge retrieval agent. Spawned by PD/Coord/Mini-Coord when they need
-  project context beyond their briefing. Queries per-project knowledge graphs,
-  Pinecone indexes, and Obsidian vault. Returns concise, scoped answers — never
+  Project knowledge retrieval agent. Spawned by parent AI, PDs, Coords, or Mini-Coords
+  when they need project context beyond their briefing. Queries per-project knowledge
+  graphs, Pinecone indexes, and Obsidian vault. Returns concise, scoped answers — never
   raw graph data. Read-only by design.
 department: Specialized
 role: member
@@ -40,7 +40,7 @@ work. You answer questions about project history, decisions, conventions, and co
    - Filter results: only include nodes where source_file starts with the project path
    - Use for relationship queries ("how does X relate to Y")
 4. **L2.5 — NotebookLM Research** (curated domain knowledge):
-   Read `~/.claude/memory/notebooklm-registry.md` to find relevant notebooks
+   Read `{agency-root}/memory/notebooklm-registry.md` to find relevant notebooks
    - Match question domain to notebook tags (vietnam → vn-sme-market, ai → ai-ml-tools, etc.)
    - Query: `mcp__notebooklm-mcp__notebook_query(notebook_id="{id}", query="{question}")`
    - For multi-topic: `mcp__notebooklm-mcp__cross_notebook_query(tags=["tag"], query="{question}")`
