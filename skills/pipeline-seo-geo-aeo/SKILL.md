@@ -196,6 +196,15 @@ Grade scale: A (50-60) | B (40-49) | C (30-39) | D (20-29) | F (<20)
 
 Update pipeline tracker with final scores, then present report to user.
 
+## Stage 7.5: QUALITY GATE
+
+Invoke `/quality-loop-router` with:
+- `task_type`: `report`
+- `pipeline_context`: "pipeline-seo-geo-aeo — internal Claude run" (Mode A)
+- `artifact`: the Stage 7 audit report
+
+Update tracker: add row `| 7.5 | QUALITY GATE | quality-loop-router | {PASS} | {score} | — |`
+
 ---
 
 ## Scope Shortcuts

@@ -18,7 +18,7 @@ Collect before starting:
 
 ## Pipeline State
 
-Create a tracker at `{project-path}/.pipeline/pipeline-deploy-{date}.md`.
+Create a tracker at `.gstack/pipeline-deploy-{date}.md`.
 
 ```markdown
 ## Pipeline: Safe Deploy
@@ -80,7 +80,7 @@ Invoke `/benchmark --baseline {production-url}` to capture:
 - Resource sizes and counts
 - Load time per page
 
-Both run as parallel subagents. Save baselines to `{project-path}/.pipeline/baselines/`.
+Both run as parallel subagents. Their outputs are saved to `.gstack/canary-reports/baselines/` and `.gstack/benchmark-reports/baselines/`.
 
 **Gate:** Baselines captured successfully. If production URL is unreachable, warn user and ask whether to skip baselines.
 
@@ -93,8 +93,8 @@ Based on the target:
 ### Railway
 Invoke `/railway-deploy`:
 - Links project if not linked
-- Sets environment variables
-- Runs dry-run before applying
+- Sets environment variables from `.env` or `.env.example`
+- Runs `--dry-run` before applying
 - Triggers build
 - Waits for deployment to complete
 - Runs HTTP health check on the production URL
@@ -145,6 +145,21 @@ If BROKEN or REGRESSION:
 
 ---
 
+## Stage 4.5: QUALITY GATE (if deploy includes content updates)
+
+**Trigger:** Run if the deploy includes any content, copy, or marketing asset changes visible to end users.
+
+**Skip if:** Pure code-only deploy with no user-facing content changes.
+
+Invoke `/quality-loop-router` with:
+- `task_type`: `content` or `design` depending on what changed
+- `pipeline_context`: "pipeline-deploy — internal Claude run" (Mode A)
+- `artifact`: the changed content/assets
+
+Update tracker: add row `| 4.5 | QUALITY GATE | quality-loop-router | {PASS/SKIPPED} | {score} | — |`
+
+---
+
 ## Stage 5: REPORT
 
 Produce the deploy report:
@@ -178,7 +193,9 @@ Date: {timestamp}
 {links to canary screenshots}
 ```
 
-Save report to `{project-path}/.pipeline/deploy-reports/deploy-{target}-{date}.md`.
+### Persist
+- Save report to `.gstack/deploy-reports/deploy-{target}-{date}.md`
+- Invoke `/obsidian-vault` to persist deploy record (background)
 
 ---
 

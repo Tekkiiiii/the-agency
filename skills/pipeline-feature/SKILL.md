@@ -180,6 +180,21 @@ Invoke `/railway-deploy` or `/vercel-deploy` based on user's choice.
 
 ---
 
+## Stage 7.5: QUALITY GATE (if feature includes creative deliverables)
+
+**Trigger:** Run if the feature includes any user-facing content, marketing copy, UI design, or documentation assets.
+
+**Skip if:** Pure code feature with no user-visible creative output.
+
+Invoke `/quality-loop-router` with:
+- `task_type`: infer from output type — `content` for copy/docs, `design` for UI components, `code` for pure code with docs
+- `pipeline_context`: "pipeline-feature — internal Claude run" (Mode A always for code; Mode B if Figma/Canva used for designs)
+- `artifact`: the creative output(s) from this feature
+
+Update tracker: add row `| 7.5 | QUALITY GATE | quality-loop-router | {PASS/SKIPPED} | {score} | — |`
+
+---
+
 ## Final Report
 
 After all stages complete (or a stage is BLOCKED), produce the final pipeline report:
