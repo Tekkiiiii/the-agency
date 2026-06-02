@@ -162,3 +162,26 @@ You're successful when:
 - **content-strategy** — Develops multimedia content strategies across platforms and audience segments
 
 **Instructions Reference**: Your detailed visual storytelling methodology is in this agent definition - refer to these patterns for consistent visual narrative creation, multimedia design excellence, and cross-platform adaptation strategies.
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.
+
+## Material Design 3
+
+When task mentions Material Design or M3 → invoke `Skill({ skill: 'material-3' })` first for tokens and integration rules.

@@ -10,26 +10,45 @@
 Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions).
 If something goes sideways, STOP and re-plan immediately.
 
-### Subagent Dispatch Rules (ENFORCED — NO EXCEPTIONS)
+### Agent Dispatch Rules
 
-**Spawn an agent ONLY when all 4 conditions are met:**
-1. The task is genuinely parallelizable — two or more things happening simultaneously
-2. The task is deep in a specialized domain (legal, financial, compliance, security, etc.)
-3. The task requires memory or persistent state across multiple sessions
-4. A skill does not exist for it
+#### Three Mandatory Service Agents (ALWAYS invoke — no conditions needed)
 
-**Default to direct action:** If I have the tool (Read, Grep, WebSearch, Edit, Write, Bash), I use it myself.
+These three agents are **mandatory**. They are service calls — spawn, answer, die. They
+bypass all spawn conditions and overhead checks. Never skip them for "efficiency":
 
-**Agents first, skills second:** Check `{agency-root}/memory/agency-dispatch.md` first. Only open `{agency-root}/skills/INDEX.md` when I need to find or create a skill.
+**Curator** (`{agency-root}/agents/specialized/curator.md`, sonnet) — invoke BEFORE:
+- Starting any multi-step investigation or research task
+- Making an architectural or design decision in a known project
+- Delegating a task that requires project context (pass Curator's answer to the Coord)
+- Any action that could contradict a past decision recorded in project memory
+Skip when: purely mechanical task (edit one line, run a command), or no connection to any active project.
+
+**Delegator** (`{agency-root}/agents/specialized/delegator.md`, sonnet) — invoke before spawning ANY agent (except: PD spawns via /pd-resume or /pd-spawn, Curator, codebase-search). It reads the agency catalog and returns the right agent/skill/protocol, then dies.
+Fast-path (rare): you may skip Delegator ONLY when ALL three are true: (1) the route matches an explicit row in agency-dispatch.md Step 1 table, (2) you have checked Step 0 and confirmed no protocol governs the task, AND (3) the task is single-domain with no cross-cutting concerns. If any doubt exists → spawn Delegator.
+
+**codebase-search** (`{agency-root}/agents/specialized/codebase-search.md`, sonnet) — invoke INSTEAD of running `find`, `grep`, `rg`, `ls -r`, or any Bash file-search command across the agency root or active projects.
+Skip when: you already have the exact file path (single-file read, no search needed).
+
+#### When to Act Directly vs. Route to Agents
+
+**The parent AI is a ROUTER, not a WORKER.** Default is to route. Direct action is the exception.
+
+**Act directly ONLY for:**
+- Single file reads or writes
+- Quick edits under 5 lines
+- Running a single CLI command
+- Answering a factual question from already-loaded context
+
+**Everything else: route.** Use the Delegator to pick the right agent, skill, or protocol. If a skill exists, invoke it. If a PD owns the project, forward to the PD.
 
 **Anti-patterns (NEVER do):**
-- "Let me spawn an agent to analyze X" when I have Read/Grep/WebSearch
-- "I'll delegate this" when the task is < 5 lines of code or a single file read
-- "Spawn and forget" — if I spawn it, I own the outcome
-- "Spawn for routing decisions" — routing is my job, not a subagent's
-- Default to general-purpose — always check Agency catalog first
-- Write CLAUDE.md content that duplicates a skill
-- Create a skill without updating INDEX.md immediately after
+- ❌ Do multi-step work yourself — route to the Delegator instead
+- ❌ Spawn and forget — own the outcome
+- ❌ Spawn a new agent when a live one exists — SendMessage first
+- ❌ Run find/grep/rg across the agency root — use codebase-search instead
+- ❌ Skip Curator before an investigation — it may know the answer already
+- ❌ Skip Delegator before an agent spawn — you might be routing to the wrong agent
 
 ### Natural Language → PD Spawn
 When the operator says something matching these patterns, invoke the `pd-spawn` skill

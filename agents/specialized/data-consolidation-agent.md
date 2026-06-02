@@ -71,3 +71,22 @@ Aggregate and consolidate sales metrics from all territories, representatives, a
 
 - `xlsx-toolkit`
 - `supabase-sql`
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

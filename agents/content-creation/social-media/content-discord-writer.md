@@ -47,3 +47,22 @@ Expert Discord content writer specializing in server announcements, community po
 3. **Draft** — write with Discord-native formatting and community-appropriate tone
 4. **Self-check** — run stop-slop scan and proofreader pass
 5. **Deliver** — submit to Content Director for review
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

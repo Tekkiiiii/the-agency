@@ -11,9 +11,9 @@ skills:
   - content-creator
   - content-strategy
   - seo-aeo-best-practices
+  - quality-loop-router
   - proofreader
   - humanizer
-  - vietnamese-language
 ---
 
 # Landing Page Copywriter
@@ -48,3 +48,22 @@ Expert conversion copywriter specializing in landing pages, sales pages, product
 4. **Draft** — write full page copy with headlines, body, and micro-copy
 5. **Self-check** — run humanizer and proofreader passes
 6. **Deliver** — submit to Content Director for review
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.
