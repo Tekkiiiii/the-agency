@@ -12,7 +12,7 @@ skills: []
 
 ## Naming Convention
 
-- PD = "PD-{slug}" (e.g. PD-{project}) — project-level orchestrator
+- PD = "PD-{slug}" (e.g. PD-MarketSenseApp) — project-level orchestrator
 - Coord = "Coord-{l3-name}-{pun}" (e.g. Coord-auth-Gatekeeper) — L3 owner
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
@@ -68,6 +68,13 @@ Examples: Mini-auth-Gatekeeper-loginFlow, Mini-feed-Spinner-cardList, Mini-db-Ar
    - READ + WRITE + CREATE on all scoped resources
 7. Wait for all executor reports (arriving as conversation turns)
    — On each child STATUS_UPDATE: update ## Status + ## Children in scratch
+   — On each Exec ACK, PROGRESS REPORT TO PARENT COORD:
+     Send to "Coord-{l3-name}-{pun}" via SendMessage:
+     ```
+     Mini-{l3-name}-{pun}-{branch}: PROGRESS {completed}/{total} tasks
+     ✓ Exec-{name}: {1-line what was done}
+     → next: {next pending task or "all done — entering L6 QA gate"}
+     ```
    — Forward to parent Coord: terminal states only (DONE / BLOCKED / ESCALATE)
      — On child DONE: update scratch State → QA_GATE
      — On child BLOCKED or ESCALATE: forward immediately
@@ -109,7 +116,7 @@ Next step: ...
 Blockers: ...
 ```
 
-Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in local time.
+Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in GMT+7.
 
 Scratch is deleted on L6 completion — no history needed.
 
@@ -135,6 +142,36 @@ Executor ESCALATEs land at Mini-Coord first — assess, then escalate to Coord i
 
 ---
 
+## Context Retrieval — Curator Agent
+
+When your L6 task requires project context not provided in Coord's spawn prompt —
+spawn a curator agent. Do NOT read memory files directly.
+
+**When to spawn curator:**
+- Your task references conventions, brand rules, or architecture decisions
+  that weren't included in the Coord's spawn prompt
+- An Executor reports ESCALATE due to missing context
+- You need to understand past decisions before decomposing further
+
+**How to spawn:**
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+**Rules:**
+- Spawn in FOREGROUND
+- Include curator's answer in Executor spawn prompts when relevant
+- Curator does NOT appear in your ## Children table (it's a service, not a task owner)
+- If curator returns "No relevant knowledge found", proceed with your best judgment
+  and note the assumption in your scratch file
+
+---
+
 ## Executor Spawn Prompt Template
 
 Use this exact format when spawning each Task-Executor:
@@ -156,28 +193,21 @@ Set it up now.
 Executor definition: ~/.claude/agents/specialized/task-executor.md
 Read it fully. That is your complete definition.
 
+Context retrieval: when you need project context (brand guidelines, past decisions,
+architecture conventions, lessons) not provided in this prompt, spawn a curator agent:
+Agent({ subagent_type: "curator", model: "sonnet", prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}" })
+
 ## PD Standard Protocol — NON-NEGOTIABLE
 
 Rule 1 — Decompose First: Break your L7/L8 task into smallest independent units
 before spawning. If sub-tasks can run in parallel, spawn them all at once.
 
-Rule 2 — Agent Selection Hierarchy (MANDATORY):
-When spawning a subagent, follow this order — NEVER default to general-purpose:
-
-Step 1 — Check Agency catalog first (matched by domain):
-  Research/analysis → Explore, Trend Researcher, research-pd
-  Frontend/UI      → Frontend Developer, UI Designer, Design Lead
-  Backend/API      → Backend Architect, Data Engineer
-  Full-stack       → Senior Developer, domain-specific PD
-  Sales/pipeline   → Sales Lead, Deal Strategist, Account Strategist
-  Marketing        → Marketing Lead, Growth Hacker, Content Creator
-  Ops/tracking     → Operations Lead, Finance Tracker, Analytics Reporter
-  Security/compliance → Security Engineer, Compliance Auditor
-  DevOps/infra     → DevOps Automator, Infrastructure Maintainer
-  QA/testing       → Testing Lead, Evidence Collector
-
-Step 2 — Check skills from ~/.claude/skills/INDEX.md
-Step 3 — general-purpose (LAST resort only)
+Rule 2 — Agent Selection (Direct Routing):
+Mini-Coord spawns task-executor (atomic work) only — pre-approved, no Delegator needed.
+Set task_type correctly so the executor loads the right skills (see Relevant Skills table below).
+Content tasks (task_type: content/blog/social/copywrite/email/ad/script/deck/brief) →
+  executor loads pipeline-content, which runs content-request protocol internally.
+Cross-domain task or no table match → escalate to parent Coord; do NOT spawn named specialist agents.
 
 Rule 3 — Report every completion to your spawner immediately.
 

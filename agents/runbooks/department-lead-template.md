@@ -126,7 +126,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state [DEPT]` to freeze department state before ending your session.
+Run `/dept-wrap [DEPT]` to freeze department state before ending your session.
 
 ### Inter-Spawn Protocol (PD ↔ Dept Head)
 

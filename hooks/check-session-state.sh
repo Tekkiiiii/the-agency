@@ -24,6 +24,14 @@ try:
         last = state.get('last_stop', 'unknown')
         print(f'NOTICE: Previous session may have ended uncleanly (last clean stop: {last}).')
         print('  Run /recall [slug] or /save-state [slug] to check project state.')
+    if state.get('stall_detected'):
+        tool = state.get('stall_tool', 'unknown')
+        at = state.get('stall_at', 'unknown')
+        print(f'WARNING: Stall was detected in previous session ({tool} at {at}).')
+        print('  An agent was looping on the same call 5+ times. Check if the task completed.')
+        state.pop('stall_detected', None)
+        state.pop('stall_tool', None)
+        state.pop('stall_at', None)
     state['was_clean'] = False
     with open(sf, 'w') as f:
         json.dump(state, f, indent=2)

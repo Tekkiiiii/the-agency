@@ -243,10 +243,10 @@ No active inter-spawn tasks.
 
 ### Step 3 — Create PD agent file
 
-Create `~/.claude/agents/{DEPARTMENT}/{SLUG}-pd.md`.
+Create `{agency-root}/agents/{DEPARTMENT}/{SLUG}-pd.md`.
 
 If the file already exists, SKIP and log "PD agent already exists — not overwritten."
-If the directory `~/.claude/agents/{DEPARTMENT}/` does not exist, create it with mkdir -p.
+If the directory `{agency-root}/agents/{DEPARTMENT}/` does not exist, create it with mkdir -p.
 
 ```markdown
 ---
@@ -344,9 +344,9 @@ You are PD-{SLUG}. You decompose work. You never execute past L3.
 
 ## Architecture Reference
 
-- PD lifecycle: `~/.claude/agents/project-management/pd-coordinator.md`
-- Coord lifecycle: `~/.claude/agents/project-management/coord.md`
-- Executor lifecycle: `~/.claude/agents/specialized/task-executor.md`
+- PD lifecycle: `{agency-root}/agents/project-management/pd-coordinator.md`
+- Coord lifecycle: `{agency-root}/agents/project-management/coord.md`
+- Executor lifecycle: `{agency-root}/agents/specialized/task-executor.md`
 - Scratch: `{PATH}/memory/agents/pd-scratch.md`
 
 ## Context Retrieval — Curator Agent
@@ -396,7 +396,7 @@ Update `"updated"` to `"{TODAY}"`. Write back with 2-space indent.
 
 If JSON parsing fails: output "ERROR: ~/projects/index.json is malformed — fix manually." and continue to next step.
 
-#### 4c. ~/.claude/memory/medium-term.md
+#### 4c. {agency-root}/memory/medium-term.md
 
 Read the file. Find the Active Projects table (header contains `| Project | Memory Path | PD | Status |`).
 Append a new row:
@@ -404,7 +404,7 @@ Append a new row:
 | {SLUG} | `{PATH}/memory/` | {SLUG}-pd | Planning — initial setup |
 ```
 
-#### 4d. ~/.claude/agents/{DEPARTMENT}/INDEX.md
+#### 4d. {agency-root}/agents/{DEPARTMENT}/INDEX.md
 
 Read the file. Find the `## Members` section and its table.
 Append a new row:
@@ -421,7 +421,7 @@ PROJECT SCAFFOLDED
 
   Project:  {NAME} ({SLUG})
   Path:     {PATH}
-  PD:       ~/.claude/agents/{DEPARTMENT}/{SLUG}-pd.md
+  PD:       {agency-root}/agents/{DEPARTMENT}/{SLUG}-pd.md
   Memory:   {PATH}/memory/
   Stack:    {STACK}
 
