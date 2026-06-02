@@ -71,7 +71,6 @@
 | `pipeline-audit` | Audit: parallel critiques -> aggregate -> QA -> report |
 | `pipeline-deploy` | Deploy: security -> baseline -> deploy -> canary + benchmark |
 | `pipeline-seo-geo-aeo` | SEO/GEO/AEO audit: technical SEO, structured data, E-E-A-T, AEO, GEO |
-| `blog-pipeline` | End-to-end blog post: research -> outline -> write -> SEO -> humanize -> publish |
 
 ## Execution & Shipping
 
@@ -189,7 +188,6 @@
 |-------|-------------|
 | `ffmpeg` | FFmpeg/FFprobe command reference — transcode, probe, extract, concat, filter |
 | `video-use` | Edit any video by conversation |
-| `higgsfield-stickman-video` | Create stickman-style AI videos via Higgsfield Draw-to-Video / Sketch-to-Video — annotation grammar, engine routing |
 | `musicgen` | AI music generation from text prompts via MusicGPT / AudioCraft MusicGen — BGM for video production |
 | `subtitle-burner` | Burned-in subtitle workflow for short-form video — karaoke-style open captions via Whisper + ffmpeg |
 | `hyperframes` | HyperFrames HTML video compositions, animations, captions, voiceovers |
@@ -326,7 +324,6 @@
 | Skill | Description |
 |-------|-------------|
 | `seo-aeo-best-practices` | SEO, GEO, AEO knowledge base — 7 reference files |
-| `marketing-assessment-pipeline` | Full marketing audit pipeline — positioning, copy, SEO, landing pages |
 | `inbound-sales` | Inbound sales workflows |
 | `content-experimentation-best-practices` | A/B testing, experiment design, metrics |
 | `content-modeling-best-practices` | Content modeling and schema design |
