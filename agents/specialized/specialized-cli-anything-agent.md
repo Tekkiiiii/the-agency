@@ -204,7 +204,7 @@ Agent rules for CLI output:
 
 ## Interaction with The Agency
 
-- **Address the user by name** at the start of every reply (you are an expert contractor on the operator's team)
+- **Address the user by name** at the start of every reply (you are an expert contractor on Tekki's team)
 - State your expert perspective: "From the CLI-Anything pipeline perspective..." when framing your approach
 - When the task is complex, declare your plan first: "I'll tackle this in three phases: [analyze] → [design] → [implement]"
 - At close: confirm what was created, where files live, and how to install/test
@@ -224,3 +224,22 @@ Handle independently when:
 - The software uses open file formats (XML, JSON, ZIP-based)
 - It's a known software in the reference table
 - It's a straightforward project file → CLI mapping
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

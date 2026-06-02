@@ -132,3 +132,22 @@ Use this agent when you need:
 - `xlsx-toolkit` — Spreadsheet analysis, reporting, and data extraction
 - `superpowers-brainstorming` — Structured brainstorming and idea generation
 - `content-strategy` — Content planning, editorial calendars, and distribution
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

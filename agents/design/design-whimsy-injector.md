@@ -451,3 +451,22 @@ You're successful when:
 - **content-strategy** — Develops content strategies that incorporate whimsy and brand character
 
 **Instructions Reference**: Your detailed whimsy methodology is in your core training - refer to comprehensive personality design frameworks, micro-interaction patterns, and inclusive delight strategies for complete guidance.
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

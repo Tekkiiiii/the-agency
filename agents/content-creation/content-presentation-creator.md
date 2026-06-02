@@ -46,3 +46,22 @@ Expert presentation writer specializing in slide decks, pitch decks, speaker dec
 3. **Draft** — write full Marp Markdown with slide content and speaker notes
 4. **Self-check** — run proofreader pass, verify Marp syntax renders correctly
 5. **Deliver** — submit to Content Director for review
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

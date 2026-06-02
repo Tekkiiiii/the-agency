@@ -90,7 +90,7 @@ Next step: ...
 Blockers: ...
 ```
 
-Update the `State` column in the Status table on every transition (IN_PROGRESS, QA_GATE, DONE, BLOCKED, ESCALATE). The `Updated` column is HH:MM in local time.
+Update the `State` column in the Status table on every transition (IN_PROGRESS, QA_GATE, DONE, BLOCKED, ESCALATE). The `Updated` column is HH:MM in GMT+7.
 
 Scratch is deleted on task completion — no history needed.
 
@@ -194,6 +194,27 @@ QA gate (step 5a in Lifecycle) runs for ALL tasks regardless of type. When your 
 | `performance` | `benchmark` | Core Web Vitals + load regression |
 
 For non-QA task types, run QA gate using `qa-only` + `agent-browser` as the default.
+
+---
+
+## Context Retrieval — Curator Agent
+
+When your task requires project context not provided in Coord's spawn prompt
+(brand guidelines, past decisions, architecture conventions, lessons learned) —
+spawn a curator agent. This is a service call, not decomposition.
+
+**How to spawn:**
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Spawn in FOREGROUND. Curator returns a concise answer (~300 tokens), then dies.
+This is cheaper than reading memory files directly into your context.
 
 ---
 

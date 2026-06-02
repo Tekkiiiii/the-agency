@@ -121,11 +121,11 @@ After scanning all projects, aggregate into a findings report:
 {
   "scanId": "uuid",
   "scanTimestamp": "ISO",
-  "projectsScanned": ["project-alpha", "project-beta"],
-  "projectsSkipped": ["project-gamma"],
+  "projectsScanned": ["agentrelay", "amani-crm"],
+  "projectsSkipped": ["sightsee"],
   "projectsSkippedReason": "uninitialized or archived",
   "findings": {
-    "project-alpha": {
+    "agentrelay": {
       "signals": [
         {"type": "missing_tests", "severity": "medium", "detail": "No test directory found"},
         {"type": "large_node_modules", "severity": "low", "detail": "node_modules is 1.2GB"}
@@ -137,8 +137,8 @@ After scanning all projects, aggregate into a findings report:
   "totalSignals": 7,
   "requiresBODConsultation": true,
   "requiresPDConsultation": {
-    "project-alpha": true,
-    "project-beta": false
+    "agentrelay": true,
+    "amani-crm": false
   }
 }
 ```
@@ -169,8 +169,8 @@ IMPACT: tier-1
 
 | Project | Signal | Severity | Detail |
 |---------|--------|----------|--------|
-| project-alpha | missing_tests | medium | No test directory found |
-| project-alpha | large_node_modules | low | node_modules is 1.2GB |
+| agentrelay | missing_tests | medium | No test directory found |
+| agentrelay | large_node_modules | low | node_modules is 1.2GB |
 | ... | ... | ... | ... |
 
 ### BOD Consultation Request
@@ -247,7 +247,7 @@ PRIORITY: medium
 
 | Project | Issue | Resolution | Status |
 |---------|-------|-----------|--------|
-| project-alpha | missing_tests | BOD approved adding test scaffolding | Approved by PD |
+| agentrelay | missing_tests | BOD approved adding test scaffolding | Approved by PD |
 | ... | ... | ... | ... |
 
 ### Deferred / Rejected
@@ -277,9 +277,9 @@ Persisted at `~/.claude/agents/specialized/efficiency-advisor-loop/state.json`:
     {
       "scanId": "uuid",
       "timestamp": "ISO",
-      "projectsScanned": ["project-alpha"],
+      "projectsScanned": ["agentrelay"],
       "bodbConsulted": true,
-      "pdConsulted": {"project-alpha": true},
+      "pdConsulted": {"agentrelay": true},
       "resolution": "approved"
     }
   ],
@@ -307,7 +307,7 @@ Store in state.json:
 ```json
 {
   "suppressed": [
-    {"project": "project-alpha", "signal": "large_node_modules", "until": "2026-04-01"}
+    {"project": "agentrelay", "signal": "large_node_modules", "until": "2026-04-01"}
   ]
 }
 ```
@@ -319,3 +319,22 @@ A suppressed signal returns after its `until` date expires.
 - `investigate`
 - `superpowers-brainstorming`
 - `finops`
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

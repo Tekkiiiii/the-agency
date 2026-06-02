@@ -165,9 +165,9 @@ Write dept-state after:
 - Spawning or receiving completion from a DC
 - Processing an incoming task from a PD
 - Closing an open issue
-- End of session (via `/dept-save-state`)
+- End of session (via `/dept-wrap`)
 
-Never let dept-state go stale across sessions. The `/dept-save-state` skill handles the end-of-session write.
+Never let dept-state go stale across sessions. The `/dept-wrap` skill handles the end-of-session write.
 
 ---
 

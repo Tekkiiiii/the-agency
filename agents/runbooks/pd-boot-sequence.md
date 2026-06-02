@@ -20,33 +20,18 @@ lastUpdated: 2026-04-01
 
 **Target context cost: ~500 tokens max**
 
-**Step 1:** Read project briefing doc:
+**Step 1:** Read briefing from spawn prompt. pd-resume passes next-session.md content
+inline -- no file reads needed. If spawned manually without a briefing, read:
 ```
-{project}/.claude/PD-BRIEFING.md
-```
-If it doesn't exist, skip to Step 2.
-
-The briefing doc is pre-built by the Agency Council and contains:
-- Which agents are most relevant to this project
-- Which department lead to contact per task type
-- Any project-specific routing overrides
-- Active blockers or priorities from last session
-
-**Step 2:** Read heartbeat:
-```
-{project}/memory/heartbeat.md
-```
-Log session start at the bottom.
-
-**Step 3:** Log to heartbeat:
-```
-## Session Start — [timestamp]
-PD: [your-name]
-Priority: [1-2 sentences on what you're working on]
-Blockers: [none / list]
+{project}/memory/next-session.md
 ```
 
-**Step 4:** Proceed with your role.
+**Step 2:** Read active tasks:
+```
+{project}/memory/tasks/ongoing/
+```
+
+**Step 3:** Proceed with your role.
 
 ---
 
@@ -58,7 +43,7 @@ Blockers: [none / list]
 
 **Step 2:** If not in briefing, load the relevant department INDEX:
 ```
-~/.claude/agents/{department}/INDEX.md
+{agency-root}/agents/{department}/INDEX.md
 ```
 Only load the one department you need. Not all 8.
 
@@ -78,7 +63,7 @@ Only load the one department you need. Not all 8.
    NO  → step 3
 
 3. Is this a workflow task (planning, verification, QA, retro)?
-   YES → use a skill from ~/.claude/skills/INDEX.md
+   YES → use a skill from {agency-root}/skills/INDEX.md
    NO  → step 4
 
 4. Can you do it directly (Tier 1: <10 line edits, docs, analysis)?
@@ -103,8 +88,8 @@ Load the relevant INDEX.md only when routing, not on every spawn.
 | Performance | testing | `testing/INDEX.md` |
 | UI design | design | `design/INDEX.md` |
 | Brand / visual | design | `design/INDEX.md` |
-| Copywriting / content | marketing | `marketing/INDEX.md` |
-| Social / growth | marketing | `marketing/INDEX.md` |
+| Content writing / copy / editorial | content-creation | `content-creation/INDEX.md` |
+| Content strategy / social / growth | marketing | `marketing/INDEX.md` |
 | China market | marketing/china | `marketing/china/INDEX.md` |
 | Sales strategy | sales | `sales/INDEX.md` |
 | Project scheduling | project-management | `project-management/INDEX.md` |

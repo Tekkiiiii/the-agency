@@ -139,3 +139,22 @@ Awaiting responses from PDs. Will follow up in next cycle if no response.
 ## Max 5 PDs Per Agent
 
 If there are more than 5 active PDs, the agent only handles the first 5 (by name alphabetically). A second instance can be spawned for the rest. This keeps each run token-efficient.
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

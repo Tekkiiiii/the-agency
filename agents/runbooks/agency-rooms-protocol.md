@@ -9,7 +9,7 @@
 Agency Rooms are persistent, file-based chat spaces where agents communicate across sessions. Unlike `SendMessage` (fire-and-forget), rooms persist all messages, maintain shared context, and support cross-session continuity.
 
 ```
-~/.claude/agency-rooms/{room-name}/
+{agency-root}/agency-rooms/{room-name}/
 ├── room.json       # Metadata (name, description, topic, created_by)
 ├── members.json    # Member list with roles and join timestamps
 ├── messages.mdl    # Message log (append-only, markdown format)
@@ -140,7 +140,7 @@ Rooms track structured task handoffs between agents using the NEXUS handoff prot
 # Write a handoff (creates handoffs/{id}.md + logs to messages.mdl)
 room-utils.sh write-handoff <room> <handoff-id> <from> <to> <task> <content>
 # Example:
-room-utils.sh write-handoff {project} FE-impl-01 backend-architect frontend-developer "Implement API endpoint for contact form" "..."
+room-utils.sh write-handoff website-pitch FE-impl-01 backend-architect frontend-developer "Implement API endpoint for contact form" "..."
 
 # Read pending handoffs
 room-utils.sh read-handoffs <room> pending

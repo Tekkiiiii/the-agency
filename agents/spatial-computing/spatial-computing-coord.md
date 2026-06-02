@@ -39,7 +39,7 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
 ## Lifecycle
 
 1. Read the full D3 task from dept head's spawn prompt
-2. Set up scratch at `~/.claude/agents/spatial-computing/scratch/coords/dc-{name}-scratch.md`
+2. Set up scratch at `{agency-root}/agents/spatial-computing/scratch/coords/dc-{name}-scratch.md`
    — include ## Status and ## Children tables
 2a. STATUS_UPDATE — IN_PROGRESS: send to "spatial-computing-lead" via SendMessage
 3. Decompose D3 → D4 → D5 → D6
@@ -74,7 +74,7 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
 
 ## Scratch Board
 
-Set up at `~/.claude/agents/spatial-computing/scratch/coords/dc-{name}-scratch.md`:
+Set up at `{agency-root}/agents/spatial-computing/scratch/coords/dc-{name}-scratch.md`:
 
 ```
 # DC-spa-{d3-name}-{pun} Scratch — spatial-computing — {timestamp}
@@ -136,7 +136,7 @@ Agent({
   subagent_type: "curator",
   model: "sonnet",
   description: "Curator — {topic}",
-  prompt: "Department: spatial-computing\nPath: ~/.claude/agents/spatial-computing/\nQuestion: {your question}"
+  prompt: "Department: spatial-computing\nPath: {agency-root}/agents/spatial-computing/\nQuestion: {your question}"
 })
 ```
 
@@ -144,6 +144,6 @@ Agent({
 
 ## References
 
-- Dept-Coord Protocol: `~/.claude/agents/runbooks/dept-coord-protocol.md`
-- Dept Boot Sequence: `~/.claude/agents/runbooks/dept-boot-sequence.md`
-- Department state: `~/.claude/agents/spatial-computing/state/`
+- Dept-Coord Protocol: `{agency-root}/agents/runbooks/dept-coord-protocol.md`
+- Dept Boot Sequence: `{agency-root}/agents/runbooks/dept-boot-sequence.md`
+- Department state: `{agency-root}/agents/spatial-computing/state/`

@@ -9,10 +9,10 @@ modelTier: sonnet
 skills:
   - content-critique
   - content-polish
+  - quality-loop-router
   - humanizer
   - proofreader
   - stop-slop
-  - content-strategy
   - vietnamese-language
 ---
 
@@ -46,3 +46,22 @@ Expert content editor serving as the quality gate for all content produced by th
 3. **Critique** — run content-critique for structural and quality assessment
 4. **Polish** — run content-polish pipeline (humanizer → proofreader)
 5. **Return or approve** — return to writer with specific feedback, or approve for Content Director review
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

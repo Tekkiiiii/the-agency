@@ -116,3 +116,22 @@ Ofertas encontradas: N total
 - **Nunca añadir duplicados** — check 3 dedup sources
 - **Seguir el orden de prioridad**: Nivel 1 → Nivel 2 → Nivel 3
 - **Nunca editar applications.md** — solo pipeline.md y scan-history.tsv
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.
