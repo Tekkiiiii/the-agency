@@ -29,21 +29,84 @@ Using ffmpeg video filters:
 
 ## Audio Mastering
 
-Using ffmpeg audio filters:
+### Standard Pass (ffmpeg-normalize — preferred for final delivery)
+
+Use `ffmpeg-normalize` as the standard final audio pass. It handles multi-pass EBU R128 loudness measurement + normalization in one command, more reliable than manual two-pass loudnorm.
+
+**Install:** `{agency-root}/venvs/video-tools/bin/ffmpeg-normalize` (venv at `{agency-root}/venvs/video-tools/`)
+
+**Short-form recipe (TikTok / Instagram / YouTube Shorts — -14 LUFS):**
+```bash
+{agency-root}/venvs/video-tools/bin/ffmpeg-normalize input.mp4 \
+  -o output.mp4 \
+  -c:a aac -b:a 192k \
+  --loudness-range-target 7 \
+  --target-level -14
+```
+
+**Long-form recipe (YouTube horizontal — -16 LUFS):**
+```bash
+{agency-root}/venvs/video-tools/bin/ffmpeg-normalize input.mp4 \
+  -o output.mp4 \
+  -c:a aac -b:a 192k \
+  --loudness-range-target 7 \
+  --target-level -16
+```
+
+**Broadcast recipe (-23 LUFS, EBU R128):**
+```bash
+{agency-root}/venvs/video-tools/bin/ffmpeg-normalize input.mp4 \
+  -o output.mp4 \
+  -c:a aac -b:a 192k \
+  --loudness-range-target 7 \
+  --target-level -23
+```
+
+### Platform LUFS Table
+
+| Platform | Target LUFS | True Peak | Use Case |
+|---|---|---|---|
+| TikTok / IG Reels / YT Shorts | -14 LUFS | -1 dBTP | Short-form vertical 9:16 |
+| YouTube (long-form) | -16 LUFS | -1 dBTP | Horizontal 16:9, 2+ min |
+| Broadcast / Streaming | -23 LUFS | -1 dBTP | TV, OTT platforms |
+
+**Rule:** Always pick target from this table before running the normalize pass. Default to -14 LUFS for any social short-form video.
+
+### Manual Pass (ffmpeg loudnorm — fallback)
+
+Use only if ffmpeg-normalize venv is unavailable:
 - Noise reduction: `afftdn` (adaptive FFT denoiser) for background hiss
 - Equalization: `-af equalizer` to boost voice clarity (1kHz-4kHz +2dB)
 - Compression: `acompressor` to even out VO dynamics
-- Loudness normalization: `-af loudnorm=I=-14:TP=-1.5:LRA=11` (YouTube/Spotify standard)
+- Loudness normalization: `-af loudnorm=I=-14:TP=-1.5:LRA=11` (two-pass required for accuracy)
 - Music ducking: sidechain-style volume automation during VO
 
-## Platform Loudness Standards
+## BGM Generation (MusicGen)
 
-| Platform | LUFS | True Peak |
-|---|---|---|
-| YouTube | -14 LUFS | -1 dBTP |
-| TikTok / Reels | -14 LUFS | -1 dBTP |
-| Broadcast | -23 LUFS | -1 dBTP |
+When a video needs original background music, use MusicGPT (AudioCraft MusicGen backend):
+
+**Binary:** `{agency-root}/tools/musicgpt/musicgpt`
+**Skill reference:** `{agency-root}/skills/musicgen/SKILL.md`
+
+**Default command:**
+```bash
+{agency-root}/tools/musicgpt/musicgpt \
+  "{mood} {genre} instrumental, {bpm} bpm, no vocals" \
+  --model small \
+  --secs {duration} \
+  --output {path}.wav \
+  --no-playback \
+  --no-interactive
+```
+
+**Default model:** `small` (fast, ~60s for 10s clip, sufficient for most BGM)
+
+**Prompt template:** `{mood} {genre} instrumental, {bpm} bpm, no vocals`
+
+After generation, always normalize via ffmpeg-normalize before mixing into video (use -14 LUFS for short-form, -16 for YouTube long-form).
+
+**MoneyPrinterTurbo:** Replace MPT's default BGM with a MusicGen-generated track before any publish.
 
 ## Output
 
-Final master video file + separate audio file (WAV). Export log with color and audio settings applied.
+Final master video file + separate audio file (WAV). Export log with color and audio settings applied. Always note which LUFS target was applied.

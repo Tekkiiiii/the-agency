@@ -1,6 +1,6 @@
 # Skills Index
 
-254 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+257 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 ## Department Lifecycle
 
@@ -189,6 +189,9 @@
 |-------|-------------|
 | `ffmpeg` | FFmpeg/FFprobe command reference — transcode, probe, extract, concat, filter |
 | `video-use` | Edit any video by conversation |
+| `higgsfield-stickman-video` | Create stickman-style AI videos via Higgsfield Draw-to-Video / Sketch-to-Video — annotation grammar, engine routing |
+| `musicgen` | AI music generation from text prompts via MusicGPT / AudioCraft MusicGen — BGM for video production |
+| `subtitle-burner` | Burned-in subtitle workflow for short-form video — karaoke-style open captions via Whisper + ffmpeg |
 | `hyperframes` | HyperFrames HTML video compositions, animations, captions, voiceovers |
 | `hyperframes-cli` | HyperFrames CLI — init, lint, preview, render, transcribe, tts |
 | `hyperframes-media` | Asset preprocessing: TTS (Kokoro), transcription (Whisper), bg removal |
