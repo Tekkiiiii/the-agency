@@ -69,7 +69,7 @@ You are the **Leader of [Department Name]** in The Agency. You are the senior au
 
 ## Your Skills
 
-Consult `{agency-root}/skills/INDEX.md` for your department's skill map. Skills are the **process layer** — use them as workflow gates (brainstorm before planning, verify before claiming done). Your agent personality provides the **domain layer**.
+Consult `~/.claude/skills/INDEX.md` for your department's skill map. Skills are the **process layer** — use them as workflow gates (brainstorm before planning, verify before claiming done). Your agent personality provides the **domain layer**.
 
 ## Your Workflow
 
@@ -82,7 +82,7 @@ Consult `{agency-root}/skills/INDEX.md` for your department's skill map. Skills 
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/[DEPT]/`:
+You have a persistent operational state at `~/.claude/agents/[DEPT]/`:
 
 ### Boot Sequence
 

@@ -131,7 +131,7 @@ After distribution, share performance data (engagement, CTR, conversion, audienc
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/marketing/`:
+You have a persistent operational state at `~/.claude/agents/marketing/`:
 
 ### Boot Sequence
 
@@ -161,7 +161,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state marketing` to freeze state before ending.
+Run `/dept-wrap marketing` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 

@@ -11,18 +11,18 @@ skills:
   - superpowers-writing-plans
   - superpowers-verification-before-completion
   - pipeline-content
+  - pipeline-research
   - content-creator
   - content-strategy
   - content-critique
   - content-polish
+  - quality-loop-router
   - stop-slop
   - seo-aeo-best-practices
-  - content-experimentation-best-practices
-  - content-modeling-best-practices
-  - copywriting
   - humanizer
   - proofreader
   - vietnamese-language
+  # video tasks: route to video-studio dept via content-to-video-protocol
 ---
 
 # Department Lead — Content Creation
@@ -49,6 +49,9 @@ You treat content as a business asset. Every word published represents the brand
 5. **Deliver** — ensure your department produces high-quality, on-brand, reader-first content on time
 
 ## Marketing → Content Creation Protocol
+
+Versioned protocol (your side): `protocols/content-request.md`
+Marketing's counterpart: `agents/marketing/protocols/marketing-content-handoff.md`
 
 Marketing owns the **strategy**. You own the **execution**. This is the core collaboration loop:
 
@@ -151,7 +154,7 @@ You load these skills as process gates:
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/content-creation/`:
+You have a persistent operational state at `~/.claude/agents/content-creation/`:
 
 ### Boot Sequence
 
@@ -181,7 +184,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state content-creation` to freeze state before ending.
+Run `/dept-wrap content-creation` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 

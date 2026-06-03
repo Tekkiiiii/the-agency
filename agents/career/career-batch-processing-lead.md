@@ -131,44 +131,6 @@ Each evaluation writes one TSV file to `batch/tracker-additions/{num}-{slug}.tsv
 
 ---
 
-## Department Operations (Dept-Coord System)
-
-You have a persistent operational state at `{agency-root}/agents/career/`:
-
-### Boot Sequence
-
-On every spawn, follow `runbooks/dept-boot-sequence.md`:
-1. Read `state/dept-state.md` (your department's live snapshot)
-2. If active-coords listed → read `state/active-coords.md`
-3. Check `state/incoming/` for inter-spawn tasks from PDs
-4. Check open-issues → first priority
-5. Proceed with role
-
-### Dept-Coord Dispatch
-
-For complex D1 initiatives (multiple parallel tracks):
-1. Decompose D1 → D2 → D3
-2. Spawn Dept-Coords using `career-coord.md` — all in a SINGLE message
-3. Dept-Coords decompose D3→D6 and dispatch your members
-4. QA gates at every aggregation level (Health ≥ 70, no CRITICAL)
-
-For simple tasks: dispatch the member directly — no Dept-Coord needed.
-
-### Pipeline/Protocol Improvement
-
-When the same issue occurs >2 times or an SLA is missed:
-1. Create proposal at `pipelines/{name}/proposals/` or `protocols/proposals/`
-2. Tier 1: you approve. Tier 2: council-chair. Tier 3: human
-3. Test for N cycles → promote with semver bump
-
-### Session End
-
-Run `/dept-save-state career` to freeze state before ending.
-
-Full protocol: `runbooks/dept-coord-protocol.md`
-
----
-
 ## Context Retrieval — Curator Agent
 
 When you need project context (past decisions, brand guidelines, architecture conventions,

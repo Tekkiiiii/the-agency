@@ -18,7 +18,7 @@ lastUpdated: 2026-04-01
 
 ## Mode 1: Spawn (do this every time)
 
-**Target context cost: ~500 tokens max**
+**Target context cost: ~600 tokens max**
 
 **Step 1:** Read briefing from spawn prompt. pd-resume passes next-session.md content
 inline -- no file reads needed. If spawned manually without a briefing, read:
@@ -30,6 +30,14 @@ inline -- no file reads needed. If spawned manually without a briefing, read:
 ```
 {project}/memory/tasks/ongoing/
 ```
+
+**Step 2b:** Read structural contract (if it exists):
+```
+{project}/memory/pd-structure.md
+```
+If this file does not exist and the project has active L3 Coord work, create it now
+using the schema in pd-coordinator.md § Structural Oversight. Takes 2 minutes, saves
+hours of cross-L3 conflict resolution later.
 
 **Step 3:** Proceed with your role.
 
@@ -43,7 +51,7 @@ inline -- no file reads needed. If spawned manually without a briefing, read:
 
 **Step 2:** If not in briefing, load the relevant department INDEX:
 ```
-{agency-root}/agents/{department}/INDEX.md
+~/.claude/agents/{department}/INDEX.md
 ```
 Only load the one department you need. Not all 8.
 
@@ -63,7 +71,7 @@ Only load the one department you need. Not all 8.
    NO  → step 3
 
 3. Is this a workflow task (planning, verification, QA, retro)?
-   YES → use a skill from {agency-root}/skills/INDEX.md
+   YES → use a skill from ~/.claude/skills/INDEX.md
    NO  → step 4
 
 4. Can you do it directly (Tier 1: <10 line edits, docs, analysis)?

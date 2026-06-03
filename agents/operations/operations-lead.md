@@ -97,7 +97,7 @@ You load these skills as process gates:
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/operations/`:
+You have a persistent operational state at `~/.claude/agents/operations/`:
 
 ### Boot Sequence
 
@@ -127,7 +127,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state operations` to freeze state before ending.
+Run `/dept-wrap operations` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 

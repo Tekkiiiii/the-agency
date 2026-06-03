@@ -22,15 +22,18 @@
 | ZK Steward | Niklas Luhmann Zettelkasten, atomic notes, cross-domain decisions |
 | Task Planner | Breaks down complex tasks into actionable implementation plans |
 | CLI-Anything Agent | Transforms any GUI app into agent-usable CLI harness via 7-phase pipeline (Blender, GIMP, LibreOffice, Inkscape, Shotcut, OBS, Audacity, etc.) |
-| {project} PD | Project Director for {project} — Vietnamese financial news RSS + Ollama Tauri app |
+| MarketSenseApp PD | Project Director for MarketSenseApp — Vietnamese financial news RSS + Ollama Tauri app |
 | Amani CRM PD | Project Director for Amani CRM — inventory/production management CRM (Next.js + FastAPI) |
 | ltv PD | Project Director for LTV school fees management app (Tauri 2 + Rust + React 19) |
 | Accounts Payable Agent | Vendor payments, contractor invoices, multi-rail (crypto/fiat/stablecoins) |
 | Vietnamese Text Agent | Vietnamese text → URL slugs and markdown-safe formats via correct Unicode NFD decomposition |
 | Paperclip Control Plane | Zero-human company orchestration via Paperclip — manages agent workforce, org charts, heartbeats, budgets, and governance. The 2nd in command under you. |
 | Task-Executor | Leaf implementation agent — executes exactly what Coord assigns, no decomposition authority, Sonnet model |
-| Codebase Search | Fast read-only search agent — finds files, symbols, patterns across ~/.claude/, active projects, and skill library |
-| Project Scaffolder | Autonomous project + PD scaffolding — creates directory structure, memory files, PD agent file, and updates all registries |
+| Integration-Tester | Phase B cross-L3 system integration QA. Spawned by PD after all per-L3 Coord QA gates pass. Tests that multiple L3 outputs work together as a system — contract verification, cross-L3 dependency resolution, integration smoke tests. Reports INTEGRATION_PASS/WARN/FAIL to PD. |
+| Project Scaffolder | Autonomous project + PD scaffolding agent — creates all files and registries for /new-project |
+| Codebase Search | Fast read-only file/symbol search across ~/.claude/, projects, and skill library — replaces Explore for system searches |
+| AI Engineer PD | Project Director for AI Engineer — Project workspace holding all AI Engineer Fullstack course materials — lessons, exercises, notebooks, and practice files. Current course module: Pandas/Seaborn/Matplotlib data analysis (Buổi 8 - Unicorn Companies dataset). Will hold all future course modules, homework, and practice projects as Tekki progresses through the AI Engineer Fullstack curriculum. |
+| Morpheus PD | Project Director for Morpheus — Meta-overseer PD. Monitors all other PDs across ~/.claude/projects/ + ~/projects/. Reads heartbeat files, next-session.md, dept-state.md. Flags STALE (>3 days no heartbeat) and BLOCKED. Ships daily HTML digest to ~/.claude/outputs/morpheus/YYYY-MM-DD-digest.html using html-plan-style skill. Reports only — no auto-poke. Aggregates: active PDs, stale PDs, blocked PDs, ongoing tasks, recent commits, dept-state highlights. |
 
 ## Infra Sub-team
 

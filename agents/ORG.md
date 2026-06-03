@@ -257,7 +257,7 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 | Operations | `operations/` |
 | Specialized | `specialized/` |
 | Specialized (Infra sub-team) | `specialized/infra/` |
-| **Rooms Infrastructure** | `{agency-root}/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
+| **Rooms Infrastructure** | `~/.claude/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
 | **RoomManager** | `specialized/infra/room-manager.md` — always-on via 15-min cron polling |
 | Specialized (Audit sub-team) | `specialized/audit/` |
 | Spatial Computing | `spatial-computing/` |

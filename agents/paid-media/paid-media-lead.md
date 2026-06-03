@@ -90,7 +90,7 @@ You load these skills as process gates:
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/paid-media/`:
+You have a persistent operational state at `~/.claude/agents/paid-media/`:
 
 ### Boot Sequence
 
@@ -120,7 +120,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state paid-media` to freeze state before ending.
+Run `/dept-wrap paid-media` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 
