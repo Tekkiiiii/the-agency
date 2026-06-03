@@ -27,6 +27,10 @@
 
 See [china/INDEX.md](china/INDEX.md) — 8 China-market specialists covering Xiaohongshu, WeChat, Zhihu, Bilibili, Baidu SEO, Kuaishou, and e-commerce.
 
+## Content Production Handoff
+
+Marketing owns content **strategy** (what, who, when, where, why). Content Creation owns **execution** (the written artifact). When you need content produced, build a strategic brief and send it to the CCO. See [Content Request Protocol](../runbooks/content-request-protocol.md) for the full workflow.
+
 ## Parent Directory
 
 [← Agency Directory](../INDEX.md)

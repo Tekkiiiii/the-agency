@@ -16,9 +16,10 @@ skills:
   - codex
   - careful
   - impeccable
+  - critique-code
   - document-release
-  - sync-md-json
   - ship
+  # swapped: sync-md-json → critique-code (higher domain relevance for code quality gates)
 ---
 
 

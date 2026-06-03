@@ -84,7 +84,7 @@ You load these skills as process gates:
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/spatial-computing/`:
+You have a persistent operational state at `~/.claude/agents/spatial-computing/`:
 
 ### Boot Sequence
 
@@ -114,7 +114,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state spatial-computing` to freeze state before ending.
+Run `/dept-wrap spatial-computing` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 

@@ -105,7 +105,7 @@ All videos pass through vs-video-quality-reviewer before distribution.
 | Script unclear / incomplete | NACK to content-video-script-writer |
 | Brand assets missing | Request from Design dept via inter-spawn |
 | AI video fails 3+ iterations | Escalate to vs-ai-video-producer → video-studio-lead → human |
-| Platform API failure on upload | Log, retry x2, then escalate to Tekki |
+| Platform API failure on upload | Log, retry x2, then escalate to user |
 | Score < 50 after redo | Escalate to video-studio-lead + parent AI |
 
 ---

@@ -1,307 +1,118 @@
 ---
 name: pd-resume
 description: >
-  Orchestrate a multi-PD session: recall + spawn PDs in parallel, all fully autonomous.
-  Invoke as /pd-resume all (resume all projects) or /pd-resume [project-slug] (resume one project only).
-  When a slug is given, only that single PD is spawned — never all. When "all" is used,
-  every active project's save-state files are read in parallel, a recall briefing is assembled
-  per project, and all PD coordinators are spawned simultaneously with briefings pre-loaded
-  so they begin work instantly.
-  Blocked projects surface as such. Useful when starting a session with multiple
-  active projects — no manual reading required. Also for quickly auditing which
-  projects are stale (stale last_session dates), for spinning up context on a
-  new project before exploring it manually, and for confirming what each PD's
-  next action should be without re-deriving it from memory files.
----
-
-# PD Standard Protocol
-
-**This section applies to ALL spawned PDs, every time they run.** Embed it verbatim in
-every spawn prompt — no exceptions.
-
-## Rule 1 — Decompose First
-
-When you receive any task or work item — regardless of size — your **first action**
-is to break it into the smallest possible independent sub-tasks.
-
-Rule of thumb: if a sub-task can be done without waiting for another sub-task's
-output, it is independent. Split along those lines.
-
-Examples:
-- ❌ "Build the auth flow" (one monolithic task)
-- ✅ "Create user table schema", "Write /auth/register endpoint", "Write /auth/login endpoint",
-  "Add JWT middleware", "Write login page component", "Write register page component"
-  (six independent sub-tasks)
-
-## Rule 2 — Agent Selection Hierarchy (MANDATORY)
-
-When spawning a subagent, follow this order — do NOT default to general-purpose:
-
-**Step 1 — Match from The Agency catalog first.**
-Check if a named department lead, coordinator, or specialist agent fits the task domain:
-
-| Task domain | Prefer this agent type |
-|---|---|
-| Research, analysis, investigation | `research-pd`, `Explore`, `Trend Researcher` |
-| Frontend, UI, design | `Frontend Developer`, `UI Designer`, `Design Lead` |
-| Backend, API, database | `Backend Architect`, `Data Engineer` |
-| Full-stack / feature work | `Senior Developer`, domain-specific PD |
-| Sales, pipeline, revenue | `Sales Lead`, `Deal Strategist`, `Account Strategist` |
-| Marketing, content, growth | `Marketing Lead`, `Growth Hacker`, `Content Creator` |
-| Operations, tracking, finance | `Operations Lead`, `Finance Tracker`, `Analytics Reporter` |
-| Security, compliance, legal | `Security Engineer`, `Compliance Auditor` |
-| Deployment, DevOps, infra | `DevOps Automator`, `Infrastructure Maintainer` |
-| QA, testing, verification | `Testing Lead`, `Evidence Collector`, `qa` skill agent |
-| Experiment design, A/B | `Experiment Tracker` |
-| Proposal, RFP, deal | `Proposal Strategist`, `Deal Strategist` |
-| HR, culture, ops | `Studio Operations` |
-| Game dev | `Game Development Lead` |
-| Spatial/VR/AR | `Spatial Computing Lead` |
-
-**Step 2 — Route to existing specialized agents before general-purpose.**
-Use `Agent({ subagent_type: "Explore" })` for research, `Agent({ subagent_type: "general-purpose" })` only as an absolute last resort when no named or domain agent fits.
-
-**Step 3 — Fallback is general-purpose.**
-Only use `general-purpose` when the task is truly generic and no catalog agent matches.
-
-**All subagent spawn calls go in one message.** Do not wait for one to finish before
-spawning the next.
-
-## Rule 3 — Report Every Completion to team-lead
-
-**Do NOT wait until all sub-tasks are done.** Send a message to "team-lead" via
-SendMessage after EACH subagent finishes.
-
-Completion format:
-```
-{subtask-label}: DONE — [1-sentence description of what was done]
-```
-
-Blocker format:
-```
-{subtask-label}: BLOCKED — [reason] — [suggested path forward or workaround]
-```
-
-The main session receives a live, chronological feed of progress. This is not optional
-and not a courtesy — it is how the operator tracks portfolio-wide work in real time.
-
-## Skeleton Prompt for PD Spawn
-
-Use this as the spawn prompt for every PD (fill in project-specific fields):
-
-**Before spawning, check if the project has an identity file.**
-If `{project}/memory/{slug}-pd.md` exists, read it — it contains the PD's skills, context files, and spawner protocol.
-If it does NOT exist, create it before spawning. See `/pd-spawn` SKILL.md for the format.
-
-```
-You are resuming work on {project-name}. Your recall briefing from the last session is below.
-Read it carefully — this is your context. Start the stated 'Next' action immediately.
-
-## Task Startup Behavior
-
-**On every session start, read only `memory/tasks/ongoing/`** — not `completed/` or `revisions/`.
-- Tasks in `ongoing/` = active work (INCOMING, IN_PROGRESS)
-- Tasks in `completed/` = archived, not re-read unless asked
-- Tasks in `revisions/` = superseded by revisions, read only when doing a revision
-
-============================================
-{recall-briefing}
-============================================
-
-## PD Directory (do not read — always embedded here)
-
-| Project | Inbox name | Project Directory | Task Folder |
-|---------|-----------|-------------------|-------------|
-| {Project A} | {project-a}-pd | `{project-a-directory}` | `memory/tasks/` |
-| {Project B} | {project-b}-pd | `{project-b-directory}` | `memory/tasks/` |
-
-(Populate from your medium-term.md — this is the SSOT for project paths.)
-
-## PD Standard Protocol — NON-NEGOTIABLE
-
-You are bound by the following protocol on every task, every time:
-
-1. DECOMPOSE: Break every task into the smallest possible independent sub-tasks.
-   Do not do any work yourself until sub-tasks are decomposed.
-
-2. PARALLELIZE: In a SINGLE message, spawn one Agent per sub-task.
-   All subagents must be launched simultaneously. Do not wait between spawns.
-
-3. REPORT: After EACH subagent completes, send a SendMessage to "team-lead":
-   - DONE: "{subtask-label}: DONE — [brief description]"
-   - BLOCKED: "{subtask-label}: BLOCKED — [reason] — [workaround]"
-   Report immediately on completion, not at the end of all work.
-
-Agent template: {path to PD .md file}
-
-Start immediately on 'Next'. Do not re-read project docs unless the briefing says to.
-When a task block is complete or you are blocked, run /save-state [{slug}] then stop.
-```
-
+  Resume PD sessions with minimal context overhead. Reads next-session.md directly
+  (no subagents), spawns PD coordinators with lean briefings. Invoke as
+  /pd-resume all or /pd-resume [slug]. Optimized for context window efficiency:
+  no recall subagents, no temp files, no embedded protocol duplication.
 ---
 
 # /pd-resume
 
-Fully autonomous: spawns recall subagents, collects briefings, spawns PDs with briefings pre-loaded.
+Fully autonomous. Reads state directly, spawns PDs with pre-digested briefings.
 
-## SSOT: medium-term.md
+**Context budget principle:** save-state does the synthesis at write-time so
+pd-resume pays near-zero at read-time. Every token in the PD spawn prompt
+must earn its place.
 
-The **primary source of truth** for project locations is `~/.claude/memory/medium-term.md`
-— the Active Projects table. Read it FIRST.
+## SSOT
+
+Project registry: `~/.claude/memory/medium-term.md` — Active Projects table.
+Read it FIRST. This is the ONLY project-to-path map. No hardcoded tables.
 
 ## If Slug Not Found
 
-1. Check `~/.claude/memory/medium-term.md` Active Projects table — the SSOT.
-2. If not in medium-term.md → output:
-
-   ```
-   PROJECT NOT FOUND: {slug}
-   Hint: Check ~/.claude/memory/medium-term.md for the current project list.
-   ```
-
-   **Stop.**
+1. Check `~/.claude/memory/medium-term.md` Active Projects table.
+2. If not found → output: `PROJECT NOT FOUND: {slug}` and stop.
 
 ## Step 1 — Resolve Targets
 
-Accept an argument: `all` (resume all projects from medium-term.md) or a single
-project slug (resume only that project).
-- `all` → resume every project listed in medium-term.md
-- `{slug}` → resume only that project — spawn exactly one PD
-- Multiple slugs separated by comma → resume listed projects only (not all)
+Accept argument: `all` | single slug | comma-separated slugs.
 
-**Important:** `/pd-resume [slug]` without the word `all` resumes exactly one project.
-Use `all` only when you intentionally want to resume all active projects simultaneously.
+1. Read `~/.claude/memory/medium-term.md`
+2. Parse the Active Projects table for slug → path + PD name mappings
+3. Skip archived projects (listed in the Archived line)
+4. If slug not found → stop with error
 
-## Step 2 — Spawn Recall Subagents in Parallel
+## Step 2 — Read Briefings Directly
 
-For each target project, spawn an **Explore sonnet subagent** that reads the project's
-save-state files and writes the briefing to a temp file. Spawn all in parallel.
+For each target project, read these files in parallel using the Read tool.
+**Do NOT spawn subagents.**
 
-For each target, spawn:
+**Per project, read simultaneously:**
+1. `{project-path}/memory/next-session.md` — the PD startup briefing
+2. `{project-path}/memory/inter-spawn-tasks/index.md` — inter-spawn tasks Active Summary
+3. All files matching `{project-path}/memory/inter-spawn-tasks/incoming/*.md` — unread inbound tasks
+4. `{project-path}/memory/pd-structure.md` — structural contract (if exists; skip silently if not)
 
-Subagent prompt:
-
-"Read-only briefing for {project}. Do NOT write any files except your output file.
-
-FILES TO READ:
-- {project}/memory/next-session.md
-- {project}/memory/heartbeat.md
-- {project}/memory/decisions.md
-- {project}/memory/tasks/ongoing/delegated-*.md (read ALL — check for "Completion" or "Blocker" sections)
-
-OUTPUT FORMAT (write exactly this to /tmp/pd-resume-{slug}.briefing):
-
-RECALL — {slug}
-
-Phase: [current phase or status]
-Next: [specific action — one sentence]
-Blockers: [list one per line, or "none"]
-Decisions: [top 2 locked decisions, one per line, or "none"]
-Mid-flight: [1-2 mid-flight files, one per line, or "none"]
-Delegated tasks: [list each delegated-*.md that has a "Completion" section → mark DONE; each with "Blocker" section → BLOCKED; each with neither → awaiting report]
-Last Session: [from heartbeat.md Session End block: what was happening last session — 1-2 sentences; if no Session End block, use next-session.md content]
-
-RULES:
-- Read-only. Do NOT write or edit any project files.
-- If a file doesn't exist, skip that field and note "N/A".
-- Keep every field to 1-2 lines max.
-- Be specific — "fix BottomNav.tsx mobile layout" not "fix bugs".
-- Output to /tmp/pd-resume-{slug}.briefing only. Then stop. No other files."
-
-subagent_type: Explore
-model: sonnet
-
-Collect all briefings. Wait for all subagents to complete.
-
-## Step 3 — Read Briefings
-
-For each project, read `/tmp/pd-resume-{slug}.briefing`. If a briefing file is missing or empty,
-use this fallback for that project:
-
+If next-session.md doesn't exist or is empty, use fallback:
 ```
 Phase: unknown
-Next: read project docs and assess current state
+Next: read project memory and assess current state
 Blockers: none
-Decisions: none
-Mid-flight: none
-Context: no prior session found
 ```
 
-## Step 3.5 — Graph enrichment (caller-side, parallel per project)
+If `inter-spawn-tasks/incoming/` has no files or doesn't exist, skip silently.
 
-For each target project, call in parallel:
-
-```
-mcp__graphify__query_graph(question="{slug} architecture dependencies")
-```
-
-Append the top 5 returned node labels to each project's briefing as a **Graph context:** section before passing it to the PD coordinator in Step 4:
+**INCOMING INTER-SPAWN TASKS (mandatory injection):**
+After reading, if any files exist in `incoming/`, inject an "INCOMING INTER-SPAWN TASKS"
+section into the PD spawn briefing (Step 3). Format:
 
 ```
-Graph context: <node1>, <node2>, <node3>, <node4>, <node5>
+INCOMING INTER-SPAWN TASKS ({N} unread):
+- {filename}: {first line of each file — the task title or # header}
+  [verbatim: first 3 lines of each file]
+Active Summary (from index.md): {Active Summary section verbatim}
 ```
 
-If the graphify MCP tool is unavailable, skip silently.
+The PD MUST read and act on these at startup — the identity file contract says
+"inter-spawn-tasks/incoming/ checked FIRST" and the spawn briefing must enforce it.
 
-## Step 3.6 — Check Showcase Mode
+## Step 2.5 — Check Showcase Mode
 
-Before spawning, test whether `{agency-root}/state/pd-showcase.flag` exists.
+Before spawning, test whether `~/.claude/state/pd-showcase.flag` exists.
 
 - **If absent (default):** background spawn, no narration injection.
 - **If present (showcase ON):** foreground spawn + Showcase Narration Directive
   appended to every PD briefing. Toggled via `/pd-showcase`.
 
-Record this as `showcase_on = true | false` for use in Step 4. NOTE: if
+Record this as `showcase_on = true | false` for use in Step 3. NOTE: if
 multiple targets were resolved in Step 1 and showcase is ON, spawn them
 **sequentially** (foreground spawns block) — not in parallel.
 
-## Step 4 — Spawn PD Coordinator(s)
+## Step 3 — Spawn PD Coordinators
 
-**If a single slug was given:** spawn exactly one PD coordinator with that briefing only.
-**If `all` was given:** spawn one pd-coordinator per project in parallel.
+Spawn one pd-coordinator per target. **All in a single message** (parallel)
+WHEN showcase is OFF. When showcase is ON, spawn one at a time.
 
-Agent template: `~/.claude/agents/project-management/pd-coordinator.md`
+**Spawn config:**
+- `subagent_type`: pd-coordinator
+- `model`: opus
+- `run_in_background`: `false` if `showcase_on`, else `true`
 
-Spawn prompt for each target:
+**Spawn prompt — LEAN FORMAT (do not add to this):**
 
 ```
-You are PD-{slug}, resuming work on {project-name}.
-Your recall briefing from the last session is below.
-Read it carefully — this is your context. Start the stated 'Next' action immediately.
+You are PD-{slug}, resuming {project-name}.
+Project: {project-path}
+Tasks: {project-path}/memory/tasks/ongoing/
+Inter-spawn tasks: {project-path}/memory/inter-spawn-tasks/
 
-============================================
-{recall-briefing}
-============================================
+--- BRIEFING ---
+{verbatim content of next-session.md}
+---
 
-## PD Directory (do not read — always embedded here)
+{IF incoming inter-spawn tasks exist, append:}
+--- INCOMING INTER-SPAWN TASKS ({N}) ---
+{verbatim task list from Step 2 injection block}
+Read and action these FIRST before any other work. Each file is at:
+{project-path}/memory/inter-spawn-tasks/incoming/
+---
 
-| Project | Inbox name | Project Directory | Task Folder |
-|---------|-----------|-------------------|-------------|
-| {Project A} | {project-a}-pd | `{project-a-directory}` | `memory/tasks/` |
-| {Project B} | {project-b}-pd | `{project-b-directory}` | `memory/tasks/` |
-
-(Populate from your medium-term.md — this is the SSOT for project paths.)
-
-## PD Standard Protocol — NON-NEGOTIABLE
-
-You are bound by the following protocol on every task, every time:
-
-1. DECOMPOSE: Break every task into the smallest possible independent sub-tasks.
-   Do not do any work yourself until sub-tasks are decomposed.
-
-2. PARALLELIZE: In a SINGLE message, spawn one Agent per sub-task.
-   All subagents must be launched simultaneously. Do not wait between spawns.
-
-3. REPORT: After EACH subagent completes, send a SendMessage to "team-lead":
-   - DONE: "{subtask-label}: DONE — [brief description]"
-   - BLOCKED: "{subtask-label}: BLOCKED — [reason] — [workaround]"
-   Report immediately on completion, not at the end of all work.
-
-Agent template: {path to pd-coordinator.md}
-Model: Opus (pd-coordinator uses Opus, Coords use Opus, Executors use Sonnet)
-
-Start immediately on 'Next'. Do not re-read project docs unless the briefing says to.
-When a task block is complete or you are blocked, run /save-state [{slug}] then stop.
+Start the Next action immediately. On startup, read only memory/tasks/ongoing/
+and memory/inter-spawn-tasks/incoming/. Your agent definition has your full
+protocol and lifecycle — do not wait for additional instructions.
+When done or blocked, /save-state {slug} and stop.
 
 {IF showcase_on, append:}
 
@@ -322,23 +133,43 @@ your tool calls; you just connect the dots.
 --- END SHOWCASE MODE ---
 ```
 
-**Subagent config — MANDATORY HIERARCHY:**
-- `subagent_type`: pd-coordinator (from Agency catalog — match domain first)
-- `model`: opus
-- `run_in_background`: `false` if `showcase_on`, else `true`
-- **Never use general-purpose as default. Only fall back to general-purpose when no named or domain agent fits the task.**
-- When spawning subagents FOR the PD coordinator's tasks, follow Rule 2 Agent Selection Hierarchy (check domain match first from the Agency catalog).
+**IF pd-structure.md exists and was read, inject into spawn prompt:**
+```
+--- STRUCTURAL CONTRACT ---
+{verbatim content of pd-structure.md}
+---
+```
 
-Wait for all PD Coordinators to report back. Then output:
+**What is NOT in the spawn prompt (already in pd-coordinator agent definition):**
+- PD Standard Protocol (decompose → parallelize → report)
+- Agent Selection Hierarchy
+- Decomposition guide (L1→L3)
+- Coord spawn template
+- QA gate protocol
+- ACK/NACK reference
+- Status log format
+- Escalation protocol
+
+**What is NOT in the spawn prompt (available on-demand via file read):**
+- PD Directory / cross-project paths (medium-term.md — read only for inter-spawn)
+- Project CLAUDE.md (read only if PD needs project-specific config)
+- Historical sessions (sessions/*.md — never read at startup)
+
+## Step 4 — Output Summary
+
+After all PDs are spawned:
 
 ```
 PD RESUME — {n} projects
 
-{slug} — [phase from briefing] — spawned
-  next: [next action]
-  blockers: [blockers or "none"]
+{slug} — {phase} — spawned
+  next: {next action}
+  blockers: {blockers or "none"}
 
 [...one per project...]
 
-All PDs running. Results arrive as each completes.
+{IF showcase_on:} Showcase MODE — PDs are running in the foreground. Tool calls and narration stream into this session live.
+{ELSE:} All PDs running in background. Progress arrives via SendMessage.
 ```
+
+Then stop. Do not poll or wait.
