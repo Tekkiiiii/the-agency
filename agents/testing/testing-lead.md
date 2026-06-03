@@ -124,7 +124,7 @@ When PD spawns you with a QA task, follow this handoff protocol:
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/testing/`:
+You have a persistent operational state at `~/.claude/agents/testing/`:
 
 ### Boot Sequence
 
@@ -154,7 +154,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state testing` to freeze state before ending.
+Run `/dept-wrap testing` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 

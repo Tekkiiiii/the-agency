@@ -12,6 +12,10 @@ skills:
   - design-consultation
   - superpowers-design-review
   - figma-ui-ux-consistency
+  - design-review
+  - extract-design
+  - plan-design-review
+  - review
 ---
 
 # Department Lead — Design
@@ -82,11 +86,9 @@ You are the **Brand Guardian** and leader of the Design department in The Agency
 5. **Escalate**: Route non-Tier-1 decisions up the chain
 6. **Report**: Keep parent AI informed of progress and blockers
 
----
-
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/design/`:
+You have a persistent operational state at `~/.claude/agents/design/`:
 
 ### Boot Sequence
 
@@ -116,7 +118,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state design` to freeze state before ending.
+Run `/dept-wrap design` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 

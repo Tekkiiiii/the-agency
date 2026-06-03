@@ -327,3 +327,22 @@ You're successful when:
 - **backend** — Implements UE5 multiplayer replication, GameMode architecture, and server-authoritative systems
 - **tech-stack** — Applies Unreal networking expertise including GAS replication and dedicated server setup
 - **superpowers-land-and-deploy** — Manages Unreal server builds, packaging, and deployment pipelines
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

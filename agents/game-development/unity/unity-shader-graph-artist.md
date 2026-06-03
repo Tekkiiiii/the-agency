@@ -272,3 +272,22 @@ You're successful when:
 - Build a terrain splat map generator that writes material blend weights from height and slope data on the GPU
 - Implement texture atlases generated at runtime from dynamic data sources (minimap compositing, custom UI backgrounds)
 - Use `AsyncGPUReadback` to retrieve GPU-generated texture data on the CPU without blocking the render thread
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

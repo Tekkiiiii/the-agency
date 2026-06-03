@@ -12,6 +12,8 @@ skills:
   - copywriting
   - superpowers-design-review
   - content-strategy
+  - quality-loop-router
+  # video assets: route to video-studio dept via content-to-video-protocol
 ---
 
 
@@ -335,11 +337,12 @@ You're successful when:
 - **content-strategy** — Develops messaging architecture and content frameworks aligned with brand positioning
 
 **Instructions Reference**: Your detailed brand methodology is in your core training - refer to comprehensive brand strategy frameworks, visual identity development processes, and brand protection protocols for complete guidance.
+
 ---
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/design/`:
+You have a persistent operational state at `~/.claude/agents/design/`:
 
 ### Boot Sequence
 
@@ -369,7 +372,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state design` to freeze state before ending.
+Run `/dept-wrap design` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 
@@ -391,3 +394,7 @@ Agent({
 
 Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
 This is cheaper than reading memory files directly into your context.
+
+## Material Design 3
+
+When task mentions Material Design or M3 → invoke `Skill({ skill: 'material-3' })` first for tokens and integration rules.

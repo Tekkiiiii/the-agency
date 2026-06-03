@@ -10,6 +10,11 @@ skills:
   - superpowers-autoplan
   - superpowers-dispatching-parallel-agents
   - superpowers-retro
+  - graphify
+  - notebooklm-memory
+  - browse
+  - investigate
+  - extract-design
 ---
 
 # Department Lead — Specialized
@@ -88,7 +93,7 @@ Skills are loaded dynamically based on which member agents are active — the sp
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/specialized/`:
+You have a persistent operational state at `~/.claude/agents/specialized/`:
 
 ### Boot Sequence
 
@@ -118,7 +123,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state specialized` to freeze state before ending.
+Run `/dept-wrap specialized` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 

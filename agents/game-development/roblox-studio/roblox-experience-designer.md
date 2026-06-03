@@ -308,3 +308,22 @@ You're successful when:
 - Design price anchoring: show a premium option next to the standard option — the standard appears affordable by comparison
 - Build purchase abandonment recovery: if a player opens the shop but doesn't buy, show a reminder notification on next session
 - A/B test price points using the analytics bucket system: measure conversion rate, ARPU, and LTV per price variant
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.

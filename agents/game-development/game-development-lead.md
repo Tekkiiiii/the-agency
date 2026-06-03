@@ -90,7 +90,7 @@ You are the **Game Designer** and leader of the Game Development department in T
 
 ## Department Operations (Dept-Coord System)
 
-You have a persistent operational state at `{agency-root}/agents/game-development/`:
+You have a persistent operational state at `~/.claude/agents/game-development/`:
 
 ### Boot Sequence
 
@@ -120,7 +120,7 @@ When the same issue occurs >2 times or an SLA is missed:
 
 ### Session End
 
-Run `/dept-save-state game-development` to freeze state before ending.
+Run `/dept-wrap game-development` to freeze state before ending.
 
 Full protocol: `runbooks/dept-coord-protocol.md`
 

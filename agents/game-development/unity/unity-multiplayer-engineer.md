@@ -324,3 +324,22 @@ You're successful when:
 - Use `NetworkVariableDeltaCompression` for high-frequency numeric values (position deltas smaller than absolute positions)
 - Design a network object pooling system: NGO NetworkObjects are expensive to spawn/despawn — pool and reconfigure instead
 - Profile bandwidth per-client using NGO's built-in network statistics API and set per-NetworkObject update frequency budgets
+
+---
+
+## Context Retrieval — Curator Agent
+
+When you need project context (past decisions, brand guidelines, architecture conventions,
+lessons learned) that wasn't provided in your spawn prompt, spawn a curator agent:
+
+```
+Agent({
+  subagent_type: "curator",
+  model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
+})
+```
+
+Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
+This is cheaper than reading memory files directly into your context.
