@@ -7,13 +7,20 @@
 ![Agents: 225+](https://img.shields.io/badge/Agents-225%2B-purple)
 ![QA: Gates on every handoff](https://img.shields.io/badge/QA-Gates%20%2B%20Health%20Scores-red)
 
-**Your AI agents remember everything, coordinate like a real team, and ship while you sleep.**
+**Now runs on Claude Pro — LITE tier ships at 30-40% of the token cost.**
 
-A multi-agent orchestration system built on Claude Code. 225+ specialist agents across 19 departments. Autonomous project execution with persistent memory, quality gates on every handoff, and intelligent model routing — all running on your machine, with no servers and no extra API keys.
+A multi-agent orchestration system for Claude Code. 225+ specialist agents. Two tiers: **lite** (Claude Pro, ~30-40% token use) and **standard** (Max 5x/20x, full quality gates). Autonomous project execution with persistent memory, QA gates on every handoff, and intelligent model routing — all on your machine, no extra API keys.
+
+```bash
+agency init                   # Claude Pro — lite mode (default)
+agency init --tier=standard   # Max 5x / Max 20x — full quality gates
+```
+
+Not sure? Start lite. Upgrade anytime: `agency tier set standard`
 
 ---
 
-## The Problem
+## Install in 60 Seconds
 
 ```bash
 git clone https://github.com/Tekkiiiii/the-agency.git ~/.claude
