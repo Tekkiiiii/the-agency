@@ -176,10 +176,12 @@ agency init --tier=standard   # Max 5x / Max 20x — full quality gates
 | | lite (default) | standard |
 |--|--|--|
 | Claude plan | Pro | Max 5x / Max 20x |
-| QA gates | Single-phase | Two-phase (+ IntegrationTester) |
+| Agent trio | pd-coordinator-lite + coord-lite + task-executor-lite | pd-coordinator + coord + task-executor |
+| Coord role | Pure task-giver (decomposes L3, dispatches Exec, reviews ACK/NACK) | Team-lead (Approach Gate, 50% Check-In) |
+| QA gates | Phase A only (Coord-qa-Canary) | Phase A + Phase B (IntegrationTester) |
 | Approach Gate | No | Yes |
 | 50% Check-In | No | Yes |
-| Token use | Lower | Higher |
+| Token use | ~30-40% of standard | Full |
 
 Not sure? Start with `lite`. Upgrade anytime: `agency tier set standard`
 
