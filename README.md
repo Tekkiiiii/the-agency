@@ -164,6 +164,29 @@ cd ~/.claude
 
 Override the install location with `AGENCY_HOME=/custom/path ./install.sh`.
 
+## Choosing Your Tier
+
+The Agency runs in two modes depending on your Claude plan:
+
+```bash
+agency init                   # Claude Pro — lite mode (default, lower token use)
+agency init --tier=standard   # Max 5x / Max 20x — full quality gates
+```
+
+| | lite (default) | standard |
+|--|--|--|
+| Claude plan | Pro | Max 5x / Max 20x |
+| QA gates | Single-phase | Two-phase (+ IntegrationTester) |
+| Approach Gate | No | Yes |
+| 50% Check-In | No | Yes |
+| Token use | Lower | Higher |
+
+Not sure? Start with `lite`. Upgrade anytime: `agency tier set standard`
+
+See [docs/tiers.md](docs/tiers.md) for the full comparison.
+
+---
+
 ## Quick Start
 
 **Prerequisites:** Claude Code, Node.js 18+

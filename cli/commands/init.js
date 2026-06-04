@@ -75,6 +75,28 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const cliSrc = path.resolve(__dirname, '../bin/agency.js');
   linkCli(cliSrc, console);
 
+  // 7b. Write default tier to ~/.agency/config.json (only if not already set)
+  const tierArg = args.find(a => a && a.startsWith('--tier='));
+  const tierVal = tierArg ? tierArg.split('=')[1] : 'lite';
+  const validTiers = ['lite', 'standard', 'full'];
+  const resolvedTier = validTiers.includes(tierVal) ? tierVal : 'lite';
+
+  const cfgDir = path.join(os.homedir(), '.agency');
+  const cfgPath = path.join(cfgDir, 'config.json');
+  if (!existsSync(cfgDir)) mkdirSync(cfgDir, { recursive: true });
+
+  let existingCfg = {};
+  if (existsSync(cfgPath)) {
+    try { existingCfg = JSON.parse(require('fs').readFileSync(cfgPath, 'utf8')); } catch (_) {}
+  }
+  if (!existingCfg.tier) {
+    existingCfg.tier = resolvedTier;
+    writeFileSync(cfgPath, JSON.stringify(existingCfg, null, 2) + '\n');
+    console.log(`  ✓ Default tier: ${resolvedTier}  (change with: agency tier set standard)`);
+  } else {
+    console.log(`  ✓ Tier: ${existingCfg.tier} (existing config preserved)`);
+  }
+
   console.log(`\n✓ The Agency is ready — ${skillsDest}\n`);
   console.log('Next steps:');
   console.log('  agency onboard                            Guided introduction');
