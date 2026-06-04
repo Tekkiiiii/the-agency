@@ -7,13 +7,19 @@ runs at each agent handoff. Choose based on your Claude plan.
 
 ## lite (default)
 
-Optimized for **Claude Pro plan** users. Lower token budget per session.
+Optimized for **Claude Pro plan** users. ~30-40% token footprint of standard.
+
+**Architecture:** PD → Coord → Task-Executor (3 layers)
+
+**Coord role in LITE:** Pure task-giver. Coord decomposes L3 → smallest independent
+sub-tasks, dispatches Task-Executors, reviews ACK/NACK reports. No hands-on work.
+No Director-era Approach Gate or 50% Check-In patterns.
 
 **What runs:**
 - Full L1→L2→L3 decomposition by the PD
+- L3→L6 decomposition by Coord (task-giver only)
 - Coord spawn + ACK/NACK lifecycle
-- Single-phase QA (Coord-qa-Canary per session)
-- DIRECTION framing (team-lead mindset in all agents)
+- Phase A QA gate (Coord-qa-Canary per session)
 
 **What is skipped:**
 - Approach Gate — Execs do not send an APPROACH plan before file edits
@@ -23,7 +29,10 @@ Optimized for **Claude Pro plan** users. Lower token budget per session.
 
 **Best for:** solo projects, Pro plan users, single-domain tasks, quick iterations.
 
-**PD file:** `core/agents/pd-coordinator-lite.md`
+**Agent trio:**
+- `core/agents/pd-coordinator-lite.md` — PD (source: commit 9607f2d)
+- `core/agents/coord-lite.md` — Coord task-giver (source: commit 9607f2d)
+- `core/agents/task-executor-lite.md` — Exec (source: commit 9607f2d)
 
 ---
 
@@ -44,7 +53,10 @@ Full quality gates for complex multi-domain projects.
 
 **Best for:** complex multi-domain builds, Max 5x / Max 20x users, team deployments.
 
-**PD file:** `core/agents/pd-coordinator.md`
+**Agent trio:**
+- `core/agents/pd-coordinator.md` — PD
+- `core/agents/coord.md` — Coord (Director-era: team-lead mindset, Approach Gate, Check-In)
+- `core/agents/task-executor.md` — Exec
 
 ---
 
@@ -86,7 +98,8 @@ to explicitly lock that in.
 **New installs** default to `lite` (safest assumption for Pro plan).
 
 **Upgrade path:** `agency tier set standard` — no file migration needed. The tier
-flag only controls which PD coordinator file gets used at spawn time.
+flag controls which full agent trio (PD + Coord + Exec) gets used at spawn time.
+Use `require('./cli/commands/tier').agentTrio(tier)` to resolve the trio programmatically.
 
 ---
 
@@ -94,9 +107,13 @@ flag only controls which PD coordinator file gets used at spawn time.
 
 | Feature | lite | standard |
 |---------|------|----------|
+| Coord role | task-giver (pure dispatch) | team-lead (hands-on oversight) |
 | PD→Coord protocol rounds per task | 1 (spawn + ACK) | 1-3 (spawn + optional NACK) |
-| Exec→Coord protocol rounds | 1 (result) | 2-3 (APPROACH + result + optional CHECKPOINT) |
-| Integration testing agent | no | yes (1 Sonnet spawn post-L3) |
+| Exec→Coord protocol rounds | 1 (result + QA) | 2-3 (APPROACH + result + optional CHECKPOINT) |
+| Phase A QA gate (Coord-qa-Canary) | yes | yes |
+| Phase B Integration Testing agent | no | yes (1 Sonnet spawn post-L3) |
+| Approach Gate | no | yes |
+| 50% Check-In | no | yes |
 | Estimated tokens per medium project | ~40-80k | ~80-160k |
 
 Estimates vary by project size and number of L3 tasks.
