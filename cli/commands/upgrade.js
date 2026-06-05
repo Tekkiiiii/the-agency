@@ -1,6 +1,7 @@
 const { execFileSync } = require('child_process');
-const { existsSync } = require('fs');
+const { existsSync, chmodSync } = require('fs');
 const { resolve, join } = require('path');
+const os = require('os');
 const { syncSkills, syncAgents } = require('./sync-assets.js');
 
 function findRepoRoot() {
@@ -152,5 +153,41 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     } catch (_) {}
   }
 
-  console.log('\nUpgrade complete.\n');
+  // Re-link CLI binary to ensure symlink is current after pull
+  const cliBin = join(repoDir, 'cli', 'bin', 'agency.js');
+  if (existsSync(cliBin)) {
+    try {
+      chmodSync(cliBin, 0o755);
+    } catch (_) {}
+    let relinked = false;
+    const linkTargets = ['/usr/local/bin/agency', join(os.homedir(), '.local', 'bin', 'agency')];
+    for (const target of linkTargets) {
+      try {
+        const actual = execFileSync('readlink', [target], { stdio: 'pipe' }).toString().trim();
+        if (actual !== cliBin) {
+          execFileSync('ln', ['-sf', cliBin, target], { stdio: 'pipe' });
+          console.log(`CLI re-linked: ${target} -> ${cliBin}`);
+          relinked = true;
+        }
+      } catch (_) {
+        // target doesn't exist or readlink failed — skip
+      }
+    }
+    if (!relinked) {
+      // Symlink already correct or not installed — no action needed
+    }
+  }
+
+  // Show current version (HEAD commit)
+  let headCommit = '';
+  try {
+    headCommit = execFileSync('git', ['-C', repoDir, 'log', '-1', '--format=%h %s'], { stdio: 'pipe' })
+      .toString().trim();
+  } catch (_) {}
+
+  console.log('\nUpgrade complete.');
+  if (headCommit) console.log(`Version: ${headCommit}`);
+  console.log('');
+  console.log('Quick check: agency tier get   (shows your orchestration tier)');
+  console.log('');
 };
