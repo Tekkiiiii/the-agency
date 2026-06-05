@@ -121,11 +121,37 @@ function linkCli(cliSrc, console) {
 
   try { execFileSync('chmod', ['+x', cliSrc], { stdio: 'pipe' }); } catch (_) {}
 
+  // Check if 'agency' is already on PATH — but verify it points to THIS repo.
+  // If the symlink points elsewhere (stale clone, different checkout), re-link to cliSrc.
   try {
-    execFileSync('which', ['agency'], { stdio: 'pipe' });
-    console.log('  ✓ agency command already on PATH');
-    return;
-  } catch (_) {}
+    const existingBin = execFileSync('which', ['agency'], { stdio: 'pipe' }).toString().trim();
+    let existingTarget = '';
+    try {
+      existingTarget = execFileSync('readlink', [existingBin], { stdio: 'pipe' }).toString().trim();
+    } catch (_) {
+      // not a symlink — could be a shim or direct file
+      existingTarget = existingBin;
+    }
+    if (path.resolve(existingTarget) === path.resolve(cliSrc)) {
+      console.log(`  ✓ CLI already linked → ${existingBin}`);
+      return;
+    }
+    // Symlink exists but points to a different path — re-link to this repo
+    console.log(`  ⚠ CLI symlink points to wrong location:`);
+    console.log(`      was: ${existingTarget}`);
+    console.log(`      now: ${cliSrc}`);
+    try {
+      execFileSync('ln', ['-sf', cliSrc, existingBin], { stdio: 'pipe' });
+      console.log(`  ✓ CLI re-linked → ${existingBin}`);
+      return;
+    } catch (_) {
+      console.log(`  ⚠ Could not re-link ${existingBin} (permission error?)`);
+      console.log(`    Run manually: ln -sf "${cliSrc}" "${existingBin}"`);
+      return;
+    }
+  } catch (_) {
+    // 'which agency' failed — not on PATH yet, proceed to install
+  }
 
   const targets = ['/usr/local/bin/agency', path.join(os.homedir(), '.local', 'bin', 'agency')];
   for (const target of targets) {

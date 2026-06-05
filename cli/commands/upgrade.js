@@ -153,28 +153,31 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     } catch (_) {}
   }
 
-  // Re-link CLI binary to ensure symlink is current after pull
+  // Re-link CLI binary to ensure symlink points into the repo being upgraded.
+  // Critical: if the symlink pointed to a different/older clone, re-link it now
+  // so future `agency` invocations run from THIS repo.
   const cliBin = join(repoDir, 'cli', 'bin', 'agency.js');
   if (existsSync(cliBin)) {
     try {
       chmodSync(cliBin, 0o755);
     } catch (_) {}
-    let relinked = false;
     const linkTargets = ['/usr/local/bin/agency', join(os.homedir(), '.local', 'bin', 'agency')];
     for (const target of linkTargets) {
       try {
         const actual = execFileSync('readlink', [target], { stdio: 'pipe' }).toString().trim();
-        if (actual !== cliBin) {
+        if (resolve(actual) !== resolve(cliBin)) {
+          // Symlink points to a different location — re-link to this repo
+          console.log(`Re-linking CLI:`);
+          console.log(`  was: ${actual}`);
+          console.log(`  now: ${cliBin}`);
           execFileSync('ln', ['-sf', cliBin, target], { stdio: 'pipe' });
-          console.log(`CLI re-linked: ${target} -> ${cliBin}`);
-          relinked = true;
+          console.log(`  ✓ ${target} updated`);
+        } else {
+          console.log(`CLI symlink OK: ${target} -> ${cliBin}`);
         }
       } catch (_) {
-        // target doesn't exist or readlink failed — skip
+        // target doesn't exist or readlink failed — skip silently
       }
-    }
-    if (!relinked) {
-      // Symlink already correct or not installed — no action needed
     }
   }
 
