@@ -24,8 +24,8 @@ module.exports = async function tier({ args, AGENCY_ROOT, console }) {
     console.log('');
     console.log('Available tiers:');
     console.log('  lite     — Pro plan friendly. PD + Coord + Exec (3 layers).');
-    console.log('             Coord = pure task-giver (decomposes L3, dispatches Exec, reviews ACK/NACK).');
-    console.log('             Phase A QA gate. No Approach Gate, no 50% Check-In.');
+    console.log('             Coord = team-lead task-giver (decomposes L3, dispatches Exec, reviews ACK/NACK).');
+    console.log('             Phase A QA gate. No Approach Gate, no 50% Check-In, no Phase B IntegrationTester.');
     console.log('             ~30-40% token footprint of standard. Good for solo projects.');
     console.log('  standard — Full quality gates: Phase B IntegrationTester, Approach Gate,');
     console.log('             Mandatory 50% Check-In, pd-structure.md contracts.');
@@ -56,7 +56,7 @@ module.exports = async function tier({ args, AGENCY_ROOT, console }) {
     console.log(`✓ Tier updated: ${prev} → ${value}`);
     if (value === 'lite') {
       console.log('  Pro-plan mode active. Agent trio: pd-coordinator-lite + coord-lite + task-executor-lite');
-      console.log('  Coord = pure task-giver. Phase A QA. ~30-40% token footprint of standard.');
+      console.log('  Coord = team-lead task-giver. Phase A QA. ~30-40% token footprint of standard.');
       console.log('  To use full quality gates: agency tier set standard');
     } else {
       console.log('  Full quality gates active. Agent trio: pd-coordinator + coord + task-executor');
