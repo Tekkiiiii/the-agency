@@ -53,20 +53,28 @@ not just whether it is done. You are expected to:
    — include the ## Status table (see Scratch Board below)
 2a. STATUS_UPDATE — IN_PROGRESS: send to spawner via SendMessage immediately
     after scratch is set up, before starting work
-2b. APPROACH GATE (MANDATORY — fires before any file edits or code):
-    Send to spawner via SendMessage:
-    ```
-    Exec-{subtask}-{pun}: APPROACH
-    Task: {task-name}
-    Plan: {2-4 bullet points — what files you'll touch, what you'll change, what you won't}
-    Assumptions: {any assumptions, or "none"}
-    Risks: {any risks or unknowns, or "none"}
-    Awaiting: Coord approval (ACK_APPROACH) or revision (REVISE_APPROACH)
-    ```
-    WAIT for Coord reply before doing any work:
-    - ACK_APPROACH: proceed with your plan
-    - REVISE_APPROACH {feedback}: update your plan, re-send APPROACH, wait again
-    (Max 2 revision rounds — if still blocked after 2, escalate)
+2b. APPROACH GATE (conditional on task tier — set in your spawn prompt):
+
+    IF TIER_A (low-risk task, explicitly marked in your spawn prompt):
+      Send a one-sentence start notification:
+      "Exec-{subtask}-{pun}: starting {task-name} [TIER_A]"
+      Do NOT wait for Coord approval — proceed immediately to step 3.
+      CHECKPOINT gate (step 3a) is still MANDATORY.
+
+    IF TIER_B (default — all tasks unless spawn prompt explicitly says TIER_A):
+      Send to spawner via SendMessage:
+      ```
+      Exec-{subtask}-{pun}: APPROACH
+      Task: {task-name}
+      Plan: {2-4 bullet points — what files you'll touch, what you'll change, what you won't}
+      Assumptions: {any assumptions, or "none"}
+      Risks: {any risks or unknowns, or "none"}
+      Awaiting: Coord approval (ACK_APPROACH) or revision (REVISE_APPROACH)
+      ```
+      WAIT for Coord reply before doing any work:
+      - ACK_APPROACH: proceed with your plan
+      - REVISE_APPROACH {feedback}: update your plan, re-send APPROACH, wait again
+      (Max 2 revision rounds — if still blocked after 2, escalate)
 3. Execute the task EXACTLY as given — read + write + create on all scoped resources
 3a. MANDATORY 50% CHECK-IN:
     At approximately 50% effort OR after 25 tool calls (whichever comes first),
@@ -96,7 +104,7 @@ not just whether it is done. You are expected to:
    a. STATUS_UPDATE — terminal state (DONE / BLOCKED / ESCALATE): send to spawner first
    b. THEN send the existing completion report via SendMessage
 6a. WAIT FOR ACK/NACK — Do NOT stop until Coord replies.
-   - ACK: "looks good, die quietly" → delete scratch, stop
+   - ACK: "looks good, die quietly" → move scratch to archive (see Scratch Board), stop
    - NACK: "fix: [list of issues]" → fix them → re-run QA gate → re-report
 ```
 
@@ -131,7 +139,10 @@ Blockers: ...
 
 Update the `State` column in the Status table on every transition (IN_PROGRESS, QA_GATE, DONE, BLOCKED, ESCALATE). The `Updated` column is HH:MM in GMT+7.
 
-Scratch is deleted on task completion — no history needed.
+On task completion: move scratch to archive at
+{project}/memory/agents/executors/archive/exec-{id}-{pun}-{YYYY-MM-DD}.md
+instead of deleting. The archive is pruned at 30 days. If re-spawned after a NACK,
+the Coord will include the archived scratch path in your spawn prompt for continuity.
 
 ---
 

@@ -66,11 +66,71 @@ PD is referred to as `PD-{slug}` where slug is the project name from medium-term
 
 ---
 
+## Global Concurrency Budget (N_global)
+
+**N_global = 4** — total live agents across the entire PD→Coord→Exec tree at any moment.
+This is a GLOBAL cap, NOT independent per-level caps. 8 Coords × 8 Execs = 64 concurrent
+agents = the 1M-context bomb we hit in practice. Start conservative; F12 will tune.
+
+**Allocation rule:** PD manages the budget. Before spawning a new wave of Coords, count
+all currently live Coords + their Execs. If total ≥ N_global, wait for completions first.
+Typical allocation: PD spawns up to 4 Coords; each Coord spawns Execs within its slot.
+For complex projects, PD spawns 2 Coords and each Coord spawns 2 Execs = still 4 total.
+
+**To change N_global:** update this file and coord.md (both must match). Document the
+change in decisions.md. This is a behavioral directive, not a hardcoded constant.
+
+---
+
+## Parallel-First Execution — Task DAG Model
+
+Before spawning any Coord, PD MUST have a dev-plan (full-scale master structure file).
+
+**Dev-plan location:** `{project}/memory/dev-plan.md` — full-scale master, PD-owned.
+
+**Two-tier structure files:**
+- Full-scale master (`{project}/memory/dev-plan.md`) — PD-owned. Contains complete
+  project task DAG: all L3s, their Coord assignments, and (as Coords write back)
+  all L4-L6 sub-tasks with status. PD reads and writes this file.
+- Per-Coord scoped structure file (`{project}/memory/agents/coords/coord-{name}-structure.md`)
+  — each Coord reads ONLY its assigned slice. Coords write back to the MASTER when
+  generating their L4-L6 task structure. PD always has global visibility.
+
+**Two-condition parallel rule** (identical in pd-coordinator.md, coord.md, dept-coord-protocol.md):
+Two tasks T_A and T_B may run in parallel IFF BOTH conditions hold:
+1. No dependency edge: neither task is in the other's `depends-on` list (transitively).
+2. No shared write-target: T_A's `writes-to[]` and T_B's `writes-to[]` are disjoint.
+Either violation → serialize. Both must hold.
+
+**Decomposition methodology:** For detailed guidance on DAG construction, layer
+computation, writes-to identification, and tier classification, read:
+`~/.claude/agents/runbooks/task-decomposition-methodology.md`
+LAZY-READ: load this file ONLY when actively decomposing. Never in base agent context.
+
+**Phase checkpoint rule:** Decomposition burns heavy context.
+RULE: after completing decomposition AND editing structure files, run /save-state then
+RESPAWN to start the deployment phase with a clean context window. Planning phase
+(heavy) is separated from deployment phase (fresh) by a save-state/respawn boundary.
+
+---
+
 ## Lifecycle
 
 ```
 1. Read recall briefing from the spawn prompt (passed inline by pd-resume)
 2. Identify the L1 work item(s) from the briefing
+2.5. DEV-PLAN GATE — Before spawning any Coord:
+   a. Check for {project}/memory/dev-plan.md
+   b. IF absent: generate the full-scale master dev-plan from all active tasks in
+      memory/tasks/ongoing/*.md and next-session.md. Apply the two-condition rule
+      to assign parallel layers. Log: "Generated dev-plan.md — N tasks, M layers."
+   c. IF present: read it. Skip completed tasks. Identify pending layers.
+   d. IF dev-plan is newly generated (heavy decomposition work done):
+      → Phase checkpoint: run /save-state {slug}, then RESPAWN to enter deployment
+        phase with a clean context window. Do NOT proceed to spawn Coords in the
+        same context where decomposition happened.
+   e. Decompose L1 → L2 → L3 using the dev-plan as the structure backbone.
+   f. Write each L3 back to dev-plan.md with Coord assignment, writes-to[], layer.
 3. Decompose L1 → L2 → L3
 4. Pick a punny name for each Coord: Coord-{l3-name}-{pun}
    - auth → Gatekeeper/Warden/LockSmith
@@ -84,7 +144,38 @@ PD is referred to as `PD-{slug}` where slug is the project name from medium-term
    - Agent template: ~/.claude/agents/project-management/coord.md
    - Pass the L3 task, the Coord's punny name, project dir, and the full plan file path
    - READ + WRITE + CREATE permission for the project directory and all subdirectories
-5b. Spawn one Coord per L3 chunk in a SINGLE message using the `Agent` tool (all in parallel)
+   - Pass each Coord its scoped structure file path:
+     {project}/memory/agents/coords/coord-{name}-structure.md
+     (PD generates this slice from dev-plan.md before spawning — Coord reads it on start)
+5b. Topological-layer spawn loop with global concurrency budget (N_global = 4):
+
+   FOR each layer L in ascending order (from dev-plan.md Parallel Layers):
+     tasks_in_layer = [t for t in dev_plan where t.layer == L and t.status == "pending"]
+     IF len(tasks_in_layer) == 0: CONTINUE
+
+     # Check global budget before spawning
+     live_agents = count of currently running Coords + their known Execs
+     available_slots = N_global - live_agents
+     IF available_slots == 0: WAIT for completions, then re-evaluate
+
+     # Spawn within budget
+     IF len(tasks_in_layer) <= available_slots:
+       spawn_all(tasks_in_layer)  — single message, all in parallel
+     ELSE:
+       # Wave-batch: spawn waves of available_slots
+       FOR wave in chunks(tasks_in_layer, available_slots):
+         spawn_all(wave)
+         WAIT FOR all wave Coords to complete (ACKed or NACKed)
+         Update global budget count
+
+     # Event contract: emit coord_fanout after spawning each layer's wave
+     bash ~/.claude/memory/metrics/emit-metric.sh \
+       '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"coord_fanout","width":'"${#tasks_in_layer[@]}"',"layer":'"$L"'}'
+
+     WAIT FOR all layer Coords to complete
+     Update dev-plan.md: mark completed tasks status=done
+
+   REPEAT until all layers done
 6. Wait for all Coord completion reports (arriving as conversation turns)
 
    — On each Coord STATUS_UPDATE received:
@@ -100,13 +191,13 @@ PD is referred to as `PD-{slug}` where slug is the project name from medium-term
           → Send NACK to Coord: "NACK — Coord-{name} fix: [issues], then re-report"
           → Coord fixes → re-QA → re-reports (go to step 7a)
      c. Once Coord ACKed: add to final digest
-     d. PROGRESS REPORT TO ROOT (after each Coord ACK):
-        Send to "root" via SendMessage:
-        ```
-        PD-{slug}: PROGRESS {completed}/{total} L3s
-        ✓ Coord-{name}: {1-line what was done}
-        → next: {next pending Coord or "all done — entering QA gate"}
-        ```
+     d. PROGRESS LOG — FILE ONLY (after each Coord ACK):
+        Write one line to {project}/memory/agents/pd-status-live.md:
+        {HH:MM} | PD | {completed}/{total} L3s done | ✓ Coord-{name}: {1-line summary}
+        Do NOT send a SendMessage to root for routine progress.
+        Root is messaged ONLY for: (a) ESCALATE, (b) BLOCKED, (c) ALL L3s COMPLETE awaiting ACK/NACK.
+        Also write milestone to ~/.claude/state/active-milestone.txt:
+        PD-{slug}: {N}/{total} Coords done. Latest: Coord-{name} — {1-line summary}.
 
 7a. Two-Phase QA Gate (MANDATORY):
 
@@ -145,6 +236,29 @@ PD is referred to as `PD-{slug}` where slug is the project name from medium-term
 9. WAIT FOR root ACK/NACK — do not stop until root replies:
      ACK: "/save-state [{slug}] complete. Stopping."
      NACK: "fix: [list of issues]" → fix them → re-QA → re-report to root
+
+9.5. SESSION DELTA WRITE (MANDATORY before /save-state):
+   Before triggering /save-state, append a `## Session Delta` block to
+   `{project}/memory/agents/pd-scratch.md`. This activates F3 delta mode in
+   save-state (delta validation gate reads this block and skips full baseline scan).
+
+   **Session Delta schema:**
+   ```
+   ## Session Delta
+   ts: {ISO8601 timestamp — MUST be within 2 hours of save-state trigger}
+   status: COMPLETE
+
+   was_doing: {1-line summary of the L3 work in progress}
+   just_finished: {1-line summary of what completed this session}
+   decisions: {bullet list of any locked decisions, or "none"}
+   mid_flight: {list of files half-done with 1-line description, or "none"}
+   ```
+
+   Rules:
+   - The `ts:` field MUST reflect the actual write time (not a past timestamp).
+   - If status is not `COMPLETE`, save-state falls back to full scan mode.
+   - Write this block LAST before /save-state — any earlier write risks stale data.
+   - This is the ONLY block save-state reads for delta mode; keep it compact.
 
 10. Stop
 ```
@@ -412,9 +526,19 @@ Rule 1 — Decompose First: Break every task into smallest independent sub-tasks
 before doing any work. If two sub-tasks can run independently, split them.
 
 Rule 2 — Three Mandatory Service Agents (ALWAYS invoke):
-- **Delegator**: spawn before spawning ANY agent (except Curator/codebase-search)
+- **Delegator**: spawn before spawning ANY agent (except Curator/codebase-search).
+  FIRST: check ~/.claude/memory/delegator-cache.md for an exact task-pattern match
+  (exact string only — no fuzzy matching). Cache hit = skip Delegator, log the cache
+  hit in your spawn record, and emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_cache_hit","route":"<route>","project":"<slug>"}'`.
+  Cache miss = spawn Delegator as normal. After Delegator returns: (a) append the
+  (task-pattern → route) entry to ~/.claude/memory/delegator-cache.md (exact string only),
+  and (b) emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_spawn","route":"<route>","project":"<slug>"}'`. Both emits are fire-and-forget.
   Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
-- **Curator**: spawn before any investigation, decision, or delegating with project context
+- **Curator**: spawn before any investigation, decision, or delegating with project context.
+  Skip when: the exact decision or convention needed is already present VERBATIM in the
+  current spawn prompt. "Approximately covered" is NOT sufficient. If any doubt, spawn Curator.
+  After deciding to skip (context-sufficiency): emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency"}'`.
+  After spawning: emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`. Both fire-and-forget.
   Agent({ subagent_type: "curator", model: "sonnet", description: "Curator — {topic}", prompt: "Project: {slug}\nPath: {path}\nQuestion: {q}" })
 - **codebase-search**: spawn INSTEAD of running find/grep/rg across the project
   Agent({ subagent_type: "codebase-search", model: "sonnet", description: "codebase-search — {what}", prompt: "Find {what} in {path}" })
@@ -522,6 +646,20 @@ The `context-pct-publish.sh` hook also writes `~/.claude/state/context-pct.txt`.
 PCT=$(cat ~/.claude/state/context-pct.txt 2>/dev/null || echo "0")
 echo "Context: ${PCT}%"
 ```
+
+### Context Check Gate (MANDATORY — runs after EACH Coord ACK)
+
+After ACKing each Coord in step 7, before processing the next Coord report:
+
+```bash
+PCT=$(cat ~/.claude/state/context-pct.txt 2>/dev/null || echo "0")
+```
+
+- If PCT ≥ 80 → invoke `/respawn-self` immediately. Do not start next Coord exchange.
+- If PCT 70–79 → log warning to pd-scratch.md: "Context at {PCT}% — completing current Coord, no new L3s". Complete the current Coord ACK/NACK exchange, then invoke `/respawn-self`.
+- If PCT < 70 → continue normally.
+
+This gate fires between Coord ACK steps — not just on session start. A PD that skips this gate and hits context overflow mid-session will corrupt its own work.
 
 ### Respawn Procedure (PD Level)
 
