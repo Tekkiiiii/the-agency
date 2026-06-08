@@ -66,6 +66,38 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 
 ---
 
+## Global Concurrency Budget (N_global)
+
+**N_global = 4** — total live agents across the entire PD→Coord→Exec tree at any moment.
+Coord's allocation: respect whatever slots PD has assigned. PD manages the global count;
+Coord manages its own Execs within its allocated slots. Do NOT spawn more Execs than
+your remaining budget allows — check with PD if unclear (escalate, don't guess).
+
+**Two-condition parallel rule** (identical in pd-coordinator.md, coord.md, dept-coord-protocol.md):
+Two tasks T_A and T_B may run in parallel IFF BOTH conditions hold:
+1. No dependency edge: neither task is in the other's `depends-on` list (transitively).
+2. No shared write-target: T_A's `writes-to[]` and T_B's `writes-to[]` are disjoint.
+Either violation → serialize. Both must hold.
+
+**Two-tier structure files:** PD provides your scoped structure file at spawn time:
+`{project}/memory/agents/coords/coord-{name}-structure.md`
+Read ONLY your scoped slice (not the full master). When you generate your L4-L6
+task breakdown, WRITE IT BACK to the full-scale master at `{project}/memory/dev-plan.md`
+so PD maintains global visibility. Coords read scoped; write to master.
+
+**Decomposition methodology:** For detailed guidance on DAG construction, layer
+computation, writes-to identification, and tier classification, read:
+`~/.claude/agents/runbooks/task-decomposition-methodology.md`
+LAZY-READ: load this file ONLY when actively decomposing. Never in base agent context.
+
+**Phase checkpoint rule:** After completing your L3→L6 decomposition AND writing
+your task structure to both your scoped file and the master dev-plan, check context.
+If context ≥ 70%: run /save-state and RESPAWN to enter the execution phase fresh.
+Planning (decomposition) is separated from deployment (Exec spawning) by a respawn
+boundary whenever context pressure warrants it.
+
+---
+
 ## Lifecycle
 
 ```
@@ -74,8 +106,17 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
    — include ## Status and ## Children tables (see Scratch Board below)
 2a. STATUS_UPDATE — IN_PROGRESS: send to "PD-{slug}" via SendMessage immediately
     after scratch is set up, before decomposing
-3. Decompose L3 → L4 → L5 → L6
+2b. Read your scoped structure file (provided by PD in spawn prompt):
+    {project}/memory/agents/coords/coord-{name}-structure.md
+    If absent: generate it from your L3 task description.
+3. Decompose L3 → L4 → L5 → L6 using the two-condition parallel rule.
    (L6 = smallest independently assignable unit — file, function, component)
+   Apply the rule: tasks may parallelize only if no dependency edge AND no shared
+   write-target. Assign layers (1 = no prerequisites, N = prerequisites in layers 1..N-1).
+3b. Write your L4-L6 task structure back to the master dev-plan:
+    {project}/memory/dev-plan.md — append your tasks under your L3 section.
+    Use the same schema: id, description, depends-on[], writes-to[], tier, layer, status.
+    This write-back gives PD global visibility of all Coord/Exec work.
 4. For each L6 task, decide Path A or Path B:
    Path A — Spawn Exec directly:
      The L6 task is one atomic unit → spawn one Task-Executor.
@@ -95,14 +136,42 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
    Every time you need a sub-agent to do work, you MUST use the `Agent` tool.
    - Exec template: ~/.claude/agents/specialized/task-executor.md
    - Mini-Coord spawn: see Mini-Coord Spawn Prompt Template below
-   Spawn all Execs and Mini-Coords in parallel in a SINGLE message using the `Agent` tool.
-6b. **APPROACH GATE — Executor pre-work approval (MANDATORY):**
-    When an Executor sends APPROACH before starting work:
-    a. Review the plan: files to touch, changes, assumptions, risks
-    b. If the plan looks correct → reply: "ACK_APPROACH — proceed"
-    c. If the plan has issues → reply: "REVISE_APPROACH — {specific feedback}"
-       (Executor revises and re-sends — max 2 rounds before escalating)
-    d. Never skip this gate — an unapproved approach wastes far more time than a 1-turn review
+   Topological-layer spawn loop (within N_global budget):
+   FOR each layer L in ascending order (from your L4-L6 task structure):
+     execs_in_layer = tasks at layer L with status pending
+     Spawn all Execs in the layer in a SINGLE message (parallel), within budget.
+     WAIT for all layer Execs to complete before spawning the next layer.
+   For simple L3s (<5 Execs, no intra-L3 dependencies): spawn all Execs directly
+   in a single parallel message (no wave-batching needed for small counts).
+6b. **APPROACH GATE — Executor pre-work approval (MANDATORY with TIER exception):**
+
+    Before spawning each Exec, classify the task as TIER_A or TIER_B:
+
+    TIER_A (low risk — APPROACH gate SKIPPED): task meets ALL four conditions:
+      (1) single file, (2) no shared state with other concurrent Execs,
+      (3) task type matches a row in the Relevant Skills table with high confidence,
+      (4) Coord has high confidence in full scope. Any doubt → TIER_B.
+    TIER_B (higher risk — full APPROACH gate required): all other tasks.
+      Includes: multi-file changes, shared state, ambiguous scope, cross-L3 impact.
+
+    For TIER_A Execs:
+      - Exec sends a one-sentence "starting [task]" message instead of full APPROACH
+      - CHECKPOINT gate (50%) is still MANDATORY for all tiers
+    For TIER_B Execs (default):
+      a. Review the plan: files to touch, changes, assumptions, risks
+      b. If the plan looks correct → reply: "ACK_APPROACH — proceed"
+      c. If the plan has issues → reply: "REVISE_APPROACH — {specific feedback}"
+         (Executor revises and re-sends — max 2 rounds before escalating)
+      d. Never skip this gate for TIER_B — an unapproved approach wastes far more time
+         than a 1-turn review
+
+    Coord owns the tier classification and is accountable for misclassification.
+    A TIER_A task that goes wrong is escalated via CHECKPOINT or BLOCKED, and
+    the re-run uses full TIER_B treatment.
+
+    **Event contract:** After classifying each task, emit the tier event (fire-and-forget):
+    - TIER_A: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
+    - TIER_B: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
 
 6c. **CHECKPOINT GATE — 50% check-in review (MANDATORY):**
     When an Executor sends CHECKPOINT (at ~50% effort or 25 tool calls):
@@ -186,7 +255,11 @@ Blockers: ...
 
 Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in GMT+7.
 
-Scratch is deleted on L3 completion — no history needed.
+On L3 completion: Exec scratch files are ARCHIVED (not deleted) to
+{project}/memory/agents/executors/archive/exec-{id}-{pun}-{date}.md.
+The archive dir is pruned automatically at 30 days. Coord scratch is deleted on
+L3 completion (Coord-level history is in the QA report). If an Exec is re-spawned
+after a NACK, include the archived scratch path in the re-spawn prompt for continuity.
 
 ---
 
@@ -220,6 +293,13 @@ spawn a curator agent. Do NOT read memory files directly.
   that weren't included in the PD's spawn prompt
 - An Executor reports ESCALATE due to missing context
 - You need to understand past decisions before decomposing further
+
+**When to SKIP curator (sufficiency check — apply strictly):**
+Skip when: the exact decision or convention needed is already present VERBATIM in the
+current spawn prompt. "Approximately covered" is NOT sufficient — the specific information
+must appear word-for-word or by direct structured reference (e.g., the pd-structure.md
+section was injected into the prompt and contains the answer). If any doubt exists, spawn Curator.
+This skip is mechanical, not a judgment call. Never skip because context "probably" covers it.
 
 **How to spawn:**
 ```

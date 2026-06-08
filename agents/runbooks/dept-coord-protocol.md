@@ -90,6 +90,32 @@ Examples: `DC-cc-pipeline-Conductor`, `DC-eng-schema-Architect`, `DC-mkt-onboard
 
 ---
 
+## 4a. Parallel-First Execution + Global Concurrency Budget
+
+**N_global = 4** — total live agents across the Dept Head → Dept-Coord → Member tree.
+Same constraint as the PD-Coord system. Dept Head manages the global count.
+
+**Two-condition parallel rule** (identical in pd-coordinator.md, coord.md, dept-coord-protocol.md):
+Two tasks T_A and T_B may run in parallel IFF BOTH conditions hold:
+1. No dependency edge: neither task is in the other's `depends-on` list (transitively).
+2. No shared write-target: T_A's `writes-to[]` and T_B's `writes-to[]` are disjoint.
+Either violation → serialize. Both must hold.
+
+**Dev-plan for department initiatives:** For D1 initiatives with 3+ D3 tracks, the
+Dept Head generates a `~/.claude/agents/{dept}/state/dev-plan.md` before spawning
+Dept-Coords. Same schema as project dev-plan.md. DC reads its scoped slice; writes
+its D4-D6 tasks back to the master.
+
+**Dev-plan-absent trigger (dept-resume):** When dept-resume starts a session and
+`~/.claude/agents/{dept}/state/dev-plan.md` is absent for a multi-track initiative,
+the spawned Dept Head generates it before dispatching Dept-Coords.
+
+**Decomposition methodology:** For detailed guidance on DAG construction and the
+two-condition rule, read: `~/.claude/agents/runbooks/task-decomposition-methodology.md`
+LAZY-READ: load only when actively decomposing.
+
+---
+
 ## 5. Dept-Coord Agent Lifecycle
 
 ```
@@ -102,12 +128,16 @@ Examples: `DC-cc-pipeline-Conductor`, `DC-eng-schema-Architect`, `DC-mkt-onboard
 2a. STATUS_UPDATE IN_PROGRESS: send to the Dept Head via SendMessage immediately
     after scratch setup, before any decomposition.
 
-3. Decompose D3 → D4 → D5 → D6.
+3. Decompose D3 → D4 → D5 → D6 using the two-condition parallel rule.
    D6 = smallest independently executable unit: one protocol file, one analysis,
    one member interview, one pipeline step, one document section.
+   Assign layers based on dependencies and write-target overlap.
 
 4. For each D6 task, spawn the appropriate Dept Member using the Agent tool.
-   Spawn ALL members in PARALLEL in a SINGLE message.
+   Apply topological-layer spawning within N_global budget:
+   Spawn tasks in the same dependency-layer in PARALLEL in a SINGLE message.
+   Wait for each layer to complete before spawning the next layer.
+   For simple D3s (<5 members, no intra-D3 dependencies): spawn all in parallel directly.
 
 5. QA GATE — per-member review (MANDATORY):
    For EACH member report received:
