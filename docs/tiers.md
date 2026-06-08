@@ -15,7 +15,7 @@ The Agency ships two tiers. The tier controls how much protocol overhead runs at
 
 **~30-40% of standard token cost.**
 
-Coord acts as a pure task-giver: decomposes work to the smallest independent sub-tasks, dispatches Executors, reviews ACK/NACK reports. No hands-on oversight patterns.
+Coord acts as a team-lead task-giver: decomposes work to the smallest independent sub-tasks, dispatches Executors, reviews ACK/NACK reports with judgment. No hands-on oversight gates.
 
 **What runs:**
 - Full PD decomposition (L1 → L2 → L3)
@@ -96,7 +96,7 @@ Not sure which to use? Start with `lite`. If you're on Max and hitting issues wi
 
 | Feature | lite | standard |
 |---------|------|----------|
-| Coord role | task-giver (pure dispatch) | team-lead (hands-on oversight) |
+| Coord role | team-lead task-giver (no hands-on gates) | team-lead (hands-on oversight, Approach+Checkpoint gates) |
 | PD→Coord protocol rounds per task | 1 (spawn + ACK) | 1-3 (spawn + optional NACK) |
 | Exec→Coord protocol rounds | 1 (result + QA) | 2-3 (APPROACH + result + optional CHECKPOINT) |
 | Phase A QA gate (Coord-qa-Canary) | yes | yes |
