@@ -35,6 +35,24 @@
 | AI Engineer PD | Project Director for AI Engineer — Project workspace holding all AI Engineer Fullstack course materials — lessons, exercises, notebooks, and practice files. Current course module: Pandas/Seaborn/Matplotlib data analysis (Buổi 8 - Unicorn Companies dataset). Will hold all future course modules, homework, and practice projects as Tekki progresses through the AI Engineer Fullstack curriculum. |
 | Morpheus PD | Project Director for Morpheus — Meta-overseer PD. Monitors all other PDs across ~/.claude/projects/ + ~/projects/. Reads heartbeat files, next-session.md, dept-state.md. Flags STALE (>3 days no heartbeat) and BLOCKED. Ships daily HTML digest to ~/.claude/outputs/morpheus/YYYY-MM-DD-digest.html using html-plan-style skill. Reports only — no auto-poke. Aggregates: active PDs, stale PDs, blocked PDs, ongoing tasks, recent commits, dept-state highlights. |
 
+## Understand-Anything Sub-team
+
+Code comprehension agents from the Understand-Anything tool (`~/.claude/tools/understand-anything/`). Invoked by `/understand-*` skills — not spawned directly. Listed here so Delegator can route comprehension tasks correctly.
+
+| Agent | What it does |
+|---|---|
+| understand-architecture-analyzer | Analyzes file structure, imports, and summaries to identify logical architectural layers |
+| understand-domain-analyzer | Extracts business domain knowledge, maps how business logic flows through code |
+| understand-file-analyzer | Analyzes source file batches to produce knowledge graph nodes and edges |
+| understand-graph-reviewer | Validates knowledge graphs for correctness, completeness, and quality |
+| understand-knowledge-graph-guide | Guides users through querying and interpreting knowledge graphs |
+| understand-project-scanner | Scans codebase directory to produce structured file inventory with languages and frameworks |
+| understand-tour-builder | Designs guided learning tours through codebases (5-15 pedagogical steps) |
+| understand-assemble-reviewer | Reviews merged batch graphs for semantic issues |
+| understand-article-analyzer | Analyzes markdown/wiki files to extract knowledge graph nodes and edges |
+
+**Route via skills:** Use `/understand-*` skills (see `~/.claude/memory/skill-triggers.md`) — they invoke these agents internally. Do NOT spawn these agents directly.
+
 ## Infra Sub-team
 
 See [infra/INDEX.md](infra/INDEX.md) — agent lifecycle, identity/trust, code intelligence.
