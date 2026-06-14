@@ -217,22 +217,35 @@ only the most recent one exists. Old sessions live in sessions/YYYY-MM-DD.md.
 ### Mid-Flight Files
 {format mid_flight list}
 
-## Step 9 — Write next-session.md
-Overwrite {project}/memory/next-session.md (keep under 10 lines):
+## Step 9 — Write next-session.md (CRITICAL — this is the PD startup file)
 
-# Next Session — {project}
+Overwrite {project}/memory/next-session.md. This is the ONLY file pd-resume reads
+at startup, so it must be self-contained. Max 15 lines. Use compact key: value format
+(no ## headers — they waste tokens).
 
-## Status
-[current phase or status]
+**Before writing:** scan `{project}/memory/inter-spawn-tasks/incoming/` for any `.md`
+files. List each as a "Pending inbound" line in the `Delegated` field.
 
-## Next action
-[specific next step — one sentence]
+```
+# {slug}
+Phase: [current phase or status]
+Next: [specific next action — one sentence, be precise]
+Blockers: [one per line, or "none"]
+Decisions: [top 2 locked decisions from decisions.md, one per line, or "none"]
+Mid-flight: [1-2 files with one-line description, or "none"]
+Delegated: [pending inter-spawn tasks with status, or "none"]
+Pending inbound: [list each incoming/*.md filename with 1-line title, or "none"]
+Last saved: YYYY-MM-DD
+```
 
-## Blockers
-{format blockers list}
-
-## Mid-flight
-{format mid_flight list}
+Rules for next-session.md:
+- Be specific: "deploy marketing pipeline to Vercel" not "continue deployment"
+- `Next:` MUST name a concrete target (file, task, action, URL, or agent). Vague entries like "continue work", "review progress", "continue development" are INVALID — rewrite with a specific target. Valid: "run eval suite on evals/cases.jsonl and fix failing cases". Invalid: "continue eval work".
+- Include ONLY actionable context — no session history, no completed items
+- Decisions: only locked decisions that affect the Next action
+- Delegated: only pending/blocked tasks, not completed ones
+- Pending inbound: list ALL files currently in inter-spawn-tasks/incoming/ — these are unprocessed tasks. If none, write "none" — do not omit the field
+- If no decisions or delegated tasks exist, write "none" — do not omit the field
 
 ## Step 10 — Reset Turn Counter
 Update {project}/.claude/save-state-state.json:

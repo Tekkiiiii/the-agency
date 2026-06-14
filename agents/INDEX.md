@@ -17,7 +17,7 @@ Navigate to the department that fits your task. Each department has its own `IND
 | [Project Management](project-management/INDEX.md) | `project-management/` | Sprint planning, project coordination, studio ops |
 | [Testing](testing/INDEX.md) | `testing/` | QA, performance, accessibility, API testing, audits |
 | [Operations](operations/INDEX.md) | `operations/` | Analytics, finance, infrastructure, legal/compliance, support |
-| [Specialized](specialized/INDEX.md) | `specialized/` | Agents infra, audits, data extraction, ZK knowledge, Vietnamese text processing, misc |
+| [Specialized](specialized/INDEX.md) | `specialized/` | Agents infra, audits, data extraction, web extraction/crawling, ZK knowledge, Vietnamese text processing, misc |
 | [Spatial Computing](spatial-computing/INDEX.md) | `spatial-computing/` | AR/VR/XR, visionOS, Metal, Apple platform spatial |
 | [Critiques](critiques/INDEX.md) | `critiques/` | Scored critique of any deliverable — design, content, marketing, pedagogy, SEO, product, security, brand |
 | [Video Studio](video-studio/INDEX.md) | `video-studio/` | All video production — scripted or AI-generated. Pre-production, production, post-production, distribution, QA |

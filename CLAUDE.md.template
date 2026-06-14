@@ -49,6 +49,19 @@ Skip when: you already have the exact file path (single-file read, no search nee
 - ❌ Run find/grep/rg across the agency root — use codebase-search instead
 - ❌ Skip Curator before an investigation — it may know the answer already
 - ❌ Skip Delegator before an agent spawn — you might be routing to the wrong agent
+- ❌ Spawn `general-purpose`, `claude`, or `Explore` as a substitute for a named specialist — these are last-resort fallbacks, NOT defaults
+
+**Hard ban on generalist subagent_type:**
+`general-purpose` and `claude` are FORBIDDEN as `subagent_type` unless ALL of the following hold:
+1. Delegator was invoked and its returned `Primary` agent name is literally `general-purpose` (with documented reason in its response), OR
+2. The spawn prompt begins with `You are PD-{slug}` (PD spawns via /pd-resume, /pd-spawn), OR
+3. The operator explicitly typed the agent name in the request.
+
+If you catch yourself typing `subagent_type: "general-purpose"` without one of the above — STOP, spawn Delegator, use what it returns. The agency has 160+ named agents; "no specialist exists" is almost always wrong.
+
+**Violation metric (mandatory):** If `general-purpose` or `claude` is used as subagent_type outside the above conditions, emit BEFORE spawning (fire-and-forget):
+`bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"generalist_ban_violation","subagent_type":"general-purpose","context":"<one-word reason>"}'`
+Then STOP and spawn Delegator instead. Do not proceed with the generalist spawn.
 
 ### Natural Language → PD Spawn
 When the operator says something matching these patterns, invoke the `pd-spawn` skill
