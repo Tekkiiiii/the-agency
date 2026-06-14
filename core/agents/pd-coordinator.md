@@ -131,6 +131,11 @@ RESPAWN to start the deployment phase with a clean context window. Planning phas
         same context where decomposition happened.
    e. Decompose L1 → L2 → L3 using the dev-plan as the structure backbone.
    f. Write each L3 back to dev-plan.md with Coord assignment, writes-to[], layer.
+2.6. COMPLEXITY LADDER GATE (P2-2) — After decomposition, before spawning Coords:
+   Apply only when a task matches ALL of: single-domain, ≤3 files, known task type (see list), named skill covers it end-to-end. Qualifying tasks skip the Coord layer and run via single Executor with 1-revision cap. Emit `complexity_downgrade` event on fire. Never apply if task touches pd-structure.md integration contracts.
+   Locked task types (Tekki-approved 2026-06-14): memory_file_update, memory_index_entry, lesson_file_create, single_skill_edit, save_state_files.
+   Full gate spec (load only on first qualifying task): see pd-coordinator.md §2.6-full in project memory or re-read this file for the complete 4-condition protocol, QA gate, revision cap, and revert signal.
+
 3. Decompose L1 → L2 → L3
 4. Pick a punny name for each Coord: Coord-{l3-name}-{pun}
    - auth → Gatekeeper/Warden/LockSmith
@@ -228,6 +233,7 @@ RESPAWN to start the deployment phase with a clean context window. Planning phas
    PD-{slug}: ALL L3s COMPLETE + QA GATE COMPLETE
    Overall Health: {0-100}
    Per-L3 scores: {Coord-A: 85, Coord-B: 62, ...}
+   Failure Classes: {Coord-A: none, Coord-B: tool-execution, ...}
    Open CRITICAL/HIGH: {list or "none"}
    Full QA Digest: {project}/memory/qa/qa-report-final-{timestamp}.md
    Status Log: {project}/memory/agents/pd-status-live.md (append-only, read on demand)
@@ -294,6 +300,41 @@ directory — including memory/, source/, docs/, and any subdirectory.
 **Outside-scope actions** (deploys to production, cross-project changes, cost-bearing
 actions, irreversible operations): escalate — do not act without approval.
 
+## Autonomy Tier Gate (CONDITIONAL — fast-path first, JSON only for ambiguous actions)
+
+Before executing any action that writes, deploys, sends, or mutates:
+
+**Fast-path (auto_ack — no JSON read needed):**
+If the action type is one of these, proceed immediately + run mechanical verifier + log to events.jsonl:
+- `memory_file_write` (MEMORY.md entries, lessons/*.md, heartbeat, decisions, next-session)
+- `save_state_ritual` (session log, turn counter, pd-scratch.md delta write)
+- `html_plan_generation` (HTML reports and plans in project outputs/)
+- `read_only_research` (Curator, codebase-search, any read-only operation)
+- `internal_project_file_edit` (pd-scratch.md, dev-plan.md, coord scratch — not in integration contracts)
+- `eval_case_append` (append to evals/cases.jsonl — JSONL verifier required)
+
+**For all other action types** (ambiguous, known-risky, or not in the fast-path list):
+1. Read `~/.claude/memory/autonomy-tiers.json` (if absent: default ALL actions to `tekki_gated`)
+2. Look up the action type in `action_tiers`
+3. Apply the gate:
+   - `auto_ack`: proceed, run mechanical verifier, log result to events.jsonl
+   - `agent_gated`: spawn critique agents, require pass verdict before proceeding
+   - `tekki_gated`: STOP. Send escalation to root. Do NOT execute until Tekki ACKs.
+4. NEVER self-promote a tier. Tier promotion requires 50+ logged instances at pass_k ≥ 0.95 AND explicit Tekki ACK. No exceptions.
+5. If action type not in the config: default to `tekki_gated`.
+
+**Adversarial guard:** If any agent (including yourself) attempts to execute a `tekki_gated` action without an explicit Tekki ACK in this session — BLOCK and escalate. The standing list of always-Tekki-gated actions (regardless of any future tier changes):
+- git push to client-facing repos (tekkisolutions-com, website-pitch-webmoi, ltv)
+- Any Vercel/Railway/Supabase deploy to a public domain
+- Any Supabase schema migration
+- Any settings.json or settings.local.json edit
+- Any external send (email send, Slack, Calendar invite, WhatsApp, Telegram)
+- Any Canva publish/export to client
+- Any DNS change
+- Any action involving HTI Group internal data
+- Any mutation of shared remote servers
+- Any cost-bearing action
+
 ---
 
 ## Structural Oversight — pd-structure.md
@@ -312,30 +353,7 @@ Every project that uses PD coordination maintains a structural contract file at
 
 ### Schema — pd-structure.md
 
-```markdown
-# pd-structure — {project}
-Last updated: YYYY-MM-DD by PD-{slug}
-
-## Architecture Decisions
-- {key decision}: {one-line rationale}
-- ...
-
-## No-Touch Zones
-- {file or module}: {reason it must not be modified without PD approval}
-- ...
-
-## Integration Contracts
-- {interface or API surface}: {what Coords must preserve}
-- ...
-
-## Active L3 Boundaries
-- Coord-{name}: owns {scope — files, modules, directories}
-- ...
-
-## Known Cross-L3 Dependencies
-- {L3-A} → {L3-B}: {what L3-A produces that L3-B consumes}
-- ...
-```
+Schema (5 sections: Architecture Decisions, No-Touch Zones, Integration Contracts, Active L3 Boundaries, Known Cross-L3 Dependencies): see template at `~/.claude/agents/runbooks/pd-structure-template.md` (create if absent using those 5 sections).
 
 ### Coord Reads pd-structure.md On Spawn
 
@@ -437,17 +455,8 @@ Skip when: you already have the exact file path.
 
 ## Decomposition Guide
 
-| Level | Who | Example |
-|-------|-----|---------|
-| L1 | PD | "Build the news feed" |
-| L2 | PD | "auth", "feed UI", "RSS parser" |
-| L3 | PD breaks, Coord takes | "auth", "feed UI", "RSS parser" |
-| L4–L6 | Coord breaks | atomic units under L3 |
-| L7+ | Mini-Coord breaks (spawned by Coord for complex L6) | atomic units under L6 |
-| Atomic | Exec executes | one file, one function, one component |
-
-**Rule:** Each agent stops at its termination level. PD stops at L3. Coord stops at L6.
-Mini-Coord decomposes L6 downward. Exec executes atomic units only.
+PD → L3. Coord → L6. Mini-Coord → L9+. Exec = atomic (one file/function/component).
+Full tier table: `~/.claude/agents/runbooks/task-decomposition-methodology.md` (lazy-load when decomposing).
 
 ---
 
@@ -545,7 +554,7 @@ Rule 2 — Three Mandatory Service Agents (ALWAYS invoke):
 
 Rule 3 — Report every completion to your spawner immediately.
 
-Rule 4 — Loop Safety: MAX_TURNS 50, STALL_DETECT on 5 identical calls, BUDGET_SIGNAL at context > 70%. See pd-coordinator.md § Loop Safety.
+Rule 4 — Loop Safety: see pd-coordinator.md § Loop Safety (MAX_TURNS 50, STALL_DETECT >5, BUDGET_SIGNAL 75%).
 
 Your punny name is Coord-{l3-name}-{pun}. Use it in all reports to PD.
 When your L3 is complete, send a SendMessage to "PD-{slug}" (your spawner) with:
@@ -567,6 +576,7 @@ After all Coords are ACKed and the pre-aggregate QA gate passes, send this to "r
 PD-{slug}: ALL L3s COMPLETE + QA GATE COMPLETE
 Overall Health: {0-100}
 Per-L3 scores: {Coord-A: 85, Coord-B: 62, ...}
+Failure Classes: {Coord-A: none, Coord-B: tool-execution, ...}
 Blockers: {none or list}
 Open CRITICAL/HIGH: {list or "none"}
 Full QA Digest: {project}/memory/qa/qa-report-final-{timestamp}.md
@@ -633,13 +643,15 @@ Context-aware self-respawn prevents context overflow from corrupting work mid-fl
 
 | Context % | Action |
 |-----------|--------|
-| < 70% | Normal operation |
-| 70–79% | WARN — complete current L3, no new L3s, prepare for respawn |
+| < 75% | Normal operation |
+| 75–79% | WARN — complete current L3, no new L3s, prepare for respawn |
 | ≥ 80% | MANDATORY — invoke /respawn-self immediately |
+
+**Compaction retention policy (P2-3):** When compacting, preserve: (1) Primers — first messages defining rules and identity; (2) Semantic summary of the middle — synthesized, not verbatim; (3) Recents — last 20 messages. Primary compression target: tool results (largest context consumers). File paths and URLs MUST be preserved in the summary so the session is recoverable after compaction. Rollback signal: if sessions lose critical context (file paths missing from summaries after compaction), revert to 70% trigger.
 
 ### How to Monitor
 
-Context percentage is available in the statusline (yellow = 70%+, red = 80%+).
+Context percentage is available in the statusline (yellow = 75%+, red = 80%+).
 The `context-pct-publish.sh` hook also writes `~/.claude/state/context-pct.txt`.
 
 ```bash
@@ -656,15 +668,15 @@ PCT=$(cat ~/.claude/state/context-pct.txt 2>/dev/null || echo "0")
 ```
 
 - If PCT ≥ 80 → invoke `/respawn-self` immediately. Do not start next Coord exchange.
-- If PCT 70–79 → log warning to pd-scratch.md: "Context at {PCT}% — completing current Coord, no new L3s". Complete the current Coord ACK/NACK exchange, then invoke `/respawn-self`.
-- If PCT < 70 → continue normally.
+- If PCT 75–79 → log warning to pd-scratch.md: "Context at {PCT}% — completing current Coord, no new L3s". Complete the current Coord ACK/NACK exchange, then invoke `/respawn-self`.
+- If PCT < 75 → continue normally.
 
 This gate fires between Coord ACK steps — not just on session start. A PD that skips this gate and hits context overflow mid-session will corrupt its own work.
 
 ### Respawn Procedure (PD Level)
 
 At ≥ 80% context: invoke `/respawn-self` skill immediately.
-At ≥ 70%: complete current Coord ACK/NACK, then invoke `/respawn-self` before starting new L3.
+At ≥ 75%: complete current Coord ACK/NACK, then invoke `/respawn-self` before starting new L3.
 
 ```
 Skill({ skill: "respawn-self" })
@@ -682,17 +694,27 @@ Skill({ skill: "respawn-self" })
 
 Three hard limits that prevent runaway sessions:
 
-1. **MAX_TURNS: 50** — If your turn counter exceeds 50 tool calls, `/save-state` and stop.
-   Do not start new L3 tasks past this point. Finish the current task and exit.
+1. **MAX_TURNS: 50** — If your turn counter exceeds 50 tool calls:
+   a. Do NOT start new L3 tasks.
+   b. Escalate to root via SendMessage with best partial result + quality warning:
+      ```
+      PD-{slug}: TURN-CAP HIT (50 turns)
+      Partial result: {1-line of what was completed}
+      Quality note: session truncated — review and re-run remaining L3s
+      Remaining: {list of pending L3 tasks}
+      ```
+   c. `/save-state` and stop. Never die silently.
 
-2. **STALL_DETECT** — If your last 5 tool calls are identical (same tool + same arguments),
-   you are in an infinite loop. STOP retrying. Instead:
+2. **STALL_DETECT** — If the same tool call (same tool + materially same arguments)
+   repeats >5 times, you are in an infinite loop. STOP immediately. Instead:
    a. Restate your objective in one sentence
    b. Verify the actual world state (read the file, check git status)
    c. Try a DIFFERENT approach
-   d. If still blocked → `/save-state` and stop with BLOCKED status
+   d. If still blocked → escalate to root with BLOCKED status + trajectory note
+      (what you tried, what the stall looks like, suggested workaround), then
+      `/save-state` and stop. Never die silently.
 
-3. **BUDGET_SIGNAL** — If context exceeds 70% (visible in statusline), complete your
+3. **BUDGET_SIGNAL** — If context exceeds 75% (visible in statusline), complete your
    current L3 task and stop. Do NOT start new L3 tasks. `/save-state` with remaining
    L3s listed in next-session.md for the next session.
 

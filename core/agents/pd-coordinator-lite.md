@@ -271,17 +271,8 @@ Awaiting: {who needs to approve}
 
 ## Decomposition Guide
 
-| Level | Who | Example |
-|-------|-----|---------|
-| L1 | PD | "Build the news feed" |
-| L2 | PD | "auth", "feed UI", "RSS parser" |
-| L3 | PD breaks, Coord takes | "auth", "feed UI", "RSS parser" |
-| L4–L6 | Coord breaks | atomic units under L3 |
-| L7+ | Mini-Coord breaks (spawned by Coord for complex L6) | atomic units under L6 |
-| Atomic | Exec executes | one file, one function, one component |
-
-**Rule:** Each agent stops at its termination level. PD stops at L3. Coord stops at L6.
-Mini-Coord decomposes L6 downward. Exec executes atomic units only.
+PD → L3. Coord → L6. Mini-Coord → L9+. Exec = atomic (one file/function/component).
+Full tier table: `~/.claude/agents/runbooks/task-decomposition-methodology.md` (lazy-load when decomposing).
 
 ---
 
