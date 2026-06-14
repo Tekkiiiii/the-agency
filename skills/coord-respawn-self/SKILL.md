@@ -2,10 +2,11 @@
 name: coord-respawn-self
 description: >
   Coord context-aware self-respawn. Invoked by a Coord agent when context window
-  reaches 80% threshold mid-L3. Saves mid-L3 state, writes a continuation manifest
-  for the parent PD, notifies PD, and stops. PD spawns a fresh Coord with the manifest
-  to continue the L3. Enforces max 3 respawns per Coord per 24h. Use at clean task
-  boundaries only — never mid-Executor-spawn or mid-ACK/NACK cycle.
+  reaches 80% threshold mid-L3. Saves mid-L3 state, writes a continuation manifest,
+  notifies the spawner (PD or Dept Head depending on caller role), and stops. The
+  spawner then resumes the L3 with a fresh Coord. Enforces max 3 respawns per Coord
+  per 24h. Use at clean task boundaries only — never mid-Executor-spawn or
+  mid-ACK/NACK cycle.
 ---
 
 # /coord-respawn-self — Coord Context-Aware Self-Respawn
@@ -93,9 +94,15 @@ L3 task: {l3-task-description}
 {none | list}
 ```
 
-## Step 3 — Notify PD
+## Step 3 — Notify Your Spawner
 
-Send to "PD-{slug}" via SendMessage:
+**Determine who your spawner is:**
+- If you are an **execution Coord** (spawned by a PD, `reports_to: pd-coordinator`):
+  → Send to "PD-{slug}" via SendMessage.
+- If you are a **Dept-Coord** (role: dept-coord, spawned by a dept lead):
+  → Send to your Dept Head (e.g. "engineering-lead", "marketing-lead") via SendMessage.
+
+Message format (same in both cases — substitute the correct recipient):
 ```
 Coord-{l3-name}-{pun}: COORD_RESPAWN TRIGGERED
 Context at respawn: {PCT}%
@@ -103,7 +110,7 @@ Respawn count: {N}/3
 L3: {l3-task-name} — {completed}/{total} sub-tasks done
 Continuation manifest: {project}/memory/agents/coords/coord-{l3-name}-{pun}-respawn-{timestamp}.md
 A fresh Coord session is needed to continue this L3.
-PD should spawn a new Coord-{l3-name}-{pun} with the manifest path in the spawn prompt.
+Spawner should start a new Coord-{l3-name}-{pun} with the manifest path in the spawn prompt.
 ```
 
 ## Step 4 — Delete Scratch and Stop

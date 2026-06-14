@@ -219,16 +219,14 @@ Awaiting: Coord-{l3-name}-{pun}
 
 QA gate (step 5a) runs for ALL tasks regardless of type.
 
-| Task Type | Skills to Load | Notes |
-|---|---|---|
-| `qa`, `e2e`, `browser-test` | `qa`, `agent-browser` | Browser E2E + fix loop, health score, atomic commits |
-| `qa-only`, `qa-report` | `qa-only`, `agent-browser` | Report only — browse, snapshot, triage, no code changes |
-| `accessibility`, `a11y` | `agent-browser` | WCAG snapshot + severity |
-| `canary`, `post-deploy` | `canary` | Post-deploy smoke with baseline diff |
-| `regression`, `smoke` | `agent-browser` | Regression vs known baseline |
-| `performance` | `benchmark` | Core Web Vitals + load regression |
+**Default (all non-QA tasks):** load `qa-only` + `agent-browser`.
 
-For non-QA task types, run QA gate using `qa-only` + `agent-browser` as the default.
+**Exceptions by task type:**
+| Task Type | Skills | Notes |
+|---|---|---|
+| `qa`, `e2e`, `browser-test` | `qa`, `agent-browser` | Fix loop, not report-only |
+| `canary`, `post-deploy` | `canary` | Smoke + baseline diff |
+| `performance` | `benchmark` | Core Web Vitals + load regression |
 
 ---
 

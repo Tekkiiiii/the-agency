@@ -145,14 +145,17 @@ THE AGENCY
 │       Strategist, Developer Advocate, Vietnamese Text Agent,
 │       Paperclip Control Plane ★
 │
-├── CRITIQUES ───────────────────── 9 agents ── Curmudgeon-in-Chief ★
+├── CRITIQUES ───────────────────── 12 agents ── Curmudgeon-in-Chief ★
 │   └── Members: critique-design (Playwright, visual/contrast/layout),
 │       critique-content (copy/voice/diacritics/AI-slop),
 │       critique-marketing (positioning/funnel/ICP/CTA),
 │       critique-pedagogy (teaching effectiveness/scaffolding/demo ratio),
 │       critique-seo (SEO/GEO/AEO), critique-product (UX/IA/usability),
 │       critique-security (injection/auth/misconfig),
-│       critique-brand (voice/visual identity/positioning drift)
+│       critique-brand (voice/visual identity/positioning drift),
+│       critique-video (pacing/captions/visual continuity/hook/audio sync),
+│       critique-data (chart honesty/stat accuracy/accessibility/dashboard UX),
+│       critique-code (readability/complexity/error handling/dead code)
 │
 ├── SPATIAL COMPUTING ───────────── 6 agents ── XR Interface Architect ★
 │   └── Members: macOS Spatial/Metal Engineer, XR Immersive Developer,

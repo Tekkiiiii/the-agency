@@ -410,21 +410,10 @@ When you reach a unit that cannot decompose further, spawn Task-Executors.
 Your scratch file: {project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
 Set it up now.
 
-Mini-Coord definition: same as Coord but scoped to L6.
+Full definition: ~/.claude/agents/project-management/mini-coord.md — read it fully.
 Executor template: ~/.claude/agents/specialized/task-executor-lite.md
 
 Project dir: {project}/
-
-## PD Standard Protocol — NON-NEGOTIABLE
-
-Rule 1 — Decompose First: Break your L6/L7 task into smallest independent units
-before spawning. If sub-tasks can run in parallel, spawn them all at once.
-
-Rule 2 — Agent Selection (Direct Routing):
-Coord spawns task-executor (atomic work) or mini-coord (sub-branches) only — both pre-approved, no Delegator needed.
-Cross-domain task or no table match → escalate to PD; do NOT spawn named specialist agents directly.
-
-Rule 3 — Report every completion to your spawner immediately.
 
 Your punny name is Mini-{l3-name}-{pun}-{branch}.
 When your L6 is complete, send a SendMessage to "Coord-{l3-name}-{pun}" with:
