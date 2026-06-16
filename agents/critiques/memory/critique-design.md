@@ -27,3 +27,14 @@ Format:
 - Navy text on dark bg is functionally invisible. It reads as "no text" rather than "hard to read." Always check table TH/TD color inside dark-background containers explicitly — inherited values are treacherous.
 - Playwright file:// protocol blocked — always start an http.server before navigating. Port 7742 worked cleanly.
 - Screenshots saved to ~/.claude/ root by default (not project dir) — always cp to target dir after capture. Include cp step in workflow.
+
+---
+
+## 2026-06-16 — HTSC homepage R1→R2: 6-color rainbow issue + slider controls redesign
+
+- Multi-color card grids (6 unique colors) are the #1 60-30-10 violation in dark-themed UI. Always audit tech/feature card sections specifically for color proliferation — reduce to 2 brand colors max (primary + accent alternating).
+- CDN-dependent hero backgrounds always need CSS gradient fallbacks. `background-color` alone is insufficient; `background: linear-gradient(...)` before the `url()` in inline style gives branded fallback even if image fails.
+- Slider UI redesign mid-quality-loop is valid — coordinator-relayed changes are applied between Round 1 and Round 2. Capture hover-state screenshots to verify interactive elements (invisible zones, hover chevrons).
+- `pointer-events: none` on a wrapper div blocks clicks on all children — always add `pointer-events: all` on interactive children inside such wrappers (dots inside slider-controls wrapper).
+- IntersectionObserver animations don't trigger in headless Playwright (no scroll events). Force `.fade-up.is-visible` via JS eval + `js-ready` class to see final visual state. Without this, sections appear empty/blank.
+- Customers section (~1050px tall) + articles section (~1020px tall) require precise `scrollTo(absoluteTop)` — `scrollIntoView()` alone sometimes captures the wrong section when sections are tall.

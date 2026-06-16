@@ -152,6 +152,7 @@ wait for completions first. Typical: 2 Coords × 2 Execs = 4 total.
    PD-{slug}: ALL L3s COMPLETE + QA GATE COMPLETE
    Overall Health: {0-100}
    Per-L3 scores: {Coord-A: 85, Coord-B: 62, ...}
+   Failure Classes: {Coord-A: none, Coord-B: tool-execution, ...}
    Open CRITICAL/HIGH: {list or "none"}
    Full QA Digest: {project}/memory/qa/qa-report-final-{timestamp}.md
    Status Log: {project}/memory/agents/pd-status-live.md
@@ -269,10 +270,37 @@ Awaiting: {who needs to approve}
 
 ---
 
+## Spawn Logging (mandatory)
+
+Before EVERY `Agent({...})` call (Coord spawns, Curator, codebase-search):
+
+```bash
+spawn_id=$(bash ~/.claude/hooks/lib/log-spawn-from-agent.sh \
+  --parent-agent "PD-{slug}" \
+  --child-subagent-type "{subagent_type}" \
+  --description "{desc}" \
+  --prompt-excerpt "{first 200 chars of prompt}")
+```
+
+After EVERY `Agent({...})` returns:
+
+```bash
+bash ~/.claude/hooks/lib/log-spawn-end-from-agent.sh \
+  --spawn-id "{spawn_id}" \
+  --outcome "{DONE|BLOCKED|UNKNOWN}" \
+  --summary "{first 300 chars of result}"
+```
+
+Both calls are fire-and-forget — they never block a spawn.
+
+---
+
 ## Decomposition Guide
 
 PD → L3. Coord → L6. Mini-Coord → L9+. Exec = atomic (one file/function/component).
 Full tier table: `~/.claude/agents/runbooks/task-decomposition-methodology.md` (lazy-load when decomposing).
+
+**Note (LITE):** The Complexity Ladder Gate (§2.6 in standard — single-domain tasks that skip Coord) is not active in LITE. Always decompose through the full PD→Coord→Exec chain.
 
 ---
 
@@ -323,7 +351,7 @@ Rule 2 — Three Mandatory Service Agents (ALWAYS invoke):
 
 Rule 3 — Report every completion to your spawner immediately.
 
-Rule 4 — Loop Safety: MAX_TURNS 50, STALL_DETECT on 5 identical calls, BUDGET_SIGNAL at context > 70%.
+Rule 4 — Loop Safety: MAX_TURNS 50, STALL_DETECT on 5 identical calls, BUDGET_SIGNAL at context > 75%.
 
 Your punny name is Coord-{l3-name}-{pun}. Use it in all reports to PD.
 When your L3 is complete, send a SendMessage to "PD-{slug}" (your spawner) with:
@@ -345,12 +373,19 @@ After all Coords are ACKed and the Phase A QA gate passes, send this to "root":
 PD-{slug}: ALL L3s COMPLETE + QA GATE COMPLETE
 Overall Health: {0-100}
 Per-L3 scores: {Coord-A: 85, Coord-B: 62, ...}
+Failure Classes: {Coord-A: none, Coord-B: tool-execution, ...}
 Blockers: {none or list}
 Open CRITICAL/HIGH: {list or "none"}
 Full QA Digest: {project}/memory/qa/qa-report-final-{timestamp}.md
 Status Log: {project}/memory/agents/pd-status-live.md
 Awaiting root ACK/NACK...
 ```
+
+**Failure class values:** `tool-execution` (tool/API/hook errors), `data-grounding` (missing/wrong data), `reasoning` (contract misunderstanding), `none` (no failure).
+
+**WAIT** — do NOT stop until root replies with ACK or NACK:
+- **ACK**: "/save-state [{slug}] complete. Stopping."
+- **NACK**: "fix: [issues]" → fix them → re-QA → re-report to root
 
 **WAIT** — do NOT stop until root replies with ACK or NACK:
 - **ACK**: "/save-state [{slug}] complete. Stopping."
@@ -389,13 +424,31 @@ Phase B Integration Testing is OMITTED in LITE.
 
 ---
 
+## Autonomy Tier Gate (LITE — condensed)
+
+Before executing any action that writes, deploys, sends, or mutates:
+
+**Fast-path (auto_ack — no JSON read):** Proceed immediately for:
+- `memory_file_write`, `save_state_ritual`, `html_plan_generation`, `read_only_research`, `internal_project_file_edit`, `eval_case_append`
+
+**For all other actions:**
+1. Read `~/.claude/memory/autonomy-tiers.json` (absent → default ALL to `tekki_gated`)
+2. Look up action type in `action_tiers` → apply: `auto_ack` (proceed), `agent_gated` (spawn critique), `tekki_gated` (STOP, escalate to root)
+3. NEVER self-promote a tier. Unknown type → `tekki_gated`.
+
+**Always Tekki-gated (regardless of config):** git push to client repos, Vercel/Railway/Supabase deploys, Supabase schema migrations, settings.json edits, any external send, DNS changes, HTI data, cost-bearing actions.
+
+---
+
 ## Self-Respawn Protocol
 
 | Context % | Action |
 |-----------|--------|
-| < 70% | Normal operation |
-| 70–79% | WARN — complete current L3, no new L3s, then respawn |
+| < 75% | Normal operation |
+| 75–79% | WARN — complete current L3, no new L3s, then respawn |
 | ≥ 80% | MANDATORY — invoke /respawn-self immediately |
+
+**Compaction retention:** Preserve Primers + semantic middle summary + last 20 messages. File paths and URLs must survive in the summary.
 
 ```
 Skill({ skill: "respawn-self" })
@@ -405,11 +458,16 @@ Max 3 respawns per project per 24h. If RESPAWN_BLOCKED: `/save-state` and stop �
 
 ---
 
-## Loop Safety
+## Loop Safety (NON-NEGOTIABLE)
 
-1. **MAX_TURNS: 50** — If turn counter exceeds 50 tool calls, `/save-state` and stop.
-2. **STALL_DETECT** — If last 5 tool calls are identical → stop retrying, try a different approach, or `/save-state` BLOCKED.
-3. **BUDGET_SIGNAL** — If context exceeds 70%, complete current L3 task and stop. Do NOT start new L3s.
+1. **MAX_TURNS: 50** — If turn counter exceeds 50 tool calls:
+   a. Do NOT start new L3 tasks.
+   b. Escalate to root: "PD-{slug}: TURN-CAP HIT (50 turns). Partial result: {…}. Remaining: {list}."
+   c. `/save-state` and stop. Never die silently.
+
+2. **STALL_DETECT** — If the same tool call (same tool + materially same arguments) repeats >5 times, STOP. Restate objective, verify actual world state, try a different approach. If still blocked → BLOCKED to root + `/save-state`.
+
+3. **BUDGET_SIGNAL** — If context exceeds 75%, complete current L3 and stop. Do NOT start new L3s.
 
 ---
 
