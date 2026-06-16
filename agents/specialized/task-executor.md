@@ -191,6 +191,7 @@ Exec-{subtask}-{pun}: DONE + QA GATE COMPLETE
 Task: {task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
+Failure Class: {tool-execution | data-grounding | reasoning | none}
 Report: {project}/memory/qa/qa-report-{slug}-{timestamp}.md
 Awaiting Coord ACK/NACK...
 ```
@@ -232,18 +233,16 @@ Awaiting: Coord-{l3-name}-{pun}
 
 ## QA Skill Table
 
-QA gate (step 5a in Lifecycle) runs for ALL tasks regardless of type. When your task type matches a row below, load those skills.
+QA gate (step 5a in Lifecycle) runs for ALL tasks regardless of type.
 
-| Task Type | Skills to Load | Notes |
+**Default (all non-QA tasks):** load `qa-only` + `agent-browser`.
+
+**Exceptions by task type:**
+| Task Type | Skills | Notes |
 |---|---|---|
-| `qa`, `e2e`, `browser-test` | `qa`, `agent-browser` | Browser E2E + fix loop, health score, atomic commits |
-| `qa-only`, `qa-report` | `qa-only`, `agent-browser` | Report only — browse, snapshot, triage, no code changes |
-| `accessibility`, `a11y` | `agent-browser` | WCAG snapshot + severity |
-| `canary`, `post-deploy` | `canary` | Post-deploy smoke with baseline diff |
-| `regression`, `smoke` | `agent-browser` | Regression vs known baseline |
+| `qa`, `e2e`, `browser-test` | `qa`, `agent-browser` | Fix loop, not report-only |
+| `canary`, `post-deploy` | `canary` | Smoke + baseline diff |
 | `performance` | `benchmark` | Core Web Vitals + load regression |
-
-For non-QA task types, run QA gate using `qa-only` + `agent-browser` as the default.
 
 ---
 
@@ -282,6 +281,36 @@ Executors do NOT self-respawn. If context reaches 70%+ during execution:
    Awaiting: Coord-{l3-name}-{pun}
    ```
 Executors never invoke /respawn-self or /coord-respawn-self — those are Coord/PD level.
+
+---
+
+## Loop Safety (NON-NEGOTIABLE)
+
+Three hard limits that prevent runaway Executor sessions:
+
+1. **MAX_TURNS: 20** — If your turn counter exceeds 20 tool calls:
+   a. Stop the current work unit cleanly (finish the current file edit if mid-edit).
+   b. Escalate to Coord via SendMessage with best partial result + quality warning:
+      ```
+      Exec-{subtask}-{pun}: TURN-CAP HIT (20 turns)
+      Partial result: {1-line of what was completed}
+      Quality note: session truncated — Coord should spawn a continuation Exec
+      Remaining: {what's left to complete}
+      ```
+   c. Stop immediately. Never die silently.
+
+2. **STALL_DETECT** — If the same tool call (same tool + materially same arguments)
+   repeats >5 times, you are in an infinite loop. STOP immediately. Instead:
+   a. Restate your objective in one sentence
+   b. Verify the actual world state (read the file, check git status)
+   c. Try a DIFFERENT approach
+   d. If still blocked → send BLOCKED to Coord with trajectory note
+      (what you tried, what the stall looks like, suggested workaround).
+      Never die silently. Coord decides next steps.
+
+3. **BUDGET_SIGNAL** — If context exceeds 70% (visible in statusline), complete
+   the current atomic unit and send a CHECKPOINT to Coord with the context warning.
+   Let Coord decide whether to spawn a continuation Exec for the remaining work.
 
 ---
 

@@ -98,6 +98,7 @@ Integration failures that Phase A cannot catch:
 ```
 IntegrationTester-{slug}: INTEGRATION COMPLETE
 Score: {0-100} ({INTEGRATION_PASS | INTEGRATION_WARN | INTEGRATION_FAIL})
+Failure Class: {tool-execution | data-grounding | reasoning | none}
 Contracts checked: {n}/{n} honored
 Dependencies checked: {n}/{n} resolved
 Browser tests: {n passed}/{n total} (or "skipped — quick mode")
@@ -114,6 +115,12 @@ WARNINGS ({n}):
 Report: {project}/memory/qa/qa-integration-{timestamp}.md
 Screenshots: {project}/memory/qa/screenshots/integration-{timestamp}/
 ```
+
+**failure_class** in integration reports:
+- `"tool-execution"` — integration failure caused by tool/API/hook errors in combined output
+- `"data-grounding"` — integration failure caused by missing/wrong data across L3 boundary
+- `"reasoning"` — integration failure caused by contract misunderstanding or reasoning error
+- `"none"` — no failure (INTEGRATION_PASS)
 
 ---
 

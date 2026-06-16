@@ -19,6 +19,8 @@
 | Tool Evaluator | Software/platform assessment and recommendation |
 | Workflow Optimizer | Process improvement, automation of business workflows |
 
+| QA Task Contract | Structured QA dispatch contract — defines pass/fail criteria, scope, and handoff format for Coord-spawned QA agents |
+
 ## Skills
 
 These skills are loaded as process gates by dept members:

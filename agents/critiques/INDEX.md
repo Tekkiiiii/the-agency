@@ -15,7 +15,8 @@
 | critique-content | Copy / voice / diacritics / AI-slop | All written content — English and Vietnamese |
 | critique-marketing | Positioning / funnel / ICP / CTA / retention | Any marketing-facing deliverable |
 | critique-pedagogy | Teaching effectiveness / scaffolding / demo ratio / cognitive load | Courses, workshops, training decks |
-| critique-seo | SEO/GEO/AEO — keywords / headings / meta / content depth | Blogs, landing pages, any indexed content |
+| critique-seo | SEO/GEO/AEO content — keywords / headings / meta copy / content depth | Blogs, landing pages, any indexed content |
+| sag-critique | Technical SEO/AEO/GEO — metadata tags / image naming / JSON-LD / robots / sitemap / hreflang | Live websites, production builds — the `<head>`, assets, crawl plumbing |
 | critique-product | UX / IA / usability / accessibility | Apps, dashboards, interactive flows |
 | critique-security | Injection / auth / secret exposure / misconfig | Code, configs, infrastructure |
 | critique-brand | Voice / visual identity / naming / positioning alignment | Any branded deliverable |
@@ -31,6 +32,7 @@
 | blog post | content + marketing + seo + brand |
 | email | content + marketing + brand |
 | landing page | design + content + marketing + seo + brand + product |
+| website / production build | sag + design + product + security |
 | app / dashboard | design + product + security |
 | code / config | security + code |
 | branded document | content + brand |
@@ -38,7 +40,7 @@
 | analytics / dashboard / data report | data + product |
 | generic (unknown) | content + brand |
 
-Add pedagogy for any training material. Add SEO for any publicly-indexed page.
+Add pedagogy for any training material. Add SEO (critique-seo) for any publicly-indexed page's copy. Add sag-critique for any live website / production build to audit the technical layer (head tags, image naming, structured data, crawl plumbing).
 
 ## Scoring Rubric
 

@@ -130,27 +130,9 @@ Coord will include the archived scratch path in your spawn prompt for continuity
 ## Status Updates
 
 Send to spawner via SendMessage on every state transition (except QUEUED).
+Format: `Exec-{subtask}-{pun}: STATUS_UPDATE | Task: {name} | State: {state} | Health: {score or —} | Summary: {1-line} | Blockers: {none or reason}`
 
-**STATUS_UPDATE — IN_PROGRESS:**
-```
-Exec-{subtask}-{pun}: STATUS_UPDATE
-Task: {task-name}
-State: IN_PROGRESS
-Health: —
-Summary: {1-line of what you're starting}
-Blockers: none
-```
-
-**STATUS_UPDATE — QA_GATE:**
-```
-Exec-{subtask}-{pun}: STATUS_UPDATE
-Task: {task-name}
-State: QA_GATE
-Health: {0-100}
-Summary: canary running
-Blockers: none
-```
-
+States in order: IN_PROGRESS → QA_GATE → terminal (DONE/BLOCKED/ESCALATE).
 **On reaching terminal state:** Send STATUS_UPDATE first, then the completion report below.
 
 ---
@@ -174,6 +156,7 @@ Exec-{subtask}-{pun}: DONE + QA GATE COMPLETE
 Task: {task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
+Failure Class: {tool-execution | data-grounding | reasoning | none}
 Report: {project}/memory/qa/qa-report-{slug}-{timestamp}.md
 Awaiting Coord ACK/NACK...
 ```
@@ -230,20 +213,11 @@ QA gate (step 5a) runs for ALL tasks regardless of type.
 
 ---
 
-## Self-Respawn Protocol — BLOCKED Rule
+## Loop Safety (NON-NEGOTIABLE)
 
-Executors do NOT self-respawn. If context reaches 70%+ during execution:
-1. Complete the current atomic unit (finish the file edit, finish the command)
-2. Send STATUS_UPDATE to Coord with context warning in Summary field
-3. Wait for Coord direction
-4. If context reaches 80%: escalate immediately
-   ```
-   Exec-{subtask}-{pun}: ESCALATE — context at {PCT}%, cannot continue safely
-   Needed: Coord to spawn a continuation Executor for the remaining work
-   Scope: {what is left to complete}
-   Awaiting: Coord-{l3-name}-{pun}
-   ```
-Executors never invoke /respawn-self or /coord-respawn-self — those are Coord/PD level.
+1. **MAX_TURNS: 20** — If turn counter exceeds 20: stop current unit, send TURN-CAP HIT to Coord, stop.
+2. **STALL_DETECT** — Same tool call >5 times → STOP, try different approach, or send BLOCKED to Coord.
+3. **BUDGET_SIGNAL** — Context > 70%: finish current atomic unit, send STATUS_UPDATE to Coord with context warning. Context > 80%: ESCALATE immediately ("Needed: Coord to spawn a continuation Executor"). Executors never invoke /respawn-self — Coord/PD level only.
 
 ---
 
@@ -252,25 +226,9 @@ Executors never invoke /respawn-self or /coord-respawn-self — those are Coord/
 - Do NOT decompose what Coord gave you — execute exactly as specified
 - Do NOT escalate to PD directly — go through Coord first
 - Do NOT retry permission failures — always escalate
-- Do NOT hold findings in context — save at atomic level to project memory/task log
 - Move scratch to archive on completion (do not delete)
-- Stop immediately after receiving ACK
 - **STOP only on explicit ACK from Coord — never stop on your own**
-
----
-
-## Finding / Lesson Routing
-
-```
-Does it change how THIS sub-task was done?
-  → Save at agent (atomic) level — project memory / task log
-
-Does it change how a DEPARTMENT works?
-  → Report to Coord → Coord escalates to dept head
-
-Does it change the PROJECT's direction or decisions?
-  → Report to Coord → Coord escalates to PD
-```
+- Findings: sub-task level → project memory/task log; dept/project changes → report to Coord
 
 ---
 

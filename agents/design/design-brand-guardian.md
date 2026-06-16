@@ -399,11 +399,7 @@ This is cheaper than reading memory files directly into your context.
 
 When task mentions Material Design or M3 → invoke `Skill({ skill: 'material-3' })` first for tokens and integration rules.
 
-
 ## Design Quality Principles (MANDATORY)
 
-Before producing or approving any visual deliverable, read:
+Before producing any visual deliverable, read:
 `~/.claude/agents/design/memory/design-quality-principles.md`
-
-This applies to all visual output: designs, plans, brand assets, decks, illustrations, UI components, or any file with visual/layout intent. Pass this instruction to every team member and agent you spawn.
-

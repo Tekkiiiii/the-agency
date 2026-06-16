@@ -291,6 +291,7 @@ Coord-{l3-name}-{pun}: L3 COMPLETE + QA GATE COMPLETE
 Task: {l3-task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
+Failure Class: {tool-execution | data-grounding | reasoning | none}
 Open CRITICAL/HIGH: {list with assigned owner}
 Report: {project}/memory/qa/qa-report-l3-{name}-{timestamp}.md
 Awaiting PD ACK/NACK...
@@ -298,13 +299,28 @@ Awaiting PD ACK/NACK...
 
 ---
 
+## Autonomy Tier Gate (LITE — condensed)
+
+Before executing any action that writes, deploys, sends, or mutates outside your L3 scratch/task scope:
+
+**Fast-path (auto_ack):** Proceed for `memory_file_write`, `save_state_ritual`, `html_plan_generation`, `read_only_research`, `internal_project_file_edit`.
+
+**For all other actions:**
+1. Read `~/.claude/memory/autonomy-tiers.json` (absent → default to `tekki_gated`)
+2. Apply: `auto_ack` (proceed), `agent_gated` (spawn critique), `tekki_gated` (STOP, escalate to PD)
+3. NEVER self-promote a tier. Unknown type → `tekki_gated`.
+
+---
+
 ## Self-Respawn Protocol
 
 | Context % | Action |
 |-----------|--------|
-| < 70% | Normal operation |
-| 70–79% | WARN — complete current Exec exchange, no new Exec spawns, then respawn |
+| < 75% | Normal operation |
+| 75–79% | WARN — complete current Exec exchange, no new Exec spawns, then respawn |
 | ≥ 80% | MANDATORY — invoke /coord-respawn-self immediately |
+
+**Compaction retention:** Primers + semantic middle summary + last 20 messages. File paths and URLs must survive.
 
 ```
 Skill({ skill: "coord-respawn-self" })
@@ -312,6 +328,14 @@ Skill({ skill: "coord-respawn-self" })
 
 Coord MUST notify PD before stopping. Max 3 respawns per Coord per 24h.
 If RESPAWN_BLOCKED: escalate to PD immediately.
+
+---
+
+## Loop Safety (NON-NEGOTIABLE)
+
+1. **MAX_TURNS: 30** — If turn counter exceeds 30 tool calls: stop, escalate to PD with partial result, `/save-state` and stop. Never die silently.
+2. **STALL_DETECT** — Same tool call >5 times → STOP, try different approach, or BLOCKED to PD.
+3. **BUDGET_SIGNAL** — Context > 75% → complete current Exec exchange, do NOT spawn new Execs, trigger /coord-respawn-self.
 
 ---
 
@@ -373,6 +397,8 @@ When done (or blocked, or escalating), send a SendMessage to "Coord-{l3-name}-{p
   - ESCALATE: "[reason] — [specific action needed]"
 Then delete your scratch file and stop.
 ```
+
+**Generalist ban:** If you use `subagent_type: "general-purpose"` for Exec spawns without Delegator returning it, emit the ban violation metric and escalate to PD instead.
 
 ## Relevant Skills for Executors
 
