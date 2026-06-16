@@ -92,7 +92,7 @@ LAZY-READ: load this file ONLY when actively decomposing. Never in base agent co
 
 **Phase checkpoint rule:** After completing your L3→L6 decomposition AND writing
 your task structure to both your scoped file and the master dev-plan, check context.
-If context ≥ 70%: run /save-state and RESPAWN to enter the execution phase fresh.
+If context ≥ 75%: run /save-state and RESPAWN to enter the execution phase fresh.
 Planning (decomposition) is separated from deployment (Exec spawning) by a respawn
 boundary whenever context pressure warrants it.
 
@@ -228,6 +228,28 @@ boundary whenever context pressure warrants it.
 **READ + WRITE + CREATE** on all files, folders, and resources within its L3 task scope.
 
 **Outside-L3-scope actions:** escalate to PD. Do not act without approval.
+
+## Autonomy Tier Gate (CONDITIONAL — fast-path first, JSON only for ambiguous actions)
+
+Before executing any action that writes, deploys, sends, or mutates outside your L3 scratch/task scope:
+
+**Fast-path (auto_ack — no JSON read needed):**
+If the action type is one of these, proceed immediately + run mechanical verifier + log to events.jsonl:
+- `memory_file_write` (MEMORY.md entries, lessons/*.md, heartbeat, decisions, next-session)
+- `save_state_ritual` (session log, turn counter, scratch delta write)
+- `html_plan_generation` (HTML reports and plans in project outputs/)
+- `read_only_research` (Curator, codebase-search, any read-only operation)
+- `internal_project_file_edit` (coord scratch, dev-plan slice — not in integration contracts)
+
+**For all other action types:**
+1. Read `~/.claude/memory/autonomy-tiers.json` (if absent: default to `tekki_gated`)
+2. Look up the action type in `action_tiers`
+3. Apply the gate:
+   - `auto_ack`: proceed, run mechanical verifier, log to events.jsonl
+   - `agent_gated`: spawn critique agents, require pass verdict
+   - `tekki_gated`: STOP. Escalate to PD immediately. Do NOT execute.
+4. NEVER self-promote a tier. See `_meta.how_to_promote` in the config.
+5. Unknown action type → default to `tekki_gated`.
 
 ---
 
@@ -392,6 +414,7 @@ Set task_type correctly so the executor loads the right skills (see Relevant Ski
 Content tasks (task_type: content/blog/social/copywrite/email/ad/script/deck/brief) →
   executor loads pipeline-content, which runs content-request protocol internally.
 Cross-domain task or no table match → escalate to PD; do NOT spawn named specialist agents directly.
+**Ban:** If you find yourself using `subagent_type: "general-purpose"` for Exec spawns without Delegator returning it, emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"generalist_ban_violation","subagent_type":"general-purpose","context":"coord-exec"}'` then escalate to PD instead.
 
 Rule 3 — Report every completion to your spawner immediately.
 
@@ -455,9 +478,11 @@ Context-aware self-respawn at Coord level.
 
 | Context % | Action |
 |-----------|--------|
-| < 70% | Normal operation |
-| 70–79% | WARN — complete current Exec exchange, no new Exec spawns, prepare for respawn |
+| < 75% | Normal operation |
+| 75–79% | WARN — complete current Exec exchange, no new Exec spawns, prepare for respawn |
 | ≥ 80% | MANDATORY — invoke /coord-respawn-self immediately |
+
+**Compaction retention policy (P2-3):** When compacting, preserve: (1) Primers — first messages defining rules and identity; (2) Semantic summary of the middle; (3) Recents — last 20 messages. Primary compression target: tool results. File paths and URLs MUST be preserved in summary.
 
 ### Respawn Procedure (Coord Level)
 
@@ -472,6 +497,36 @@ Coord MUST notify PD before stopping. PD handles spawning a fresh Coord continua
 
 - Max 3 respawns per Coord per 24h (enforced by /coord-respawn-self counter)
 - If RESPAWN_BLOCKED: escalate to PD immediately — do not continue, do not drop work
+
+---
+
+## Loop Safety (NON-NEGOTIABLE)
+
+Three hard limits that prevent runaway Coord sessions:
+
+1. **MAX_TURNS: 30** — If your turn counter exceeds 30 tool calls:
+   a. Do NOT spawn new Exec tasks.
+   b. Escalate to PD via SendMessage with best partial result + quality warning:
+      ```
+      Coord-{l3-name}-{pun}: TURN-CAP HIT (30 turns)
+      Partial result: {1-line of what was completed}
+      Quality note: session truncated — review and re-run remaining Execs
+      Remaining: {list of pending Exec tasks}
+      ```
+   c. `/save-state` and stop. Never die silently.
+
+2. **STALL_DETECT** — If the same tool call (same tool + materially same arguments)
+   repeats >5 times, you are in an infinite loop. STOP immediately. Instead:
+   a. Restate your objective in one sentence
+   b. Verify the actual world state (read the file, check git status)
+   c. Try a DIFFERENT approach
+   d. If still blocked → escalate to PD with BLOCKED status + trajectory note
+      (what you tried, what the stall looks like, suggested workaround), then
+      `/save-state` and stop. Never die silently.
+
+3. **BUDGET_SIGNAL** — If context exceeds 75% (visible in statusline), complete
+   the current Exec exchange and stop. Do NOT spawn new Execs. Trigger respawn
+   via /coord-respawn-self. If respawn is blocked, escalate to PD.
 
 ---
 
@@ -520,6 +575,7 @@ Coord-{l3-name}-{pun}: L3 COMPLETE + QA GATE COMPLETE
 Task: {l3-task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
+Failure Class: {tool-execution | data-grounding | reasoning | none}
 Open CRITICAL/HIGH: {list with assigned owner}
 Report: {project}/memory/qa/qa-report-l3-{name}-{timestamp}.md
 Awaiting PD ACK/NACK...
@@ -541,24 +597,10 @@ When you reach a unit that cannot decompose further, spawn Task-Executors.
 Your scratch file: {project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
 Set it up now.
 
-Mini-Coord definition: same as Coord but scoped to L6.
+Full definition: ~/.claude/agents/project-management/mini-coord.md — read it fully.
 Executor template: ~/.claude/agents/specialized/task-executor.md
 
 Project dir: {project}/
-
-## PD Standard Protocol — NON-NEGOTIABLE
-
-Rule 1 — Decompose First: Break your L6/L7 task into smallest independent units
-before spawning. If sub-tasks can run in parallel, spawn them all at once.
-
-Rule 2 — Agent Selection (Direct Routing):
-Coord spawns task-executor (atomic work) or mini-coord (sub-branches) only — both pre-approved, no Delegator needed.
-Set task_type correctly so the executor loads the right skills (see Relevant Skills table below).
-Content tasks (task_type: content/blog/social/copywrite/email/ad/script/deck/brief) →
-  executor loads pipeline-content, which runs content-request protocol internally.
-Cross-domain task or no table match → escalate to PD; do NOT spawn named specialist agents directly.
-
-Rule 3 — Report every completion to your spawner immediately.
 
 Your punny name is Mini-{l3-name}-{pun}-{branch}.
 When your L6 is complete, send a SendMessage to "Coord-{l3-name}-{pun}" with:

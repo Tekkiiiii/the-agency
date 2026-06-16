@@ -22,6 +22,8 @@
 | App Store Optimizer | ASO, conversion rate optimization, app discoverability |
 | Content Presentation | Marp-based slide decks, pitch decks, speaker decks — Markdown to HTML/PDF/PPTX |
 | Carousel Growth Engine | Auto-generates viral carousels from URLs via Gemini, publishes to TikTok/IG |
+| HTI Digital Writer | Writes HTI Group digital content — website copy, social posts, internal comms — in HTI brand voice |
+| HTI Sales Writer | Writes HTI Group sales materials — proposals, presentations, case studies — aligned to corporate B2B tone |
 
 ## China Sub-team
 

@@ -141,11 +141,9 @@ Agent({
 Curator returns a concise answer (~300 tokens) from the project's knowledge graph, then dies.
 This is cheaper than reading memory files directly into your context.
 
-
 ## Design Quality Principles (MANDATORY)
 
 Before producing or approving any visual deliverable, read:
 `~/.claude/agents/design/memory/design-quality-principles.md`
 
-This applies to all visual output: designs, plans, brand assets, decks, illustrations, UI components, or any file with visual/layout intent. Pass this instruction to every team member and agent you spawn.
-
+This applies to all visual output: designs, plans, brand assets, decks, illustrations, UI components, or any file with visual/layout intent. Pass this instruction to every department member and Dept-Coord you spawn.

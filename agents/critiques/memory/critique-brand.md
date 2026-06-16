@@ -22,3 +22,25 @@ Format:
 - Agency-specific rule: each client brand must have a `brand-guidelines.md` file. If missing, flag as HIGH in critique findings.
 
 ---
+
+## 2026-06-15 — Multi-page demo critique: d231/d230 experimental fork vs live brand
+
+- When a demo is an "experimental fork" with explicitly locked new palette/type decisions, the critique reference must be the fork brief, not the live brand-guidelines.md. The two will conflict on fonts, colors, and layout — that's intentional. Check the task brief first.
+- CTA label drift is the most common multi-page brand failure. With 5 pages there were 4 distinct CTA surface phrasings — "Marketing Assessment", "Book Marketing Assessment", "DM Marketing Assessment", "Send Assessment Request". Always enumerate every CTA string across all pages before scoring.
+- Navy-as-hover is a carry-over pattern: legacy brand colors bleed into new design systems through button hover states. Check hover/active colors specifically — they often escape palette audits.
+- Placeholder text in forms ("Santiago Fernández") is a HIGH-visibility brand issue in demos. Clients see placeholders; test data leaks signal carelessness.
+- Dead utility classes (e.g., `.ta` defined but never used in body HTML on 4/5 pages) aren't visual bugs but they create governance drift risk — flag them LOW, don't skip them.
+- A brand-guidelines.md file that contradicts itself (MARKETING AUDIT vs MARKETING ASSESSMENT in different sections) is worth flagging as a finding even if the demo HTML is correct. The source of truth being wrong is a future failure waiting to happen.
+
+---
+
+## 2026-06-16 — HTSC homepage: duplicate i18n keys mask fabricated claims
+
+- When old + new i18n dict entries are merged (not replaced), JS last-write-wins means the LAST value renders — but the FIRST (orphan) value is a latent risk if key order changes. Always grep for duplicate keys after i18n extension work.
+- "ISO 9001:2015" and "SLA 24/7" were the specific unverified claims in this project. Never assume standard-sounding certs/SLAs are confirmed — check brand-kit explicitly. Absence from brand-kit = fabricated claim.
+- ISO 9001 appeared in 6 separate locations: HTML static text ×2, i18n dict EN ×2, i18n dict VI ×2. Each must be hunted independently — searching one only misses the rest. Always grep for the claim string after any brand fix to find all instances.
+- Preserved "original" nmore template sections are NOT exempt from brand compliance — the partners/trust-badge section contained a fabricated cert. Audit ALL sections, not just the new ones.
+- Brand claims check order: (1) grep for numbers/certifications in HTML body, (2) grep in i18n dict EN, (3) grep in i18n dict VI, (4) grep in HTML static fallback text of data-i18n elements. All four must be clean.
+- "9 Vietnamese tech products" chip text was in the page — this is also unverified. The brand kit does not confirm a specific product count. Any number-claim in a badge/chip needs explicit brand-kit sourcing.
+
+---

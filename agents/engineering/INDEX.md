@@ -25,6 +25,7 @@
 | Technical Writer | Dev docs, API references, README files |
 | Threat Detection Engineer | SIEM rules, MITRE ATT&CK, detection-as-code pipelines |
 | WeChat Mini Program Developer | WeChat WXML/WXSS, payment systems, WeChat ecosystem |
+| Laravel Debugger | Laravel-specific debugging, error tracing, Telescope, Horizon, queue/job inspection |
 
 ## Skills
 
