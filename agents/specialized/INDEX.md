@@ -31,9 +31,9 @@
 | Task-Executor | Leaf implementation agent — executes exactly what Coord assigns, no decomposition authority, Sonnet model |
 | Integration-Tester | Phase B cross-L3 system integration QA. Spawned by PD after all per-L3 Coord QA gates pass. Tests that multiple L3 outputs work together as a system — contract verification, cross-L3 dependency resolution, integration smoke tests. Reports INTEGRATION_PASS/WARN/FAIL to PD. |
 | Project Scaffolder | Autonomous project + PD scaffolding agent — creates all files and registries for /new-project |
-| Codebase Search | Fast read-only file/symbol search across ~/.claude/, projects, and skill library — replaces Explore for system searches |
-| AI Engineer PD | Project Director for AI Engineer — Project workspace holding all AI Engineer Fullstack course materials — lessons, exercises, notebooks, and practice files. Current course module: Pandas/Seaborn/Matplotlib data analysis (Buổi 8 - Unicorn Companies dataset). Will hold all future course modules, homework, and practice projects as Tekki progresses through the AI Engineer Fullstack curriculum. |
-| Morpheus PD | Project Director for Morpheus — Meta-overseer PD. Monitors all other PDs across ~/.claude/projects/ + ~/projects/. Reads heartbeat files, next-session.md, dept-state.md. Flags STALE (>3 days no heartbeat) and BLOCKED. Ships daily HTML digest to ~/.claude/outputs/morpheus/YYYY-MM-DD-digest.html using html-plan-style skill. Reports only — no auto-poke. Aggregates: active PDs, stale PDs, blocked PDs, ongoing tasks, recent commits, dept-state highlights. |
+| Codebase Search | Fast read-only file/symbol search across {agency-root}/, projects, and skill library — replaces Explore for system searches |
+| Web Extraction Agent | Routes web data-extraction and crawling tasks to the right tool based on task type — Lightpanda (default), Firecrawl (bulk/scale), Playwright (visual/interaction/login), social decision ladder (API → Apify → session → FLAG) |
+| Morpheus PD | Meta-overseer PD — monitors all other PDs, reads heartbeat/next-session/dept-state files, flags STALE (>3 days) and BLOCKED, ships daily digest. Reports only — no auto-poke. |
 
 ## Understand-Anything Sub-team
 
