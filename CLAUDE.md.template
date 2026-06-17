@@ -23,12 +23,34 @@ bypass all spawn conditions and overhead checks. Never skip them for "efficiency
 - Delegating a task that requires project context (pass Curator's answer to the Coord)
 - Any action that could contradict a past decision recorded in project memory
 Skip when: purely mechanical task (edit one line, run a command), or no connection to any active project.
+**Context-sufficiency skip (strict):** also skip when the exact decision or convention needed is already present VERBATIM in the current spawn prompt. "Approximately covered" is NOT sufficient — the specific information must appear word-for-word or by direct structured reference. If any doubt exists, spawn Curator. This skip is mechanical, not a judgment call.
+**Event contract:** After deciding to skip Curator (context-sufficiency), emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency","skip_reason_excerpt":"<1-line reason agent judged context sufficient — what specific info in the prompt made Curator unnecessary>"}'`. After spawning Curator, emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`. Fire-and-forget, non-blocking. (F17: skip_reason_excerpt enables audit of over-skipping — excerpt lets reviewers assess whether skips were justified.)
 
 **Delegator** (`{agency-root}/agents/specialized/delegator.md`, sonnet) — invoke before spawning ANY agent (except: PD spawns via /pd-resume or /pd-spawn, Curator, codebase-search). It reads the agency catalog and returns the right agent/skill/protocol, then dies.
+**Cache lookup first:** Before spawning Delegator, check `{agency-root}/memory/delegator-cache.md` for an exact task-pattern match (exact string only — no fuzzy matching). Cache hit = skip Delegator, note the cache hit in your spawn record, and emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_cache_hit","route":"<route>","matched_pattern":"<first-8-words-of-matched-cache-key>"}'`. Cache miss = spawn Delegator as normal, then: (a) append the (task-pattern → route) entry to `{agency-root}/memory/delegator-cache.md`, and (b) emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_spawn","route":"<route>","miss_pattern":"<first-8-words-of-task-pattern-that-missed>"}'`. Both emits are fire-and-forget. (F15: matched_pattern/miss_pattern fields enable cache diagnostic.)
 Fast-path (rare): you may skip Delegator ONLY when ALL three are true: (1) the route matches an explicit row in agency-dispatch.md Step 1 table, (2) you have checked Step 0 and confirmed no protocol governs the task, AND (3) the task is single-domain with no cross-cutting concerns. If any doubt exists → spawn Delegator.
 
 **codebase-search** (`{agency-root}/agents/specialized/codebase-search.md`, sonnet) — invoke INSTEAD of running `find`, `grep`, `rg`, `ls -r`, or any Bash file-search command across the agency root or active projects.
 Skip when: you already have the exact file path (single-file read, no search needed).
+
+#### Code Comprehension — Recommended for Code Understanding Tasks
+
+The `/understand-*` skill family provides on-demand code comprehension. Invoke these skills BEFORE writing analysis from scratch when agents need to understand unfamiliar code.
+
+**Trigger phrase → Recommended skill:**
+
+| When you hear / need to do... | Invoke |
+|-------------------------------|--------|
+| "onboard to this project", "never seen this codebase", new project start | `/understand-onboard` — full onboarding guide from knowledge graph |
+| "what does X do", "explain this function/module/file" | `/understand-explain [file-path]` — deep-dive on a specific unit |
+| "find all auth code", "where is the database layer", domain search | `/understand-domain` — extracts business domain + flow graph |
+| "what changed in this PR/diff", "what did this commit affect" | `/understand-diff` — analyzes diffs against knowledge graph |
+| interactive Q&A about a codebase | `/understand-chat [query]` — conversational code queries |
+| "build a searchable index", "index this codebase" | `/understand-knowledge [wiki-dir]` — entity-level knowledge index |
+| "show me a visual map", "launch the dashboard" | `/understand-dashboard [path]` — interactive visual codebase browser |
+| full architecture analysis, knowledge graph generation | `/understand [path]` — base skill, produces `.understand-anything/knowledge-graph.json` |
+
+**DO NOT** invoke `/understand-*` for: single-file edits, small bug fixes, config changes, tasks where the file path is already known and scope is narrow.
 
 #### When to Act Directly vs. Route to Agents
 
@@ -62,6 +84,25 @@ If you catch yourself typing `subagent_type: "general-purpose"` without one of t
 **Violation metric (mandatory):** If `general-purpose` or `claude` is used as subagent_type outside the above conditions, emit BEFORE spawning (fire-and-forget):
 `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"generalist_ban_violation","subagent_type":"general-purpose","context":"<one-word reason>"}'`
 Then STOP and spawn Delegator instead. Do not proceed with the generalist spawn.
+
+#### Background Agent Completion Gate (F11)
+
+**Problem:** PostToolUse hooks fire only for synchronous Agent tool completions. All PDs spawn with `run_in_background:true` — the `artifact-verify.sh` hook never fires for them. Background PD deliverables (HTML reports, QA digests, plan files) can be fabricated without triggering any automated check.
+
+**Rule:** When a background agent returns, the parent AI MUST verify claimed deliverables before accepting the result as DONE.
+
+**Verification steps (mandatory):**
+1. For EVERY file the returning agent claims to have created or modified:
+   ```bash
+   ls -la {full-absolute-path}
+   wc -l {full-absolute-path}
+   ```
+2. If the file is missing OR has size 0: mark the item BLOCKED, not DONE. Do not accept the agent's completion claim.
+3. If all files exist and are non-empty: proceed to ACK.
+
+**Scope:** Applies to deliverables in `outputs/`, `plans/`, `reports/`, any `*.html` file, and any file the agent explicitly named as a deliverable in its completion message.
+
+**Does NOT apply to:** intermediate scratch files, log files, or memory files (heartbeat, decisions, next-session) — these are write-and-forget, not deliverables.
 
 ### Natural Language → PD Spawn
 When the operator says something matching these patterns, invoke the `pd-spawn` skill

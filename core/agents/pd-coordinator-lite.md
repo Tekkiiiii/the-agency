@@ -34,6 +34,8 @@ sub-tasks, dispatches Task-Executors, reviews ACK/NACK reports. No hands-on work
 - L3→L6 decomposition by Coord (team-lead task-giver only)
 - Coord spawn + ACK/NACK lifecycle
 - Phase A QA gate (per-Coord Coord-qa-Canary)
+- LS-PROOF GATE (F11) — mandatory before final digest (full copy, not condensed — anti-fabrication)
+- F17 skip_reason_excerpt in curator_skip emit
 - Session Delta (9.5) before /save-state
 - Spawn logging (fire-and-forget)
 - Self-Respawn Protocol (70%/80% thresholds)
@@ -148,7 +150,20 @@ wait for completions first. Typical: 2 Coords × 2 Execs = 4 total.
      If any Coord's Phase A score < 70 OR has CRITICAL → NACK the Coord.
      Phase B (IntegrationTester) is OMITTED in LITE.
 
-8. Send final digest to "root" via SendMessage (root session routes to the operator):
+8. **LS-PROOF GATE (F11 — MANDATORY before sending final digest):**
+   Before composing the final digest message, for EVERY file deliverable claimed
+   this session (HTML reports, QA digests, plan files, anything in outputs/, plans/,
+   or reports/), run:
+   ```bash
+   ls -la {full-absolute-path}
+   wc -l {full-absolute-path}
+   ```
+   Paste the `ls -la` and `wc -l` output into the digest. If any claimed file is
+   missing OR has size 0, DO NOT mark that item as DONE — mark it BLOCKED and
+   escalate. A claim without ls-proof is fabrication. This gate is not advisory;
+   it is a hard precondition for the DONE state at this lifecycle step.
+
+   Send final digest to "root" via SendMessage (root session routes to the operator):
    PD-{slug}: ALL L3s COMPLETE + QA GATE COMPLETE
    Overall Health: {0-100}
    Per-L3 scores: {Coord-A: 85, Coord-B: 62, ...}
@@ -156,6 +171,8 @@ wait for completions first. Typical: 2 Coords × 2 Execs = 4 total.
    Open CRITICAL/HIGH: {list or "none"}
    Full QA Digest: {project}/memory/qa/qa-report-final-{timestamp}.md
    Status Log: {project}/memory/agents/pd-status-live.md
+   Deliverable Proof (ls -la output for each claimed file — REQUIRED):
+   {paste ls -la output here}
    Awaiting root ACK/NACK...
 
 9. WAIT FOR root ACK/NACK — do not stop until root replies:
@@ -344,7 +361,9 @@ Rule 2 — Three Mandatory Service Agents (ALWAYS invoke):
   (task-pattern → route) entry to ~/.claude/memory/delegator-cache.md.
   Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
 - **Curator**: spawn before any investigation, decision, or delegating with project context.
-  Skip when: the exact decision is already present VERBATIM in the current spawn prompt.
+  Skip when: the exact decision is already present VERBATIM in the current spawn prompt. "Approximately covered" is NOT sufficient.
+  After deciding to skip (context-sufficiency): emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency","skip_reason_excerpt":"<1-line reason agent judged context sufficient>"}'`. (F17: skip_reason_excerpt enables audit of over-skipping.)
+  After spawning: emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`.
   Agent({ subagent_type: "curator", model: "sonnet", description: "Curator — {topic}", prompt: "Project: {slug}\nPath: {path}\nQuestion: {q}" })
 - **codebase-search**: spawn INSTEAD of running find/grep/rg across the project.
   Agent({ subagent_type: "codebase-search", model: "sonnet", description: "codebase-search — {what}", prompt: "Find {what} in {path}" })
