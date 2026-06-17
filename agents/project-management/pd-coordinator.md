@@ -174,9 +174,16 @@ RESPAWN to start the deployment phase with a clean context window. Planning phas
          WAIT FOR all wave Coords to complete (ACKed or NACKed)
          Update global budget count
 
-     # Event contract: emit coord_fanout after spawning each layer's wave
+     # Event contract: emit coord_fanout after spawning each layer's wave (F14: include task_type)
+     # task_type: "single_domain" if width=1 AND all tasks are single-domain L3s;
+     #            "multi_domain" if width>1 OR tasks span multiple L3 domains;
+     #            "unknown" if decomposition metadata is unavailable.
+     # This field distinguishes valid serial work (single-domain, width=1) from
+     # decomposition drift (multi-domain work incorrectly serialized).
+     TASK_TYPE="unknown"
+     if [ "${#tasks_in_layer[@]}" -eq 1 ]; then TASK_TYPE="single_domain"; else TASK_TYPE="multi_domain"; fi
      bash ~/.claude/memory/metrics/emit-metric.sh \
-       '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"coord_fanout","width":'"${#tasks_in_layer[@]}"',"layer":'"$L"'}'
+       '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"coord_fanout","width":'"${#tasks_in_layer[@]}"',"layer":'"$L"',"task_type":"'"$TASK_TYPE"'"}'
 
      WAIT FOR all layer Coords to complete
      Update dev-plan.md: mark completed tasks status=done
@@ -230,7 +237,20 @@ RESPAWN to start the deployment phase with a clean context window. Planning phas
           → Re-run Phase B only (not Phase A — per-L3 QA was already clean)
           → Must pass before reporting to root
 
-8. Send final digest to "root" via SendMessage (root session routes to Tekki):
+8. **LS-PROOF GATE (F11 — MANDATORY before sending final digest):**
+   Before composing the final digest message, for EVERY file deliverable claimed
+   this session (HTML reports, QA digests, plan files, anything in outputs/, plans/,
+   or reports/), run:
+   ```bash
+   ls -la {full-absolute-path}
+   wc -l {full-absolute-path}
+   ```
+   Paste the `ls -la` and `wc -l` output into the digest. If any claimed file is
+   missing OR has size 0, DO NOT mark that item as DONE — mark it BLOCKED and
+   escalate. A claim without ls-proof is fabrication. This gate is not advisory;
+   it is a hard precondition for the DONE state at this lifecycle step.
+
+   Send final digest to "root" via SendMessage (root session routes to Tekki):
    PD-{slug}: ALL L3s COMPLETE + QA GATE COMPLETE
    Overall Health: {0-100}
    Per-L3 scores: {Coord-A: 85, Coord-B: 62, ...}
@@ -238,6 +258,8 @@ RESPAWN to start the deployment phase with a clean context window. Planning phas
    Open CRITICAL/HIGH: {list or "none"}
    Full QA Digest: {project}/memory/qa/qa-report-final-{timestamp}.md
    Status Log: {project}/memory/agents/pd-status-live.md (append-only, read on demand)
+   Deliverable Proof (ls -la output for each claimed file — REQUIRED):
+   {paste ls -la output here}
    Awaiting root ACK/NACK...
 
 9. WAIT FOR root ACK/NACK — do not stop until root replies:
@@ -321,6 +343,12 @@ If the action type is one of these, proceed immediately + run mechanical verifie
    - `auto_ack`: proceed, run mechanical verifier, log result to events.jsonl
    - `agent_gated`: spawn critique agents, require pass verdict before proceeding
    - `tekki_gated`: STOP. Send escalation to root. Do NOT execute until Tekki ACKs.
+3a. **Emit `tier_checked` event (F16 — MANDATORY after every gate evaluation):**
+   ```bash
+   bash ~/.claude/memory/metrics/emit-metric.sh \
+     '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_checked","action_type":"<action_type>","tier":"<auto_ack|agent_gated|tekki_gated>","outcome":"<proceed|block|escalate>"}'
+   ```
+   Fire-and-forget. Emit even on fast-path auto_ack. Outcome values: `proceed` (auto_ack), `block` (tekki_gated stops execution), `escalate` (agent_gated spawns critique agents).
 4. NEVER self-promote a tier. Tier promotion requires 50+ logged instances at pass_k ≥ 0.95 AND explicit Tekki ACK. No exceptions.
 5. If action type not in the config: default to `tekki_gated`.
 
@@ -539,16 +567,18 @@ Rule 2 — Three Mandatory Service Agents (ALWAYS invoke):
 - **Delegator**: spawn before spawning ANY agent (except Curator/codebase-search).
   FIRST: check ~/.claude/memory/delegator-cache.md for an exact task-pattern match
   (exact string only — no fuzzy matching). Cache hit = skip Delegator, log the cache
-  hit in your spawn record, and emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_cache_hit","route":"<route>","project":"<slug>"}'`.
+  hit in your spawn record, and emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_cache_hit","route":"<route>","project":"<slug>","matched_pattern":"<first-8-words-of-matched-cache-key>"}'`.
   Cache miss = spawn Delegator as normal. After Delegator returns: (a) append the
   (task-pattern → route) entry to ~/.claude/memory/delegator-cache.md (exact string only),
-  and (b) emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_spawn","route":"<route>","project":"<slug>"}'`. Both emits are fire-and-forget.
+  and (b) emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_spawn","route":"<route>","project":"<slug>","miss_pattern":"<first-8-words-of-task-pattern-that-missed>"}'`. Both emits are fire-and-forget.
+  (F15: matched_pattern/miss_pattern fields are diagnostic — which cache entries are actually being used.)
   Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
 - **Curator**: spawn before any investigation, decision, or delegating with project context.
   Skip when: the exact decision or convention needed is already present VERBATIM in the
   current spawn prompt. "Approximately covered" is NOT sufficient. If any doubt, spawn Curator.
-  After deciding to skip (context-sufficiency): emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency"}'`.
+  After deciding to skip (context-sufficiency): emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency","skip_reason_excerpt":"<1-line reason agent judged context sufficient>"}'`.
   After spawning: emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`. Both fire-and-forget.
+  (F17: skip_reason_excerpt enables audit of over-skipping — include what specific info in the prompt made Curator unnecessary.)
   Agent({ subagent_type: "curator", model: "sonnet", description: "Curator — {topic}", prompt: "Project: {slug}\nPath: {path}\nQuestion: {q}" })
 - **codebase-search**: spawn INSTEAD of running find/grep/rg across the project
   Agent({ subagent_type: "codebase-search", model: "sonnet", description: "codebase-search — {what}", prompt: "Find {what} in {path}" })
