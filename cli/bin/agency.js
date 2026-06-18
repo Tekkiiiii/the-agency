@@ -11,15 +11,17 @@ const os = require('os');
 const AGENCY_ROOT = process.env.AGENCY_HOME || resolve(os.homedir(), '.claude');
 
 const COMMANDS = {
-  init:    () => require('../commands/init.js'),
-  new:     () => require('../commands/new.js'),
-  onboard: () => require('../commands/onboard.js'),
-  setup:   () => require('../commands/onboard.js'),
-  status:  () => require('../commands/status.js'),
-  skill:   () => require('../commands/skill.js'),
-  tasks:   () => require('../commands/tasks.js'),
-  upgrade: () => require('../commands/upgrade.js'),
-  tier:    () => require('../commands/tier.js'),
+  init:      () => require('../commands/init.js'),
+  new:       () => require('../commands/new.js'),
+  onboard:   () => require('../commands/onboard.js'),
+  setup:     () => require('../commands/onboard.js'),
+  status:    () => require('../commands/status.js'),
+  skill:     () => require('../commands/skill.js'),
+  tasks:     () => require('../commands/tasks.js'),
+  upgrade:   () => require('../commands/upgrade.js'),
+  tier:      () => require('../commands/tier.js'),
+  initiate:  () => require('../commands/bootstrap.js'),
+  bootstrap: () => require('../commands/bootstrap.js'),
 };
 
 async function main() {
@@ -30,6 +32,8 @@ async function main() {
     console.log('');
     console.log('Commands:');
     console.log('  agency init                         Install skills, agents, core docs, task store, and CLI link');
+    console.log('  agency initiate                     Install tool deps + register MCP servers + auth checklist (run after init)');
+    console.log('                                        Flags: --upgrade (force reinstall), --dry-run (preview only)');
     console.log('  agency onboard                      Guided introduction — creates first project + agent (run after init)');
     console.log('  agency new <proj> <desc>            Create a project');
     console.log('  agency status                       Show project states');

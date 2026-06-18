@@ -99,6 +99,7 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
 
   console.log(`\n✓ The Agency is ready — ${skillsDest}\n`);
   console.log('Next steps:');
+  console.log('  agency initiate                           Install tool deps + register MCP servers');
   console.log('  agency onboard                            Guided introduction');
   console.log('  agency new <project-slug> "<description>"  Create your first project');
   console.log('  agency status                             Show all projects');
