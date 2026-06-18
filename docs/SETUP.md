@@ -120,6 +120,29 @@ bash ~/.claude/scripts/setup-graphify.sh --upgrade   # also bumps graphifyy to l
 After running, restart your Claude Code session. Graph data populates automatically via
 `/save-state` Step 11b (per-project graph build + merge into unified).
 
+## 10. Bootstrap a new machine (optional)
+
+For full machine setup — all uv tools, CLI tools, and MCP servers in one pass:
+
+```bash
+bash ~/.claude/scripts/bootstrap-machine.sh
+```
+
+This covers three layers:
+
+- **Layer 1 (uv tools):** graphifyy, notebooklm-mcp-cli, blue, browser-harness, nano-pdf
+- **Layer 2 (CLI tools):** gws, lightpanda, markitdown, hermes
+- **Layer 3 (MCP servers):** graphify, notebooklm-mcp, railway-mcp-server, stitch
+
+All registered with `-s user` scope so they load from any working directory.
+
+Pass `--upgrade` to also upgrade installed tools. Pass `--dry-run` to preview
+without making changes.
+
+After running, complete the **manual auth checklist** printed at the end of the
+script (nlm login, gws auth login, railway login — these require OAuth flows that
+cannot be scripted).
+
 ## What you get
 
 ```
