@@ -21,7 +21,7 @@ set -euo pipefail
 
 UPGRADE=0
 DRY_RUN=0
-for arg in "${@}"; do
+for arg in "$@"; do
   case "$arg" in
     --upgrade)  UPGRADE=1 ;;
     --dry-run)  DRY_RUN=1 ;;
