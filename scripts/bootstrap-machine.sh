@@ -97,8 +97,11 @@ uv_install() {
     fi
   else
     say "Installing ${pkg} (entrypoint: ${entry})..."
-    run "uv install ${pkg}" uv tool install "$pkg"
-    ok "${pkg} installed"
+    if run "uv install ${pkg}" uv tool install "$pkg"; then
+      ok "${pkg} installed"
+    else
+      warn "${pkg} install failed (non-fatal) — package may be unpublished or renamed; skipping"
+    fi
   fi
 }
 
@@ -113,8 +116,11 @@ uv_install "notebooklm-mcp-cli" "notebooklm-mcp"
 # blue — Python formatter
 uv_install "blue" "blue"
 
-# browser-harness — browser automation harness
-uv_install "browser-harness" "browser-harness"
+# browser-harness — NOT installed: Tekki-local editable package (~/Developer/browser-harness),
+# not published to PyPI. The public `browser-harness` on PyPI is an unrelated empty package
+# (v0.0.1, no executables) and `uv tool install` fails on it. If you need browser-harness,
+# obtain the source repo and run: uv tool install --editable <path-to-browser-harness>.
+# Skipped here to keep the bootstrap portable.
 
 # nano-pdf — lightweight PDF utility
 uv_install "nano-pdf" "nano-pdf"
@@ -189,15 +195,8 @@ else
 fi
 
 # ── dia-tts ───────────────────────────────────────────────────────────────────
-# Install method UNCLEAR. The binary at ~/.local/bin/dia-tts is a Python wrapper
-# pointing to ~/.local/share/uv/tools/dia-tts/ but 'dia-tts' does not appear in
-# 'uv tool list'. Could be a manual/custom install or a non-standard package name.
-# DO NOT guess the install command. Listed in manual checklist below.
-if command -v dia-tts >/dev/null 2>&1; then
-  skip "dia-tts already installed"
-else
-  warn "dia-tts: install method unclear — see manual checklist below"
-fi
+# INTENTIONALLY NOT INSTALLED — dia-tts is unusable (Tekki, 2026-06-18). Excluded
+# from bootstrap. Do not re-add.
 
 echo ""
 
@@ -334,12 +333,6 @@ MANUAL AUTH CHECKLIST — cannot be scripted; do these by hand after bootstrap
        Edit ~/.hermes/config.yaml — set provider, model, and API key.
        Then run: hermes login  (if applicable for your provider)
 
-  □  dia-tts install
-       Install method unclear (wrapper at ~/.local/bin/dia-tts points to
-       ~/.local/share/uv/tools/dia-tts/ but package is not in 'uv tool list').
-       Manual step: identify the correct package name and install method,
-       or copy ~/.local/share/uv/tools/dia-tts/ from an existing machine.
-
 ────────────────────────────────────────────────────────────────────────────────
 Restart your Claude Code session after bootstrap so all MCP servers load.
 ────────────────────────────────────────────────────────────────────────────────
@@ -364,13 +357,7 @@ Restart your Claude Code session after bootstrap so all MCP servers load.
        # Requires: ffmpeg (brew install ffmpeg)
        # Optional: ELEVENLABS_API_KEY in .env for speaker diarization
 
-  □  omnivoice-studio (zero-shot TTS + voice cloning, ~2GB with model weights)
-       git clone https://github.com/debpalash/OmniVoice-Studio ~/.agents/skills/omnivoice-studio
-       cd ~/.agents/skills/omnivoice-studio
-       uv sync   # or: pip install -e .
-       # Then register the MCP server in ~/.claude/settings.json:
-       # See ~/.claude/skills/omnivoice-studio/SKILL.md for MCP registration JSON
-       # Start/stop backend: ~/.agents/skills/omnivoice-studio/bin/omnivoicectl up|down
+  (omnivoice-studio + dia-tts intentionally excluded — unusable, Tekki 2026-06-18)
 
 ────────────────────────────────────────────────────────────────────────────────
 
