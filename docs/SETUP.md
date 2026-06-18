@@ -93,6 +93,33 @@ touch ~/.claude/agency-rooms/project-oversight/context/rolling.md
 Create a room for each active project and department as needed. See `docs/ROOMS.md`
 for the full directory structure and setup instructions.
 
+## 9. Enable graphify knowledge-graph MCP (optional)
+
+graphify builds a per-project knowledge graph that the Curator agent queries for project context.
+It is optional but strongly recommended — without it, Curator falls back to raw file reads.
+
+```bash
+bash ~/.claude/scripts/setup-graphify.sh
+```
+
+Or, if you cloned the-agency to `~/.claude/`:
+
+```bash
+bash ~/.claude/scripts/setup-graphify.sh
+```
+
+**Package name gotcha:** the PyPI package is `graphifyy` (double-y). `uv tool install graphify`
+(single-y) fails silently. The script handles this correctly — do not install manually.
+
+The script is idempotent — safe to run again after upgrades:
+
+```bash
+bash ~/.claude/scripts/setup-graphify.sh --upgrade   # also bumps graphifyy to latest
+```
+
+After running, restart your Claude Code session. Graph data populates automatically via
+`/save-state` Step 11b (per-project graph build + merge into unified).
+
 ## What you get
 
 ```
