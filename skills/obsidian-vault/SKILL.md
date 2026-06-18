@@ -134,3 +134,42 @@ The vault also serves as the destination for medium-term memory eviction. When m
 - **Vault is source of truth for long-term memory** — vault overview and decisions-log capture context that should persist across sessions. `PROJECT.md` is the session-start snapshot.
 - **Vault sync on demand** — after updating `PROJECT.md`, sync to vault overview only at end of day or on explicit user request
 - **Never store secrets** — credentials and keys never enter the vault under any circumstance
+
+---
+
+## Integration: Understand-Anything → Obsidian Vault
+
+**Combined workflow for code comprehension + persistent vault notes:**
+
+1. Run `/understand <project-path>` to produce `.understand-anything/knowledge-graph.json`
+2. Convert to Obsidian notes:
+   ```bash
+   node ~/.claude/tools/understand-anything/integrations/to-obsidian.mjs \
+     <project-path>/.understand-anything/knowledge-graph.json \
+     --slug <project-slug>
+   ```
+3. Notes land in `~/Documents/Obsidian Vault/Codebases/{slug}/`:
+   - `index.md` — hub note with project overview and links to sections
+   - `architecture.md` — layer structure and high-complexity nodes
+   - `modules.md` — files, functions, classes, modules
+   - `infrastructure.md` — services, endpoints, config, schema
+   - `domains.md` — business domains, flows, process steps (from /understand-domain)
+   - `knowledge.md` — articles, entities, topics, claims (from /understand-knowledge)
+
+**Galaxy graph rules respected:**
+- Max 12 `[[wikilinks]]` per note (prevents mesh-link explosion in graph view)
+- Hub-and-spoke topology: index.md is the hub, section files are spokes
+- Each section file links back to `[[{slug}/index]]`
+
+**Dry-run first:**
+```bash
+node ~/.claude/tools/understand-anything/integrations/to-obsidian.mjs \
+  .understand-anything/knowledge-graph.json --slug myproject --dry-run
+```
+
+**Glue script:** `~/.claude/tools/understand-anything/integrations/to-obsidian.mjs`
+- Input: `knowledge-graph.json` from understand-anything
+- Output: Obsidian-formatted markdown notes with frontmatter + wikilinks
+
+See also: `~/.claude/skills/understand/SKILL.md` for the understand-anything base skill.
+See also: `~/.claude/memory/obsidian.md` for vault access conventions.

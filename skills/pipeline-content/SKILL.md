@@ -156,30 +156,12 @@ The content-polish skill orchestrates three passes in sequence:
 2. **Anti-fragmentation pass** — catches over-fragmentation, restores connective tissue, preserves parallelism
 3. **Proofreader** (post-humanizer mode) — catches typos, grammar, lost specifics, broken flow
 
-This stage is MANDATORY per the Marketing→CCO content pipeline. Never skip.
+This stage is MANDATORY per CLAUDE.md rules. Never skip.
 
 **Gate:** Content-polish delivers a final "Version C" that passes:
 - Humanizer's two-pass self-audit (30 AI-pattern categories)
 - Anti-fragmentation check (no 3-short-sentences-in-a-row)
 - Proofreader's format-calibrated review (spelling, grammar, clarity, flow)
-
----
-
-## Stage 5.5: QUALITY GATE
-
-Invoke `/quality-loop-router` with:
-- `task_type`: infer from content type — `content` for most, `content-web` for blog/landing pages
-- `pipeline_context`: "pipeline-content — internal Claude run" (Mode A) OR if Canva/Figma/NotebookLM were used, list them (Mode B)
-- `artifact`: the Stage 5 polished content
-
-This is MANDATORY. It runs after Polish and before Knowledge capture.
-
-The quality-loop-router will:
-- Ask for threshold (default avg >= 85, none below 75)
-- Run critique-content + critique-marketing (+ critique-seo if `content-web`)
-- Loop up to 3 rounds applying fixes (Mode A) OR produce a fix plan for approval (Mode B)
-
-Update tracker: add row `| 5.5 | QUALITY GATE | quality-loop-router | {PASS/MODE_B_APPROVED} | {score} | {rounds or "fix plan approved"} |`
 
 ---
 

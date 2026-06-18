@@ -315,6 +315,61 @@ skill-quality/results/[name]-quality-results.json — written
 
 ---
 
+## Common Rationalizations (Anti-Rationalization Table)
+
+Every SKILL.md template should include a "Common Rationalizations" section. This is a first-class part of the skill definition — not an afterthought. Include it between the process steps and the Red Flags section.
+
+**Why it matters:** Agents (and humans) rationalize skipping skills under pressure. Naming the rationalizations explicitly prevents them from succeeding silently.
+
+**Format:**
+
+```markdown
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "This task is too small for this skill" | [counter-argument] |
+| "I'll skip this step just this once" | [what that actually costs] |
+| "We don't have time for this" | [what the time actually buys] |
+| "[specific domain rationalization]" | [specific counter] |
+```
+
+**Rules for the table:**
+- 4–8 rows (not fewer than 4; more than 8 dilutes signal)
+- Every rationalization must be a phrase someone would actually say or think — not abstract
+- Every reality must be concrete: name the cost, the failure mode, or the specific thing that goes wrong
+- Include at least one domain-specific rationalization (not just generic ones)
+- Write rationalizations as quotes — they sound like something a developer says
+
+When creating or enhancing a skill, if the input skill lacks a Common Rationalizations section, add one as part of the AI enhancement pass (level 2+).
+
+---
+
+## Simplify-Ignore Pattern (Locked-Section Protection)
+
+When a skill or document contains sections that must not be modified by agents or automated tools — architecture contracts, no-touch zones, signed-off decisions — use the simplify-ignore pattern to protect them.
+
+The pattern: mark locked sections with a content-hash placeholder so automated tools skip them while humans can still read the original content.
+
+**When to apply this pattern in skill context:**
+- A SKILL.md contains an "Integration Contracts" or "No-Touch Zones" section that Coords must not modify
+- A project memory file contains a decision that is "locked" per decisions.md
+- A configuration section is under change control
+
+**Implementation approach (instruction-level, no hook required):**
+Add this to the "Key Rules" section of any skill whose output includes locked content:
+
+```
+**Locked-section rule:** If this skill's output includes sections marked `<!-- LOCKED: [reason] -->`,
+treat those sections as read-only. Do not modify, reformat, or simplify content between
+`<!-- LOCKED-START -->` and `<!-- LOCKED-END -->` markers. Surface locked section presence to the
+user before making any edits that could affect surrounding content.
+```
+
+**Do NOT implement this as a hook.** Hook implementation requires infrastructure management. Use HTML comment markers + instruction-level guidance in the skill that produces the output.
+
+---
+
 ## Skill Learnings Convention
 
 Every new skill should support the **staging → distill → promote** feedback model:

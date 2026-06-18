@@ -6,7 +6,6 @@ description: >
   but scoped entirely to ~/.claude/tasks/inbox/ (no project memory files). Trigger
   when the session ends with inbox tasks in progress, when switching focus away from
   inbox work, or when the user says "wrap up" or "wrap" for non-project tasks.
----
 
 # Wrap — Inbox Task Session Freeze
 

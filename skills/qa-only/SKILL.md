@@ -1146,3 +1146,63 @@ already knows. A good test: would this insight save time in a future session? If
 
 11. **Never fix bugs.** Find and document only. Do not read source code, edit files, or suggest fixes in the report. Your job is to report what's broken, not to fix it. Use `/qa` for the test-fix-verify loop.
 12. **No test framework detected?** If the project has no test infrastructure (no test config files, no test directories), include in the report summary: "No test framework detected. Run `/qa` to bootstrap one and enable regression test generation."
+
+---
+
+## QA Verdict JSON (MANDATORY — write alongside every full report)
+
+After writing the full QA report, write a compact verdict JSON to enable context-efficient QA gate decisions by Coord and PD agents. The full report stays on disk for human review; the verdict JSON is what agents read.
+
+Write to: `{project}/memory/qa/qa-verdict-{timestamp}.json`
+
+Where `{timestamp}` matches the timestamp used in the full report filename.
+
+```json
+{
+  "health": {integer 0-100},
+  "critical": {integer count of CRITICAL issues},
+  "high": {integer count of HIGH issues},
+  "verdict": "PASS" | "FAIL",
+  "failure_class": "tool-execution" | "data-grounding" | "reasoning" | "none",
+  "top_issue": "{highest severity issue one-liner, or null if no issues}",
+  "full_report": "{absolute path to the full QA report .md file}"
+}
+```
+
+**Verdict rule:**
+- `verdict: "PASS"` if health >= 70 AND critical == 0
+- `verdict: "FAIL"` otherwise
+
+**`failure_class` rule** (collapse Toloka 12-type taxonomy to 3 categories):
+- `"tool-execution"` — agent failed to use a tool correctly, API error, file not found, permission denied, hook failure (~40% of observed failures)
+- `"data-grounding"` — agent acted on stale/missing/wrong data, hallucinated a file path, used wrong context (~35% of observed failures)
+- `"reasoning"` — agent reasoning error: wrong plan, missed edge case, misunderstood task scope (~25% of observed failures)
+- `"none"` — no failure; verdict is PASS
+
+Set `failure_class` based on the dominant failure mode of the top issue.
+If multiple issues exist, use the class of the highest-severity issue.
+If `verdict: "PASS"`, always set `failure_class: "none"`.
+
+**Emit to events.jsonl** after writing the verdict JSON (fire-and-forget):
+```bash
+bash ~/.claude/memory/metrics/emit-metric.sh \
+  '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"qa_verdict","verdict":"VERDICT","failure_class":"FAILURE_CLASS","health":HEALTH,"project":"PROJECT_SLUG"}'
+```
+Replace VERDICT, FAILURE_CLASS, HEALTH, PROJECT_SLUG with actual values.
+
+**`top_issue`:** The single most severe issue in one line. Format: `"[CRITICAL|HIGH|MED] {issue title}"`. Set to `null` if no issues found.
+
+**Example:**
+```json
+{
+  "health": 82,
+  "critical": 0,
+  "high": 1,
+  "verdict": "PASS",
+  "failure_class": "none",
+  "top_issue": "[HIGH] Button contrast below AA on mobile",
+  "full_report": "/Users/Tekki/.claude/projects/myproject/memory/qa/qa-report-final-2026-06-04-1430.md"
+}
+```
+
+Write the verdict JSON AFTER the full report is complete. Both files must exist before the QA lifecycle ends.

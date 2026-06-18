@@ -27,7 +27,8 @@ Read `~/.claude/teams/agency-council/config.json`. Extract member names that end
 For each PD, derive their project directory:
 ```
 ~/.claude/projects/{project-name}/   (most PDs)
-~/Projects/{project-name}/memory/     (alternate locations)
+~/Projects/{project-name}/memory/     (ltv)
+~/projects/{project-name}/memory/     (website-pitch, sightsee)
 ```
 
 If a PD has no known project, skip them.
@@ -55,7 +56,7 @@ Include your PD name at the start of your response.
 Send your response via SendMessage to "team-lead".
 
 Example response format:
-{project}-pd: BLOCKED — auth needed from the operator; workaround is local dev
+amanicrm-pd: BLOCKED — Railway auth needed from Tekki; workaround is local dev
 ```
 
 **Subagent config:**
@@ -116,10 +117,11 @@ PD Standard Protocol from `/pd-resume`.
 
 | PD | Project Directory |
 |---|---|
-| {project-a}-pd | `{project-a-directory}` |
-| {project-b}-pd | `{project-b-directory}` |
-
-(Populate from your medium-term.md — the SSOT for project paths.)
+| marketsenseapp-pd | `~/.claude/projects/MarketSenseApp/` |
+| amanicrm-pd | `~/.claude/projects/amani-crm/` |
+| ltv-pd | `~/Projects/ltv/` |
+| website-pitch-pd | `~/projects/website-pitch-webmoi/` |
+| research-pd | `~/.claude/projects/research/` |
 
 If a project directory doesn't exist, skip that PD silently.
 

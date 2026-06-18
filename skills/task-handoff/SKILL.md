@@ -2,7 +2,6 @@
 name: task-handoff
 description: >
   Tier-A structured agent handoff protocol — no new infrastructure required, just discipline with the shared task store as the single coordination layer. When Agent A completes work that unblocks Agent B, Agent A writes outcome and next steps to the task store, creates Agent B's task, marks its own done, and moves on. Conversation context is not a handoff mechanism. Trigger when: an agent finishes a task and needs to unblock a downstream agent; you need to pass work between agents in a multi-step pipeline; you are setting up a multi-agent workflow and want to define explicit ownership boundaries; the user asks how to hand off work between agents. Key capabilities: the task store is the only source of truth (not memory, not chat history); blocked status is a hard gate that prevents work from starting; handoff is explicit and auditable (each agent writes before spawning the next); failure propagates upward if a downstream agent exhausts retries. Also for: establishing team conventions for how agents should communicate before Tier-B (file-based FIFO queue) is introduced; auditing a pipeline to see where work actually stalled; setting up governance gates between phases (e.g. design → dev → QA → ship). Ideal for any multi-agent workflow where one agent's output feeds into another agent's input.
----
 
 Tier-A structured agent handoff — no new infrastructure, just discipline with the task store. The task store is the coordination layer; conversation context is not.
 

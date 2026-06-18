@@ -51,6 +51,23 @@ firecrawl scrape "https://example.com/pricing" --query "What is the enterprise p
 - **Always quote URLs** — `?` and `&` are shell special characters.
 - Naming convention: `.firecrawl/{site}-{path}.md`
 
+## Session Fetch Cache (ETag/304 Revalidation)
+
+When scraping the same URL repeatedly within a session or across sessions, use HTTP conditional requests to avoid re-fetching unchanged content. This saves Firecrawl credits and reduces latency.
+
+**How it works:**
+1. On first scrape, capture the `ETag` or `Last-Modified` response header and save it alongside the output file
+2. On subsequent scrapes, send `If-None-Match: <etag>` or `If-Modified-Since: <date>` in the request
+3. If the server returns HTTP 304 Not Modified, the cached file is still valid — skip the scrape, use what is on disk
+
+**Practical guidance:**
+- Save the ETag alongside the scraped content: `page.md` + `page.md.etag`
+- Before scraping, check if `page.md.etag` exists and pass its value via `--header "If-None-Match: <etag>"` to firecrawl
+- Treat a 304 response as a cache hit — no new content, no new credits consumed
+- Not all servers send ETags. If absent, fall back to `Last-Modified` header, or full scrape
+
+**When to use:** Any research workflow that revisits the same documentation URLs, pricing pages, or reference pages in multiple sessions. Especially valuable for `/auto-researcher` workflows that check the same sources repeatedly.
+
 ## Related Skills
 
 - `firecrawl-search` — find pages when you don't have a URL

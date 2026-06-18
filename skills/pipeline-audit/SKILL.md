@@ -159,19 +159,6 @@ Scope: {scope}
 
 ---
 
-## Stage 4.5: QUALITY GATE (audit report)
-
-Invoke `/quality-loop-router` with:
-- `task_type`: `report`
-- `pipeline_context`: "pipeline-audit — internal Claude run" (Mode A)
-- `artifact`: the Stage 4 audit report
-
-This ensures the audit report itself is clear, well-structured, and accurately represents the findings before delivery.
-
-Update tracker: add row `| 4.5 | QUALITY GATE | quality-loop-router | {PASS} | {score} | — |`
-
----
-
 ## Final Pipeline Report
 
 ```markdown

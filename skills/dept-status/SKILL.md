@@ -1,94 +1,72 @@
 ---
 name: dept-status
-description: >
-  Quick department status check. Reads dept-state.md and active-coords.md,
-  returns a compact digest. No subagents, no side effects. Invoke as
-  /dept-status [dept-slug] or /dept-status all.
+description: Read-only department status digest. No spawns. Shows active coords, pipelines, open issues, and incoming tasks.
+category: dept-ops
+version: 1.0.0
 ---
 
-# /dept-status
+# dept-status
 
-Read-only status check. Reads state files directly, outputs a compact digest.
-No subagents, no writes, no spawns.
+Read-only status check for a department. Reads `dept-state.md` and optionally `active-coords.md`. No agents spawned, no files written.
 
-## Department Registry
-
-| Slug | Path | Abbr |
-|------|------|------|
-| career | {agency-root}/agents/career | car |
-| content-creation | {agency-root}/agents/content-creation | cc |
-| design | {agency-root}/agents/design | des |
-| engineering | {agency-root}/agents/engineering | eng |
-| game-development | {agency-root}/agents/game-development | gd |
-| marketing | {agency-root}/agents/marketing | mkt |
-| operations | {agency-root}/agents/operations | ops |
-| paid-media | {agency-root}/agents/paid-media | pm |
-| product | {agency-root}/agents/product | prd |
-| project-management | {agency-root}/agents/project-management | prj |
-| sales | {agency-root}/agents/sales | sal |
-| spatial-computing | {agency-root}/agents/spatial-computing | spa |
-| specialized | {agency-root}/agents/specialized | spc |
-| testing | {agency-root}/agents/testing | tst |
-
-Replace `{agency-root}` with `~/.claude` after installation.
-
-## Argument Resolution
-
-| Argument | Action |
-|---|---|
-| `all` | Status for all departments |
-| `[dept-slug]` | Status for one department |
-| no arg | Fail: "Pass a dept slug or 'all'" |
-
-## Step 1 — Read State
-
-For each target department, read in parallel:
-1. `{dept-path}/state/dept-state.md`
-2. `{dept-path}/state/active-coords.md` (last 10 lines only)
-3. `{dept-path}/scratch/dept-scratch.md` (if exists — means a session is active)
-
-## Step 2 — Output Digest
-
-**Single department format:**
+## Usage
 
 ```
-═══ {DEPARTMENT NAME} ({abbr}) ═══
-Lead: {lead name}
-Updated: {timestamp from dept-state}
-Active Pipelines: {list or "none"}
-Active Coords: {list with state or "none"}
-Open Issues: {list or "none"}
-Member Alerts: {list or "none"}
-Next Focus: {value}
-Blockers: {value}
-Session Active: {yes if dept-scratch.md exists, no otherwise}
-═══════════════════════════════════
+/dept-status [dept-slug]
+/dept-status content-creation
+/dept-status all
 ```
 
-**All departments format (compact table):**
+## What It Reads
+
+1. `~/.agency/agents/{dept}/state/dept-state.md` — primary snapshot
+2. `~/.agency/agents/{dept}/state/active-coords.md` — if `active-coords` field is non-empty
+3. `~/.agency/agents/{dept}/state/incoming/` — file count only (no content)
+
+## Output Format
 
 ```
-DEPARTMENT STATUS — {date}
+DEPT STATUS — {dept}
+Head: {head-agent-name}
+Last updated: {YYYY-MM-DD HH:MM}
 
-| Dept | Lead | Pipelines | Coords | Issues | Blockers | Session |
-|------|------|-----------|--------|--------|----------|---------|
-| cc | CCO | 1 active | none | none | none | no |
-| eng | Backend Architect | none | DC-eng-review | none | none | yes |
+Priority: {current-priority}
+Active coords: {n — DC names or "none"}
+Active pipelines: {pipeline names or "none"}
+Open issues: {issue slugs or "none"}
+Blocked on: {description or "none"}
+Incoming tasks: {n pending or "none"}
+
+Notes: {notes field from dept-state}
+```
+
+If `active-coords.md` exists and was read:
+```
+Coord detail:
+  DC-{name} | {D3 track} | {State} | since {HH:MM}
+  ...
+```
+
+## Multi-Dept (all)
+
+When called with `all`, reads all departments listed in `ORG.md` and outputs a summary table:
+
+```
+DEPT STATUS — ALL
+| Dept | Priority | Coords | Issues | Incoming |
+|---|---|---|---|---|
+| content-creation | ... | 2 | 0 | 1 |
+| engineering | ... | 0 | 1 | 0 |
 ...
-
-Legend: Session = dept head scratch file exists (active session)
 ```
 
-## Step 3 — Flag Attention Items
+## Notes
 
-After the digest, if any department has:
-- `blockers` not "none" → flag with warning
-- `open-issues` not "none" → flag with note
-- Active coords in BLOCKED state → flag with warning
-- Updated more than 7 days ago → flag as stale
+- This skill never spawns agents — it's a read-only diagnostic tool
+- Use `/dept-resume` to start a dept head session
+- Use `/dept-save-state` to persist state at session end
 
-```
-ATTENTION:
-- {dept}: BLOCKED — {blocker description}
-- {dept}: STALE — last updated {date}
-```
+## References
+
+- dept-state.md format: `core/runbooks/dept-boot-sequence.md`
+- Parallel: `/pd-status` for project status, `/swarm` for full portfolio check

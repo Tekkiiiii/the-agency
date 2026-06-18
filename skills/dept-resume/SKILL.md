@@ -1,105 +1,82 @@
 ---
 name: dept-resume
-description: >
-  Resume department head sessions with minimal context overhead. Reads dept-state.md
-  directly (no subagents), spawns dept heads with lean briefings. Invoke as
-  /dept-resume all or /dept-resume [dept-slug]. Optimized for context window
-  efficiency: no recall subagents, no temp files.
+description: Read dept-state.md and spawn a Dept Head with a lean briefing. Department-operations parallel of /pd-resume.
+category: dept-ops
+version: 1.0.0
 ---
 
-# /dept-resume
+# dept-resume
 
-Fully autonomous. Reads dept state directly, spawns dept heads with pre-digested briefings.
+Spawns a Dept Head agent for the given department with a pre-built briefing from `dept-state.md`. Lean context, fast start.
 
-**Context budget principle:** dept-save-state does the synthesis at write-time so
-dept-resume pays near-zero at read-time. Every token in the dept head spawn prompt
-must earn its place. Target: ~400 tokens per spawn.
+## Usage
 
-## Department Registry
-
-| Slug | Path | Lead Agent | Agent Definition |
-|------|------|-----------|-----------------|
-| career | {agency-root}/agents/career | Pipeline Strategist (acting) | career-lead.md |
-| content-creation | {agency-root}/agents/content-creation | Chief Content Officer | content-creation-lead.md |
-| design | {agency-root}/agents/design | Brand Guardian | design-brand-guardian.md |
-| engineering | {agency-root}/agents/engineering | Backend Architect | engineering-lead.md |
-| game-development | {agency-root}/agents/game-development | Game Designer | game-development-lead.md |
-| marketing | {agency-root}/agents/marketing | Growth Hacker | marketing-lead.md |
-| operations | {agency-root}/agents/operations | Infrastructure Maintainer | operations-lead.md |
-| paid-media | {agency-root}/agents/paid-media | PPC Campaign Strategist | paid-media-lead.md |
-| product | {agency-root}/agents/product | Sprint Prioritizer | product-lead.md |
-| project-management | {agency-root}/agents/project-management | Studio Producer | project-management-lead.md |
-| sales | {agency-root}/agents/sales | Sales Coach | sales-lead.md |
-| spatial-computing | {agency-root}/agents/spatial-computing | XR Interface Architect | spatial-computing-lead.md |
-| specialized | {agency-root}/agents/specialized | Agents Orchestrator | specialized-lead.md |
-| testing | {agency-root}/agents/testing | Reality Checker | testing-lead.md |
-
-Replace `{agency-root}` with `~/.claude` after installation.
+```
+/dept-resume [dept-slug]
+/dept-resume content-creation
+/dept-resume engineering
+/dept-resume all
+```
 
 ## Argument Resolution
 
 | Argument | Action |
 |---|---|
-| `all` | Resume all departments in parallel |
-| `[dept-slug]` | Resume one department |
-| comma-separated | Resume listed departments |
-| no arg | Fail: "Pass a dept slug, comma-separated slugs, or 'all'" |
+| `[dept-slug]` | Resume exactly one department |
+| `all` | Resume all active departments (spawns in parallel) |
+| no arg | Fail with usage hint |
 
-## Step 1 — Read Briefings Directly
+## What It Does
 
-For each target department, read `{dept-path}/state/dept-state.md` using the
-Read tool. **Do NOT spawn subagents.** Issue all reads in parallel.
+1. Reads `~/.agency/agents/{dept}/state/dept-state.md`
+2. Checks `~/.agency/agents/{dept}/state/incoming/` for pending inter-spawn tasks
+3. Checks `~/.claude/agents/{dept}/state/dev-plan.md` for existence (dev-plan-absent check)
+4. Spawns the Dept Head with dept-state.md inline — no extra reads on spawn
+5. Dept Head boots per `core/runbooks/dept-boot-sequence.md` Mode 1
 
-dept-state.md is self-contained — dept-save-state writes active pipelines, protocols,
-coords, issues, and next-focus into it. No other files need to be read at startup.
+## Dev-Plan-Absent Check
 
-If dept-state.md doesn't exist or is empty, use fallback:
-```
-dept: {slug}
-lead: {lead from registry}
-updated: unknown
-next-focus: initialize department state and pipelines
-blockers: none
-```
+After reading dept-state.md (Step 1), check whether `~/.claude/agents/{dept}/state/dev-plan.md` exists.
 
-## Step 2 — Spawn Dept Heads
+- **If absent** (and the initiative has 3+ D3 tracks): inject into the Dept Head spawn prompt:
+  "DEV-PLAN ABSENT — generate ~/.claude/agents/{dept}/state/dev-plan.md before dispatching
+  any Dept-Coords. Apply the two-condition parallel rule (see task-decomposition-methodology.md)
+  to assign layers. After generating the dev-plan, run /save-state and respawn to enter
+  the deployment phase with a clean context."
+- **If absent** (simple initiative, <3 D3 tracks): skip dev-plan generation — not required
+  for single-track or dual-track initiatives.
+- **If present**: inject a one-line note: "Dev-plan: ~/.claude/agents/{dept}/state/dev-plan.md
+  (present — read before dispatching Dept-Coords)"
 
-Spawn one dept head agent per target. **All in a single message** (parallel).
+This mirrors the pd-resume dev-plan-absent trigger, applied to department operations.
 
-**Spawn config:**
-- `subagent_type`: the dept lead agent name (from registry)
-- `model`: opus
-- `run_in_background`: true (dept heads work autonomously)
+## Dept Head Boot Context
 
-**Spawn prompt — LEAN FORMAT (do not add to this):**
+The spawn prompt includes:
+- dept-state.md content (inline, no file read needed)
+- incoming task count and any HIGH-priority items
+- The dept head's agent definition path
 
-```
-You are the {lead-name}, resuming the {department} department.
-Department dir: {dept-path}
-Dept-Coord protocol: {agency-root}/agents/runbooks/dept-coord-protocol.md
-Boot sequence: {agency-root}/agents/runbooks/dept-boot-sequence.md
+**Target context on spawn: ~400 tokens.** Everything else is lazy-loaded per Mode 2 (Route).
 
---- STATE ---
-{verbatim content of dept-state.md}
----
-
-Follow the boot sequence. Check state/incoming/ for inter-spawn tasks from PDs.
-Start the next-focus action immediately. When done or blocked, /dept-save-state {slug} and stop.
-```
-
-**What is NOT in the spawn prompt (already in the dept lead agent definition):**
-- Department member roster
-- Approval tiers
-- Skills list
-- Communication protocol
-- Curator pattern
-
-## Step 3 — Output Summary
-
-After all spawns:
+## Output
 
 ```
-DEPT-RESUME: Spawned {n} department head(s)
-{for each: {slug} — {lead-name} — next-focus: {value}}
-All running in background. Use /dept-status [slug] to check progress.
+dept-resume done — {dept}
+  Head: {head-agent-name}
+  Priority: {current-priority from dept-state}
+  Active coords: {n or "none"}
+  Incoming tasks: {n or "none"}
 ```
+
+## Notes
+
+- If `dept-state.md` doesn't exist, output: `No dept-state found for {dept}. Run /dept-wrap to initialize.`
+- Dept Heads do NOT start their session by reading every pipeline and protocol file — that is lazy-loaded
+- The incoming check is part of the boot sequence and runs before any other dept work
+
+## References
+
+- Dept boot sequence: `core/runbooks/dept-boot-sequence.md`
+- Dept-Coord protocol: `core/runbooks/dept-coord-protocol.md`
+- Parallel: `/pd-resume` for project directors, `/dept-status` for read-only check

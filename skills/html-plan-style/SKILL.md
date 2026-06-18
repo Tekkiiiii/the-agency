@@ -4,16 +4,18 @@ description: >
   Use when generating any HTML plan, report, or deliverable document. Apply this
   skill whenever the task involves "create a plan", "write a plan", "make an HTML
   plan", "/pipeline-*" that produces plans, output convention plan files, or any
-  structured HTML document for review. Provides a locked color
-  palette, typography, and layout system so all plan HTML files look consistent
-  and professional. Includes the 22px body font rule, rem-based child sizing,
-  CSS variable architecture, print stylesheet, and a full component vocabulary
-  (headings, callouts, tables, checklists, code blocks, status badges).
-  Self-contained. Use plan-template.html as the base skeleton and
+  structured HTML document intended for Tekki review. Provides a locked color
+  palette, typography, and layout system extracted from the WebMoi/website-pitch
+  home page so all plan HTML files look consistent and professional. Includes the
+  22px body font rule, rem-based child sizing, CSS variable architecture, print
+  stylesheet, and a full component vocabulary (headings, callouts, tables,
+  checklists, code blocks, status badges). Self-contained — no visit to
+  website-pitch needed. Use plan-template.html as the base skeleton and
   style.css (or the embedded style block) as the single CSS source of truth.
   Also for: session digests, agent reports, architecture decision records, sprint
   summaries, onboarding docs, and any structured HTML deliverable that will be
-  opened in a browser or exported to PDF. This skill is for plans/documents, not slide decks.
+  opened in a browser or exported to PDF. Compare with tekki-standalone-deck (TV
+  presentation decks) — this skill is for plans/documents, not slide decks.
 scope: global
 dept:
   - all
@@ -43,14 +45,15 @@ aliases:
   - plan-template
 last_updated: "2026-05-22"
 trust_level: human-authored
-author: agency
+author: tekki
 provenance: manual
 quality_gate_passed: true
 ---
 
 # html-plan-style
 
-Locked style system for all HTML plan and report files. Apply whenever producing a plan.html.
+Locked style system for all HTML plan and report files. Extracted from the
+WebMoi/website-pitch home page. Apply whenever producing a plan.html.
 
 ## Quick Start
 
@@ -157,6 +160,10 @@ Use standard `<pre><code>` -- styled with mono font and forest-50 background.
 - Body font stays 22px; child elements use rem (e.g. `1rem` = 22px, `0.9rem` = ~20px)
 - Print stylesheet is included -- do not remove the `@media print` block
 - No emojis in plan content unless the plan content specifically calls for them
+
+## Design Quality Principles
+
+Before producing any HTML plan output, read `~/.claude/agents/design/memory/design-quality-principles.md` and apply its visual standards to layout, color usage, and typography choices.
 
 ## Files in This Skill
 

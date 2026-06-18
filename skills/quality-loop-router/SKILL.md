@@ -30,9 +30,14 @@ If unclear, default to **Mode A** (safer for quality, no cost risk).
 
 ---
 
-## Step 2: Ask User for Threshold (Mode A only)
+## Step 2: Load or Ask User for Threshold (Mode A only)
 
-Before starting Mode A, ask the user:
+**First: check for stored preference.** Read `~/.claude/memory/quality-prefs.md` (if exists).
+If the file contains a `threshold: {avg}/{floor}` line (e.g., `threshold: 85/75`), use those
+values silently — skip the dialog entirely. This is the user's own stored preference, set on
+first run.
+
+**If no stored preference exists**, ask the user once:
 
 > "Quality loop starting. Default threshold: avg score >= 85, no dimension below 75. Max 3 rounds. Accept defaults or override? (e.g. '90/80' for stricter, '75/65' for lenient)"
 
@@ -42,6 +47,15 @@ Accept:
 - Two numbers (e.g. "90/80") → avg threshold = 90, floor = 80
 - "strict" → avg 90, floor 80
 - "lenient" → avg 75, floor 65
+
+After getting the answer, write to `~/.claude/memory/quality-prefs.md`:
+```
+threshold: {avg}/{floor}
+```
+This makes the dialog a one-time setup. Future invocations read the file and skip the dialog.
+
+Tekki can always override by editing `~/.claude/memory/quality-prefs.md` directly, or by
+invoking with an explicit threshold flag (e.g., `quality-loop-router threshold:90/80`).
 
 Store as `THRESHOLD_AVG` and `THRESHOLD_FLOOR` for use in Step 4.
 
@@ -103,7 +117,7 @@ During Step 3 (critic selection), if the task type maps to no existing critic:
    - Code/technical task → clone critique-code
    - Default fallback → clone critique-content
 
-2. **Create new critic** at `{agency-root}/agents/critiques/critique-{domain}.md`:
+2. **Create new critic** at `~/.claude/agents/critiques/critique-{domain}.md`:
    - Copy template structure (frontmatter, personality, step 0, hard rules, evaluate, report format, post-run reflection, critical rules)
    - Rescope personality to domain: old {domain} expert, seen ten thousand bad {deliverables}
    - Rescope hard rules: require evidence artifacts appropriate to domain (screenshots for visual, frames for video, code snippets for code, etc.)
@@ -116,7 +130,7 @@ During Step 3 (critic selection), if the task type maps to no existing critic:
 
    **b. quality-loop-router/SKILL.md** — add row to the task-type → critic-set table in Step 3
 
-   **c. {agency-root}/memory/skill-routing.md** (if it exists) — add entry under critiques section
+   **c. ~/.claude/memory/skill-routing.md** (if it exists) — add entry under critiques section
 
 4. **Log the creation** in the pipeline report under "Critics created this run: {list}"
 
