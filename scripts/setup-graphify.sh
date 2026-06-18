@@ -59,10 +59,13 @@ fi
 if command -v claude >/dev/null 2>&1; then
   if claude mcp list 2>/dev/null | grep -q '^graphify[: ]'; then
     say "graphify MCP already registered — re-registering with current paths."
-    claude mcp remove graphify >/dev/null 2>&1 || true
+    claude mcp remove -s user graphify >/dev/null 2>&1 || true
+    claude mcp remove graphify >/dev/null 2>&1 || true   # also drop any stale local-scope entry
   fi
-  say "Registering graphify MCP server..."
-  claude mcp add graphify -- "$UV_PY" -m graphify.serve "$GRAPH_JSON"
+  # -s user => loads from ANY cwd. Default (local) scope binds to the dir this ran
+  # in, so pd-resume from ~/.claude would silently miss a server registered elsewhere.
+  say "Registering graphify MCP server (user scope)..."
+  claude mcp add -s user graphify -- "$UV_PY" -m graphify.serve "$GRAPH_JSON"
 
   say "Verifying connection..."
   if claude mcp list 2>/dev/null | grep -i graphify; then
@@ -72,7 +75,7 @@ if command -v claude >/dev/null 2>&1; then
   fi
 else
   warn "Skipped MCP registration (no claude CLI). Run this when claude is on PATH:"
-  printf '    claude mcp add graphify -- "%s" -m graphify.serve "%s"\n' "$UV_PY" "$GRAPH_JSON"
+  printf '    claude mcp add -s user graphify -- "%s" -m graphify.serve "%s"\n' "$UV_PY" "$GRAPH_JSON"
 fi
 
 # 6. Next steps --------------------------------------------------------------
