@@ -344,4 +344,34 @@ MANUAL AUTH CHECKLIST — cannot be scripted; do these by hand after bootstrap
 Restart your Claude Code session after bootstrap so all MCP servers load.
 ────────────────────────────────────────────────────────────────────────────────
 
+  HEAVY RUNTIME SKILLS (opt-in, large downloads)
+  ────────────────────────────────────────────────
+  These skills are NOT installed by default — they require large downloads
+  (300MB–2GB) and install to ~/.agents/skills/. Install only what you need.
+
+  □  hyperframes (HTML-based video composition framework)
+       Zero-install via npx — no clone needed. Just run:
+         npx --yes hyperframes <command>
+       Or install globally: npm install -g hyperframes
+       Skill docs: ~/.claude/skills/hyperframes/SKILL.md
+
+  □  video-use (conversation-driven video editor, ~316MB)
+       git clone https://github.com/browser-use/video-use ~/.agents/skills/video-use
+       cd ~/.agents/skills/video-use
+       uv sync   # or: pip install -e .
+       # Then symlink into Claude skills:
+       ln -sfn ~/.agents/skills/video-use ~/.claude/skills/video-use
+       # Requires: ffmpeg (brew install ffmpeg)
+       # Optional: ELEVENLABS_API_KEY in .env for speaker diarization
+
+  □  omnivoice-studio (zero-shot TTS + voice cloning, ~2GB with model weights)
+       git clone https://github.com/debpalash/OmniVoice-Studio ~/.agents/skills/omnivoice-studio
+       cd ~/.agents/skills/omnivoice-studio
+       uv sync   # or: pip install -e .
+       # Then register the MCP server in ~/.claude/settings.json:
+       # See ~/.claude/skills/omnivoice-studio/SKILL.md for MCP registration JSON
+       # Start/stop backend: ~/.agents/skills/omnivoice-studio/bin/omnivoicectl up|down
+
+────────────────────────────────────────────────────────────────────────────────
+
 CHECKLIST
