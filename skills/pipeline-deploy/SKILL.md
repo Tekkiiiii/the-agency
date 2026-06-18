@@ -145,21 +145,6 @@ If BROKEN or REGRESSION:
 
 ---
 
-## Stage 4.5: QUALITY GATE (if deploy includes content updates)
-
-**Trigger:** Run if the deploy includes any content, copy, or marketing asset changes visible to end users.
-
-**Skip if:** Pure code-only deploy with no user-facing content changes.
-
-Invoke `/quality-loop-router` with:
-- `task_type`: `content` or `design` depending on what changed
-- `pipeline_context`: "pipeline-deploy — internal Claude run" (Mode A)
-- `artifact`: the changed content/assets
-
-Update tracker: add row `| 4.5 | QUALITY GATE | quality-loop-router | {PASS/SKIPPED} | {score} | — |`
-
----
-
 ## Stage 5: REPORT
 
 Produce the deploy report:

@@ -48,8 +48,8 @@ Before writing, define:
 - **Angle**: what new perspective or evidence does this bring?
 - **Target keyword**: primary + 2 secondary keywords
 - **Audience**: specific persona and their knowledge level
-- **Structure**: H2 outline with 3-5 key points
-- **Word count**: target range (e.g., 1,200-1,500)
+- **Structure**: H2 outline with 3–5 key points
+- **Word count**: target range (e.g., 1,200–1,500)
 - **CTA**: what should the reader do after reading?
 - **Examples of what NOT to write**: anti-patterns to avoid
 
@@ -69,8 +69,8 @@ Extract maximum value from each long-form piece:
 
 ### SEO
 - Target primary keyword in title, first 100 words, H2 headings
-- Internal links to 2-3 related existing pieces
-- External links to 2-3 authoritative sources
+- Internal links to 2–3 related existing pieces
+- External links to 2–3 authoritative sources
 - Featured snippet optimization (direct Q&A format in intro)
 
 ### Social
@@ -81,7 +81,7 @@ Extract maximum value from each long-form piece:
 
 ### Email
 - Segment list by funnel stage and persona
-- Send time: Tuesday-Thursday, 8-10am or 2-3pm in recipient timezone
+- Send time: Tuesday–Thursday, 8–10am or 2–3pm in recipient timezone
 - Subject line: specific, benefit-led, no clickbait
 
 ## Performance Metrics by Funnel Stage
@@ -93,3 +93,7 @@ Extract maximum value from each long-form piece:
 | BOFU | Demo-to-close rate, content-attributed revenue, pipeline influence |
 
 Audit: review all content quarterly. Archive what has zero organic traffic after 6 months. Update or expand what has traffic but no conversions.
+
+## Vietnamese Content Strategy
+
+When building strategy for Vietnamese audiences, load matching files from `skills/vietnamese-language/` via its SKILL.md routing table. Key resources: `seo-content-marketing.md` (diacritic keyword strategy, CocCoc, regional splitting), `viral-content.md` (seasonal patterns — Tết, 8/3, 20/10), platform files for channel-specific VN dynamics, `regional-dialects.md` (brand voice by Northern/Southern/national audience).

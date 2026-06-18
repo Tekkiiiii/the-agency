@@ -54,28 +54,8 @@ Both skills handle their own verification checkpoints internally.
 
 **Gate:** All plan tasks must be marked completed. Run the project's test suite (`npm test`, `pytest`, `mix test`, etc.) — all tests must pass.
 
-**On pass:** Update tracker row 2 → PASS, proceed to Stage 2b.
+**On pass:** Update tracker row 2 → PASS, proceed to Stage 3.
 **On fail:** If tests fail, fix failures before proceeding. If blocked, update tracker row 2 → BLOCKED.
-
----
-
-## Stage 2b: DE-SLOPPIFY
-
-After implementation passes, spawn a SEPARATE cleanup agent (fresh context, no shared history with the implementer). This is NOT optional — the cleanup agent sees dead code the implementer is blind to.
-
-Spawn prompt:
-```
-Review and clean the changes on this branch (git diff main...HEAD).
-Remove: defensive checks for impossible states, over-tested language/framework
-behavior, console.log/debug statements, commented-out code, redundant type
-assertions, unnecessary abstractions added "just in case".
-Run the full test suite after cleanup. Do not change functionality.
-```
-
-**Gate:** Tests still pass after cleanup. If cleanup broke tests → revert cleanup, proceed anyway.
-
-**On pass:** Update tracker row 2b → PASS, proceed to Stage 3.
-**On skip:** If no meaningful cleanup found, mark SKIPPED.
 
 ---
 
@@ -177,21 +157,6 @@ Invoke `/railway-deploy` or `/vercel-deploy` based on user's choice.
 
 **On pass:** Update tracker row 7 → PASS.
 **On fail:** Report findings. Canary DEGRADED or benchmark REGRESSION may warrant a rollback — ask the user.
-
----
-
-## Stage 7.5: QUALITY GATE (if feature includes creative deliverables)
-
-**Trigger:** Run if the feature includes any user-facing content, marketing copy, UI design, or documentation assets.
-
-**Skip if:** Pure code feature with no user-visible creative output.
-
-Invoke `/quality-loop-router` with:
-- `task_type`: infer from output type — `content` for copy/docs, `design` for UI components, `code` for pure code with docs
-- `pipeline_context`: "pipeline-feature — internal Claude run" (Mode A always for code; Mode B if Figma/Canva used for designs)
-- `artifact`: the creative output(s) from this feature
-
-Update tracker: add row `| 7.5 | QUALITY GATE | quality-loop-router | {PASS/SKIPPED} | {score} | — |`
 
 ---
 

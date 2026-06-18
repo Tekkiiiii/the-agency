@@ -5,7 +5,7 @@ description: >
   spawn PDs in the foreground with verbose narration so the audience sees every
   tool call, reasoning step, and decision in real-time. When OFF (default), PDs
   run silently in the background as usual. Invoke as /pd-showcase on, off, or
-  status. State is a single marker file at {agency-root}/state/pd-showcase.flag —
+  status. State is a single marker file at ~/.claude/state/pd-showcase.flag —
   read by pd-spawn and pd-resume at spawn-time.
 ---
 
@@ -20,7 +20,7 @@ A single marker file flips PD-spawning skills between two modes:
 
 ## SSOT
 
-Flag file: `{agency-root}/state/pd-showcase.flag`
+Flag file: `~/.claude/state/pd-showcase.flag`
 - Exists → showcase ON
 - Absent → showcase OFF
 
@@ -43,14 +43,14 @@ If the argument is missing or unrecognized, default to `status` (read-only).
 
 ## Step 2 — Read Current State
 
-Check whether `{agency-root}/state/pd-showcase.flag` exists. Record the result
+Check whether `~/.claude/state/pd-showcase.flag` exists. Record the result
 as `currently_on = true | false`.
 
 ## Step 3 — Apply Action
 
 **`on` (or `enable`, `start`):**
 1. If `currently_on` → output "Showcase already ON — no change." and stop.
-2. Otherwise, write `{agency-root}/state/pd-showcase.flag` with body:
+2. Otherwise, write `~/.claude/state/pd-showcase.flag` with body:
    ```
    enabled_at: {ISO timestamp}
    note: PD showcase mode — foreground spawns + narration injected
@@ -59,7 +59,7 @@ as `currently_on = true | false`.
 
 **`off` (or `disable`, `stop`):**
 1. If not `currently_on` → output "Showcase already OFF — no change." and stop.
-2. Otherwise, delete `{agency-root}/state/pd-showcase.flag`.
+2. Otherwise, delete `~/.claude/state/pd-showcase.flag`.
 3. Output the "DISABLED" confirmation (see Step 4).
 
 **`toggle`:**
@@ -75,7 +75,7 @@ as `currently_on = true | false`.
 **ENABLED:**
 ```
 PD SHOWCASE: ON
-  Flag: {agency-root}/state/pd-showcase.flag
+  Flag: ~/.claude/state/pd-showcase.flag
   Effect: Next /pd-spawn and /pd-resume run PDs in the foreground with verbose narration.
   Trade-off: One PD at a time. Main session blocks until each PD finishes.
 
@@ -102,17 +102,45 @@ PD SHOWCASE: OFF (default)
   Flip with /pd-showcase on or /pd-showcase toggle.
 ```
 
-## How pd-spawn and pd-resume Honor the Flag
+## How pd-spawn and pd-resume Honor Showcase Mode
 
-Both skills include a "Step — Check Showcase Mode" gate before the Agent call:
+**Two activation paths — both explicit, neither automatic:**
 
-1. Test for `{agency-root}/state/pd-showcase.flag`.
-2. If present:
-   - Spawn config: set `run_in_background: false`.
-   - Briefing prompt: append the **Showcase Narration Directive** (below).
-3. If absent: use default (background + lean briefing).
+**Path A — Per-invocation flag (`--showcase` argument):**
+Pass `--showcase` directly to `/pd-resume` or `/pd-spawn`. Showcase activates for
+that spawn only. The flag file is not read or written.
+```
+/pd-resume ltv --showcase
+/pd-spawn ltv --showcase
+```
 
-## Showcase Narration Directive (injected into PD briefing when flag is ON)
+**Path B — Persistent demo session (`/pd-showcase on` toggle):**
+For a live demo where you want all subsequent PD spawns to use showcase mode,
+run `/pd-showcase on` first. This writes the flag file. Subsequent `/pd-resume`
+and `/pd-spawn` calls check for the flag IF `--showcase` was not explicitly
+passed. Run `/pd-showcase off` to end the demo session.
+
+**The default behavior:**
+Without `--showcase` AND without a prior `/pd-showcase on` in this session,
+`pd-resume` and `pd-spawn` NEVER check the flag file. They default to
+background + silent mode. The flag file on disk has zero effect unless
+`/pd-showcase on` was explicitly run.
+
+**pd-resume Step 2.5 logic (simplified):**
+```
+if args.include("--showcase"):
+    showcase_on = true
+elif pd_showcase_on_was_run_this_session:
+    showcase_on = test -f ~/.claude/state/pd-showcase.flag
+else:
+    showcase_on = false   # no file probe
+```
+
+**pd-spawn Step 4.5 logic (same pattern):**
+Same as pd-resume. Only probe the flag file when `/pd-showcase on` was explicitly
+invoked in the current session. `--showcase` argument takes precedence.
+
+## Showcase Narration Directive (injected into PD briefing when showcase_on = true)
 
 ```
 --- SHOWCASE MODE ---
@@ -134,11 +162,11 @@ your tool calls; you just connect the dots.
 
 ## Notes
 
-- The flag is session-agnostic — it persists until explicitly turned off. Always
-  flip it back to `off` after a demo, or future PD spawns will keep blocking
-  the main session.
+- **Default is OFF and stays OFF** — no per-resume flag probe. Showcase only
+  activates when explicitly requested (`--showcase` arg or `/pd-showcase on`).
+- The flag file persists until explicitly cleared with `/pd-showcase off`.
+  After a demo, always run `/pd-showcase off` to prevent leakage into the next session.
 - This toggle does NOT affect Curator, Delegator, codebase-search, or any
   non-PD agent. Only `/pd-spawn` and `/pd-resume` honor it.
-- If you forget the flag is on and the next PD spawn blocks the main session,
-  the running PD will still complete normally — interrupt it via the Agent
-  tool's stop, or just let it finish, then flip the flag off.
+- If a PD spawn blocks the main session unexpectedly, check flag state with
+  `/pd-showcase status`, then `/pd-showcase off` to restore background mode.

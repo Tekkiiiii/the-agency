@@ -1,7 +1,7 @@
 ---
 name: seo-aeo-best-practices
 version: 1.0.0
-description: "SEO, GEO, and AEO best practices knowledge base — 7 on-demand reference files covering technical SEO (metadata, sitemaps, CWV, hreflang, AI crawlers), structured data (JSON-LD templates for Article/FAQ/HowTo/Organization/Product/Breadcrumb/Person/Event), E-E-A-T principles (Quality Rater signals + implementation), AEO (featured snippets, PAA, voice search, knowledge panels, extraction zones), GEO (AI citation optimization, entity authority, platform-specific for ChatGPT/Perplexity/Claude/Gemini, measurement tools), content architecture (pillar/cluster, internal linking, topical authority), and an integration checklist for content-critique scoring. Use when implementing page SEO, schema markup, international SEO, AI-overview readiness, improving content for Google/ChatGPT/Perplexity/Claude/Gemini, or auditing content for the SEO & Value critique dimension."
+description: "SEO, GEO, and AEO best practices knowledge base — 9 on-demand reference files covering technical SEO (metadata, sitemaps, CWV, hreflang, AI crawlers), structured data (JSON-LD templates for Article/FAQ/HowTo/Organization/Product/Breadcrumb/Person/Event), E-E-A-T principles (Quality Rater signals + implementation), AEO (featured snippets, PAA, voice search, knowledge panels, extraction zones), GEO (AI citation optimization, entity authority, platform-specific for ChatGPT/Perplexity/Claude/Gemini, measurement tools), content architecture (pillar/cluster, internal linking, topical authority), an integration checklist for content-critique scoring, a content production guideline (BLUF writing, extraction zones, question headings, quantitative claims, GEO rules), and a website metadata spec (copy-paste-ready title/OG/Twitter/canonical/hreflang/sitemap/robots.txt/all JSON-LD templates/CWV/URL structure). Use when implementing page SEO, schema markup, international SEO, AI-overview readiness, improving content for Google/ChatGPT/Perplexity/Claude/Gemini, auditing content for the SEO & Value critique dimension, or building any production website."
 ---
 
 # SEO, GEO & AEO Best Practices
@@ -34,6 +34,8 @@ Load only the file(s) needed for the current task. Never load all 7 at once.
 | AI citation optimization, ChatGPT/Perplexity/Claude/Gemini visibility, entity authority, BLUF writing, GEO measurement, AI crawler access decisions | `references/geo-optimization.md` |
 | Pillar/cluster architecture, internal linking strategy, topical authority, content silos, freshness signals, URL structure | `references/content-architecture.md` |
 | Scoring content-critique dimension 5 (SEO & Value), quick pre-publish checklist, severity mapping | `references/integration-checklist.md` |
+| Content production standard: BLUF writing, extraction zones, question headings, quantitative claims, E-E-A-T, FAQ format, GEO platform rules, internal linking, content length by intent | `references/content-guidelines.md` |
+| Website implementation: title/meta templates, Open Graph, Twitter Cards, canonical, hreflang, sitemap, robots.txt, all JSON-LD schemas (Article/FAQ/HowTo/Organization/Person/Breadcrumb/Product/Event), Core Web Vitals thresholds, URL structure, pre-launch checklist, analytics & GTM/GA4 default install | `references/website-metadata-spec.md` |
 
 ---
 

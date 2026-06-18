@@ -1383,3 +1383,30 @@ graphify claude uninstall  # remove the section
 - Always show token cost in the report.
 - Never hide cohesion scores behind symbols - show the raw number.
 - Never run HTML viz on a graph with more than 5,000 nodes without warning the user.
+
+---
+
+## Integration: Understand-Anything → graphify
+
+**Combined workflow for code comprehension + visual graph:**
+
+1. Run `/understand <project-path>` to produce `.understand-anything/knowledge-graph.json`
+2. Convert to graphify-ingestible markdown:
+   ```bash
+   node ~/.claude/tools/understand-anything/integrations/to-graphify.mjs \
+     <project-path>/.understand-anything/knowledge-graph.json \
+     --out ./graphify-understand-out \
+     --run
+   ```
+3. graphify produces `graphify-understand-out/graphify-out/graph.html` — a visual cluster map showing architecture communities.
+
+**What this gives you that neither tool alone provides:**
+- understand-anything gives you typed, structured code entities with relationships
+- graphify runs community detection on those entities to find non-obvious clusters
+- The combined output reveals which modules are more tightly coupled than the layer structure suggests
+
+**Glue script:** `~/.claude/tools/understand-anything/integrations/to-graphify.mjs`
+- Input: `knowledge-graph.json` from understand-anything
+- Output: `nodes.md` + `layers.md` + `project-meta.md` → graphify-ingestible directory
+
+See also: `~/.claude/skills/understand/SKILL.md` for the understand-anything base skill.

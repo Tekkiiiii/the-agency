@@ -796,3 +796,7 @@ The final result should be:
 - art-directed
 - implementation-friendly
 - stronger than normal AI-generated brand visuals
+
+## Design Quality Principles
+
+Before producing any brand visual output, read `~/.claude/agents/design/memory/design-quality-principles.md` and verify the output meets its quality bar for visual design.

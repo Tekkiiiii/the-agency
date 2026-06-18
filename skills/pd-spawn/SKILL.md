@@ -3,7 +3,7 @@ name: pd-spawn
 description: >
   Spawn another Project Director to do work on your behalf. The caller PD
   creates a briefing, tags the spawned PD in both projects' memory, then waits
-  for a report. Use when the operator says "spawn {other-pd} to do X". The spawned PD
+  for a report. Use when Tekki says "spawn {other-pd} to do X". The spawned PD
   works in its own project, reads only its identity + your briefing, and reports
   back when done.
 triggerPatterns:
@@ -15,7 +15,7 @@ triggerPatterns:
 
 # PD Spawn Protocol
 
-Spawns another PD on the operator's command. Caller PD creates the briefing, spawns
+Spawns another PD on Tekki's command. Caller PD creates the briefing, spawns
 the other PD, tracks the delegation in its own memory, and waits.
 
 ## Activation Triggers
@@ -40,12 +40,12 @@ The list of active PDs and their project paths is in `~/.claude/memory/medium-te
 
 From medium-term.md, find:
 - `{target-slug}` — the project slug
-- `{target-pd-name}` — the PD's agent name (e.g. `{project}-pd`)
+- `{target-pd-name}` — the PD's agent name (e.g. `website-pitch-pd`)
 - `{target-memory-path}` — the project's memory directory
 
 ## Step 2 — Create the Task ID
 
-Generate: `{YYYYMMDD}-{slug}-{n}` e.g. `20260416-{project}-1`
+Generate: `{YYYYMMDD}-{slug}-{n}` e.g. `20260416-website-pitch-1`
 
 ## Step 3 — Create Incoming Briefing
 
@@ -55,29 +55,46 @@ Write to the **target PD's** inter-spawn-tasks folder:
 ```markdown
 # Inter-Spawn Task — {task-id}
 
-**Created by:** {caller-pd-name} (on behalf of the operator)
+**Created by:** {caller-pd-name} (on behalf of Tekki)
 **Created at:** {ISO timestamp} UTC
 **From PD:** {caller-pd-name}
 **To PD:** {target-pd-name}
 **Status:** INCOMING
 
 ## End Goal
-[Taken verbatim from the operator's instruction — state the outcome, not the method]
+[Taken verbatim from Tekki's instruction — state the outcome, not the method]
 
 ## Available Assets & Context
-- Branding: [paths from operator's instruction or project memory]
+- Branding: [paths from Tekki's instruction or project memory]
 - Content: [paths or "none specified — use best judgment"]
 - Stack: [from target project's CLAUDE.md if known]
-- Other: [any other context provided]
+- Other: [any other context Tekki provided]
 
 ## Constraints
-- [Any constraints named]
+- [Any constraints Tekki named]
 - Default: work in spawned PD's own project directory
 ```
 
+## Step 3.5 — Resolve Caller Type
+
+Determine the caller before Step 4:
+
+- **Caller = PD** (default): caller is `{caller-pd-name}`, owns `{caller-project}/memory/tasks/`. Use canonical paths in Steps 4 + 5b.
+- **Caller = parent-ai** (Tekki direct): no `{caller-project}` exists. Use the inbox per CLAUDE.md:
+  - Caller's delegation file → `~/.claude/tasks/inbox/ongoing/{task-slug}/TASK.md` (Tekki creates this; if missing, caller must create it before spawning)
+  - Completion target in Step 5b → same inbox TASK.md
+  - Spawn prompt MUST replace `{caller-project}` references with the inbox path
+  - Spawn prompt MUST state `Caller: parent-ai (Tekki direct)` for traceability
+
+Record `caller_type = pd | parent_ai` for use in Steps 4 + 5 + 5b.
+
 ## Step 4 — Create Caller's Delegation Task
 
-Write `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md`:
+**IF `caller_type = pd`:** write `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md`:
+
+**IF `caller_type = parent_ai`:** the inbox task file `~/.claude/tasks/inbox/ongoing/{task-slug}/TASK.md` already exists (Tekki created it) — skip creation. Append a "Delegated to" line referencing the target PD + briefing path.
+
+Canonical PD-caller delegation file format:
 
 ```markdown
 # Delegated Task — {task-id}
@@ -101,22 +118,32 @@ Mark this task DONE only after {target-pd-name} sends completion message.
 
 ## Step 4.5 — Check Showcase Mode
 
-Before spawning, test whether `{agency-root}/state/pd-showcase.flag` exists.
+Showcase is **off by default**. Do NOT probe `~/.claude/state/pd-showcase.flag`
+on every spawn — only check it when explicitly activated.
 
-- **If absent (default):** standard background spawn, no narration injection.
-- **If present (showcase ON):** spawn in foreground and inject the Showcase
-  Narration Directive into the briefing. Toggled via `/pd-showcase`.
+**Determine showcase_on:**
+- If Tekki passed `--showcase` as an argument to the current `/pd-spawn` call → `showcase_on = true`.
+- If `/pd-showcase on` was explicitly invoked in this session → check `~/.claude/state/pd-showcase.flag` as confirmation.
+- Otherwise → `showcase_on = false`. Do NOT read the flag file.
+
+**If showcase_on = false (default):** standard background spawn, no narration injection.
+**If showcase_on = true:** spawn in foreground and inject the Showcase Narration Directive into the briefing.
 
 Record this as `showcase_on = true | false` for use in Step 5.
 
 ## Step 5 — Spawn the Target PD
 
-Use the Agent tool to spawn the target PD:
+Use the Agent tool to spawn the target PD.
+
+**Caller-type substitution rules (apply BEFORE rendering the prompt):**
+- `{caller-name}` = `{caller-pd-name}` if `caller_type = pd`, else `parent-ai (Tekki direct)`
+- `{caller-completion-path}` = `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md` if `caller_type = pd`, else `~/.claude/tasks/inbox/ongoing/{task-slug}/TASK.md`
+- The "Do NOT read/write {caller-project}" block applies only when `caller_type = pd`. For `caller_type = parent_ai`, replace with: "Do NOT read or write any files outside {target-project-root}/ EXCEPT the completion record at {caller-completion-path}. ~/.claude/ root is READ-ONLY for reference."
 
 ```
 prompt: |
   You are {target-pd-name}, resuming work as Project Director for {target-slug}.
-  You have been spawned by {caller-pd-name} to complete an inter-spawn task.
+  You have been spawned by {caller-name} to complete an inter-spawn task.
 
   YOUR IDENTITY FILE (read first):
   {target-memory-path}/{target-slug}-pd.md
@@ -130,18 +157,24 @@ prompt: |
   2. Read the briefing: {target-memory-path}/inter-spawn-tasks/incoming/inter-spawn-{task-id}.md
      (confirm it exists, update status to IN_PROGRESS)
   3. Do the work in {target-project-root}/ only
-  4. When done: Write completion record to caller's delegation task file (see Step 5b below)
+  4. When done: append completion record to {caller-completion-path} (format in Step 5b)
   5. Move briefing from inter-spawn-tasks/incoming/ to inter-spawn-tasks/completed/
   6. Run /save-state [{target-slug}]
   7. Stop.
 
-  Do NOT use SendMessage to notify the caller PD — background headless agents
+  Do NOT use SendMessage to notify the caller — background headless agents
   do not have active sessions and cannot receive direct messages. The message
-  would land in the parent session instead of the caller PD's context, and
+  would land in the parent session instead of the caller's context, and
   neither would act on it. Always use the filesystem completion protocol below.
 
+  {IF caller_type = pd:}
   Do NOT read any files in {caller-project}/.
   Do NOT write any files to {caller-project}/.
+
+  {IF caller_type = parent_ai:}
+  Do NOT read or write any files outside {target-project-root}/ EXCEPT:
+  - READ-ONLY: ~/.claude/ root (config/skills/agents/memory) for reference
+  - WRITE: the completion record at {caller-completion-path}
 
   Start now. Read your identity file first.
 
@@ -177,21 +210,49 @@ caller's filesystem — NOT via SendMessage. Background headless agents cannot
 receive direct messages; the caller's session is already closed by the time
 completion happens.
 
-**The spawned PD (target) writes this to the caller's delegation task file:**
+**The spawned PD (target) writes the completion record to one of two paths
+based on `caller_type` (set in Step 3.5):**
 
-Append to `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md`:
+**IF `caller_type = pd`:** append to `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md`:
 
 ```markdown
 ## Completion — {ISO timestamp} UTC
 **Status:** DONE — [1-sentence summary of what was delivered]
 ```
 
-Then append the same to the briefing file:
+**IF `caller_type = parent_ai`:** append to `~/.claude/tasks/inbox/ongoing/{task-slug}/TASK.md`:
+
+```markdown
+## Completion — {ISO timestamp} UTC
+**Status:** DONE — [1-sentence summary of what was delivered]
+**Output:** [path to deliverable, e.g. plans/2026-06-04-foo.html]
+```
+
+The `**Output:**` line is REQUIRED for parent-ai callers — Tekki uses it to find the deliverable without re-reading the spawn briefing.
+
+Then in BOTH cases, append the same Completion block to the briefing file:
 `{target-memory-path}/inter-spawn-tasks/completed/inter-spawn-{task-id}.md`
 
-**This is the ONLY way the caller learns the task is done.** The caller must
-read its own `delegated-{task-id}.md` to know when the task completed — it
+**This is the ONLY way the caller learns the task is done.** The caller (PD or parent-ai)
+must read its own delegation/inbox file to know when the task completed — it
 cannot wait for a SendMessage that will never arrive.
+
+## Inter-Spawn Notify Protocol
+
+**File-only. SendMessage is forbidden for inter-spawn completion notification.**
+
+Background headless PDs do not have active sessions. Any SendMessage from a spawned
+PD to its caller PD will land in the parent session (Tekki's main window) or be
+lost — the caller's session is already closed. Only filesystem writes survive the
+session boundary.
+
+Full protocol, flow diagram, and smoke test:
+`~/.claude/agents/runbooks/inter-spawn-notify-protocol.md`
+
+This rule applies to all PD identity files. If a Spawner Protocol section in any
+`agents/specialized/*-pd.md` says "SendMessage to caller" for inter-spawn
+completion, that instruction is wrong and must be replaced with the filesystem
+protocol above.
 
 ## Step 6 — Confirm
 
@@ -216,7 +277,7 @@ Instead, it polls its own `memory/tasks/ongoing/delegated-{task-id}.md` file.
 is found with a "Completion" section, the caller PD:
 1. Reads the completion record from `delegated-{task-id}.md`
 2. Moves `memory/tasks/ongoing/delegated-{task-id}.md` → `memory/tasks/completed/`
-3. Logs the completion to the operator: "✅ {task-id} complete — [summary from completion record]"
+3. Logs the completion to Tekki: "✅ {task-id} complete — [summary from completion record]"
 4. Runs /save-state [{caller-slug}]
 
 **How the caller knows a task is done between sessions:**
@@ -238,9 +299,9 @@ Caller reads this on next `/pd-resume`. Do NOT use SendMessage for blockers eith
 
 ## Revision Protocol — "Not Satisfied, Adjust and Continue"
 
-When the operator or the caller PD is unsatisfied with the result:
+When Tekki or the caller PD is unsatisfied with the result:
 
-**Trigger:** "revision needed on {task-id}" or "{project} PD, revise the landing page"
+**Trigger:** "revision needed on {task-id}" or "website-pitch PD, revise the landing page"
 
 **Step 1 — The requesting PD (caller):**
 1. Move `{caller}/memory/tasks/completed/delegated-{task-id}.md` → `memory/tasks/revisions/delegated-{task-id}.md`
@@ -248,7 +309,7 @@ When the operator or the caller PD is unsatisfied with the result:
 
 ```markdown
 ## Revision — {YYYY-MM-DD HH:MM UTC}
-**Requested by:** {caller-pd-name or "operator"}
+**Requested by:** {caller-pd-name or "Tekki"}
 **Reason:** [what is wrong or needs changing]
 **Instructions:** [specific adjustments required]
 ```
@@ -289,4 +350,4 @@ Prior task file: {target-memory-path}/inter-spawn-tasks/completed/inter-spawn-{t
 
 **Revision counter:** r1, r2, r3... originating task ID preserved for traceability.
 
-**Escalation:** If a revision is rejected twice, caller PD escalates to the operator: "⚠️ {task-id} rejected twice — needs your call."
+**Escalation:** If a revision is rejected twice, caller PD escalates to Tekki: "⚠️ {task-id} rejected twice — needs your call."

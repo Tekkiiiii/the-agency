@@ -1402,3 +1402,7 @@ Use AskUserQuestion:
 
 - **One page per invocation.** For multi-page designs, run /design-html once per page.
   Each run produces one HTML file.
+
+## Design Quality Principles
+
+Before generating visual HTML output, read `~/.claude/agents/design/memory/design-quality-principles.md` and apply its standards to spacing, typography, color, and visual hierarchy.

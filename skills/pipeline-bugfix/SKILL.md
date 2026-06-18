@@ -134,23 +134,6 @@ For bugfixes, the ship skill should produce:
 
 ---
 
-## Stage 5.5: QUALITY GATE (code changes with documentation)
-
-**Trigger:** Run if the fix includes any user-facing documentation, error messages, release notes, or commit message descriptions that will be seen outside the team.
-
-**Skip if:** Pure code-only fix with no user-visible text changes.
-
-Invoke `/quality-loop-router` with:
-- `task_type`: `code` (for code quality gate)
-- `pipeline_context`: "pipeline-bugfix — internal Claude run" (Mode A)
-- `artifact`: the fix diff + any documentation changed
-
-The quality-loop-router runs critique-code + receiving-code-review in Mode A.
-
-Update tracker: add row `| 5.5 | QUALITY GATE | quality-loop-router | {PASS/SKIPPED} | {score or "n/a"} | — |`
-
----
-
 ## Final Report
 
 ```markdown
