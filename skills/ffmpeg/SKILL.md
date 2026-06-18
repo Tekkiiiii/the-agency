@@ -134,44 +134,6 @@ ffmpeg -i input.mp4 -af loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json -f null 
 # Then apply measured values in second pass
 ```
 
-### Loudness Normalization (EBU R128 — use ffmpeg-normalize)
-
-For final platform delivery, prefer `ffmpeg-normalize` over raw ffmpeg loudnorm. It runs the proper two-pass EBU R128 measurement automatically and handles edge cases (clipping, LRA overshoot) that manual two-pass often misses.
-
-**Binary:** `~/.claude/venvs/video-tools/bin/ffmpeg-normalize` (venv at `~/.claude/venvs/video-tools/`)
-
-```bash
-# Short-form (TikTok / IG Reels / YT Shorts) — -14 LUFS
-~/.claude/venvs/video-tools/bin/ffmpeg-normalize input.mp4 \
-  -o output.mp4 -c:a aac -b:a 192k \
-  --loudness-range-target 7 --target-level -14
-
-# Long-form (YouTube horizontal) — -16 LUFS
-~/.claude/venvs/video-tools/bin/ffmpeg-normalize input.mp4 \
-  -o output.mp4 -c:a aac -b:a 192k \
-  --loudness-range-target 7 --target-level -16
-
-# Broadcast (EBU R128) — -23 LUFS
-~/.claude/venvs/video-tools/bin/ffmpeg-normalize input.mp4 \
-  -o output.mp4 -c:a aac -b:a 192k \
-  --loudness-range-target 7 --target-level -23
-```
-
-**Platform LUFS Table:**
-| Platform | LUFS | True Peak |
-|---|---|---|
-| TikTok / IG / YT Shorts | -14 | -1 dBTP |
-| YouTube long-form | -16 | -1 dBTP |
-| Broadcast / OTT | -23 | -1 dBTP |
-
-**Manual two-pass ffmpeg loudnorm (fallback only):**
-```bash
-# Pass 1: measure
-ffmpeg -i input.mp4 -af loudnorm=I=-16:TP=-1.5:LRA=11:print_format=json -f null - 2>&1 | tail -12
-# Pass 2: apply (substitute measured values from pass 1)
-ffmpeg -i input.mp4 -af "loudnorm=I=-16:TP=-1.5:LRA=11:measured_I={I}:measured_TP={TP}:measured_LRA={LRA}:measured_thresh={thresh}:linear=true" -c:a aac -b:a 192k output.mp4
-```
-
 ### Audio
 
 ```bash

@@ -1,16 +1,3 @@
----
-name: task-store
-description: >
-  Structured task coordination backed by a local SQLite database. The task store is
-  the source of truth for multi-agent pipeline state — not conversation context. Use
-  when: spawning agents with upstream dependencies; tracking gate verdicts across
-  agent handoffs; surfacing blocked tasks in a pipeline; coordinating parallel workstreams
-  that must merge at a gate. Key capabilities: SQLite-backed persistence (survives
-  session restarts), gate protocol with verifier tracking, blocked_by dependency chains,
-  retry counting, priority ordering. Pairs with /task-handoff for the full Tier-A
-  agent coordination protocol.
----
-
 # task-store
 
 Structured task coordination backed by a local SQLite database. The task store is the source of truth for pipeline state — not conversation context.

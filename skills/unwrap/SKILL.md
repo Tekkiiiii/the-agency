@@ -6,7 +6,6 @@ description: >
   inbox task", or "continue task". Similar to /pd-resume but for single inbox tasks:
   spawns a briefing subagent, collects the briefing, then spawns a task worker that
   starts the next action immediately. SSOT for task paths is ~/.claude/tasks/inbox/.
----
 
 # Unwrap — Inbox Task Recall + Resume
 
