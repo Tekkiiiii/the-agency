@@ -1,8 +1,36 @@
 const { execFileSync } = require('child_process');
-const { existsSync, chmodSync } = require('fs');
+const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
 const { syncSkills, syncAgents } = require('./sync-assets.js');
+
+const AGENCY_CONFIG_DIR = join(os.homedir(), '.agency');
+const AGENCY_CONFIG_PATH = join(AGENCY_CONFIG_DIR, 'config.json');
+
+function readTier() {
+  if (!existsSync(AGENCY_CONFIG_PATH)) return null;
+  try {
+    const cfg = JSON.parse(readFileSync(AGENCY_CONFIG_PATH, 'utf8'));
+    return cfg.tier || null;
+  } catch {
+    return null;
+  }
+}
+
+function restoreTier(tier) {
+  if (!tier) return;
+  try {
+    let cfg = {};
+    if (existsSync(AGENCY_CONFIG_PATH)) {
+      try { cfg = JSON.parse(readFileSync(AGENCY_CONFIG_PATH, 'utf8')); } catch (_) {}
+    }
+    if (cfg.tier !== tier) {
+      cfg.tier = tier;
+      if (!existsSync(AGENCY_CONFIG_DIR)) mkdirSync(AGENCY_CONFIG_DIR, { recursive: true });
+      writeFileSync(AGENCY_CONFIG_PATH, JSON.stringify(cfg, null, 2) + '\n');
+    }
+  } catch (_) {}
+}
 
 function findRepoRoot() {
   let dir = __dirname;
@@ -34,9 +62,16 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     process.exit(1);
   }
 
+  // Capture current tier BEFORE any git/sync operations so we can restore it
+  // after the upgrade completes. Upgrade does not intentionally write the tier,
+  // but capturing and restoring it here is a defensive guarantee against any
+  // future change in the upgrade flow accidentally resetting the user's tier.
+  const tierBefore = readTier();
+
   console.log('\nAgency Upgrade');
   console.log('==============');
   console.log('Repo: ' + repoDir);
+  if (tierBefore) console.log('Tier: ' + tierBefore + ' (will be preserved)');
   console.log('');
 
   // Detect in-progress git operations before doing anything
@@ -145,12 +180,19 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const coreSrc = join(repoDir, 'core');
   const coreDest = join(agencyRoot, 'core');
   if (existsSync(coreSrc)) {
-    const { mkdirSync } = require('fs');
     mkdirSync(coreDest, { recursive: true });
     try {
       execFileSync('cp', ['-r', coreSrc + '/.', coreDest + '/'], { stdio: 'pipe' });
       console.log('Core docs synced.');
     } catch (_) {}
+  }
+
+  // Restore tier — ensure the upgrade has not altered the user's tier setting.
+  // We read it before the git pull and write it back now. If no tier was set
+  // before (fresh install path), we leave the config as-is so init defaults apply.
+  if (tierBefore) {
+    restoreTier(tierBefore);
+    console.log(`Tier preserved: ${tierBefore}`);
   }
 
   // Re-link CLI binary to ensure symlink points into the repo being upgraded.
