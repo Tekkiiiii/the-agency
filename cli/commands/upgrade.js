@@ -1,4 +1,4 @@
-const { execFileSync } = require('child_process');
+const { execFileSync, spawnSync } = require('child_process');
 const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
@@ -6,6 +6,10 @@ const { syncSkills, syncAgents } = require('./sync-assets.js');
 
 const AGENCY_CONFIG_DIR = join(os.homedir(), '.agency');
 const AGENCY_CONFIG_PATH = join(AGENCY_CONFIG_DIR, 'config.json');
+
+// Loop guard env var. When set, the process knows it was re-exec'd after a pull
+// and must skip fetch/pull entirely — preventing an infinite restart loop.
+const REEXEC_ENV = 'AGENCY_UPGRADE_REEXEC';
 
 function readTier() {
   if (!existsSync(AGENCY_CONFIG_PATH)) return null;
@@ -54,6 +58,15 @@ function hasInProgressOp(repoDir) {
   return null;
 }
 
+function getHead(repoDir) {
+  try {
+    return execFileSync('git', ['-C', repoDir, 'rev-parse', 'HEAD'], { stdio: 'pipe' })
+      .toString().trim();
+  } catch {
+    return null;
+  }
+}
+
 module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const repoDir = findRepoRoot();
   if (!repoDir) {
@@ -68,95 +81,144 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   // future change in the upgrade flow accidentally resetting the user's tier.
   const tierBefore = readTier();
 
-  console.log('\nAgency Upgrade');
-  console.log('==============');
-  console.log('Repo: ' + repoDir);
-  if (tierBefore) console.log('Tier: ' + tierBefore + ' (will be preserved)');
-  console.log('');
+  // ─── RE-EXEC PATH ──────────────────────────────────────────────────────────
+  // When this process was spawned by a prior upgrade run after a successful
+  // pull (AGENCY_UPGRADE_REEXEC=1), skip fetch/pull entirely and jump straight
+  // to the post-pull sync steps. This is the loop guard: without it, the fresh
+  // process would pull again and potentially re-exec forever.
+  const isReexec = process.env[REEXEC_ENV] === '1';
 
-  // Detect in-progress git operations before doing anything
-  const inProgress = hasInProgressOp(repoDir);
-  if (inProgress) {
-    console.error(`A git ${inProgress} is already in progress.`);
-    console.error(`Run:  git -C "${repoDir}" ${inProgress === 'cherry-pick' ? 'cherry-pick' : inProgress} --abort`);
-    console.error('Then re-run: agency upgrade');
-    console.error('Or run: bash rescue.sh (handles this automatically)');
-    process.exit(1);
-  }
+  if (isReexec) {
+    console.log('\nAgency Upgrade (continuing with fresh code)');
+    console.log('===========================================');
+    console.log('Repo: ' + repoDir);
+    if (tierBefore) console.log('Tier: ' + tierBefore + ' (will be preserved)');
+    console.log('');
+    // Skip directly to post-pull steps below.
+  } else {
+    // ─── NORMAL FIRST-RUN PATH ────────────────────────────────────────────────
+    console.log('\nAgency Upgrade');
+    console.log('==============');
+    console.log('Repo: ' + repoDir);
+    if (tierBefore) console.log('Tier: ' + tierBefore + ' (will be preserved)');
+    console.log('');
 
-  // Fetch
-  console.log('Fetching origin/main...');
-  try {
-    execFileSync('git', ['-C', repoDir, 'fetch', 'origin', 'main'], { stdio: 'pipe' });
-  } catch (err) {
-    console.error('git fetch failed: ' + (err.stderr ? err.stderr.toString().trim() : err.message));
-    console.error('Check your network connection, then re-run: agency upgrade');
-    process.exit(1);
-  }
+    // Detect in-progress git operations before doing anything
+    const inProgress = hasInProgressOp(repoDir);
+    if (inProgress) {
+      console.error(`A git ${inProgress} is already in progress.`);
+      console.error(`Run:  git -C "${repoDir}" ${inProgress === 'cherry-pick' ? 'cherry-pick' : inProgress} --abort`);
+      console.error('Then re-run: agency upgrade');
+      console.error('Or run: bash rescue.sh (handles this automatically)');
+      process.exit(1);
+    }
 
-  // Stash local changes
-  let stashed = false;
-  try {
-    const status = execFileSync('git', ['-C', repoDir, 'status', '--porcelain'], { stdio: 'pipe' }).toString().trim();
-    if (status) {
-      console.log('Stashing local changes...');
-      try {
-        execFileSync('git', ['-C', repoDir, 'stash', '--include-untracked'], { stdio: 'pipe' });
-        stashed = true;
-      } catch (stashErr) {
-        console.error('git stash failed: ' + (stashErr.stderr ? stashErr.stderr.toString().trim() : stashErr.message));
-        // Check if tree is still dirty
-        const stillDirty = execFileSync('git', ['-C', repoDir, 'status', '--porcelain'], { stdio: 'pipe' }).toString().trim();
-        if (stillDirty) {
-          console.error('Cannot proceed with unstaged changes. Either:');
-          console.error(`  git -C "${repoDir}" stash --include-untracked`);
-          console.error(`  git -C "${repoDir}" checkout -- .`);
-          console.error('Or run: bash rescue.sh');
-          process.exit(1);
+    // Snapshot HEAD before pull — used to detect whether new code was fetched.
+    const headBefore = getHead(repoDir);
+
+    // Fetch
+    console.log('Fetching origin/main...');
+    try {
+      execFileSync('git', ['-C', repoDir, 'fetch', 'origin', 'main'], { stdio: 'pipe' });
+    } catch (err) {
+      console.error('git fetch failed: ' + (err.stderr ? err.stderr.toString().trim() : err.message));
+      console.error('Check your network connection, then re-run: agency upgrade');
+      process.exit(1);
+    }
+
+    // Stash local changes
+    let stashed = false;
+    try {
+      const status = execFileSync('git', ['-C', repoDir, 'status', '--porcelain'], { stdio: 'pipe' }).toString().trim();
+      if (status) {
+        console.log('Stashing local changes...');
+        try {
+          execFileSync('git', ['-C', repoDir, 'stash', '--include-untracked'], { stdio: 'pipe' });
+          stashed = true;
+        } catch (stashErr) {
+          console.error('git stash failed: ' + (stashErr.stderr ? stashErr.stderr.toString().trim() : stashErr.message));
+          // Check if tree is still dirty
+          const stillDirty = execFileSync('git', ['-C', repoDir, 'status', '--porcelain'], { stdio: 'pipe' }).toString().trim();
+          if (stillDirty) {
+            console.error('Cannot proceed with unstaged changes. Either:');
+            console.error(`  git -C "${repoDir}" stash --include-untracked`);
+            console.error(`  git -C "${repoDir}" checkout -- .`);
+            console.error('Or run: bash rescue.sh');
+            process.exit(1);
+          }
         }
       }
-    }
-  } catch (statusErr) {
-    console.error('git status failed: ' + (statusErr.message || statusErr));
-    process.exit(1);
-  }
-
-  // Pull with rebase
-  try {
-    const pullOutput = execFileSync('git', ['-C', repoDir, 'pull', '--rebase', 'origin', 'main'], { stdio: 'pipe' }).toString().trim();
-    console.log(pullOutput || 'Already up to date.');
-  } catch (err) {
-    const stderr = err.stderr ? err.stderr.toString().trim() : err.message;
-    console.error('git pull --rebase failed: ' + stderr);
-
-    // Check if rebase is now in progress (started but hit conflicts)
-    if (hasInProgressOp(repoDir) === 'rebase') {
-      console.error('Aborting failed rebase...');
-      try { execFileSync('git', ['-C', repoDir, 'rebase', '--abort'], { stdio: 'pipe' }); } catch (_) {}
+    } catch (statusErr) {
+      console.error('git status failed: ' + (statusErr.message || statusErr));
+      process.exit(1);
     }
 
-    if (stashed) {
-      console.error('Your stashed changes are preserved. To restore:');
-      console.error(`  git -C "${repoDir}" stash pop`);
-    }
-
-    console.error('Or run: bash rescue.sh');
-    process.exit(1);
-  }
-
-  // Restore stashed changes
-  if (stashed) {
-    console.log('Restoring local changes...');
+    // Pull with rebase
     try {
-      execFileSync('git', ['-C', repoDir, 'stash', 'pop'], { stdio: 'pipe' });
-    } catch (_) {
-      console.log('  Stash pop had conflicts. Your changes are safe in the stash.');
-      console.log(`  To see them:   git -C "${repoDir}" stash show -p`);
-      console.log(`  To drop them:  git -C "${repoDir}" stash drop`);
-    }
-  }
+      const pullOutput = execFileSync('git', ['-C', repoDir, 'pull', '--rebase', 'origin', 'main'], { stdio: 'pipe' }).toString().trim();
+      console.log(pullOutput || 'Already up to date.');
+    } catch (err) {
+      const stderr = err.stderr ? err.stderr.toString().trim() : err.message;
+      console.error('git pull --rebase failed: ' + stderr);
 
-  console.log('');
+      // Check if rebase is now in progress (started but hit conflicts)
+      if (hasInProgressOp(repoDir) === 'rebase') {
+        console.error('Aborting failed rebase...');
+        try { execFileSync('git', ['-C', repoDir, 'rebase', '--abort'], { stdio: 'pipe' }); } catch (_) {}
+      }
+
+      if (stashed) {
+        console.error('Your stashed changes are preserved. To restore:');
+        console.error(`  git -C "${repoDir}" stash pop`);
+      }
+
+      console.error('Or run: bash rescue.sh');
+      // Pull FAILED — do NOT re-exec. Exit so the user sees the error.
+      process.exit(1);
+    }
+
+    // Restore stashed changes
+    if (stashed) {
+      console.log('Restoring local changes...');
+      try {
+        execFileSync('git', ['-C', repoDir, 'stash', 'pop'], { stdio: 'pipe' });
+      } catch (_) {
+        console.log('  Stash pop had conflicts. Your changes are safe in the stash.');
+        console.log(`  To see them:   git -C "${repoDir}" stash show -p`);
+        console.log(`  To drop them:  git -C "${repoDir}" stash drop`);
+      }
+    }
+
+    // ─── RE-EXEC CHECK ─────────────────────────────────────────────────────────
+    // Compare HEAD before and after the pull. If HEAD moved, new code is on disk.
+    // Re-exec this upgrade under the freshly-pulled Node module so the remaining
+    // sync + tier-restore steps run with the latest logic.
+    //
+    // Critical conditions for re-exec:
+    //   1. headBefore must be known (git was readable before pull)
+    //   2. HEAD must have changed (something was actually pulled)
+    //   3. The new CLI bin must exist (sanity check before spawning)
+    //   4. We are NOT already a re-exec'd run (loop guard — checked above via isReexec)
+    const headAfter = getHead(repoDir);
+    if (headBefore && headAfter && headBefore !== headAfter) {
+      const freshBin = join(repoDir, 'cli', 'bin', 'agency.js');
+      if (existsSync(freshBin)) {
+        console.log('');
+        console.log('New code pulled — re-launching with fresh upgrade.js...');
+        const childEnv = { ...process.env, [REEXEC_ENV]: '1' };
+        const result = spawnSync(process.execPath, [freshBin, 'upgrade', ...args], {
+          stdio: 'inherit',
+          env: childEnv,
+        });
+        // Propagate child exit code exactly. Do not run post-pull steps in the
+        // old process — the fresh child handles all of them.
+        process.exit(result.status ?? 1);
+      }
+    }
+    // HEAD unchanged (already up to date) — fall through to post-pull steps below.
+    console.log('');
+  }
+  // ─── POST-PULL STEPS (run in fresh re-exec'd process OR when HEAD unchanged) ─
 
   // Sync skills and agents
   const agencyRoot = AGENCY_ROOT;
@@ -188,8 +250,8 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   }
 
   // Restore tier — ensure the upgrade has not altered the user's tier setting.
-  // We read it before the git pull and write it back now. If no tier was set
-  // before (fresh install path), we leave the config as-is so init defaults apply.
+  // The re-exec'd child reads the tier fresh itself (~/  .agency/config.json is
+  // never touched by git pull — blast-radius confirmed). No env passing needed.
   if (tierBefore) {
     restoreTier(tierBefore);
     console.log(`Tier preserved: ${tierBefore}`);
