@@ -60,7 +60,7 @@ See [social-media/INDEX.md](social-media/INDEX.md) — 12 platform-specific writ
 
 **Reference layers**: seo-aeo-best-practices, content-experimentation-best-practices, content-modeling-best-practices, vietnamese-language
 
-**Video handoff**: Video scripts complete here → use `content-to-video-protocol` (`agents/runbooks/content-to-video-protocol.md`) to hand off to Video Studio dept for production
+**Video handoff**: Video scripts complete here → use `content-to-video-protocol` (`runbooks/content-to-video-protocol.md`) to hand off to Video Studio dept for production
 
 ## How Content Gets Requested
 

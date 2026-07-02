@@ -267,6 +267,6 @@ Stop after reporting.
 
 ## References
 
-- Dept-Coord Protocol: `{agency-root}/agents/runbooks/dept-coord-protocol.md`
-- Dept Boot Sequence: `{agency-root}/agents/runbooks/dept-boot-sequence.md`
+- Dept-Coord Protocol: `{agency-root}/runbooks/dept-coord-protocol.md`
+- Dept Boot Sequence: `{agency-root}/runbooks/dept-boot-sequence.md`
 - Department state: `{agency-root}/agents/video-studio/state/`

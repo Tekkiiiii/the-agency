@@ -247,7 +247,7 @@ lost — the caller's session is already closed. Only filesystem writes survive 
 session boundary.
 
 Full protocol, flow diagram, and smoke test:
-`~/.claude/agents/runbooks/inter-spawn-notify-protocol.md`
+`~/.claude/runbooks/inter-spawn-notify-protocol.md`
 
 This rule applies to all PD identity files. If a Spawner Protocol section in any
 `agents/specialized/*-pd.md` says "SendMessage to caller" for inter-spawn

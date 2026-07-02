@@ -87,7 +87,7 @@ so PD maintains global visibility. Coords read scoped; write to master.
 
 **Decomposition methodology:** For detailed guidance on DAG construction, layer
 computation, writes-to identification, and tier classification, read:
-`~/.claude/agents/runbooks/task-decomposition-methodology.md`
+`~/.claude/runbooks/task-decomposition-methodology.md`
 LAZY-READ: load this file ONLY when actively decomposing. Never in base agent context.
 
 **Phase checkpoint rule:** After completing your L3→L6 decomposition AND writing

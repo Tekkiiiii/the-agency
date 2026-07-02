@@ -22,7 +22,7 @@ Any protocol listed here has passed cross-dept sign-off and is considered active
 |---|---|---|---|---|---|
 | content-request | content-creation | marketing | v1.0 | active | `agents/content-creation/protocols/content-request.md` |
 | marketing-content-handoff | marketing | content-creation | v1.0 | active | `agents/marketing/protocols/marketing-content-handoff.md` |
-| quality-loop | critiques | content-creation, marketing, design, engineering, video-studio | v1.0 | active | `agents/runbooks/quality-loop-protocol.md` |
+| quality-loop | critiques | content-creation, marketing, design, engineering, video-studio | v1.0 | active | `runbooks/quality-loop-protocol.md` |
 
 **Column definitions:**
 - **Protocol** — machine-readable slug, kebab-case, unique across the registry
@@ -131,8 +131,8 @@ The agency-council reviews this registry quarterly and deprecates protocols that
 
 ## References
 
-- Dept-Coord protocol: `{agency-root}/agents/runbooks/dept-coord-protocol.md`
-- Dept boot sequence: `{agency-root}/agents/runbooks/dept-boot-sequence.md`
-- Dept lead protocol: `{agency-root}/agents/runbooks/department-lead-protocol.md`
+- Dept-Coord protocol: `{agency-root}/runbooks/dept-coord-protocol.md`
+- Dept boot sequence: `{agency-root}/runbooks/dept-boot-sequence.md`
+- Dept lead protocol: `{agency-root}/runbooks/department-lead-protocol.md`
 - Content request protocol: `{agency-root}/agents/content-creation/protocols/content-request.md`
 - Marketing-content handoff: `{agency-root}/agents/marketing/protocols/marketing-content-handoff.md`

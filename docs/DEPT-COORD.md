@@ -137,7 +137,7 @@ When a department head resumes:
 5. Spawn Dept-Coord for any queued tasks
 6. On completion: `/dept-save-state {dept}`
 
-Full boot sequence: `agents/runbooks/dept-boot-sequence.md`
+Full boot sequence: `runbooks/dept-boot-sequence.md`
 
 ## Context Budget
 

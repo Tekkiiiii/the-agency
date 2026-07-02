@@ -91,5 +91,5 @@
 ## Protocols
 
 - `protocols/content-to-video.md` — script handoff from Content Creation department
-- `agents/runbooks/content-to-video-protocol.md` — agency-wide cross-dept protocol
-- `agents/runbooks/quality-loop-protocol.md` — quality gate protocol; quality-loop-router applies this at the terminal step
+- `runbooks/content-to-video-protocol.md` — agency-wide cross-dept protocol
+- `runbooks/quality-loop-protocol.md` — quality gate protocol; quality-loop-router applies this at the terminal step

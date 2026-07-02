@@ -124,7 +124,7 @@ its D4-D6 tasks back to the master.
 the spawned Dept Head generates it before dispatching Dept-Coords.
 
 **Decomposition methodology:** For detailed guidance on DAG construction and the
-two-condition rule, read: `~/.claude/agents/runbooks/task-decomposition-methodology.md`
+two-condition rule, read: `~/.claude/runbooks/task-decomposition-methodology.md`
 LAZY-READ: load only when actively decomposing.
 
 ---
@@ -619,7 +619,7 @@ Without these steps, dept heads spawn into sessions with no knowledge of protoco
 ## References
 
 - Coord agent definition: `~/.claude/agents/project-management/coord.md`
-- Dept boot sequence: `~/.claude/agents/runbooks/dept-boot-sequence.md`
-- Dept lead protocol: `~/.claude/agents/runbooks/department-lead-protocol.md`
-- Protocol registry: `~/.claude/agents/runbooks/protocol-registry.md`
+- Dept boot sequence: `~/.claude/runbooks/dept-boot-sequence.md`
+- Dept lead protocol: `~/.claude/runbooks/department-lead-protocol.md`
+- Protocol registry: `~/.claude/runbooks/protocol-registry.md`
 - Dept state format: `~/.claude/agents/{dept}/state/dept-state.md`

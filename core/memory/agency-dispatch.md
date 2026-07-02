@@ -15,10 +15,10 @@ Before matching agents or skills, check if an active protocol governs the task:
 |---|---|---|
 | Content production (blog, email, ad, social, video script) | content-request | `agents/content-creation/protocols/content-request.md` |
 | Marketing→Content handoff (strategic brief → artifact) | marketing-content-handoff | `agents/marketing/protocols/marketing-content-handoff.md` |
-| Quality gate for any creative or code deliverable | quality-loop | `agents/runbooks/quality-loop-protocol.md` |
-| Cross-dept work not listed above | Check protocol-registry | `agents/runbooks/protocol-registry.md` |
-| Escalation, conflict, authority dispute | escalation-protocol | `agents/runbooks/escalation-protocol.md` |
-| Department initiative execution (D1→D6) | dept-coord-protocol | `agents/runbooks/dept-coord-protocol.md` |
+| Quality gate for any creative or code deliverable | quality-loop | `runbooks/quality-loop-protocol.md` |
+| Cross-dept work not listed above | Check protocol-registry | `runbooks/protocol-registry.md` |
+| Escalation, conflict, authority dispute | escalation-protocol | `runbooks/escalation-protocol.md` |
+| Department initiative execution (D1→D6) | dept-coord-protocol | `runbooks/dept-coord-protocol.md` |
 
 If a protocol matches → route through the protocol's owning department. Skills and agents are dispatched **within** the protocol flow, not instead of it.
 

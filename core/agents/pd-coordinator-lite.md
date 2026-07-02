@@ -315,7 +315,7 @@ Both calls are fire-and-forget — they never block a spawn.
 ## Decomposition Guide
 
 PD → L3. Coord → L6. Mini-Coord → L9+. Exec = atomic (one file/function/component).
-Full tier table: `~/.claude/agents/runbooks/task-decomposition-methodology.md` (lazy-load when decomposing).
+Full tier table: `~/.claude/runbooks/task-decomposition-methodology.md` (lazy-load when decomposing).
 
 **Note (LITE):** The Complexity Ladder Gate (§2.6 in standard — single-domain tasks that skip Coord) is not active in LITE. Always decompose through the full PD→Coord→Exec chain.
 
