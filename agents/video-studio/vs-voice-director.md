@@ -41,12 +41,12 @@ Deliver:
 - MCP: registered as `omnivoice` in `~/.claude/settings.json` — use `mcp__omnivoice__generate_speech` to generate audio
 - API direct: `POST http://localhost:3900/generate` with `text`, `language`, `num_step` form fields
 - 646 languages, Apple Silicon native (MPS + mlx-audio), zero-shot voice clone
-- Full convention: `~/.claude/projects/-Users-Tekki--claude/memory/omnivoice_studio_skill.md`
+- Full convention: see the omnivoice-studio skill README
 
 **Backend lifecycle — ON-DEMAND (mandatory).** The backend holds ~2.4GB of models in
 RAM, so it is NOT always-on. Around every voice task you MUST:
 1. `~/.agents/skills/omnivoice-studio/bin/omnivoicectl up` — boot + wait for health (first boot ~slow).
-2. Generate via `mcp__omnivoice__generate_speech` (hold the backend up while Tekki reviews the audio).
+2. Generate via `mcp__omnivoice__generate_speech` (hold the backend up while the user reviews the audio).
 3. `~/.agents/skills/omnivoice-studio/bin/omnivoicectl down` — shut down + free RAM ONCE the output is approved.
 Never leave the backend running after a task is approved. Check `omnivoicectl status` if unsure.
 
@@ -64,6 +64,6 @@ OmniVoice and all TTS engines produce near-digital silence during pauses. That d
 - Adds 0.4 s ambience lead-in and 0.6 s lead-out so the clip never opens or closes on dead air.
 - Voice peak level is unaffected; only the silence floor is raised.
 - Gain offset (optional, DEFAULT -10 → ~-60 dB floor, matched to the voice's own ambience so it never jumps in pauses). Use -13 for quieter, -5 for more present.
-- Room-tone source: `~/.claude/projects/system-improvement/outputs/omnivoice/roomtone.wav` (Tekki home studio, 11.2–14.0 s of ai-ceo-day2-audio.wav, 16 kHz mono, ~-83 dB mean).
+- Room-tone source: capture 3-5s of silence from your own recording environment, 16 kHz mono, ~-80 dB mean or quieter.
 
 This is a NO-BACKEND step — do not boot OmniVoice for this. ffmpeg only.

@@ -117,11 +117,9 @@ PD Standard Protocol from `/pd-resume`.
 
 | PD | Project Directory |
 |---|---|
-| marketsenseapp-pd | `~/.claude/projects/MarketSenseApp/` |
-| amanicrm-pd | `~/.claude/projects/amani-crm/` |
-| ltv-pd | `~/Projects/ltv/` |
-| website-pitch-pd | `~/projects/website-pitch-webmoi/` |
-| research-pd | `~/.claude/projects/research/` |
+| my-app-pd | `~/.claude/projects/my-app/` |
+| example-crm-pd | `~/.claude/projects/example-crm/` |
+| landing-site-pd | `~/projects/landing-site/` |
 
 If a project directory doesn't exist, skip that PD silently.
 
