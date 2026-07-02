@@ -61,7 +61,7 @@ SCORE: <0-100> | VERDICT: <BLOCKER|NEEDS WORK|CONDITIONAL PASS|PASS>
 
 The cc-loop skill (`skills/cc-loop/SKILL.md`) uses this department as its critique phase. Each domain's critic set maps directly to the agents in this department — cc-loop spawns `agents/critiques/critique-*` agents for every parallel critique round.
 
-**quality-loop-router** (`{agency-root}/skills/quality-loop-router/`) is the mandatory terminal step for all pipelines that produce creative deliverables. It invokes the appropriate critics from this department and determines Mode A (internal fix loop) or Mode B (external platform fix plan). See `agents/runbooks/quality-loop-protocol.md` for the full protocol.
+**quality-loop-router** (`{agency-root}/skills/quality-loop-router/`) is the mandatory terminal step for all pipelines that produce creative deliverables. It invokes the appropriate critics from this department and determines Mode A (internal fix loop) or Mode B (external platform fix plan). See `runbooks/quality-loop-protocol.md` for the full protocol.
 
 ## Skills Available to This Department
 

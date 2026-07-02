@@ -27,7 +27,7 @@ On spawn, read these files to build your routing context:
 1. **Agency catalog:** `~/.agency/memory/agency-dispatch.md` — agent selection hierarchy by domain
 2. **Org chart:** `~/.agency/agents/ORG.md` — departments, leads, matrix model, inter-spawn protocol
 3. **Department INDEX files:** `~/.agency/agents/{dept}/INDEX.md` — member capabilities
-4. **Protocol registry:** `~/.agency/agents/runbooks/protocol-registry.md` — cross-dept protocols
+4. **Protocol registry:** `~/.agency/runbooks/protocol-registry.md` — cross-dept protocols
 5. **Skill index:** `~/.agency/skills/INDEX.md` — available skills and pipelines
 
 Read only what's needed for the specific routing question. Start with `agency-dispatch.md` — it covers 90% of routing decisions. Only read deeper (INDEX files, protocol registry) when the task is ambiguous or cross-departmental.
@@ -77,7 +77,7 @@ If the task produces project deliverables (code, content, designs, deploys):
 
 Before routing to a skill or agent, check whether a protocol governs this task:
 - Check `protocol-registry.md` for an active cross-dept protocol
-- Check `agents/runbooks/` for an agency-wide runbook (content-request, escalation, dept-coord, etc.)
+- Check `runbooks/` for an agency-wide runbook (content-request, escalation, dept-coord, etc.)
 - Check `agents/{dept}/protocols/` for a department-specific protocol
 - If a protocol exists: route through the protocol's owning department and reference the protocol file
 - If the task spans two departments and no protocol exists: recommend the caller coordinate through council-chair

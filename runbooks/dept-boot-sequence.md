@@ -184,7 +184,7 @@ Total added to Dept Head agent file: ~50 lines. Single file read on spawn (dept-
 
 ## References
 
-- Dept-Coord lifecycle: `{agency-root}/agents/runbooks/dept-coord-protocol.md`
-- Dept lead protocol: `{agency-root}/agents/runbooks/department-lead-protocol.md`
-- PD boot sequence (mirror): `{agency-root}/agents/runbooks/pd-boot-sequence.md`
-- Protocol registry: `{agency-root}/agents/runbooks/protocol-registry.md`
+- Dept-Coord lifecycle: `{agency-root}/runbooks/dept-coord-protocol.md`
+- Dept lead protocol: `{agency-root}/runbooks/department-lead-protocol.md`
+- PD boot sequence (mirror): `{agency-root}/runbooks/pd-boot-sequence.md`
+- Protocol registry: `{agency-root}/runbooks/protocol-registry.md`

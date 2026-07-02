@@ -104,7 +104,7 @@ Either violation → serialize. Both must hold.
 
 **Decomposition methodology:** For detailed guidance on DAG construction, layer
 computation, writes-to identification, and tier classification, read:
-`~/.claude/agents/runbooks/task-decomposition-methodology.md`
+`~/.claude/runbooks/task-decomposition-methodology.md`
 LAZY-READ: load this file ONLY when actively decomposing. Never in base agent context.
 
 **Phase checkpoint rule:** Decomposition burns heavy context.
@@ -382,7 +382,7 @@ Every project that uses PD coordination maintains a structural contract file at
 
 ### Schema — pd-structure.md
 
-Schema (5 sections: Architecture Decisions, No-Touch Zones, Integration Contracts, Active L3 Boundaries, Known Cross-L3 Dependencies): see template at `~/.claude/agents/runbooks/pd-structure-template.md` (create if absent using those 5 sections).
+Schema (5 sections: Architecture Decisions, No-Touch Zones, Integration Contracts, Active L3 Boundaries, Known Cross-L3 Dependencies): see template at `~/.claude/runbooks/pd-structure-template.md` (create if absent using those 5 sections).
 
 ### Coord Reads pd-structure.md On Spawn
 
@@ -485,7 +485,7 @@ Skip when: you already have the exact file path.
 ## Decomposition Guide
 
 PD → L3. Coord → L6. Mini-Coord → L9+. Exec = atomic (one file/function/component).
-Full tier table: `~/.claude/agents/runbooks/task-decomposition-methodology.md` (lazy-load when decomposing).
+Full tier table: `~/.claude/runbooks/task-decomposition-methodology.md` (lazy-load when decomposing).
 
 ---
 
