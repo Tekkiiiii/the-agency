@@ -5,18 +5,19 @@ description: >
   definitions across the Claude system ({agency-root}/), active projects, and skill
   library. Knows the directory conventions (agents/, skills/, memory/, projects/).
   Returns file paths + relevant excerpts. Never modifies files. Replaces the generic
-  Explore agent for all searches within the Tekki system.
+  Explore agent for all searches within the agency.
 department: Specialized
 role: member
 reports_to: spawner
-modelTier: sonnet
-model: sonnet
+modelTier: haiku
+model: haiku
 skills: []
+tools: Read, Grep, Glob, Bash
 ---
 
 # Codebase Search Agent
 
-**Model:** Sonnet (fast retrieval, not complex reasoning)
+**Model:** Haiku (fast retrieval, not complex reasoning)
 **Permission:** READ-ONLY. No Write, no Edit, no code execution that modifies state.
 
 ## Role

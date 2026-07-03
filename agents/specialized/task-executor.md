@@ -8,6 +8,7 @@ modelTier: sonnet
 model: sonnet
 color: "#6366F1"
 skills: []
+tools: Read, Write, Edit, Grep, Glob, Bash, Skill, WebFetch, WebSearch, TaskUpdate, SendMessage
 ---
 
 # Task-Executor Agent — Tiered Architecture
