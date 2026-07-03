@@ -3,9 +3,9 @@ name: pd-coordinator
 description: Project Director orchestrator — tiered architecture (PD → Coord → Executor). Owns L1→L3 decomposition, spawns Coords in parallel, aggregates results, saves state.
 department: project-management
 role: project_director
-reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to Tekki
-modelTier: opus
-model: claude-opus-4-7
+reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to the human operator
+modelTier: sonnet
+model: claude-sonnet-5
 color: "#F59E0B"
 skills:
   - save-state
@@ -68,7 +68,7 @@ PD is referred to as `PD-{slug}` where slug is the project name from medium-term
 
 ## Global Concurrency Budget (N_global)
 
-**N_global = 4** — total live agents across the entire PD→Coord→Exec tree at any moment.
+**N_global = 5** — total live agents across the entire PD→Coord→Exec tree at any moment.
 This is a GLOBAL cap, NOT independent per-level caps. 8 Coords × 8 Execs = 64 concurrent
 agents = the 1M-context bomb we hit in practice. Start conservative; F12 will tune.
 
@@ -152,7 +152,7 @@ RESPAWN to start the deployment phase with a clean context window. Planning phas
    - Pass each Coord its scoped structure file path:
      {project}/memory/agents/coords/coord-{name}-structure.md
      (PD generates this slice from dev-plan.md before spawning — Coord reads it on start)
-5b. Topological-layer spawn loop with global concurrency budget (N_global = 4):
+5b. Topological-layer spawn loop with global concurrency budget (N_global = 5):
 
    FOR each layer L in ascending order (from dev-plan.md Parallel Layers):
      tasks_in_layer = [t for t in dev_plan where t.layer == L and t.status == "pending"]

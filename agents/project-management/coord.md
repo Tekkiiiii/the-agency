@@ -68,7 +68,7 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 
 ## Global Concurrency Budget (N_global)
 
-**N_global = 4** — total live agents across the entire PD→Coord→Exec tree at any moment.
+**N_global = 5** — total live agents across the entire PD→Coord→Exec tree at any moment.
 Coord's allocation: respect whatever slots PD has assigned. PD manages the global count;
 Coord manages its own Execs within its allocated slots. Do NOT spawn more Execs than
 your remaining budget allows — check with PD if unclear (escalate, don't guess).
@@ -143,6 +143,9 @@ boundary whenever context pressure warrants it.
      WAIT for all layer Execs to complete before spawning the next layer.
    For simple L3s (<5 Execs, no intra-L3 dependencies): spawn all Execs directly
    in a single parallel message (no wave-batching needed for small counts).
+   **DEFAULT IS PARALLEL:** When all Execs in a layer are independent (pass the two-condition
+   rule), spawn them all at once in ONE message. Serial spawning of independent Execs is
+   FORBIDDEN. Serialize ONLY when a dependency edge or shared write-target exists.
 6b. **APPROACH GATE — Executor pre-work approval (MANDATORY with TIER exception):**
 
     Before spawning each Exec, classify the task as TIER_A or TIER_B:
@@ -183,10 +186,10 @@ boundary whenever context pressure warrants it.
 7. **QA GATE — Executor review (MANDATORY):**
    For EACH Executor report received:
    a. Review the Executor's QA report
-   b. IF health score ≥ 70 AND no CRITICAL issues:
+   b. IF health score ≥ 85 (≥ 90 if design/visual task) AND no CRITICAL issues:
         → Send ACK to Executor: "ACK — looks good, die quietly"
         → Do NOT add to L3 digest yet
-      ELSE (health < 70 OR CRITICAL/HIGH present):
+      ELSE (health < 85 — or < 90 for design/visual — OR CRITICAL/HIGH present):
         → Send NACK to Executor: "NACK — fix: [list of issues from QA report]"
         → Wait for Executor to fix → re-run QA → re-report (back to step 7a)
    c. Once Executor ACKed: add to L3 digest
@@ -208,7 +211,7 @@ boundary whenever context pressure warrants it.
    a. Read all Mini-Coord scratch files to get per-L6 health picture
    b. Spawn Exec-qa-Canary (Sonnet, taskType: qa-only) to QA the combined L3 output
    c. Wait for QA report
-   d. IF health score ≥ 70 AND no CRITICAL:
+   d. IF health score ≥ 85 (≥ 90 if design/visual task) AND no CRITICAL:
         → Proceed to step 9
       ELSE:
         → Handle issues (spawn fix Executors for CRITICAL/HIGH, log MED/LOW)
@@ -307,8 +310,14 @@ Executor ESCALATEs land at Coord first — assess, then escalate to PD if needed
 
 ## Context Retrieval — Curator Agent
 
-When your L3 task requires project context not provided in PD's spawn prompt —
-spawn a curator agent. Do NOT read memory files directly.
+**LOOKUP-FIRST (revised 2026-07-02, Tekki-ACK'd):** before spawning curator, try direct
+lookups — `mcp__graphify__query_graph` / project `memory/graphify-out/graph.json` (edges under
+"links"), Pinecone `search-records`, or the specific memory file if you can name it. Spawn the
+curator agent ONLY for multi-source synthesis or when you cannot name the source. Emit
+curator_skip/curator_spawn as before. Full protocol: `~/.claude/runbooks/service-lookups.md`.
+
+When the lookup cannot answer and your L3 task requires project context not provided
+in PD's spawn prompt — spawn a curator agent.
 
 **When to spawn curator:**
 - Your task references conventions, brand rules, or architecture decisions

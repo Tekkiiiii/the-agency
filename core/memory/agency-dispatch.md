@@ -22,11 +22,11 @@ Before matching agents or skills, check if an active protocol governs the task:
 
 If a protocol matches → route through the protocol's owning department. Skills and agents are dispatched **within** the protocol flow, not instead of it.
 
-## Step 0.5 — Spawn Delegator FIRST (mandatory, before using the table below)
+## Step 0.5 — Lookup-first, Delegator second
 
-**The Delegator is mandatory before any agent spawn.** Do NOT use the Step 1 table to self-route — use it only as a reference when briefing the Delegator or when applying the fast-path (see Step 1.5).
+**Check `core/memory/delegator-cache.md` for an exact task-pattern match before spawning anything.** Cache hit → use the cached route, skip Delegator, log `delegator_cache_hit`. See `runbooks/service-lookups.md` for the full lookup-first protocol.
 
-Spawn the Delegator (`~/.claude/agents/specialized/delegator.md`, sonnet). It reads the full agency catalog, org chart, protocol registry, and skill index, and returns a structured routing recommendation. It is a one-shot service agent — spawn, get answer, it dies.
+No cache hit → spawn the Delegator (`agents/specialized/delegator.md`, haiku). It reads the full agency catalog, org chart, protocol registry, and skill index, and returns a structured routing recommendation. It is a one-shot service agent — spawn, get answer, it dies. Append its answer to the cache and emit `delegator_spawn`.
 
 Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, Curator spawns, codebase-search spawns.
 
@@ -50,6 +50,7 @@ Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, Cura
 | Game dev | `Game Development Lead` |
 | Spatial/VR/AR | `Spatial Computing Lead` |
 | Knowledge retrieval, project context, history lookup | `curator` |
+| Task planning, decomposition, DAG structuring, sprint planning | `task-planner` (`specialized/task-planner.md`) |
 | Voice cloning, TTS, voice generation, text-to-speech, dubbing, voice design | `Voice & Cast Director` (`video-studio/vs-voice-director.md`) via OmniVoice Studio (default tool) — MCP: `mcp__omnivoice__generate_speech` |
 | Video editing, transcription, color grade, subtitles, overlays, raw footage | `/video-use` skill (default), `content-creation-lead` for strategy |
 | Video production (scripted, AI-generated, full pipeline) | Video Studio dept — `video-studio-lead` for strategy, `video-studio-coord` for production coordination |

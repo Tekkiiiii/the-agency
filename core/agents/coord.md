@@ -68,7 +68,7 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 
 ## Global Concurrency Budget (N_global)
 
-**N_global = 4** — total live agents across the entire PD→Coord→Exec tree at any moment.
+**N_global = 5** — total live agents across the entire PD→Coord→Exec tree at any moment.
 Coord's allocation: respect whatever slots PD has assigned. PD manages the global count;
 Coord manages its own Execs within its allocated slots. Do NOT spawn more Execs than
 your remaining budget allows — check with PD if unclear (escalate, don't guess).

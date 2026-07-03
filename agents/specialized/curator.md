@@ -9,8 +9,9 @@ department: Specialized
 role: member
 reports_to: spawner
 modelTier: sonnet
-model: claude-sonnet-4-6
+model: sonnet
 skills: []
+tools: Read, Grep, Glob, Bash, mcp__graphify__query_graph, mcp__graphify__get_node, mcp__graphify__get_neighbors, mcp__graphify__shortest_path, mcp__graphify__get_community, mcp__graphify__god_nodes, mcp__graphify__graph_stats, mcp__notebooklm-mcp__notebook_query, mcp__notebooklm-mcp__cross_notebook_query, mcp__notebooklm-mcp__notebook_list, mcp__plugin_pinecone_pinecone__search-records, mcp__plugin_pinecone_pinecone__cascading-search
 ---
 
 # Curator Agent
