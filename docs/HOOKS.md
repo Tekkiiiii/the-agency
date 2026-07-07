@@ -2,7 +2,7 @@
 
 The Agency ships a lifecycle hook system that runs shell scripts at key Claude Code events. Hooks are installed at `~/.claude/hooks/` and wired into `~/.claude/settings.json` by `agency init`.
 
-This is a significant security and observability upgrade over a bare Claude Code install: 2 → 17 hooks across 4 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below).
+This is a significant security and observability upgrade over a bare Claude Code install: 2 → 18 hooks across 5 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below).
 
 ---
 
@@ -10,6 +10,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 
 | Script | Event | Trigger | Purpose |
 |--------|-------|---------|---------|
+| `fable-on-opus.sh` | UserPromptSubmit | always (self-gates on model) | Inject Fable-style operating-discipline guidance (`hooks/fable/*.md`) when the active model is Opus-line |
 | `startup-sync.sh` | SessionStart | always | Auto-pull `~/.claude` config from GitHub on session open |
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
@@ -89,6 +90,13 @@ After `agency init`, your `~/.claude/settings.json` contains:
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash ~/.claude/hooks/fable-on-opus.sh" }
+        ]
+      }
     ]
   }
 }
@@ -119,6 +127,35 @@ The template `hooks/.hook-profile.template` ships `standard` as the default.
 ---
 
 ## Hook Details
+
+### fable-on-opus.sh (UserPromptSubmit)
+
+Reads the incoming prompt payload from stdin (`session_id`, `transcript_path`, `model`, `prompt`) and determines the active model in order: the hook's own `.model` field, then the last assistant-model entry in the transcript JSONL, then the `model` key in `settings.json`. If the resolved model is not Opus-line, it clears any per-session marker files for that session and exits — a no-op on every other model tier.
+
+On an Opus-line model:
+
+- **Once per session:** injects `hooks/fable/core.md` (the reasoning-engine + behavioral-layer discipline) via a per-session marker file in `$TMPDIR` (`fable-core-<session_id>`) so it's added exactly once, not on every prompt.
+- **Keyword-routed, once each per session:** scans the prompt text against a keyword profile per task-type module (`visual`, `content`, `delegation`, `research`, `coding`, `planning`, `systems`, `security`, `efficiency`) and injects the matching module(s) from `hooks/fable/`. A prompt can match zero, one, or several modules.
+- **Otherwise:** emits a one-line reminder that core discipline is already loaded and names the on-demand modules available in `hooks/fable/`.
+
+Output is a `hookSpecificOutput.additionalContext` JSON block (the standard `UserPromptSubmit` hook contract) — never blocks the prompt. Requires `jq`; portable for macOS's bundled `/bin/bash` 3.2 (no bash-4-only syntax).
+
+**Playbook inventory (`hooks/fable/`):**
+
+| File | Covers |
+|------|--------|
+| `core.md` | Reasoning engine (intent reconstruction, hypothesis-first investigation, risk-ordered decomposition, epistemic ledger, blast-radius simulation) + behavioral layer (outcome-first replies, calibrated completion claims, one sharp question, pre-send checklist) |
+| `visual.md` | UI, pages, slides, charts, images — render-and-judge discipline, hierarchy, design tokens, accessibility as correctness |
+| `content.md` | Articles, posts, emails, scripts, teaching material — reader-first drafting, point-before-prose, slop removal |
+| `coding.md` | Implementation, bugfixes, refactors, tests — read-before-write, root-cause fixes, leave-a-check-behind |
+| `planning.md` | Implementation plans, proposals, roadmaps — plan from the end state, sequence by risk retirement |
+| `delegation.md` | Spawning, briefing, verifying agents — self-contained briefings, independent decomposition, verify like an outsider |
+| `research.md` | Comparisons, evaluations, investigations — source weighting, triangulation, confidence-leveled synthesis |
+| `systems.md` | Workflows, pipelines, recurring problems — structure over instance, blast radius, leverage points |
+| `security.md` | Auth, secrets, untrusted input, attacker modeling, operator hygiene (own credentials/environment/data) |
+| `efficiency.md` | Bottlenecks, cost, tokens, performance — measure first, optimize the bottleneck, price every optimization |
+
+Each module is self-contained; `core.md` is the only one injected unconditionally.
 
 ### startup-sync.sh (SessionStart)
 
@@ -281,6 +318,8 @@ Optionally appends a pre-rendered token-savings suffix (from `~/.claude/.caveman
 A shared one-line utility, not itself wired into `settings.json`. Other hooks (`spawn-gate.sh`, `write-evidence.sh`) and agents call it directly: `emit-metric.sh '{"event":"...", ...}'`. It appends the given JSON payload — with a `ts` (UTC ISO-8601) field added automatically — as one line to `~/.claude/memory/metrics/events.jsonl`.
 
 Always exits 0 and never raises; if the input is missing or unparseable, it's a silent no-op.
+
+`hooks/fable/` is the one other subdirectory under `hooks/` — it holds the Fable playbook modules read by `fable-on-opus.sh` above, not additional registered hooks. `install.sh` copies it explicitly, as a separate step from the generic `hooks/*.sh` glob it uses for flat hook scripts (that glob does not pick up `*.md` files or subdirectories). Note that hook installation currently happens only in `install.sh` — `agency init`/`agency upgrade` sync skills, agents, and core docs but do not currently sync `hooks/` at all; re-running `install.sh` is the only supported way to pick up new or updated hooks post-install.
 
 ---
 

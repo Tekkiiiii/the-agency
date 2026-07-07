@@ -78,6 +78,12 @@ if [ -d "$HOOKS_SRC" ]; then
         hook_count=$((hook_count + 1))
     done
 
+    # Fable playbook modules (not top-level *.sh — a subdirectory read by fable-on-opus.sh)
+    if [ -d "$HOOKS_SRC/fable" ]; then
+        mkdir -p "$HOOKS_DEST/fable"
+        cp "$HOOKS_SRC"/fable/*.md "$HOOKS_DEST/fable/"
+    fi
+
     # Install default profile if not already set
     if [ ! -f "$CLAUDE_HOME/.hook-profile" ] && [ -f "$HOOKS_SRC/.hook-profile.template" ]; then
         cp "$HOOKS_SRC/.hook-profile.template" "$CLAUDE_HOME/.hook-profile"
@@ -125,6 +131,9 @@ hooks_config = {
         ],
         'Stop': [
             {'matcher': '', 'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/session-end.sh && bash ~/.claude/hooks/batch-check.sh && bash ~/.claude/hooks/cost-tracker.sh'}]}
+        ],
+        'UserPromptSubmit': [
+            {'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/fable-on-opus.sh'}]}
         ]
     }
 }
