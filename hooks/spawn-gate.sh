@@ -49,6 +49,16 @@ if printf '%s' "$PROMPT" | grep -qE '^You own the (save-state ritual|cc-loop rit
   exit 0
 fi
 
+# --- Metric emission: generalist-ban violation (eval-048 fix) ---
+# Mechanically log when a banned generalist type reaches this gate, BEFORE
+# the ask-interrupt fires below. Non-blocking — never delays or fails the gate.
+if [ "$SUBAGENT_TYPE" = "general-purpose" ] || [ "$SUBAGENT_TYPE" = "claude" ]; then
+  HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [ -x "$HOOK_DIR/emit-metric.sh" ]; then
+    "$HOOK_DIR/emit-metric.sh" '{"event":"generalist_ban_violation","subagent_type":"'"$SUBAGENT_TYPE"'"}' >/dev/null 2>&1 || true
+  fi
+fi
+
 # --- Not allowlisted and no marker: interrupt ---
 MSG="[spawn-gate] Agent spawn blocked. No routing marker found for subagent_type=\"${SUBAGENT_TYPE}\".
 

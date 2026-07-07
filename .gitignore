@@ -18,6 +18,11 @@ secrets.json
 .claude/
 plans/
 
+# PD/Coord/Executor scratch boards written when this repo is used as a
+# {project} dir by a spawn (should live in the PD's real project-memory
+# dir, e.g. ~/.claude/projects/the-agency/memory/ — never in the repo itself)
+memory/
+
 # OpenSpec generated files (session artifacts)
 openspec/changes/
 openspec/specs/

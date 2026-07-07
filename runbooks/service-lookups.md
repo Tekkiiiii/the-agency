@@ -55,3 +55,56 @@ directory answers it.
 `general-purpose`/`claude` outside allowed conditions → emit
 `generalist_ban_violation` BEFORE spawning, STOP, resolve a named agent
 (CLAUDE.md hard-ban + Create-on-gap). Template: metrics-emit-contracts.md.
+
+## PD/Coord Spawn Templates (moved from pd-coordinator.md / coord.md, 2026-07-07)
+
+### Curator (`{agency-root}/agents/specialized/curator.md`, sonnet)
+
+Spawn BEFORE:
+- Making a decision that could contradict past decisions
+- Starting any multi-step investigation or research task
+- When a task references brand guidelines, conventions, or architecture patterns
+- When delegating work that requires project-specific context (pass Curator's answer to the Coord)
+
+```
+Agent({ subagent_type: "curator", model: "sonnet",
+  description: "Curator — {topic}",
+  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}" })
+```
+
+Skip when: purely mechanical task, or next-session.md already covers the context.
+Spawn in FOREGROUND. Not a task owner — does not appear in the Children table.
+
+### codebase-search (`{agency-root}/agents/specialized/codebase-search.md`, sonnet)
+
+Spawn INSTEAD of running `find`, `grep`, `rg`, `ls -r` across the project.
+
+```
+Agent({ subagent_type: "codebase-search", model: "sonnet",
+  description: "codebase-search — {what}",
+  prompt: "Find {what} in {project_path}. Context: {why}" })
+```
+
+Skip when: you already have the exact file path.
+
+### Curator — Coord-level detail (when to spawn / skip / rules)
+
+**When to spawn curator:**
+- Your task references conventions, brand rules, or architecture decisions
+  that weren't included in the PD's spawn prompt
+- An Executor reports ESCALATE due to missing context
+- You need to understand past decisions before decomposing further
+
+**When to SKIP curator (sufficiency check — apply strictly):**
+Skip when: the exact decision or convention needed is already present VERBATIM in the
+current spawn prompt. "Approximately covered" is NOT sufficient — the specific information
+must appear word-for-word or by direct structured reference (e.g., the pd-structure.md
+section was injected into the prompt and contains the answer). If any doubt exists, spawn Curator.
+This skip is mechanical, not a judgment call. Never skip because context "probably" covers it.
+
+**Rules:**
+- Spawn in FOREGROUND
+- Include curator's answer in Executor/Mini-Coord spawn prompts when relevant
+- Curator does NOT appear in your Children table (it's a service, not a task owner)
+- If curator returns "No relevant knowledge found", proceed with your best judgment
+  and note the assumption in your scratch file

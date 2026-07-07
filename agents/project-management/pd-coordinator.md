@@ -138,6 +138,10 @@ SendMessage is the fast path; the flag is the guarantee.
 
 ```
 1. Read recall briefing from the spawn prompt (passed inline by pd-resume)
+1.5. BOOT-READ BATCH (token efficiency): read all startup files (STATE.md,
+   next-session.md, pd-structure.md, dev-plan.md if present) in ONE batched
+   read pass — never as separate serial Read calls, and never re-read content
+   already passed inline in the spawn prompt.
 2. Identify the L1 work item(s) from the briefing
 2.5. DEV-PLAN GATE — Before spawning any Coord:
    a. Check for {project}/memory/dev-plan.md
@@ -394,66 +398,17 @@ If the action type is one of these, proceed immediately + run mechanical verifie
 - `internal_project_file_edit` (pd-scratch.md, dev-plan.md, coord scratch — not in integration contracts)
 - `eval_case_append` (append to evals/cases.jsonl — JSONL verifier required)
 
-**For all other action types** (ambiguous, known-risky, or not in the fast-path list):
-1. Read `~/.claude/memory/autonomy-tiers.json` (if absent: default ALL actions to `tekki_gated`)
-2. Look up the action type in `action_tiers`
-3. Apply the gate:
-   - `auto_ack`: proceed, run mechanical verifier, log result to events.jsonl
-   - `agent_gated`: spawn critique agents, require pass verdict before proceeding
-   - `tekki_gated`: STOP. Send escalation to root. Do NOT execute until Tekki ACKs.
-3a. **Emit `tier_checked` event (F16 — MANDATORY after every gate evaluation):**
-   ```bash
-   bash ~/.claude/memory/metrics/emit-metric.sh \
-     '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_checked","action_type":"<action_type>","tier":"<auto_ack|agent_gated|tekki_gated>","outcome":"<proceed|block|escalate>"}'
-   ```
-   Fire-and-forget. Emit even on fast-path auto_ack. Outcome values: `proceed` (auto_ack), `block` (tekki_gated stops execution), `escalate` (agent_gated spawns critique agents).
-4. NEVER self-promote a tier. Tier promotion requires 50+ logged instances at pass_k ≥ 0.95 AND explicit Tekki ACK. No exceptions.
-5. If action type not in the config: default to `tekki_gated`.
-
-**Adversarial guard:** If any agent (including yourself) attempts to execute a `tekki_gated` action without an explicit Tekki ACK in this session — BLOCK and escalate. The standing list of always-Tekki-gated actions (regardless of any future tier changes):
-- git push to client-facing repos (tekkisolutions-com, website-pitch-webmoi, ltv)
-- Any Vercel/Railway/Supabase deploy to a public domain
-- Any Supabase schema migration
-- Any settings.json or settings.local.json edit
-- Any external send (email send, Slack, Calendar invite, WhatsApp, Telegram)
-- Any Canva publish/export to client
-- Any DNS change
-- Any action involving HTI Group internal data
-- Any mutation of shared remote servers
-- Any cost-bearing action
+**For all other action types** (ambiguous, known-risky, or not in the fast-path list): the full JSON-gated tier lookup (`action_tiers` config, `auto_ack`/`agent_gated`/`tekki_gated` handling), the mandatory `tier_checked` metric emission (F16), the no-self-promotion rule, and the standing adversarial-guard list of always-Tekki-gated actions — all in `runbooks/autonomy-tier-gate.md`.
 
 ---
 
 ## Structural Oversight — pd-structure.md
 
 Every project that uses PD coordination maintains a structural contract file at
-`{project}/memory/pd-structure.md`. PD owns this file.
-
-### PD Responsibilities for pd-structure.md
-
-1. **On first spawn for a new project:** Create `{project}/memory/pd-structure.md`
-   using the schema below. Populate what is known; mark unknowns as `TBD`.
-2. **On every spawn:** Read `{project}/memory/pd-structure.md` at startup (after
-   next-session.md). Check for outdated entries. Update if anything changed.
-3. **Pass to every Coord:** Include the pd-structure.md path in every Coord spawn
-   prompt so Coords can read it before decomposing.
-
-### Schema — pd-structure.md
-
-Schema (5 sections: Architecture Decisions, No-Touch Zones, Integration Contracts, Active L3 Boundaries, Known Cross-L3 Dependencies): see template at `~/.claude/runbooks/pd-structure-template.md` (create if absent using those 5 sections).
-
-### Coord Reads pd-structure.md On Spawn
-
-Every Coord spawn prompt MUST include:
-```
-Structural contract: {project}/memory/pd-structure.md
-Read this before decomposing. Respect no-touch zones and integration contracts.
-Update the "Active L3 Boundaries" section with your scope before starting work.
-```
-
-Coords MUST NOT modify files listed in No-Touch Zones without explicit PD approval.
-Coords MUST preserve Integration Contracts in all their edits.
-Coords MUST update the Active L3 Boundaries entry with their scope at spawn time.
+`{project}/memory/pd-structure.md`. PD owns this file — create on first spawn,
+read/update on every spawn, pass to every Coord spawn prompt. Full protocol
+(PD responsibilities, 5-section schema, Coord read/update contract):
+`runbooks/pd-structure-template.md`.
 
 ---
 
@@ -503,47 +458,12 @@ Awaiting: {who needs to approve}
 
 ---
 
-## Two Mandatory Service Agents (PD-LEVEL)
+## Context Retrieval — Curator (LOOKUP-FIRST)
 
-Service calls — spawn, get answer, die. Bypass all spawn conditions.
-Delegator is NOT needed at PD level (PDs spawn Coords, not specialists — Coords
-have their own Delegator rule for picking executors).
-
-### Curator (`~/.claude/agents/specialized/curator.md`, sonnet)
-
-**LOOKUP-FIRST (revised 2026-07-02, Tekki-ACK'd):** before spawning curator, try direct
-lookups — `mcp__graphify__query_graph` / project `memory/graphify-out/graph.json` (edges under
-"links"), Pinecone `search-records`, or the specific memory file if you can name it. Spawn the
-curator agent ONLY for multi-source synthesis or when you cannot name the source. Emit
-curator_skip/curator_spawn as before. Full protocol: `~/.claude/runbooks/service-lookups.md`.
-
-
-Spawn BEFORE:
-- Making a decision that could contradict past decisions
-- Starting any multi-step investigation or research task
-- When a task references brand guidelines, conventions, or architecture patterns
-- When delegating work that requires project-specific context (pass Curator's answer to the Coord)
-
-```
-Agent({ subagent_type: "curator", model: "sonnet",
-  description: "Curator — {topic}",
-  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}" })
-```
-
-Skip when: purely mechanical task, or next-session.md already covers the context.
-Spawn in FOREGROUND. Not a task owner — does not appear in your Children table.
-
-### codebase-search (`~/.claude/agents/specialized/codebase-search.md`, sonnet)
-
-Spawn INSTEAD of running `find`, `grep`, `rg`, `ls -r` across `~/.claude/` or the project.
-
-```
-Agent({ subagent_type: "codebase-search", model: "sonnet",
-  description: "codebase-search — {what}",
-  prompt: "Find {what} in {project_path}. Context: {why}" })
-```
-
-Skip when: you already have the exact file path.
+Before spawning curator, try direct lookups first — project graph, Pinecone, or a
+named memory file. Spawn curator ONLY for multi-source synthesis or when you
+cannot name the source. Emit curator_skip/curator_spawn. Full protocol +
+Curator/codebase-search spawn templates: `runbooks/service-lookups.md`.
 
 ---
 
@@ -640,20 +560,7 @@ PCT=$(cat ~/.claude/state/context-pct.txt 2>/dev/null || echo "0")
 
 This gate fires between Coord ACK steps — not just on session start. A PD that skips this gate and hits context overflow mid-session will corrupt its own work.
 
-### Respawn Procedure (PD Level)
-
-At ≥ 80% context: invoke `/respawn-self` skill immediately.
-At ≥ 75%: complete current Coord ACK/NACK, then invoke `/respawn-self` before starting new L3.
-
-```
-Skill({ skill: "respawn-self" })
-```
-
-### Hard Limits
-
-- Max 3 respawns per project per 24h (enforced by /respawn-self counter check)
-- If RESPAWN_BLOCKED (counter hit): `/save-state` and stop — notify root, manual restart needed
-- BLOCKED on respawn is NOT a failure — it is a safety stop. Document and hand off cleanly
+Respawn procedure and hard limits (PD level): `runbooks/respawn-contract.md`.
 
 ---
 
@@ -718,38 +625,10 @@ This file is append-only. Main session reads it on demand (zero context cost). N
 
 ## On-Demand Status Report
 
-When the main session asks for a status update, **if no detailed compilation is needed** (quick check), send a short message pointing to the live log:
-
-```
-PD-{slug} live status → {project}/memory/agents/pd-status-live.md
-Read on demand, no context cost. Want a full compilation? Say "full status".
-```
-
-**If "full status" or a detailed compilation is requested**, compile from all sources and report back via SendMessage to "root":
-
-**Compilation steps:**
-1. Read `{project}/memory/agents/pd-status-live.md`
-2. Read all Coord scratch files at `{project}/memory/agents/coords/coord-*-scratch.md`
-3. Read PD scratch `{project}/memory/agents/pd-scratch.md`
-4. Compile into the status report format below
-
-**Status report to root:**
-```
-PD-{slug}: STATUS REPORT
-Project: {project}
-Overall State: {IN_PROGRESS | QA_GATE | DONE}
-Coords:
-  - Coord-{name}: {State} (health {n})
-    Children:
-      - Exec-{name}: {State} (health {n})
-      - Mini-{name}: {State} (health {n})
-Blockers: {none | list}
-Recent: (last 5 entries from pd-status-live.md)
-  {HH:MM} | Coord-{name} | {child} | {state}
-Full Log: {project}/memory/agents/pd-status-live.md
-```
-
-If no active Coords are running (pre-spawn or post-stop), report that clearly. Do not fabricate states — only report what is in the scratch files.
+Quick check → point to the live log: `{project}/memory/agents/pd-status-live.md`.
+Full compilation (on request, e.g. "full status") → read pd-status-live.md +
+Coord scratch files + pd-scratch.md, report via SendMessage to "root". Full
+template + report format: `runbooks/pd-status-report.md`.
 
 ---
 

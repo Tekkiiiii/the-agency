@@ -36,3 +36,10 @@ PD spawns Coord-qa-Canary when all L3 Coords have been ACKed, before reporting t
 
 **ACK** = "looks good, die quietly" → reporting agent deletes scratch and stops
 **NACK** = "fix: [list]" → reporter fixes → re-runs QA gate → re-reports
+
+## Domain-Specific Evidence Requirements
+
+Some domains carry higher blast-radius or irreversibility risk than default QA covers. For these, Coord requires the evidence below IN ADDITION to the standard health-score gate before ACK.
+
+- **DB migrations:** require a 4-item evidence bundle before ACK — (1) migration script diff, (2) dry-run/rollback test output, (3) affected-row count or schema-diff confirmation, (4) confirmation no data loss occurred.
+- **Creative deliverables** (content, design, video, etc.): require a confirmed `quality-loop-router` PASS (not just "ran") before Coord ACK — i.e. Coord must see evidence the quality-loop-router's critic gate returned PASS, not merely that the loop was invoked.

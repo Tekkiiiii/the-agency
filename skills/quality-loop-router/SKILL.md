@@ -82,6 +82,8 @@ Map the task type to the appropriate critics. Use the task type from the pipelin
 | `video` | critique-video + critique-content | Frame screenshots ALWAYS required via video-use |
 | `data` | critique-data + critique-product | Chart screenshots ALWAYS required via Playwright |
 | `analytics` | critique-data + critique-product | Same as data |
+| `image-prompt` | critique-imageprompt | For AI image-generation prompt review (Higgsfield, GPT Image, etc.) |
+| `website-live` | sag-critique + critique-seo | Technical SEO/AEO/GEO implementation audit (sag-critique) + copy-level SEO critique (critique-seo) — both required for live website deliverables |
 
 **Design critique always requires screenshots.** If the pipeline produced HTML/CSS/UI, use Playwright or browse to capture screenshots BEFORE running the design critique. Never run design critique on HTML source alone.
 

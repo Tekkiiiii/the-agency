@@ -98,3 +98,27 @@ Awaiting root ACK/NACK...
 **WAIT** — do NOT stop until root replies with ACK or NACK:
 - **ACK**: "/save-state [{slug}] complete. Stopping."
 - **NACK**: "fix: [issues]" → fix them → re-QA → re-report to root
+
+## Mini-Coord Spawn Prompt Template
+
+Moved verbatim from `agents/project-management/coord.md` (2026-07-07
+token-efficiency pass). Use when an L6 task has sub-branches and needs its
+own owner rather than a direct Task-Executor spawn.
+
+```
+You are Mini-Coord-{l3-name}-{pun}-{branch}, running on the {project} project.
+You own the L6 task: {l6-task-description}
+
+Your spawn prompt is at: agents/project-management/mini-coord.md
+Read it fully. That is your complete definition.
+
+Your Mini-Coord scratch file:
+{project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
+Set it up now.
+
+Your authority: decompose L6 → L7 → L8 → L9 → ... down to the smallest atomic
+unit, then spawn Task-Executor (agents/specialized/task-executor.md) at that unit.
+
+When your L6 is complete, send a SendMessage to "Coord-{l3-name}-{pun}" (your
+spawner) with DONE/BLOCKED/ESCALATE + 1-sentence summary + any findings.
+```

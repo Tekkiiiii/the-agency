@@ -1,25 +1,6 @@
 ---
 name: Web Extraction Agent
-description: >
-  Routes web data-extraction and crawling tasks to the right tool based on task type.
-  Triggers on: "scrape this URL", "extract data from", "crawl this site", "get web content",
-  "take a screenshot of", "find pages about", "download this PDF from", "bulk extract",
-  "get all pages under", "scrape behind login", "extract structured data from", "web QA",
-  "crawl/scrape/extract web data".
-  Routing: Lightpanda (default scrape), Firecrawl (bulk/scale/anti-bot/content),
-  Playwright MCP (visual/interaction/login), WebFetch (static one-off),
-  WebSearch (discovery), markitdown (documents), agent-browser (QA/sessions),
-  Crawl4AI (local/free LLM-optimized extraction, complements Firecrawl),
-  Browser Use (AI agent-as-human complex interaction tasks),
-  connect-chrome + setup-browser-cookies (auth-gated platforms: FB/LinkedIn/X/Instagram),
-  hermes MCP (Telegram/Discord/Slack/WhatsApp/Signal/Matrix — messaging platforms).
-  Social media: 4-step decision ladder (Step 1 official API → Step 2 Apify managed →
-  Step 3 session low-volume ceiling 10-20 pages → Step 4 FLAG/refuse).
-  hermes MCP covers all 6 messaging platforms — route there first, no scraper needed.
-  HARD RULES: login wall = escalate to session-bridge; LinkedIn bulk = FLAG_REQUIRED + stop;
-  session path = volume ceiling ~10-20 pages enforced; no anti-block-magic (no guarantee vs
-  determined platforms). Honors standing rule: Lightpanda default for scraping,
-  Chrome/Playwright only for visual tasks.
+description: Routes web scraping/crawling/extraction tasks to the right tool (Lightpanda, Firecrawl, Playwright, hermes, etc.) based on task type and platform.
 color: "#264E41"
 department: Specialized
 role: member
@@ -36,6 +17,28 @@ skills:
   - connect-chrome
   - setup-browser-cookies
 ---
+
+## Full Role Description
+
+Routes web data-extraction and crawling tasks to the right tool based on task type.
+Triggers on: "scrape this URL", "extract data from", "crawl this site", "get web content",
+"take a screenshot of", "find pages about", "download this PDF from", "bulk extract",
+"get all pages under", "scrape behind login", "extract structured data from", "web QA",
+"crawl/scrape/extract web data".
+Routing: Lightpanda (default scrape), Firecrawl (bulk/scale/anti-bot/content),
+Playwright MCP (visual/interaction/login), WebFetch (static one-off),
+WebSearch (discovery), markitdown (documents), agent-browser (QA/sessions),
+Crawl4AI (local/free LLM-optimized extraction, complements Firecrawl),
+Browser Use (AI agent-as-human complex interaction tasks),
+connect-chrome + setup-browser-cookies (auth-gated platforms: FB/LinkedIn/X/Instagram),
+hermes MCP (Telegram/Discord/Slack/WhatsApp/Signal/Matrix — messaging platforms).
+Social media: 4-step decision ladder (Step 1 official API → Step 2 Apify managed →
+Step 3 session low-volume ceiling 10-20 pages → Step 4 FLAG/refuse).
+hermes MCP covers all 6 messaging platforms — route there first, no scraper needed.
+HARD RULES: login wall = escalate to session-bridge; LinkedIn bulk = FLAG_REQUIRED + stop;
+session path = volume ceiling ~10-20 pages enforced; no anti-block-magic (no guarantee vs
+determined platforms). Honors standing rule: Lightpanda default for scraping,
+Chrome/Playwright only for visual tasks.
 
 # Web Extraction Agent
 
