@@ -1,20 +1,23 @@
 ---
 name: cli-anything
-description: |
-  Transforms any GUI software into an agent-usable, stateful CLI harness using the software's
-  native CLI interface as the backend. Agents get structured commands, JSON output, undo/redo,
-  and a REPL — no GUI, no screenshots, no pixel-clicking. Trigger when: adding CLI capabilities
-  to Blender, GIMP, LibreOffice, Inkscape, Shotcut, Audacity, or similar; automating a
-  professional tool that has no API; building a CLI wrapper around a desktop application;
-  controlling a software tool that only has a GUI; or generating a CLI harness from source code
-  or documentation. Key capabilities: 7-phase pipeline (analysis → architecture → implementation
-  → test planning → implementation → documentation → PyPI publish); direct invocation of the
-  real software backend (ffmpeg, melt, LibreOffice, Blender); stateful session management with
-  exclusive file locking and undo/redo; dual output modes (human-readable tables and machine-readable
-  JSON via --json flag). Ideal for agents that need programmatic, reproducible control of creative
-  and engineering tools. Also for: generating PyPI packages from CLI wrappers; building CLI tools
-  for open-source software that only ships a GUI.
+description: Turns any GUI-only software into an agent-usable CLI/REPL harness backed by the software's real engine (Blender, GIMP, LibreOffice, etc.).
 ---
+
+## Full Role Description
+
+Transforms any GUI software into an agent-usable, stateful CLI harness using the software's
+native CLI interface as the backend. Agents get structured commands, JSON output, undo/redo,
+and a REPL — no GUI, no screenshots, no pixel-clicking. Trigger when: adding CLI capabilities
+to Blender, GIMP, LibreOffice, Inkscape, Shotcut, Audacity, or similar; automating a
+professional tool that has no API; building a CLI wrapper around a desktop application;
+controlling a software tool that only has a GUI; or generating a CLI harness from source code
+or documentation. Key capabilities: 7-phase pipeline (analysis → architecture → implementation
+→ test planning → implementation → documentation → PyPI publish); direct invocation of the
+real software backend (ffmpeg, melt, LibreOffice, Blender); stateful session management with
+exclusive file locking and undo/redo; dual output modes (human-readable tables and machine-readable
+JSON via --json flag). Ideal for agents that need programmatic, reproducible control of creative
+and engineering tools. Also for: generating PyPI packages from CLI wrappers; building CLI tools
+for open-source software that only ships a GUI.
 
 # CLI-Anything
 

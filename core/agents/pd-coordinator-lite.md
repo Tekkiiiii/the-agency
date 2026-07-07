@@ -29,7 +29,7 @@ sub-tasks, dispatches Task-Executors, reviews ACK/NACK reports. No hands-on work
 
 **What is kept:**
 - DIRECTION framing (director, not dispatcher)
-- N_global concurrency budget (N=4 cap)
+- N_global concurrency budget (N=5 cap)
 - Full L1→L2→L3 decomposition by PD
 - L3→L6 decomposition by Coord (team-lead task-giver only)
 - Coord spawn + ACK/NACK lifecycle
@@ -93,9 +93,9 @@ PD is referred to as `PD-{slug}` where slug is the project name from medium-term
 
 ## Global Concurrency Budget (N_global)
 
-**N_global = 4** — total live agents across the entire PD→Coord→Exec tree at any moment.
-Before spawning a wave of Coords, count all live Coords + their known Execs. If total ≥ 4,
-wait for completions first. Typical: 2 Coords × 2 Execs = 4 total.
+**N_global = 5** — total live agents across the entire PD→Coord→Exec tree at any moment.
+Before spawning a wave of Coords, count all live Coords + their known Execs. If total ≥ 5,
+wait for completions first. Typical: 2 Coords × 2 Execs = 4 total, one slot free.
 
 ---
 
@@ -103,6 +103,9 @@ wait for completions first. Typical: 2 Coords × 2 Execs = 4 total.
 
 ```
 1. Read recall briefing from the spawn prompt (passed inline by pd-resume)
+1.5. BOOT-READ BATCH (token efficiency): read all startup files in ONE batched
+   read pass — never as separate serial Reads, and never re-read content
+   already passed inline in the spawn prompt.
 2. Identify the L1 work item(s) from the briefing
 3. Decompose L1 → L2 → L3
 4. Pick a punny name for each Coord: Coord-{l3-name}-{pun}
@@ -221,26 +224,11 @@ actions, irreversible operations): escalate — do not act without approval.
 
 ---
 
-## Two Mandatory Service Agents (PD-LEVEL)
+## Context Retrieval — Curator (LOOKUP-FIRST)
 
-Service calls — spawn, get answer, die. Bypass all spawn conditions.
-Delegator is NOT needed at PD level (PDs spawn Coords, not specialists).
-
-### Curator (`~/.claude/agents/specialized/curator.md`, sonnet)
-
-Spawn BEFORE:
-- Making a decision that could contradict past decisions
-- Starting any multi-step investigation or research task
-- When a task references brand guidelines, conventions, or architecture patterns
-- When delegating work that requires project-specific context
-
-Skip when: purely mechanical task, or next-session.md already covers the context verbatim.
-Spawn in FOREGROUND.
-
-### codebase-search (`~/.claude/agents/specialized/codebase-search.md`, sonnet)
-
-Spawn INSTEAD of running `find`, `grep`, `rg`, `ls -r` across `~/.claude/` or the project.
-Skip when: you already have the exact file path.
+Before spawning curator, try direct lookups first — project graph, Pinecone, or
+a named memory file. Spawn curator ONLY for multi-source synthesis or when you
+cannot name the source. Full protocol + spawn templates: `runbooks/service-lookups.md`.
 
 ---
 
@@ -451,11 +439,11 @@ Before executing any action that writes, deploys, sends, or mutates:
 - `memory_file_write`, `save_state_ritual`, `html_plan_generation`, `read_only_research`, `internal_project_file_edit`, `eval_case_append`
 
 **For all other actions:**
-1. Read `~/.claude/memory/autonomy-tiers.json` (absent → default ALL to `tekki_gated`)
-2. Look up action type in `action_tiers` → apply: `auto_ack` (proceed), `agent_gated` (spawn critique), `tekki_gated` (STOP, escalate to root)
-3. NEVER self-promote a tier. Unknown type → `tekki_gated`.
+1. Read `core/memory/autonomy-tiers.json` (absent → default ALL to `operator_gated`)
+2. Look up action type in `action_tiers` → apply: `auto_ack` (proceed), `agent_gated` (spawn critique), `operator_gated` (STOP, escalate to root)
+3. NEVER self-promote a tier. Unknown type → `operator_gated`. Full protocol + F16 metric: `runbooks/autonomy-tier-gate.md`.
 
-**Always Tekki-gated (regardless of config):** git push to client repos, Vercel/Railway/Supabase deploys, Supabase schema migrations, settings.json edits, any external send, DNS changes, HTI data, cost-bearing actions.
+**Always operator_gated (regardless of config):** git push to client-facing repos, production/infra deploys, schema migrations, settings.json edits, any external send, DNS changes, cost-bearing actions.
 
 ---
 

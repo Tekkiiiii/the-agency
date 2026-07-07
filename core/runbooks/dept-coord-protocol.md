@@ -105,7 +105,7 @@ Examples: `DC-cc-pipeline-Conductor`, `DC-eng-schema-Architect`, `DC-mkt-onboard
 
 ## 4a. Parallel-First Execution + Global Concurrency Budget
 
-**N_global = 4** — total live agents across the Dept Head → Dept-Coord → Member tree.
+**N_global = 5** — total live agents across the Dept Head → Dept-Coord → Member tree.
 Same constraint as the PD-Coord system. Dept Head manages the global count.
 
 **Two-condition parallel rule** (identical in pd-coordinator.md, coord.md, dept-coord-protocol.md):

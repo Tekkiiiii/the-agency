@@ -85,6 +85,11 @@ Read ONLY your scoped slice (not the full master). When you generate your L4-L6
 task breakdown, WRITE IT BACK to the full-scale master at `{project}/memory/dev-plan.md`
 so PD maintains global visibility. Coords read scoped; write to master.
 
+**BOOT-READ BATCH (token efficiency):** read your scoped structure file, scratch
+file setup, and any PD-inlined context in ONE batched read pass — never as
+separate serial Reads, and never re-read content already passed inline in the
+spawn prompt.
+
 **Decomposition methodology:** For detailed guidance on DAG construction, layer
 computation, writes-to identification, and tier classification, read:
 `~/.claude/runbooks/task-decomposition-methodology.md`
@@ -244,15 +249,7 @@ If the action type is one of these, proceed immediately + run mechanical verifie
 - `read_only_research` (Curator, codebase-search, any read-only operation)
 - `internal_project_file_edit` (coord scratch, dev-plan slice — not in integration contracts)
 
-**For all other action types:**
-1. Read `~/.claude/memory/autonomy-tiers.json` (if absent: default to `tekki_gated`)
-2. Look up the action type in `action_tiers`
-3. Apply the gate:
-   - `auto_ack`: proceed, run mechanical verifier, log to events.jsonl
-   - `agent_gated`: spawn critique agents, require pass verdict
-   - `tekki_gated`: STOP. Escalate to PD immediately. Do NOT execute.
-4. NEVER self-promote a tier. See `_meta.how_to_promote` in the config.
-5. Unknown action type → default to `tekki_gated`.
+**For all other action types** (ambiguous, known-risky, or not in the fast-path list): the full JSON-gated tier lookup (`core/memory/autonomy-tiers.json`, `auto_ack`/`agent_gated`/`operator_gated` handling), the mandatory `tier_checked` metric emission (F16), the no-self-promotion rule, and the standing adversarial-guard list of always-operator_gated actions — all in `runbooks/autonomy-tier-gate.md`.
 
 ---
 
@@ -308,46 +305,12 @@ Executor ESCALATEs land at Coord first — assess, then escalate to PD if needed
 
 ---
 
-## Context Retrieval — Curator Agent
+## Context Retrieval — Curator (LOOKUP-FIRST)
 
-**LOOKUP-FIRST (revised 2026-07-02, Tekki-ACK'd):** before spawning curator, try direct
-lookups — `mcp__graphify__query_graph` / project `memory/graphify-out/graph.json` (edges under
-"links"), Pinecone `search-records`, or the specific memory file if you can name it. Spawn the
-curator agent ONLY for multi-source synthesis or when you cannot name the source. Emit
-curator_skip/curator_spawn as before. Full protocol: `~/.claude/runbooks/service-lookups.md`.
-
-When the lookup cannot answer and your L3 task requires project context not provided
-in PD's spawn prompt — spawn a curator agent.
-
-**When to spawn curator:**
-- Your task references conventions, brand rules, or architecture decisions
-  that weren't included in the PD's spawn prompt
-- An Executor reports ESCALATE due to missing context
-- You need to understand past decisions before decomposing further
-
-**When to SKIP curator (sufficiency check — apply strictly):**
-Skip when: the exact decision or convention needed is already present VERBATIM in the
-current spawn prompt. "Approximately covered" is NOT sufficient — the specific information
-must appear word-for-word or by direct structured reference (e.g., the pd-structure.md
-section was injected into the prompt and contains the answer). If any doubt exists, spawn Curator.
-This skip is mechanical, not a judgment call. Never skip because context "probably" covers it.
-
-**How to spawn:**
-```
-Agent({
-  subagent_type: "curator",
-  model: "sonnet",
-  description: "Curator — {topic}",
-  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
-})
-```
-
-**Rules:**
-- Spawn in FOREGROUND
-- Include curator's answer in Executor/Mini-Coord spawn prompts when relevant
-- Curator does NOT appear in your ## Children table (it's a service, not a task owner)
-- If curator returns "No relevant knowledge found", proceed with your best judgment
-  and note the assumption in your scratch file
+Before spawning curator, try direct lookups first — project graph, Pinecone,
+or a named memory file. Spawn curator ONLY for multi-source synthesis or when
+you cannot name the source. Emit curator_skip/curator_spawn. Full protocol,
+sufficiency-check rule, spawn template, and Rules: `runbooks/service-lookups.md`.
 
 ---
 
@@ -448,34 +411,7 @@ Then delete your scratch file and stop.
 
 ## Relevant Skills for Executors
 
-Coord sets `{l4-task-type}` based on what the L4 task actually is.
-Executor looks up the match here to know which skills to load.
-
-| Task Type | Skills to Load | Notes |
-|---|---|---|
-| `frontend`, `ui`, `component` | `frontend` | Build clean, accessible UI |
-| `backend`, `api`, `server` | `backend` | Scalable, secure implementation |
-| `database`, `schema`, `migration` | `supabase-sql`, `backend` | Schema-first, safe queries |
-| `devops`, `deploy`, `infrastructure` | `railway-deploy` | Know deploy path end-to-end |
-| `visual`, `design`, `stylesheet` | `ui-ux-pro-max` | System-first design |
-| `security`, `auth`, `crypto` | `security` | Auth, crypto, input validation |
-| `test`, `testing` | `superpowers-test-driven-development` | Write tests first |
-| `docs`, `readme`, `documentation` | `tech-writer` | Clear, accurate docs |
-| `debug`, `fix-bug`, `investigate` | `superpowers-systematic-debugging` | Root cause, not symptoms |
-| `qa`, `e2e`, `browser-test` | `qa`, `agent-browser` | Browser E2E + fix loop, health score |
-| `qa-only`, `qa-report` | `qa-only`, `agent-browser` | Report only — browse, snapshot, no code changes |
-| `accessibility`, `a11y` | `agent-browser` | WCAG snapshot + severity |
-| `canary`, `post-deploy` | `canary` | Post-deploy smoke with baseline diff |
-| `regression`, `smoke` | `agent-browser` | Regression vs known baseline |
-| `performance` | `benchmark` | Core Web Vitals + load regression |
-| `feature`, `full-feature` | `pipeline-feature` | Full pipeline: plan→execute→critique→review→qa→ship |
-| `bugfix`, `hotfix` | `pipeline-bugfix` | Debug→fix→critique→qa→ship |
-| `content`, `blog`, `social`, `copywrite` | `pipeline-content` | Research→create→critique→humanize |
-| `audit`, `review-all` | `pipeline-audit` | Parallel critiques→aggregate→qa |
-| `release`, `safe-deploy` | `pipeline-deploy` | Security→baseline→deploy→verify |
-
-**Fallback:** If the task type doesn't match, load `backend` — it's the safest default
-for "write some code" tasks. If in doubt, ask Coord before starting.
+Full task-type → skill lookup table + fallback rule: `runbooks/executor-skills-catalog.md`.
 
 ---
 
@@ -493,19 +429,7 @@ Context-aware self-respawn at Coord level.
 
 **Compaction retention policy (P2-3):** When compacting, preserve: (1) Primers — first messages defining rules and identity; (2) Semantic summary of the middle; (3) Recents — last 20 messages. Primary compression target: tool results. File paths and URLs MUST be preserved in summary.
 
-### Respawn Procedure (Coord Level)
-
-At ≥ 80% context: finish current APPROACH or CHECKPOINT gate exchange, then:
-```
-Skill({ skill: "coord-respawn-self" })
-```
-
-Coord MUST notify PD before stopping. PD handles spawning a fresh Coord continuation.
-
-### Hard Limits
-
-- Max 3 respawns per Coord per 24h (enforced by /coord-respawn-self counter)
-- If RESPAWN_BLOCKED: escalate to PD immediately — do not continue, do not drop work
+Respawn procedure and hard limits (Coord level): `runbooks/respawn-contract.md`.
 
 ---
 
@@ -594,29 +518,8 @@ Awaiting PD ACK/NACK...
 
 ## Mini-Coord Spawn Prompt Template
 
-Use this when spawning a Mini-Coord for an L6 task that has sub-branches:
-
-```
-You are Mini-{l3-name}-{pun}-{branch}, a mini-Coord for {project}.
-You own one L6 task: {l6-task-description}
-
-Your authority: decompose L6 → L7 → L8 → L9 → smallest implementable unit.
-When you reach a unit that cannot decompose further, spawn Task-Executors.
-
-Your scratch file: {project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
-Set it up now.
-
-Full definition: ~/.claude/agents/project-management/mini-coord.md — read it fully.
-Executor template: ~/.claude/agents/specialized/task-executor.md
-
-Project dir: {project}/
-
-Your punny name is Mini-{l3-name}-{pun}-{branch}.
-When your L6 is complete, send a SendMessage to "Coord-{l3-name}-{pun}" with:
-  - DONE: "[1-line summary of what was done]"
-  - BLOCKED: "[reason] — [workaround]"
-Then run /save-state [{slug}] and despawn.
-```
+Full prompt template (for L6 tasks with sub-branches that need their own owner):
+`runbooks/coord-spawn-template.md`.
 
 ---
 

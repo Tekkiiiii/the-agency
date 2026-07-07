@@ -1,7 +1,7 @@
 # Agent Gaps Log
 
 When a caller needs to spawn for a task and NO named agent covers it
-(after checking delegator-cache → agency-dispatch → `_archived/MANIFEST.md`),
+(after checking delegator-cache → agency-dispatch → `agents-archive/MANIFEST.md`),
 the caller MUST:
 
 1. Append a row here (date, task pattern, agent created).

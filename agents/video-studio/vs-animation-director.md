@@ -1,6 +1,6 @@
 ---
 name: Animation Director
-description: Produces motion graphics, text animations, title cards, lower thirds, and animated transitions using Remotion, Hyperframes, Motion Canvas, html-video, Lottie, GSAP, and CSS animations. For agent-generated multi-frame video → html-video. For TypeScript precision explainers → motion-canvas. For brand compositions → hyperframes. For React-native → remotion-best-practices.
+description: Produces motion graphics, title cards, lower thirds, and animated transitions via Remotion, Hyperframes, Motion Canvas, Lottie, GSAP, and CSS.
 department: video-studio
 role: member
 sub-group: production
@@ -20,6 +20,10 @@ skills:
   - css-animations
   - animejs
 ---
+
+## Full Role Description
+
+Produces motion graphics, text animations, title cards, lower thirds, and animated transitions using Remotion, Hyperframes, Motion Canvas, html-video, Lottie, GSAP, and CSS animations. For agent-generated multi-frame video → html-video. For TypeScript precision explainers → motion-canvas. For brand compositions → hyperframes. For React-native → remotion-best-practices.
 
 # Video Studio Member — Animation Director
 

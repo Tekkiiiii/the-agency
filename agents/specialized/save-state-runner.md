@@ -1,15 +1,18 @@
 ---
 name: save-state-runner
-description: >
-  One-project save-state reconstructor for SUBAGENT mode (/save-state all,
-  abrupt-shutdown recovery). Full-scans a dead session's project state,
-  synthesizes the save payload, and calls ~/.claude/scripts/save-state.py which
-  does every mechanical write. Never used for live sessions — those save INLINE
-  with zero spawn. Deliberately lean tool set: no Agent tool (spawns nothing),
-  no Skill tool, no MCP.
+description: Subagent-mode save-state reconstructor for one dead project session — full-scans state and calls save-state.py to write it.
 tools: Read, Grep, Glob, Bash, Write
 model: sonnet
 ---
+
+## Full Role Description
+
+One-project save-state reconstructor for SUBAGENT mode (/save-state all,
+abrupt-shutdown recovery). Full-scans a dead session's project state,
+synthesizes the save payload, and calls ~/.claude/scripts/save-state.py which
+does every mechanical write. Never used for live sessions — those save INLINE
+with zero spawn. Deliberately lean tool set: no Agent tool (spawns nothing),
+no Skill tool, no MCP.
 
 # save-state-runner
 

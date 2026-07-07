@@ -92,7 +92,7 @@ Examples: Coord-auth-Gatekeeper, Coord-feed-Digest, Coord-rss-Spinner
 
 ## Global Concurrency Budget
 
-N_global = 4 (set by PD). Respect whatever slots PD assigned. Do NOT spawn more Execs
+N_global = 5 (set by PD). Respect whatever slots PD assigned. Do NOT spawn more Execs
 than your remaining budget allows — escalate to PD if unclear.
 
 **Two-condition parallel rule:** Two tasks may run in parallel IFF:
@@ -222,27 +222,12 @@ Executor ESCALATEs land at Coord first — assess, then escalate to PD if needed
 
 ---
 
-## Context Retrieval — Curator Agent
+## Context Retrieval — Curator (LOOKUP-FIRST)
 
-When your L3 task requires project context not provided in PD's spawn prompt:
-
-**When to spawn:** conventions, brand rules, architecture decisions, or past decisions
-not included in the spawn prompt.
-
-**Sufficiency check (strict):** Skip when the exact decision or convention needed is
-already present VERBATIM in the current spawn prompt. "Approximately covered" is NOT
-sufficient. If any doubt → spawn Curator.
-
-```
-Agent({
-  subagent_type: "curator",
-  model: "sonnet",
-  description: "Curator — {topic}",
-  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
-})
-```
-
-Spawn in FOREGROUND. Curator does NOT appear in your ## Children table.
+Before spawning curator, try direct lookups first — project graph, Pinecone,
+or a named memory file. Spawn curator ONLY for multi-source synthesis or when
+you cannot name the source. Sufficiency-check rule, spawn template, Rules:
+`runbooks/service-lookups.md`.
 
 ---
 
@@ -306,9 +291,12 @@ Before executing any action that writes, deploys, sends, or mutates outside your
 **Fast-path (auto_ack):** Proceed for `memory_file_write`, `save_state_ritual`, `html_plan_generation`, `read_only_research`, `internal_project_file_edit`.
 
 **For all other actions:**
-1. Read `~/.claude/memory/autonomy-tiers.json` (absent → default to `tekki_gated`)
-2. Apply: `auto_ack` (proceed), `agent_gated` (spawn critique), `tekki_gated` (STOP, escalate to PD)
-3. NEVER self-promote a tier. Unknown type → `tekki_gated`.
+1. Read `core/memory/autonomy-tiers.json` (absent → default to `operator_gated`)
+2. Apply: `auto_ack` (proceed), `agent_gated` (spawn critique), `operator_gated` (STOP, escalate to PD)
+3. NEVER self-promote a tier. Unknown type → `operator_gated`.
+
+Full tier list, standing adversarial-guard actions, and F16 `tier_checked` metric
+emission: `runbooks/autonomy-tier-gate.md`.
 
 ---
 
@@ -402,51 +390,13 @@ Then delete your scratch file and stop.
 
 ## Relevant Skills for Executors
 
-| Task Type | Skills to Load | Notes |
-|---|---|---|
-| `frontend`, `ui`, `component` | `frontend` | Build clean, accessible UI |
-| `backend`, `api`, `server` | `backend` | Scalable, secure implementation |
-| `database`, `schema`, `migration` | `supabase-sql`, `backend` | Schema-first, safe queries |
-| `devops`, `deploy`, `infrastructure` | `railway-deploy` | Know deploy path end-to-end |
-| `visual`, `design`, `stylesheet` | `ui-ux-pro-max` | System-first design |
-| `security`, `auth`, `crypto` | `security` | Auth, crypto, input validation |
-| `test`, `testing` | `superpowers-test-driven-development` | Write tests first |
-| `docs`, `readme`, `documentation` | `tech-writer` | Clear, accurate docs |
-| `debug`, `fix-bug`, `investigate` | `superpowers-systematic-debugging` | Root cause, not symptoms |
-| `qa`, `e2e`, `browser-test` | `qa`, `agent-browser` | Browser E2E + fix loop, health score |
-| `qa-only`, `qa-report` | `qa-only`, `agent-browser` | Report only — browse, snapshot, no code changes |
-| `accessibility`, `a11y` | `agent-browser` | WCAG snapshot + severity |
-| `canary`, `post-deploy` | `canary` | Post-deploy smoke with baseline diff |
-| `regression`, `smoke` | `agent-browser` | Regression vs known baseline |
-| `performance` | `benchmark` | Core Web Vitals + load regression |
-
-**Fallback:** If the task type doesn't match, load `backend`.
+Full task-type → skill lookup table + fallback rule: `runbooks/executor-skills-catalog.md`.
 
 ---
 
 ## Mini-Coord Spawn Prompt Template
 
-```
-You are Mini-{l3-name}-{pun}-{branch}, a mini-Coord for {project}.
-You own one L6 task: {l6-task-description}
-
-Your authority: decompose L6 → L7 → L8 → L9 → smallest implementable unit.
-When you reach a unit that cannot decompose further, spawn Task-Executors.
-
-Your scratch file: {project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
-Set it up now.
-
-Full definition: ~/.claude/agents/project-management/mini-coord.md — read it fully.
-Executor template: ~/.claude/agents/specialized/task-executor-lite.md
-
-Project dir: {project}/
-
-Your punny name is Mini-{l3-name}-{pun}-{branch}.
-When your L6 is complete, send a SendMessage to "Coord-{l3-name}-{pun}" with:
-  - DONE: "[1-line summary of what was done]"
-  - BLOCKED: "[reason] — [workaround]"
-Then run /save-state [{slug}] and despawn.
-```
+Full prompt template: `runbooks/coord-spawn-template.md`.
 
 ---
 

@@ -85,6 +85,20 @@ If file missing or 0 bytes: mark BLOCKED, not DONE.
 
 ---
 
+## Event 7 — tier_checked (F16)
+
+**Trigger:** Every time the Autonomy Tier Gate runs (fast-path or full JSON lookup),
+BEFORE the gated action executes. Full gate protocol: `runbooks/autonomy-tier-gate.md`.
+
+```bash
+bash ~/.claude/memory/metrics/emit-metric.sh \
+  '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_checked","action_type":"<action_type>","tier":"<auto_ack|agent_gated|operator_gated>","path":"fast_path|full_lookup"}'
+```
+
+Never skip the emission to save time — it's the only audit trail that proves the gate ran before an action executed.
+
+---
+
 ## Quick Reference
 
 | Event | When |
@@ -95,5 +109,6 @@ If file missing or 0 bytes: mark BLOCKED, not DONE.
 | `delegator_spawn` | spawned Delegator — cache miss |
 | `generalist_ban_violation` | caught self about to use general-purpose/claude illegally |
 | `bg_agent_verified` | verified background agent deliverables |
+| `tier_checked` | Autonomy Tier Gate ran before a write/deploy/send/mutate action |
 
 See also: [Mandatory agents](../memory/lessons/agent-orchestration.md)
