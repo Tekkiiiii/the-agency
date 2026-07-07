@@ -23,6 +23,7 @@
 | critique-video | Pacing / captions / visual continuity / hook / audio sync | Video deliverables — requires frame screenshots via video-use |
 | critique-data | Chart honesty / stat accuracy / accessibility / dashboard UX | Analytics, dashboards, data reports — requires Playwright screenshots |
 | critique-code | Readability / complexity / error handling / dead code / maintainability | General code quality (NOT security — use critique-security for auth/secrets) |
+| critique-imageprompt | Character consistency / prompt layer completeness / specificity / style coherence / generator fit | Image generation prompts, single or series, any generator |
 
 ## Domain → Critic Routing
 
@@ -38,6 +39,7 @@
 | branded document | content + brand |
 | video | video + content |
 | analytics / dashboard / data report | data + product |
+| image generation prompt | imageprompt |
 | generic (unknown) | content + brand |
 
 Add pedagogy for any training material. Add SEO (critique-seo) for any publicly-indexed page's copy. Add sag-critique for any live website / production build to audit the technical layer (head tags, image naming, structured data, crawl plumbing).
