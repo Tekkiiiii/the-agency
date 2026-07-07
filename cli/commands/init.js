@@ -1,8 +1,18 @@
-const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync } = require('fs');
+const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync, realpathSync } = require('fs');
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const { syncSkills, syncAgents } = require('./sync-assets.js');
+
+// Compare two paths by real (symlink-resolved) location — see matching helper
+// in upgrade.js for why bare path.resolve() is not sufficient here.
+function samePath(a, b) {
+  try {
+    return realpathSync(a) === realpathSync(b);
+  } catch (_) {
+    return path.resolve(a) === path.resolve(b);
+  }
+}
 
 module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const agencyRoot = AGENCY_ROOT;
@@ -133,7 +143,7 @@ function linkCli(cliSrc, console) {
       // not a symlink — could be a shim or direct file
       existingTarget = existingBin;
     }
-    if (path.resolve(existingTarget) === path.resolve(cliSrc)) {
+    if (samePath(existingTarget, cliSrc)) {
       console.log(`  ✓ CLI already linked → ${existingBin}`);
       return;
     }
