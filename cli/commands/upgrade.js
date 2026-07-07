@@ -1,5 +1,5 @@
 const { execFileSync, spawnSync } = require('child_process');
-const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync } = require('fs');
+const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync, realpathSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
 const { syncSkills, syncAgents } = require('./sync-assets.js');
@@ -10,6 +10,21 @@ const AGENCY_CONFIG_PATH = join(AGENCY_CONFIG_DIR, 'config.json');
 // Loop guard env var. When set, the process knows it was re-exec'd after a pull
 // and must skip fetch/pull entirely — preventing an infinite restart loop.
 const REEXEC_ENV = 'AGENCY_UPGRADE_REEXEC';
+
+// Compare two paths by real (symlink-resolved) location, not just string form.
+// `resolve()` alone is not enough: Node's require()/__dirname resolves symlinks
+// (e.g. macOS /tmp -> /private/tmp), while a bare `readlink` does not. Without
+// this, any repo path that crosses a symlinked directory component makes the
+// comparison below think an already-correct symlink is stale on every single
+// run, forcing a needless re-link. Falls back to resolve() when either side
+// can't be realpath'd (e.g. a dangling symlink — treat as a real mismatch).
+function samePath(a, b) {
+  try {
+    return realpathSync(a) === realpathSync(b);
+  } catch (_) {
+    return resolve(a) === resolve(b);
+  }
+}
 
 function readTier() {
   if (!existsSync(AGENCY_CONFIG_PATH)) return null;
@@ -115,6 +130,10 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
 
     // Snapshot HEAD before pull — used to detect whether new code was fetched.
     const headBefore = getHead(repoDir);
+    // Set if `git stash pop` below leaves unresolved conflicts. When true, the
+    // working tree is in an unknown state — do NOT re-exec fresh code on top
+    // of it, and do NOT report success at the end (see checks below).
+    let stashPopConflict = false;
 
     // Fetch
     console.log('Fetching origin/main...');
@@ -183,10 +202,26 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
       try {
         execFileSync('git', ['-C', repoDir, 'stash', 'pop'], { stdio: 'pipe' });
       } catch (_) {
+        stashPopConflict = true;
         console.log('  Stash pop had conflicts. Your changes are safe in the stash.');
         console.log(`  To see them:   git -C "${repoDir}" stash show -p`);
         console.log(`  To drop them:  git -C "${repoDir}" stash drop`);
       }
+    }
+
+    // Do NOT proceed (re-exec, sync, or re-link) on top of an unresolved
+    // stash-pop conflict — the working tree (including cli/bin/agency.js,
+    // the very file the global `agency` command points to) is in an unknown
+    // state. Silently continuing here previously let the process print
+    // "Upgrade complete" over a broken tree — the exact failure mode that
+    // let a stale/conflicted CLI entry point get symlinked as if healthy.
+    if (stashPopConflict) {
+      console.error('');
+      console.error('Upgrade halted: local changes could not be restored cleanly.');
+      console.error(`Resolve the conflict, then re-run: agency upgrade`);
+      console.error(`  git -C "${repoDir}" status`);
+      console.error(`  git -C "${repoDir}" stash show -p`);
+      process.exit(1);
     }
 
     // ─── RE-EXEC CHECK ─────────────────────────────────────────────────────────
@@ -269,7 +304,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     for (const target of linkTargets) {
       try {
         const actual = execFileSync('readlink', [target], { stdio: 'pipe' }).toString().trim();
-        if (resolve(actual) !== resolve(cliBin)) {
+        if (!samePath(actual, cliBin)) {
           // Symlink points to a different location — re-link to this repo
           console.log(`Re-linking CLI:`);
           console.log(`  was: ${actual}`);
