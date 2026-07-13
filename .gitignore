@@ -21,7 +21,10 @@ plans/
 # PD/Coord/Executor scratch boards written when this repo is used as a
 # {project} dir by a spawn (should live in the PD's real project-memory
 # dir, e.g. ~/.claude/projects/the-agency/memory/ — never in the repo itself)
-memory/
+# Anchored to repo root only — an unanchored "memory/" also matches
+# core/memory/, agents/*/memory/ (real template dirs) and silently
+# swallows any new file added under them.
+/memory/
 
 # OpenSpec generated files (session artifacts)
 openspec/changes/

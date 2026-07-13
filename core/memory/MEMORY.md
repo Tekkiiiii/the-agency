@@ -64,8 +64,14 @@ The rule or fact.
 
 When a memory file relates to 2+ other memory files, add at the bottom:
 ```
-See also: [Title A](file-a.md), [Title B](file-b.md)
+See also: [[target-file-stem]], [[other-target-stem]]
 ```
+Use the target file's stem (no `.md`, no path) inside `[[double brackets]]` —
+this is what `scripts/mem-graph-build.py` parses as a graph edge. Legacy
+`[Title](file.md)` markdown links also still resolve (parsed the same way),
+but `[[wikilink]]` is the current convention going forward — prefer it for
+new links. See `core/memory/memory-v2.md` for the full graph/scorecard/canary
+pipeline this convention feeds.
 
 ## What NOT to Save
 

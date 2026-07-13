@@ -72,3 +72,17 @@
 2. Parent AI: on ANY agent/PD task-notification claiming completion + a deliverable path, `test -f` / `ls` it BEFORE relaying to the operator.
 3. Cross-check ≥1 quantitative claim against raw source.
 4. A guard that only covers foreground agents is no guard for a background fleet — check execution-mode coverage.
+
+### MCP-heavy sessions crash "All tools" agent spawns — route to restricted-tool specialists instead
+
+**Symptom:** In a session with heavy MCP schema load (multiple MCP servers each contributing tool definitions — easily 100k+ tokens of fixed overhead before any transcript), a PD/Coord spawn with "All tools" access hits a "Prompt is too long" error within 1-3 tool calls, even though the actual conversation transcript is small.
+
+**What did NOT fix it:**
+- Omitting `model` on the spawn call, hoping it inherits the parent's larger context window — the agent-definition frontmatter's pinned model tier wins over an omitted spawn param.
+- Explicitly overriding `model` on the spawn call to a larger-window tier — some harness/session configurations still resolve to whatever the agent's own frontmatter (or session default) specifies, ignoring the spawn-time override.
+
+**Root cause:** an agent with unrestricted tool access inherits the FULL fixed MCP tool-schema overhead for every MCP server configured in that session, regardless of whether the task needs them. That fixed cost alone can consume most of a normal context window before the agent does anything.
+
+**Working fix:** spawn a RESTRICTED-TOOLS agent (e.g. this project's `task-executor`: Read/Write/Edit/Grep/Glob/Bash/Skill — no MCP tool schemas) for work that doesn't need MCP access. Overhead drops by an order of magnitude and the crash disappears.
+
+**Standing rule:** in MCP-heavy sessions, background orchestration agents with "All tools" access are unusable for routine execution work. Route routine, MCP-free tasks to restricted-tool specialists; reserve "All tools" spawns for tasks that genuinely need MCP access, and trim unused MCP servers from the session before spawning PDs/Coords if the crash persists.

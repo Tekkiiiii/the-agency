@@ -1,0 +1,20 @@
+#!/bin/bash
+# mem — memory estate CLI. Subcommands: graph (rebuild + open viewer), find <query>.
+SCRIPTS="$HOME/.claude/scripts"
+
+case "$1" in
+  graph)
+    PYBIN="$HOME/.local/share/uv/tools/graphifyy/bin/python"
+    [ -x "$PYBIN" ] || PYBIN="python3"
+    "$PYBIN" "$SCRIPTS/mem-graph-build.py" || exit 1
+    open "$HOME/.claude/memory/graphify-out/memory-graph.html"
+    ;;
+  find)
+    shift
+    "$SCRIPTS/mem-find.sh" "$@"
+    ;;
+  *)
+    echo "Usage: mem graph | mem find <query>" >&2
+    exit 1
+    ;;
+esac
