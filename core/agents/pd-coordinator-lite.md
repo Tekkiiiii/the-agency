@@ -6,6 +6,7 @@ role: project_director
 reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to the operator
 modelTier: opus
 tier: lite
+tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#F59E0B"
 skills:
   - save-state

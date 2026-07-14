@@ -4,8 +4,8 @@ description: Project Director orchestrator — tiered architecture (PD → Coord
 department: project-management
 role: project_director
 reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to the human operator
-modelTier: sonnet
-model: claude-sonnet-5
+model: opus
+tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#F59E0B"
 skills:
   - save-state

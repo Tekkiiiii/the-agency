@@ -143,6 +143,55 @@ After running, complete the **manual auth checklist** printed at the end of the
 script (nlm login, gws auth login, railway login — these require OAuth flows that
 cannot be scripted).
 
+## 11. Context Window Budget (MCP-heavy setups)
+
+MCP tool schemas are the dominant session-startup cost in MCP-heavy setups — many
+servers × many tools each adds up to a large fixed token overhead before any real
+work happens.
+
+Claude Code's fix is **MCP tool search** (deferred schema loading): only tool names
+and server instructions load at session start; full schemas fetch on demand via a
+ToolSearch call. Enabled by default — but silently disabled by any `ANTHROPIC_BASE_URL`
+proxy setting, unless you explicitly set `ENABLE_TOOL_SEARCH` in the `env` block of
+`~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true"
+  }
+}
+```
+
+Recognized values:
+
+| Value | Behavior |
+|-------|----------|
+| unset | Deferred by default, but has proxy/platform fallbacks that can silently disable it |
+| `true` | Always defer — forces the beta header through proxies |
+| `auto` / `auto:N` | Threshold mode — upfront load only if schemas fit within N% of the context window (default 10%) |
+| `false` | Always upfront |
+
+Caveats:
+
+- Tool search requires `tool_reference`-capable models — Haiku models don't support it.
+- Disabled by default on Google Cloud Agent Platform.
+- Claude Code truncates tool descriptions and MCP server instructions at 2KB each —
+  keep custom MCP server descriptions lean.
+- `claude.ai` connectors can only be disabled all-or-nothing below managed-settings
+  scope (`disableClaudeAiConnectors: true` kills all of them at once — there's no
+  per-connector user-level denial), and they only load when subscription auth is
+  active in the first place (not with API-key/Bedrock/Vertex auth).
+
+Scope MCP servers to the project directories that actually use them, not the
+home/root directory every session starts in — home-scoped servers load their full
+schema in every single session regardless of relevance.
+
+Advisory: if your setup ever routes through a result-compressing/rewriting proxy,
+be aware such proxies have been observed to occasionally mangle or drop tool-result
+data in addition to disabling tool search — verify carefully if debugging looks
+weird under a proxy.
+
 ## What you get
 
 ```

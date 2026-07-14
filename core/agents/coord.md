@@ -4,8 +4,8 @@ description: L3 task owner — autonomous work unit. Receives one L3 chunk from 
 department: project-management
 role: coord
 reports_to: pd-coordinator
-modelTier: opus
 model: claude-opus-4-7
+tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#10B981"
 skills: []
 ---

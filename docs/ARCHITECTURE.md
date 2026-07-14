@@ -143,6 +143,19 @@ Every Project Director follows a mandatory 3-rule protocol:
 
 This protocol applies to every PD spawn, every time, without exception.
 
+### Tool Access Stays Restricted Even With Tool Search
+
+Per-agent `tools:` restrictions in frontmatter (e.g. orchestrators limited to
+`Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, Task*, WebFetch,
+WebSearch` — no MCP tools) remain necessary even though Claude Code ships MCP tool
+search (deferred tool-schema loading). Tool search is conditionally unavailable —
+proxies without the `ENABLE_TOOL_SEARCH` override set, Google Cloud Agent Platform,
+and Haiku models all fall back to full upfront schema loading regardless of intent.
+The `tools:` restriction is the guaranteed floor against context blowout; tool
+search is a bonus optimization layered on top of it, not a replacement for it. Do
+not remove or "simplify away" a `tools:` restriction on the reasoning that it's
+redundant once tool search exists — the two mechanisms fail independently.
+
 ---
 
 ## Delegator — Agency Routing Agent
