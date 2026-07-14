@@ -6,6 +6,7 @@ role: coord
 reports_to: pd-coordinator-lite
 modelTier: opus
 tier: lite
+tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#10B981"
 skills: []
 ---

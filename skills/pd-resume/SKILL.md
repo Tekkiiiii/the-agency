@@ -143,6 +143,8 @@ If ALL targets were marked `BLOCKED_NO_SPAWN`, skip Step 3 entirely and go to St
 - `model`: opus
 - `run_in_background`: `false` if `showcase_on`, else `true`
 
+**⚠️ Advisory only:** the `model` value above is not a reliable override in all harness/session configurations — some setups ignore the Agent-tool spawn-time `model` param and resolve to the agent definition's own frontmatter `model:` key (or a session default) regardless. Treat `core/agents/pd-coordinator.md`'s frontmatter `model:` line as the actual binding value; keep this spawn-config line in sync with it, but do not rely on it alone.
+
 **Spawn prompt — LEAN FORMAT (do not add to this):**
 
 ```

@@ -59,3 +59,11 @@ agency upgrade
 ```
 
 Fetches latest from GitHub, preserves all local data (projects/, sessions/, lessons/).
+
+## Optional: Context Window Tuning
+
+MCP-heavy installs can burn 100k+ tokens of context on tool schemas before the first
+response. Set `ENABLE_TOOL_SEARCH: "true"` in `~/.claude/settings.json`'s `env` block
+to force deferred schema loading through proxies.
+
+See `docs/SETUP.md` §11 (Context Window Budget) for the full explanation.

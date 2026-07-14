@@ -6,6 +6,7 @@ role: task-executor
 reports_to: coord-lite
 modelTier: sonnet
 tier: lite
+tools: Read, Write, Edit, Grep, Glob, Bash, Skill, WebFetch, WebSearch, TaskUpdate, SendMessage
 color: "#6366F1"
 skills: []
 ---
