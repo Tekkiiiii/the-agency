@@ -17,7 +17,7 @@ description: "Topic-based research library via Google NotebookLM MCP. Query cura
 ## Prerequisites
 
 - NotebookLM MCP server running (`mcp__notebooklm-mcp__*` tools available)
-- Authenticated via Google OAuth (you@example.com)
+- Authenticated via Google OAuth (your Google account)
 - Registry at `~/.claude/memory/notebooklm-registry.md`
 
 ## Mode 1: QUERY — Ask Questions

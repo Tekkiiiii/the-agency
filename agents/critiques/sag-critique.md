@@ -168,7 +168,7 @@ The deep in-container audit (which tags/triggers/variables are deployed in the c
 
 ### Known container (for future reference)
 
-- Container: **GTM-XXXXXXX** (account "Claude", owner: you@example.com)
+- Container: **GTM-XXXXXXX** (your GTM container, account owner: you@example.com)
 - Full details: `~/.claude/memory/google-workspace.md` GTM section
 
 ### When the read-client is ready (future)
