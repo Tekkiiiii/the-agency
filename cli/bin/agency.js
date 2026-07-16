@@ -45,7 +45,7 @@ async function main() {
     console.log('  agency tasks status <id> <status>   Update task status');
     console.log('  agency upgrade                      Pull latest updates from git');
     console.log('  agency tier get                     Show current orchestration tier');
-    console.log('  agency tier set lite|standard|full  Set orchestration tier (default: lite)');
+    console.log('  agency tier set lite|standard|full  Set orchestration tier (default: standard; lite deprecated)');
     process.exit(0);
   }
 

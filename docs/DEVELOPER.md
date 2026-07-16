@@ -186,7 +186,12 @@ Preserves: `projects/`, `sessions/`, `lessons/`, `decisions/`, `skills/`, `task-
 
 Overwrites: `core/`, `cli/`, `docs/`
 
-### LITE-PROPAGATION GATE (mandatory — runs every upgrade)
+### LITE-PROPAGATION GATE (D42) — DEPRECATED, still mandatory until file deletion
+
+> **Deprecated 2026-07-14.** The `lite` tier itself is sunset (see `docs/tiers.md`) —
+> the token pressure D42 existed to manage no longer applies. This gate still runs on
+> every upgrade until `pd-coordinator-lite.md` / `coord-lite.md` / `task-executor-lite.md`
+> are deleted next release; do not skip it early just because lite is deprecated.
 
 Any change to the pd/coord/executor trio in `core/agents/` MUST include a matching
 re-derive of the lite variants in the same commit. The upgrade flow does NOT do this

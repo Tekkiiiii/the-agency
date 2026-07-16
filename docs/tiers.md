@@ -1,5 +1,14 @@
 # Orchestration Tiers
 
+> **`lite` is deprecated (2026-07-14).** The token pressure it existed to relieve is
+> gone: restricted `tools:` frontmatter (wave 6, `890fe98`) removed the real cost driver
+> — the full MCP schema catalog pulled into every subagent spawn — and MCP tool search
+> now defers schemas on demand. See `docs/ARCHITECTURE.md` § "Tool Access Stays
+> Restricted Even With Tool Search" for the detail. `lite` still works this release but
+> prints a warning; `standard` is the only supported tier going forward. The
+> `pd-coordinator-lite` / `coord-lite` / `task-executor-lite` files and all `lite`
+> branches in the tier CLI will be deleted next release.
+
 The Agency ships two tiers. The tier controls how much protocol overhead runs at each agent handoff. Choose based on your Claude plan.
 
 | | lite | standard |
@@ -11,9 +20,10 @@ The Agency ships two tiers. The tier controls how much protocol overhead runs at
 
 ---
 
-## lite — default for Claude Pro
+## lite — deprecated, removal next release
 
-**~30-40% of standard token cost.**
+**~30-40% of standard token cost.** Still functional this release; `standard` is now
+the default and the only supported tier.
 
 Coord acts as a team-lead task-giver: decomposes work to the smallest independent sub-tasks, dispatches Executors, reviews ACK/NACK reports with judgment. No hands-on oversight gates.
 
@@ -64,31 +74,34 @@ Alias for `standard`. Identical behavior.
 
 **At install time:**
 ```bash
-agency init                   # defaults to lite (Claude Pro)
-agency init --tier=standard   # full quality gates (Max 5x / Max 20x)
+agency init                   # defaults to standard (full quality gates)
+agency init --tier=lite       # deprecated — prints a warning, still works this release
 ```
 
 **Switch after install:**
 ```bash
-agency tier set lite          # switch to lite
-agency tier set standard      # switch to standard
+agency tier set standard      # switch to standard (default)
+agency tier set lite          # deprecated — prints a warning, still works this release
 agency tier get               # show current tier
 ```
 
 **In `~/.agency/config.json`:**
 ```json
-{ "tier": "lite" }
+{ "tier": "standard" }
 ```
 
-Not sure which to use? Start with `lite`. If you're on Max and hitting issues with complex multi-domain builds, switch to `standard`.
+Not sure which to use? Use `standard` — it's the only supported tier. `lite` is
+deprecated and scheduled for deletion next release.
 
 ---
 
 ## Migration
 
-**Existing users** (installed before tiers shipped): your behavior is unchanged. `~/.agency/config.json` will be created on next `agency init` with `"tier": "lite"`. If you were running the full quality-gate architecture, run `agency tier set standard` to lock that in explicitly.
+**Existing users** on `lite`: your behavior is unchanged this release, but `lite` now
+prints a deprecation warning on every use. Run `agency tier set standard` to move off
+it before the next release removes it entirely.
 
-**New installs** default to `lite` (safe for Pro plan; Max users can upgrade immediately).
+**New installs** default to `standard`.
 
 ---
 

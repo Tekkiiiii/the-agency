@@ -7,16 +7,15 @@
 ![Agents: 225+](https://img.shields.io/badge/Agents-225%2B-purple)
 ![QA: Gates on every handoff](https://img.shields.io/badge/QA-Gates%20%2B%20Health%20Scores-red)
 
-**Now runs on Claude Pro — LITE tier ships at 30-40% of the token cost.**
-
-A multi-agent orchestration system for Claude Code. 225+ specialist agents. Two tiers: **lite** (Claude Pro, ~30-40% token use) and **standard** (Max 5x/20x, full quality gates). Autonomous project execution with persistent memory, QA gates on every handoff, and intelligent model routing — all on your machine, no extra API keys.
+A multi-agent orchestration system for Claude Code. 225+ specialist agents. Autonomous project execution with persistent memory, QA gates on every handoff, and intelligent model routing — all on your machine, no extra API keys.
 
 ```bash
-agency init                   # Claude Pro — lite mode (default)
-agency init --tier=standard   # Max 5x / Max 20x — full quality gates
+agency init                   # standard — full quality gates (default)
 ```
 
-Not sure? Start lite. Upgrade anytime: `agency tier set standard`
+`standard` is the only supported tier. A `lite` tier existed for Claude Pro's tighter
+context budget; it's deprecated as of 2026-07-14 (the token pressure it addressed no
+longer applies — see `docs/tiers.md`) and will be removed next release.
 
 ---
 
@@ -175,26 +174,24 @@ Override the install location with `AGENCY_HOME=/custom/path ./install.sh`.
 
 ## Choosing Your Tier
 
-The Agency runs in two modes depending on your Claude plan:
+The Agency ships one supported tier:
 
 ```bash
-agency init                   # Claude Pro — lite mode (default, lower token use)
-agency init --tier=standard   # Max 5x / Max 20x — full quality gates
+agency init                   # standard — full quality gates (default)
 ```
 
-| | lite (default) | standard |
-|--|--|--|
-| Claude plan | Pro | Max 5x / Max 20x |
-| Agent trio | pd-coordinator-lite + coord-lite + task-executor-lite | pd-coordinator + coord + task-executor |
-| Coord role | Pure task-giver (decomposes L3, dispatches Exec, reviews ACK/NACK) | Team-lead (Approach Gate, 50% Check-In) |
-| QA gates | Phase A only (Coord-qa-Canary) | Phase A + Phase B (IntegrationTester) |
-| Approach Gate | No | Yes |
-| 50% Check-In | No | Yes |
-| Token use | ~30-40% of standard | Full |
+| | standard |
+|--|--|
+| Agent trio | pd-coordinator + coord + task-executor |
+| Coord role | Team-lead (Approach Gate, 50% Check-In) |
+| QA gates | Phase A + Phase B (IntegrationTester) |
+| Approach Gate | Yes |
+| 50% Check-In | Yes |
 
-Not sure? Start with `lite`. Upgrade anytime: `agency tier set standard`
-
-See [docs/tiers.md](docs/tiers.md) for the full comparison.
+A `lite` tier (lower token use, fewer gates) is **deprecated** as of 2026-07-14 and
+scheduled for removal next release — it still works via `agency tier set lite` this
+release but prints a warning. See [docs/tiers.md](docs/tiers.md) for the sunset
+rationale and full historical comparison.
 
 ---
 
