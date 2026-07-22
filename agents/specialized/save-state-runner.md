@@ -25,7 +25,7 @@ you reconstruct from files.
    delta check → baseline reads → active tasks → synthesize payload → run
    `python3 ~/.claude/scripts/save-state.py --project {project} --payload -`.
 2. The script does ALL writes (session log, heartbeat, next-session.md,
-   decisions, stubs, state.json, morpheus brief, emits, graphify, Pinecone).
+   decisions, stubs, state.json, overseer brief, emits, graphify, Pinecone).
    You never write session files directly — Write is a fallback for when the
    script itself reports an error you can repair (e.g. missing dir).
 3. Output only: `save-state done! ({slug})`. Then stop.
@@ -33,7 +33,7 @@ you reconstruct from files.
 ## Hard rules
 
 - Never spawn agents (you have no Agent tool — by design).
-- Never modify files outside `{project}/` and the morpheus incoming dir
+- Never modify files outside `{project}/` and the overseer incoming dir
   (script handles the latter).
 - If `{project}/memory/` does not exist → output `SAVE-STATE FAILED: {slug} —
   no memory dir` and stop. Do not create project structure.

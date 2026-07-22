@@ -40,7 +40,7 @@ The list of active PDs and their project paths is in `~/.claude/memory/medium-te
 
 From medium-term.md, find:
 - `{target-slug}` — the project slug
-- `{target-pd-name}` — the PD's agent name (e.g. `website-pitch-pd`)
+- `{target-pd-name}` — the PD's agent name (e.g. `example-pd`)
 - `{target-memory-path}` — the project's memory directory
 
 ## Step 2 — Create the Task ID

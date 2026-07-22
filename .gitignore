@@ -41,3 +41,17 @@ __pycache__/
 
 # Runtime
 *.log
+
+# Backup files
+*.bak-*
+
+# Machine-local runtime state (if this working tree ever accumulates
+# equivalent local daemon/job/knowledge caches — content already audited
+# as non-portable, this is just the exclude pattern)
+agent-dashboard/
+daemon/
+.tokensave/
+jobs/
+knowledge/
+daemon-auth-*
+.edit-buffer.txt

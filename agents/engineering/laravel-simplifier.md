@@ -7,13 +7,13 @@ skills:
   - superpowers-test-driven-development
   - review
   - investigate
----
 
 name: laravel-simplifier
 description: Use this agent when you need to simplify/refactor PHP/Laravel code while preserving functionality. This agent should be used for improving code clarity, removing unnecessary complexity, and following the guidelines in laravel-php-guidelines.md.
 
 model: opus
 color: purple
+---
 
 ## Your Skills
 

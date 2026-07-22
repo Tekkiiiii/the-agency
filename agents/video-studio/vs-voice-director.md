@@ -33,9 +33,39 @@ Deliver:
 4. Pronunciation guide (for technical terms)
 5. QA checklist for audio review in post-production
 
-## Default Voice Tool — OmniVoice Studio
+## Default Voice Tools — engine by language
 
-**OmniVoice Studio is the default tool for all voice generation and voice cloning tasks.**
+**Pick the engine by language.** English (and any unspecified-language task) defaults
+to Chatterbox. Vietnamese goes to VieNeu-TTS. OmniVoice Studio is a fallback ONLY for
+dubbing and languages neither engine covers.
+
+**English + default → Chatterbox (Resemble AI).**
+- Local venv (Python 3.11, torch, MPS) — recommended path: `~/tools/chatterbox/.venv`
+- Usage:
+  ```python
+  from chatterbox.tts import ChatterboxTTS
+  import torchaudio
+  model = ChatterboxTTS.from_pretrained(device="mps")
+  wav = model.generate(text)                                   # default voice
+  wav = model.generate(text, audio_prompt_path="ref.wav")      # zero-shot clone from reference
+  torchaudio.save("out.wav", wav, model.sr)
+  ```
+- Tune `exaggeration` (default 0.5) and `cfg_weight` (default 0.5) for delivery; lower cfg_weight (~0.3) for fast/expressive reference speakers.
+- No backend daemon — runs in-process, no lifecycle to manage.
+
+**Vietnamese → VieNeu-TTS — VN voice gen + voice clone.**
+- Recommended install path: `~/tools/VieNeu-TTS/` (repo + `.venv`)
+- Usage (scripted API only):
+  ```python
+  # run with ~/tools/VieNeu-TTS/.venv/bin/python
+  from vieneu import Vieneu
+  vieneu = Vieneu()  # default: VieNeu-TTS-0.3B-q4-gguf + distill-neucodec; also mode="v3turbo", backend="onnx"
+  vieneu.load_voices("path/to/your/registered-voice-clones.json")
+  ```
+- Load your own registered voice clone(s) from that json — pick the voice/style/EQ combo per your project's brand decision.
+- NEVER run `uv run vieneu-web` in agent context — known to spin up a blocking server. Scripted `Vieneu()` API only.
+
+**OmniVoice Studio — FALLBACK ONLY: dubbing pipelines + languages Chatterbox/VieNeu can't cover.**
 
 - Install path: `~/.agents/skills/omnivoice-studio/`
 - MCP: registered as `omnivoice` in `~/.claude/settings.json` — use `mcp__omnivoice__generate_speech` to generate audio
@@ -43,14 +73,15 @@ Deliver:
 - 646 languages, Apple Silicon native (MPS + mlx-audio), zero-shot voice clone
 - Full convention: see the omnivoice-studio skill README
 
-**Backend lifecycle — ON-DEMAND (mandatory).** The backend holds ~2.4GB of models in
-RAM, so it is NOT always-on. Around every voice task you MUST:
+**OmniVoice backend lifecycle — ON-DEMAND (mandatory, OmniVoice tasks only; Chatterbox
+and VieNeu-TTS have no daemon).** The backend holds ~2.4GB of models in RAM, so it is
+NOT always-on. Around every OmniVoice task you MUST:
 1. `~/.agents/skills/omnivoice-studio/bin/omnivoicectl up` — boot + wait for health (first boot ~slow).
 2. Generate via `mcp__omnivoice__generate_speech` (hold the backend up while the user reviews the audio).
 3. `~/.agents/skills/omnivoice-studio/bin/omnivoicectl down` — shut down + free RAM ONCE the output is approved.
 Never leave the backend running after a task is approved. Check `omnivoicectl status` if unsure.
 
-Replace any prior reference to ElevenLabs, Murf, or similar external services with OmniVoice unless the task explicitly requires a specific external provider.
+Replace any prior reference to ElevenLabs, Murf, or similar external services with the language-appropriate engine above unless the task explicitly requires a specific external provider.
 
 ## Post-Processing — Room-Tone Bedding (mandatory final step)
 

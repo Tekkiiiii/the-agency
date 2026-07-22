@@ -7,6 +7,7 @@ reports_to: engineering-lead
 modelTier: sonnet
 model: sonnet
 skills: []
+tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 ---
 
 ## Naming Convention

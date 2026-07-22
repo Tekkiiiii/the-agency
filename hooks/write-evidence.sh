@@ -12,18 +12,45 @@ set +e
 
 INPUT=$(cat)
 
-python3 - <<'PYEOF'
+python3 - "$INPUT" <<'PYEOF'
 import sys, json, os, re
 from datetime import datetime
 
 def is_deliverable_path(path):
-    """True if the path looks like a plan/report/output deliverable."""
+    """True if the path looks like a plan/report/output deliverable.
+
+    Broadened (F23): now includes memory/*.md and tasks/*.md writes.
+    Excludes F11 scratch/log files: heartbeat, decisions, next-session,
+    /sessions/, /logs/, and any *scratch* file.
+    """
+    # F11 exclusions — checked first; these are never deliverables
+    scratch_patterns = re.compile(
+        r'(heartbeat|decisions|next-session|/sessions/|/logs/|scratch)',
+        re.IGNORECASE
+    )
+    if scratch_patterns.search(path):
+        return False
+
+    # Classic deliverable dirs (unchanged)
     deliverable_dirs = ['/outputs/', '/plans/', '/reports/', '/qa/']
-    deliverable_exts = re.compile(r'\.(html|htm|pdf|docx|pptx|xlsx)$', re.IGNORECASE)
     for d in deliverable_dirs:
         if d in path:
             return True
-    return bool(deliverable_exts.search(path))
+
+    # Rich media deliverable extensions (unchanged)
+    deliverable_exts = re.compile(r'\.(html|htm|pdf|docx|pptx|xlsx)$', re.IGNORECASE)
+    if deliverable_exts.search(path):
+        return True
+
+    # Broadened: memory/*.md, tasks/*.md, lessons/*.md, TASK.md
+    md_deliverable = re.compile(
+        r'(/memory/|/tasks/|/lessons/|TASK\.md)',
+        re.IGNORECASE
+    )
+    if md_deliverable.search(path) and path.endswith('.md'):
+        return True
+
+    return False
 
 try:
     import sys as _sys

@@ -22,9 +22,7 @@
 | ZK Steward | Niklas Luhmann Zettelkasten, atomic notes, cross-domain decisions |
 | Task Planner | Breaks down complex tasks into actionable implementation plans |
 | CLI-Anything Agent | Transforms any GUI app into agent-usable CLI harness via 7-phase pipeline (Blender, GIMP, LibreOffice, Inkscape, Shotcut, OBS, Audacity, etc.) |
-| MarketSenseApp PD | Project Director for MarketSenseApp — Vietnamese financial news RSS + Ollama Tauri app |
-| Amani CRM PD | Project Director for Amani CRM — inventory/production management CRM (Next.js + FastAPI) |
-| ltv PD | Project Director for LTV school fees management app (Tauri 2 + Rust + React 19) |
+| Example Project PD | Project Director for a specific product/app — one PD is spawned per active project via `/new-project` (see Project Scaffolder) |
 | Accounts Payable Agent | Vendor payments, contractor invoices, multi-rail (crypto/fiat/stablecoins) |
 | Vietnamese Text Agent | Vietnamese text → URL slugs and markdown-safe formats via correct Unicode NFD decomposition |
 | Paperclip Control Plane | Zero-human company orchestration via Paperclip — manages agent workforce, org charts, heartbeats, budgets, and governance. The 2nd in command under you. |
@@ -33,7 +31,7 @@
 | Project Scaffolder | Autonomous project + PD scaffolding agent — creates all files and registries for /new-project |
 | Codebase Search | Fast read-only file/symbol search across {agency-root}/, projects, and skill library — replaces Explore for system searches |
 | Web Extraction Agent | Routes web data-extraction and crawling tasks to the right tool based on task type — Lightpanda (default), Firecrawl (bulk/scale), Playwright (visual/interaction/login), social decision ladder (API → Apify → session → FLAG) |
-| Morpheus PD | Meta-overseer PD — monitors all other PDs, reads heartbeat/next-session/dept-state files, flags STALE (>3 days) and BLOCKED, ships daily digest. Reports only — no auto-poke. |
+| Overseer PD | Meta-overseer PD — monitors all other PDs, reads heartbeat/next-session/dept-state files, flags STALE (>3 days) and BLOCKED, ships daily digest. Reports only — no auto-poke. |
 
 ## Understand-Anything Sub-team
 

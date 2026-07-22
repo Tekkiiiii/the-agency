@@ -285,17 +285,58 @@ def check_r6():
         (f" ({', '.join(stale[:3])})" if stale else "")
 
 
+MEDIUM_TERM = MEMORY / "medium-term.md"
+MEDIUM_TERM_ROW_RE = re.compile(
+    r"^\|\s*[\w.-]+\s*\|\s*`([^`]+)`\s*\|[^|]*\|\s*(active|dormant)\s*\|\s*$", re.M)
+
+
+def get_dormant_project_dirs():
+    """Parse medium-term.md's Active Projects table (slug | path | PD | flag) for
+    Flag=dormant rows, returning the set of directory names (last path segment
+    before /memory/) so check_r7 can skip them.
+
+    PROVISIONAL / minimal-viable: this only covers projects tracked in the
+    structured table. It does NOT cover a separate prose "Archived:" list that
+    may exist at the bottom of medium-term.md, which is a different,
+    unstructured category — those projects can still false-FAIL this check.
+    Extending the flag scheme to cover archived projects is a real gap, not
+    something to invent unilaterally here; flagged for your own dormant/archived
+    project list.
+    """
+    dormant_dirs = set()
+    if not MEDIUM_TERM.exists():
+        return dormant_dirs
+    for m in MEDIUM_TERM_ROW_RE.finditer(MEDIUM_TERM.read_text(errors="replace")):
+        path, flag = m.group(1), m.group(2)
+        if flag != "dormant":
+            continue
+        seg = path.rstrip("/").split("/memory")[0].rstrip("/").split("/")[-1]
+        if seg:
+            dormant_dirs.add(seg)
+    return dormant_dirs
+
+
 def check_r7():
+    dormant_dirs = get_dormant_project_dirs()
     stale = []
     checked = 0
+    skipped = 0
     for ns in CLAUDE.glob("projects/*/memory/next-session.md"):
         checked += 1
+        proj = ns.parent.parent.name
+        if proj in dormant_dirs:
+            skipped += 1
+            continue
         age_d = (time.time() - ns.stat().st_mtime) / 86400
         if age_d > 14:
-            stale.append(f"{ns.parent.parent.name} ({age_d:.0f}d)")
+            stale.append(f"{proj} ({age_d:.0f}d)")
     status = "PASS" if checked and not stale else ("FAIL" if stale else "NOT_IMPLEMENTED")
-    return status, f"{checked} project next-session.md file(s) checked, {len(stale)} stale >14d" + \
-        (f" ({', '.join(stale)})" if stale else "")
+    return status, (f"{checked} project next-session.md file(s) checked, {skipped} skipped "
+                     f"(dormant per medium-term.md), {len(stale)} stale >14d" +
+                     (f" ({', '.join(stale)})" if stale else "") +
+                     ("; PROVISIONAL — dormant-dir match only covers medium-term.md's structured "
+                      "table, not its separate prose Archived: list" if dormant_dirs else
+                      "; no dormant flags parsed from medium-term.md"))
 
 
 def check_r8():
