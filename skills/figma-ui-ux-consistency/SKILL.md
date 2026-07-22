@@ -140,7 +140,7 @@ they understand the gaps that won't be caught, then proceed.
 
 ### Project-Specific Rules for Phase 1
 
-**amani-crm** (brand: teal + amber, fonts: Playfair Display + Plus Jakarta Sans):
+**examplecrm** (brand: teal + amber, fonts: Playfair Display + Plus Jakarta Sans):
 - Audit must document existing teal/amber usage as the brand anchor
 - Any palette decisions must reference the teal + amber brand rule
 - Typography audit must flag any non-brand font usage
@@ -154,7 +154,7 @@ they understand the gaps that won't be caught, then proceed.
 ### 2a. Confirm Brand / Style Anchor
 
 Before creating any tokens, confirm:
-- Brand colors (e.g., teal + amber for amani-crm)
+- Brand colors (e.g., teal + amber for examplecrm)
 - Brand typography (e.g., Playfair Display + Plus Jakarta Sans)
 - Style direction (minimal, glass, editorial, data-dense — from ui-ux-pro-max)
 - Motion tier (A/B/C from ui-ux-pro-max)
@@ -166,7 +166,7 @@ Produce a token spec covering all 4 foundations:
 **Color:**
 ```
 Primitive tokens:  blue/50 → blue/900, gray/50 → gray/900, white, black
-Brand tokens:      teal/50 → teal/900, amber/50 → amber/900  [amani-crm]
+Brand tokens:      teal/50 → teal/900, amber/50 → amber/900  [examplecrm]
 Semantic tokens:   color/bg/primary, color/text/primary,
                     color/border/default, color/accent/primary
                     color/status/success, color/status/warning,
@@ -175,7 +175,7 @@ Semantic tokens:   color/bg/primary, color/text/primary,
 
 **Typography:**
 ```
-Font families:     [heading: Playfair Display], [body: Plus Jakarta Sans]  [amani-crm]
+Font families:     [heading: Playfair Display], [body: Plus Jakarta Sans]  [examplecrm]
 Font sizes:        text/xs=12, text/sm=14, text/base=16, text/lg=18,
                     text/xl=20, text/2xl=24, text/3xl=30, text/4xl=36
 Font weights:      font/regular=400, font/medium=500, font/semibold=600, font/bold=700
@@ -340,7 +340,7 @@ Add a `superpowers-design-review` checkpoint to the team's definition of done:
 Generate `[project]/figma-design-system-rules.md` using `figma-create-design-system-rules`.
 
 The rules file must capture:
-- Project brand tokens (e.g., amani-crm teal + amber)
+- Project brand tokens (e.g., examplecrm teal + amber)
 - Project font stack
 - Allowed component inventory
 - Naming conventions
@@ -374,7 +374,7 @@ For long-running or recurring consistency work:
 
 ## Project-Specific Adaptation
 
-### amani-crm (Next.js 14 + FastAPI + Supabase, teal + amber, Playfair Display + Plus Jakarta Sans)
+### examplecrm (Next.js 14 + FastAPI + Supabase, teal + amber, Playfair Display + Plus Jakarta Sans)
 
 **Brand anchor — never override without explicit user approval:**
 - Primary teal: `#0D9488` (Tailwind: `teal-600`) — brand anchor
@@ -382,7 +382,7 @@ For long-running or recurring consistency work:
 - Font heading: `Playfair Display` (Google Fonts)
 - Font body: `Plus Jakarta Sans` (Google Fonts)
 
-**Token naming convention for amani-crm:**
+**Token naming convention for examplecrm:**
 ```
 color/teal/[shade]    e.g., color/teal/600
 color/amber/[shade]   e.g., color/amber/500
@@ -393,7 +393,7 @@ typography/font/heading → Playfair Display
 typography/font/body    → Plus Jakarta Sans
 ```
 
-**Forbidden for amani-crm:**
+**Forbidden for examplecrm:**
 - Using blue/purple brand colors in primary UI
 - Mixing Playfair Display into body text or Plus Jakarta Sans into headings
 - Using teal-700+ for backgrounds (creates accessibility issues)
@@ -401,7 +401,7 @@ typography/font/body    → Plus Jakarta Sans
 
 ### Other Projects
 
-For MarketSenseApp:
+For ExampleApp:
 - Detect brand colors, fonts, and style direction from the project's existing
   CLAUDE.md or PROJECT.md before Phase 2
 - Apply the same 5-phase lifecycle with project-specific tokens
@@ -438,4 +438,4 @@ For MarketSenseApp:
    `get_screenshot` for visuals.
 8. **Persist the state ledger.** For workflows spanning multiple sessions, write to disk
    (`/tmp/figma-consistency-{project}-{date}.json`) and re-read at session start.
-9. **For amani-crm: never override the teal+amber brand anchor** without explicit user approval.
+9. **For examplecrm: never override the teal+amber brand anchor** without explicit user approval.

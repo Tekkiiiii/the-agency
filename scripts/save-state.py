@@ -24,7 +24,7 @@ Payload schema (all fields optional except slug, phase, next):
   "was_doing": "one line",
   "just_finished": "one line",
   "session_notes": ["bullet", ...],   # extra bullets for the session log
-  "interspawn_active": ["T-042 from ltv-pd — desc"]  # active inter-spawn tasks for index.md
+  "interspawn_active": ["T-042 from example-pd — desc"]  # active inter-spawn tasks for index.md
 }
 
 Contracts preserved (consumers in parentheses):
@@ -35,7 +35,7 @@ Contracts preserved (consumers in parentheses):
   tasks/ongoing/ next-action stub (Step 3c — pd-resume actionability)
   inter-spawn-tasks/index.md Active Summary overwrite (Step 3b)
   .claude/save-state-state.json reset (Step 10 — turn counter)
-  morpheus incoming brief         (Step 11 — morpheus-pd digest)
+  overseer incoming brief         (Step 11 — overseer-pd digest)
   save_state / save_state_complete metric events (weekly aggregator)
   graphify update + unified merge + session node (Step 11b/13 — curator)
   Pinecone session upsert         (Step 12 — RAG recall)
@@ -51,7 +51,7 @@ import subprocess
 import sys
 
 HOME = pathlib.Path.home()
-MORPHEUS_INCOMING = HOME / "projects/morpheus/memory/inter-spawn-tasks/incoming"
+OVERSEER_INCOMING = HOME / "projects/overseer/memory/inter-spawn-tasks/incoming"
 EMIT = HOME / ".claude/memory/metrics/emit-metric.sh"
 PINECONE_SCRIPT = HOME / ".claude/skills/save-state/pinecone_upsert.py"
 UNIFIED_GRAPH = HOME / ".claude/graphify-out/unified/graph.json"
@@ -284,12 +284,12 @@ def reset_state_json(project: pathlib.Path, date_str: str):
     atomic_write(path, json.dumps(state, indent=2) + "\n")
 
 
-def write_morpheus_brief(p: dict):
-    """Step 11 — brief to morpheus incoming. Skip for morpheus itself."""
-    if p["slug"] == "morpheus":
+def write_overseer_brief(p: dict):
+    """Step 11 — brief to overseer incoming. Skip for overseer itself."""
+    if p["slug"] == "overseer":
         return
     ts = now_gmt7().strftime("%Y%m%d-%H%M%S")
-    MORPHEUS_INCOMING.mkdir(parents=True, exist_ok=True)
+    OVERSEER_INCOMING.mkdir(parents=True, exist_ok=True)
     blocker = (p.get("blockers") or ["no blockers"])[0]
     content = "\n".join([
         f"project: {p['slug']}",
@@ -299,7 +299,7 @@ def write_morpheus_brief(p: dict):
         f"- {p.get('was_doing') or p.get('just_finished') or 'session work captured'}",
         f"- Blocker: {blocker}. Next: {p['next']}",
     ]) + "\n"
-    atomic_write(MORPHEUS_INCOMING / f"save-state-brief-{ts}-{p['slug']}.md", content)
+    atomic_write(OVERSEER_INCOMING / f"save-state-brief-{ts}-{p['slug']}.md", content)
 
 
 def inject_session_node(project: pathlib.Path, slug: str, date_str: str):
@@ -428,7 +428,7 @@ def main():
     update_decisions(project, p, date_str)
     update_state_md(project, p, date_str)
     reset_state_json(project, date_str)
-    write_morpheus_brief(p)
+    write_overseer_brief(p)
     try:
         inject_session_node(project, p["slug"], date_str)
     except Exception:

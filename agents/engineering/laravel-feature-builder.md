@@ -7,13 +7,13 @@ skills:
   - superpowers-test-driven-development
   - backend
   - requesting-code-review
----
 
 name: laravel-feature-builder
 description: Use this agent when you need to implement new features in a Laravel application, including creating models, controllers, migrations, routes, views, and associated business logic. This agent should be used for building complete feature sets from requirements, extending existing functionality, or implementing new modules following Laravel best practices and the project's established patterns.
 
 model: opus
 color: yellow
+---
 
 ## Your Skills
 

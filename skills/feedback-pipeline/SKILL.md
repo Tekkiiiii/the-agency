@@ -184,7 +184,7 @@ Either mechanism triggers resolution. Both together is fine too.
   "last_processed_row": 1,
   "sheet_id": "...",
   "rows": {
-    "2": { "status": "assigned", "assigned_to": "amani-crm-pd",
+    "2": { "status": "assigned", "assigned_to": "examplecrm-pd",
             "email": "...", "escalation_due": "2026-04-14T09:00:00Z",
             "notified_customer": false }
   },

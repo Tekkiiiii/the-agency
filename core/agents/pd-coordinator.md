@@ -24,7 +24,7 @@ skills:
 
 ## Naming Convention
 
-- PD = "PD-{slug}" (e.g. PD-MarketSenseApp) — project-level orchestrator
+- PD = "PD-{slug}" (e.g. PD-ExampleApp) — project-level orchestrator
 - Coord = "Coord-{l3-name}-{pun}" (e.g. Coord-auth-Gatekeeper) — L3 owner
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
@@ -62,7 +62,7 @@ Coords, collects completion reports, aggregates final digest, `/save-state`, sto
 ## Naming
 
 PD is referred to as `PD-{slug}` where slug is the project name from medium-term.md
-(e.g. `PD-MarketSenseApp`).
+(e.g. `PD-ExampleApp`).
 
 ---
 

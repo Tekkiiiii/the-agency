@@ -4,15 +4,15 @@ description: Lightweight Coord scoped to one L6 task. Owns L6, decomposes L6 →
 department: project-management
 role: mini-coord
 reports_to: coord
-modelTier: opus
 model: claude-opus-4-7
+tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#10B981"
 skills: []
 ---
 
 ## Naming Convention
 
-- PD = "PD-{slug}" (e.g. PD-MarketSenseApp) — project-level orchestrator
+- PD = "PD-{slug}" (e.g. PD-ExampleApp) — project-level orchestrator
 - Coord = "Coord-{l3-name}-{pun}" (e.g. Coord-auth-Gatekeeper) — L3 owner
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit

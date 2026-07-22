@@ -67,7 +67,7 @@ echo '{payload}' | python3 ~/.claude/scripts/save-state.py --project {project-pa
 The script does ALL mechanical work: session log, heartbeat, next-session.md
 (incl. pending-inbound sweep), decisions append + auto-prune, next-action stub
 materialization (Step 3c), inter-spawn index, STATE.md, save-state-state.json
-reset, morpheus brief, metric emits, graphify update + unified-graph session
+reset, overseer brief, metric emits, graphify update + unified-graph session
 node, Pinecone upsert. All fire-and-forget parts are backgrounded by the
 script itself — no caller-side follow-up steps.
 
@@ -95,7 +95,7 @@ scan), synthesizes the same payload, and calls the same script. It reports
 - `next-session.md` is the ONLY file pd-resume/recall read at startup — the
   script keeps it ≤15 lines, self-contained, `Pending inbound` always present.
 - decisions.md is newest-at-top; prune keeps top 60 lines when >200.
-- Morpheus brief goes to
-  `~/projects/morpheus/memory/inter-spawn-tasks/incoming/` (skipped
-  when saving morpheus itself).
+- Overseer brief goes to
+  `~/projects/overseer/memory/inter-spawn-tasks/incoming/` (skipped
+  when saving overseer itself).
 - Metric events `save_state` / `save_state_complete` are emitted by the script.

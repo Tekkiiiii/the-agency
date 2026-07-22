@@ -121,7 +121,7 @@ After scanning all projects, aggregate into a findings report:
 {
   "scanId": "uuid",
   "scanTimestamp": "ISO",
-  "projectsScanned": ["agentrelay", "amani-crm"],
+  "projectsScanned": ["agentrelay", "examplecrm"],
   "projectsSkipped": ["sightsee"],
   "projectsSkippedReason": "uninitialized or archived",
   "findings": {
@@ -138,7 +138,7 @@ After scanning all projects, aggregate into a findings report:
   "requiresBODConsultation": true,
   "requiresPDConsultation": {
     "agentrelay": true,
-    "amani-crm": false
+    "examplecrm": false
   }
 }
 ```

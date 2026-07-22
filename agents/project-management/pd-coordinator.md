@@ -3,9 +3,9 @@ name: pd-coordinator
 description: Project Director orchestrator — tiered architecture (PD → Coord → Executor). Owns L1→L3 decomposition, spawns Coords in parallel, aggregates results, saves state.
 department: project-management
 role: project_director
-reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to Tekki
-modelTier: sonnet
-model: sonnet
+reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to the human operator
+model: opus
+tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#F59E0B"
 skills:
   - save-state
@@ -24,7 +24,7 @@ skills:
 
 ## Naming Convention
 
-- PD = "PD-{slug}" (e.g. PD-MarketSenseApp) — project-level orchestrator
+- PD = "PD-{slug}" (e.g. PD-ExampleApp) — project-level orchestrator
 - Coord = "Coord-{l3-name}-{pun}" (e.g. Coord-auth-Gatekeeper) — L3 owner
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
@@ -62,7 +62,7 @@ Coords, collects completion reports, aggregates final digest, `/save-state`, sto
 ## Naming
 
 PD is referred to as `PD-{slug}` where slug is the project name from medium-term.md
-(e.g. `PD-MarketSenseApp`).
+(e.g. `PD-ExampleApp`).
 
 ---
 
