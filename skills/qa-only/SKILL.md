@@ -1201,7 +1201,7 @@ Replace VERDICT, FAILURE_CLASS, HEALTH, PROJECT_SLUG with actual values.
   "verdict": "PASS",
   "failure_class": "none",
   "top_issue": "[HIGH] Button contrast below AA on mobile",
-  "full_report": "/Users/Tekki/.claude/projects/myproject/memory/qa/qa-report-final-2026-06-04-1430.md"
+  "full_report": "~/.claude/projects/myproject/memory/qa/qa-report-final-2026-06-04-1430.md"
 }
 ```
 

@@ -2,7 +2,7 @@ const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync, realpathS
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
-const { syncSkills, syncAgents } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts } = require('./sync-assets.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -63,6 +63,11 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const agentsDest = path.join(agencyRoot, 'agents');
   const agents = syncAgents(repoRoot, agentsDest, console);
   console.log(`  ✓ ${agents.updated} agents installed, ${agents.preserved} preserved`);
+
+  // 4b. Scripts (skill support tooling — save-state.py, mem-gardener.sh, etc.)
+  const scriptsDest = path.join(agencyRoot, 'scripts');
+  const scripts = syncScripts(repoRoot, scriptsDest, console);
+  console.log(`  ✓ ${scripts.updated} scripts installed, ${scripts.preserved} preserved`);
 
   // 5. Core docs
   const coreSrc = path.join(repoRoot, 'core');

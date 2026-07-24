@@ -2,7 +2,7 @@ const { execFileSync, spawnSync } = require('child_process');
 const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync, realpathSync, readdirSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
-const { syncSkills, syncAgents } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts } = require('./sync-assets.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -288,6 +288,10 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const agents = syncAgents(repoDir, agentsDest, console);
   console.log(`Agents: ${agents.updated} updated, ${agents.preserved} preserved`);
 
+  const scriptsDest = join(agencyRoot, 'scripts');
+  const scripts = syncScripts(repoDir, scriptsDest, console);
+  console.log(`Scripts: ${scripts.updated} updated, ${scripts.preserved} preserved`);
+
   // Sync core docs
   const coreSrc = join(repoDir, 'core');
   const coreDest = join(agencyRoot, 'core');
@@ -344,6 +348,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
 
   console.log('\nUpgrade complete.');
   if (headCommit) console.log(`Version: ${headCommit}`);
+  console.log('See what changed: CHANGELOG.md');
   console.log('');
   console.log('Quick check: agency tier get   (shows your orchestration tier)');
   console.log('');

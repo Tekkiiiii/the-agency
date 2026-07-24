@@ -26,7 +26,7 @@ You receive these variables in your spawn prompt:
 | `SLUG` | `content-agency` |
 | `NAME` | `Content Agency` |
 | `DESCRIPTION` | `Content production and delivery managed service` |
-| `PATH` | `/Users/Tekki/projects/content-agency` |
+| `PATH` | `~/projects/content-agency` |
 | `STACK` | `Next.js 15, Supabase, Vercel` |
 | `DEPARTMENT` | `specialized` |
 | `COLOR` | `#6366f1` |
@@ -438,4 +438,4 @@ PROJECT SCAFFOLDED
 | PD agent file exists | Skip, log warning |
 | JSON parse fails | Log error, continue to next registry |
 | Department dir missing | Create with mkdir -p, create minimal INDEX.md |
-| `~` in PATH | Normalize to `/Users/Tekki` before writing |
+| `~` in PATH | Normalize to the current user's home directory (run `echo $HOME` or equivalent) before writing |
