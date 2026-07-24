@@ -211,6 +211,57 @@ Date headers are `YYYY-MM-DD`. This repo has no semver and no version file —
 never introduce one. Git history plus dated changelog headers are the only
 source of truth this project needs.
 
+### CHANGELOG.md is dual-language: Vietnamese first, then English
+
+`CHANGELOG.md` documents every release wave in both languages, Vietnamese
+before English. Every `## [date]` block (including `## [Unreleased]`) nests
+two sub-sections in this order:
+
+```markdown
+## [Unreleased]
+
+### Tiếng Việt
+
+#### Added
+- ...
+
+#### Fixed
+- ...
+
+### English
+
+#### Added
+- ...
+
+#### Fixed
+- ...
+```
+
+Each language sub-section repeats the full Keep-a-Changelog category set
+(`#### Added`, `#### Fixed`, `#### Changed`, `#### Deprecated`, `#### Removed`,
+`#### Security`) one level deeper than before, since it now nests under the
+language heading — `##` → `###` → `####`, never skipped or inverted. This
+keeps both languages grep-able (`grep "### Tiếng Việt"` / `grep "### English"`
+finds every block of that language) and requires zero changes to
+`cli/commands/upgrade.js`'s `printChangelogSince()` — that function only
+splits on `^## \[.+\]` and prints the body between headers verbatim, so the
+nested VN/EN sub-structure flows through untouched. The upgrade-time display
+prints both languages exactly as written in the file; there is no
+language-filtering logic anywhere in the CLI.
+
+Commit hashes, file paths, and code identifiers inside a Vietnamese entry are
+carried over unchanged from the English entry — never translated.
+
+**Before the commit lands, the Vietnamese text must go through the
+`content-polish` skill's Vietnamese pipeline**
+(`~/.claude/skills/content-polish/SKILL.md`, Vietnamese branch): a
+`translationese-cleaner-vi` pre-pass (mandatory here — the VN draft is
+translated from an English source, exactly the scenario that pre-pass exists
+for) → `humanizer-vi` → an anti-fragmentation check → `grammar-checker-vi`.
+Apply this to the VN prose only, not to code/URLs/identifiers embedded in it
+— those skills already know not to touch them. Fix anything flagged before
+committing, same as the pass that first introduced this format did.
+
 ## Upgrading
 
 ```bash
