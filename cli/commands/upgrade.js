@@ -1,8 +1,22 @@
 const { execFileSync, spawnSync } = require('child_process');
-const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync, realpathSync } = require('fs');
+const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync, realpathSync, readdirSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
 const { syncSkills, syncAgents } = require('./sync-assets.js');
+
+// Repo skill count vs installed skill count — a silent mismatch is exactly
+// the failure mode this whole sync rewrite exists to catch (see
+// skill-sync-structural-fix). Never fail silently: warn loudly instead.
+function verifySkillCount(repoCount, skillsDest, console) {
+  const installedCount = existsSync(skillsDest)
+    ? readdirSync(skillsDest, { withFileTypes: true }).filter(
+        e => e.isDirectory() && existsSync(join(skillsDest, e.name, 'SKILL.md'))
+      ).length
+    : 0;
+  if (installedCount !== repoCount) {
+    console.log(`  ⚠ Skill count mismatch: repo has ${repoCount}, installed has ${installedCount}`);
+  }
+}
 
 const AGENCY_CONFIG_DIR = join(os.homedir(), '.agency');
 const AGENCY_CONFIG_PATH = join(AGENCY_CONFIG_DIR, 'config.json');
@@ -267,6 +281,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     for (const s of skills.updated) console.log(`    + ${s}`);
   }
   console.log(`  Preserved: ${skills.preserved.length}`);
+  verifySkillCount(skills.skillCount, skillsDest, console);
 
   console.log('');
 

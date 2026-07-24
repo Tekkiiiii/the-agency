@@ -6,7 +6,8 @@
     "agency": "./bin/agency.js"
   },
   "scripts": {
-    "start": "node bin/agency.js"
+    "start": "node bin/agency.js",
+    "test": "node ../scripts/check-flat-skills.js"
   },
   "engines": {
     "node": ">=18"

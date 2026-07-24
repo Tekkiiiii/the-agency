@@ -63,9 +63,17 @@ On first run, the PD creates its memory structure. On subsequent runs, it reads
 
 ## Adding a Skill
 
-A skill is a markdown file that defines a workflow.
+A skill is a directory with a `SKILL.md` entry point that defines a workflow.
+Directory layout is canonical in the repo itself — `skills/<name>/SKILL.md` —
+not just at install time; a flat `skills/<name>.md` file is invisible to
+`syncSkills()` and never reaches installs (`scripts/check-flat-skills.js`
+fails the build if one appears).
 
-### 1. Create the skill file
+### 1. Create the skill directory
+
+```
+skills/my-skill/SKILL.md
+```
 
 ```markdown
 ---
@@ -88,6 +96,10 @@ Use this when you need to do X.
 - Tip 1
 - Tip 2
 ```
+
+Add any supporting files the skill needs (e.g. a `full-scan.md` referenced
+from the main file) into the same directory — `syncSkills()` copies the whole
+directory recursively.
 
 ### 2. Register it
 
@@ -216,15 +228,20 @@ See `~/.claude/projects/the-agency/memory/decisions.md` D42 for the full rationa
 
 ## Skill Directory Format
 
-Production skills use the subdirectory format — each skill lives in its own folder
-with a `SKILL.md` entry point:
+The directory format is canonical everywhere — repo and install alike. Each
+skill lives in its own folder with a `SKILL.md` entry point, both in the repo
+and once installed:
 
 ```
-~/.claude/skills/{name}/SKILL.md
+the-agency/skills/{name}/SKILL.md        # repo (source of truth)
+~/.claude/skills/{name}/SKILL.md         # installed (synced from repo)
 ```
 
-The repo ships flat `.md` files for readability and diff clarity. When installing
-skills to production, the CLI wraps them into the subdirectory format automatically.
+`agency init` / `agency upgrade` sync every file in each `skills/<name>/`
+directory via content-hash comparison (`cli/commands/sync-assets.js`) — repo
+edits always win over local installed edits. A flat `skills/<name>.md` file at
+the repo root is not valid and will fail `node scripts/check-flat-skills.js`
+(wired into `npm test` in `cli/`).
 
 ```bash
 agency skill install my-skill   # installs to ~/.claude/skills/my-skill/SKILL.md
