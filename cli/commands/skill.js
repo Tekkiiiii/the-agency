@@ -1,5 +1,6 @@
-const { existsSync, readdirSync, copyFileSync, mkdirSync } = require('fs');
+const { existsSync, readdirSync, mkdirSync } = require('fs');
 const { join } = require('path');
+const { syncDirRecursive } = require('./sync-assets.js');
 
 module.exports = async function skill({ args, AGENCY_ROOT, console }) {
   const [subcmd, ...rest] = args;
@@ -36,17 +37,17 @@ module.exports = async function skill({ args, AGENCY_ROOT, console }) {
       process.exit(1);
     }
 
-    const srcFile = join(skillsSrc, `${name}.md`);
+    const srcDir = join(skillsSrc, name);
     const destDir = join(skillsDest, name);
-    const destFile = join(destDir, 'SKILL.md');
+    const srcSkillMd = join(srcDir, 'SKILL.md');
 
     if (!existsSync(skillsSrc)) {
       console.error(`Skill source not found: ${skillsSrc}`);
       process.exit(1);
     }
 
-    if (!existsSync(srcFile)) {
-      if (existsSync(destFile)) {
+    if (!existsSync(srcSkillMd)) {
+      if (existsSync(join(destDir, 'SKILL.md'))) {
         console.log(`Skill "${name}" already installed.`);
         return;
       }
@@ -55,10 +56,12 @@ module.exports = async function skill({ args, AGENCY_ROOT, console }) {
     }
 
     mkdirSync(destDir, { recursive: true });
-    copyFileSync(srcFile, destFile);
+    // Copy the whole skill directory (SKILL.md + any supporting files, e.g.
+    // full-scan.md) — a single-file copy silently drops multi-file skills.
+    syncDirRecursive(srcDir, destDir);
     console.log(`\n✅ Skill "${name}" installed.\n`);
-    console.log(`  Source: ${srcFile}`);
-    console.log(`  Dest:   ${destFile}\n`);
+    console.log(`  Source: ${srcDir}`);
+    console.log(`  Dest:   ${destDir}\n`);
     return;
   }
 

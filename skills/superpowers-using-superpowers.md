@@ -1,3 +1,0 @@
----
-name: superpowers-using-superpowers
-description: "Use when starting any conversation, task, or request — establishes how to discover and invoke superpowers skills via the Skill tool BEFORE taking any action or asking clarifying questions. Check for relevant skills first, then invoke with Skill tool, then announce and follow the skill workflow. Also for: resuming sessions, handling questions that look simple but have applicable skills, and onboarding new projects where skill discovery discipline must be established from the first message."

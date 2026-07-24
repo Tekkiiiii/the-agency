@@ -1,8 +1,22 @@
-const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync, realpathSync } = require('fs');
+const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync, realpathSync, readdirSync } = require('fs');
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const { syncSkills, syncAgents } = require('./sync-assets.js');
+
+// Repo skill count vs installed skill count — a silent mismatch is exactly
+// the failure mode this whole sync rewrite exists to catch (see
+// skill-sync-structural-fix). Never fail silently: warn loudly instead.
+function verifySkillCount(repoCount, skillsDest, console) {
+  const installedCount = existsSync(skillsDest)
+    ? readdirSync(skillsDest, { withFileTypes: true }).filter(
+        e => e.isDirectory() && existsSync(path.join(skillsDest, e.name, 'SKILL.md'))
+      ).length
+    : 0;
+  if (installedCount !== repoCount) {
+    console.log(`  ⚠ Skill count mismatch: repo has ${repoCount}, installed has ${installedCount}`);
+  }
+}
 
 // Compare two paths by real (symlink-resolved) location — see matching helper
 // in upgrade.js for why bare path.resolve() is not sufficient here.
@@ -43,6 +57,7 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const skillsDest = path.join(agencyRoot, 'skills');
   const skills = syncSkills(repoRoot, skillsDest, console);
   console.log(`  ✓ ${skills.updated.length} skills installed, ${skills.preserved.length} preserved`);
+  verifySkillCount(skills.skillCount, skillsDest, console);
 
   // 4. Agents
   const agentsDest = path.join(agencyRoot, 'agents');
