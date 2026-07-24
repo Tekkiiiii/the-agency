@@ -140,7 +140,7 @@ All critique skills:
 |---|---|
 | `humanizer` | Remove AI-writing patterns from text |
 | `proofreader` | Proofread for typos, grammar, clarity |
-| `content-polish` | Humanizer → anti-fragmentation → proofreader in sequence |
+| `content-polish` | Humanizer → anti-fragmentation → proofreader in sequence (EN) / humanizer-vi → grammar-checker-vi (VN) |
 | `content-creator` | 14 copywriting formulas, 18 psychology effects, 10 NLP techniques |
 | `content-strategy` | Editorial calendars, pillars, funnel planning |
 | `copywriting` | Conversion-focused copy for any medium |

@@ -1,7 +1,7 @@
 ---
 name: content-polish
-version: 1.0.0
-description: "End-to-end content polishing workflow that runs the humanizer and proofreader in the correct sequence with proper handoff between them. Use whenever the user wants to take generated content (CVs, posts, articles, emails, cover letters) from draft to ready-to-publish in one step. Triggers: polish this, make this ready, humanize and proofread, clean this up, do the full pass, run the polish workflow. Runs three passes: (1) format-aware humanizer, (2) anti-fragmentation check, (3) format-aware proofreader."
+version: 1.1.0
+description: "End-to-end content polishing workflow that runs the humanizer and proofreader in the correct sequence with proper handoff between them. Language-branched: English content uses humanizer + proofreader; Vietnamese content uses humanizer-vi + grammar-checker-vi (with optional translationese-cleaner-vi pre-pass). Use whenever the user wants to take generated content (CVs, posts, articles, emails, cover letters) from draft to ready-to-publish in one step. Triggers: polish this, make this ready, humanize and proofread, clean this up, do the full pass, run the polish workflow. Runs three passes: (1) format-aware humanizer, (2) anti-fragmentation check, (3) format-aware proofreader/grammar check."
 ---
 
 # Content Polish: End-to-End Workflow
@@ -41,9 +41,27 @@ If unclear from context, ask once: *"Quick check: is this a CV bullet, LinkedIn 
 
 ---
 
+### Step 0.5 - Detect Language and Pick the Pipeline
+
+Detect the content's primary language, then branch:
+
+| Language | Step 1 (humanize) | Step 2 | Step 3 (check) |
+|----------|-------------------|--------|----------------|
+| **English** (or mixed, mostly EN) | `humanizer` | Anti-fragmentation | `proofreader` (post-humanizer mode) |
+| **Vietnamese** (or mixed, mostly VN) | `humanizer-vi` | Anti-fragmentation | `grammar-checker-vi` |
+
+**Vietnamese pre-pass:** if the VN draft shows translationese (English word order, nominalizations, "được"-heavy passives, business clichés translated literally — typical of translated or EN-prompted drafts), run `translationese-cleaner-vi` BEFORE Step 1. Skip if the draft reads as natively written Vietnamese.
+
+Everything else in this workflow (Step 0 document typing, anti-fragmentation, output format, calibration card) applies to both pipelines. For Vietnamese, honor the register guidance in `humanizer-vi/references/registers.md` over the English soul/personality rules.
+
+---
+
 ### Step 1 - Run the Humanizer (Format-Calibrated)
 
-Read and apply the humanizer skill instructions from `~/.claude/skills/humanizer/SKILL.md` with the document type loaded as the calibration profile.
+**English:** read and apply `~/.claude/skills/humanizer/SKILL.md`.
+**Vietnamese:** read and apply `~/.claude/skills/humanizer-vi/SKILL.md` (follow its own workflow and preservation rules; the calibration instructions below still apply).
+
+Load the document type as the calibration profile.
 
 **Critical instructions for this step:**
 
@@ -83,13 +101,23 @@ Read all bullets in a CV section together. They should share grammatical shape (
 #### Failure Mode 5: Over-stripped specifics
 If the humanizer replaced a specific number, name, or date with vague language to "remove AI vocabulary," restore the specific. "Significant budget" should go back to "12B VND budget."
 
+#### Vietnamese calibration (VN pipeline only)
+
+The rules above are English-calibrated. For Vietnamese, adjust:
+
+- **Threshold:** count tiếng (syllables), not words — flag three consecutive sentences under **~15–18 tiếng** (a 12-tiếng VN sentence carries the content of ~6–8 EN words, so the EN threshold under-fires).
+- **Merge tools:** use VN connectors — *mà, nên, vì… nên, còn, trong khi, khiến* — plus relative clauses. Semicolons are rare in VN prose; don't introduce them.
+- **Skip Failure Mode 3's em-dash restoration** — that's an EN-humanizer artifact. `humanizer-vi` is conservative and rarely over-chops, so this pass is a safety net for VN, not load-bearing. Failure Modes 1, 2, 4, 5 apply unchanged.
+
 **Output of this step:** Version B (Version A with fragmentation fixed).
 
 ---
 
 ### Step 3 - Run the Proofreader (Format-Calibrated, Post-Humanizer Mode)
 
-Read and apply the proofreader skill instructions from `~/.claude/skills/proofreader/SKILL.md` with two flags set:
+**Vietnamese pipeline:** read and apply `~/.claude/skills/grammar-checker-vi/SKILL.md` instead — it covers spelling, tone marks, punctuation, spacing, and sentence structure at depth. Still check for the post-humanizer over-correction failures listed below (lost specifics, broken parallelism), then produce Version C the same way.
+
+**English pipeline:** read and apply the proofreader skill instructions from `~/.claude/skills/proofreader/SKILL.md` with two flags set:
 
 1. **Document type:** Same as Step 0
 2. **Post-humanizer mode:** ON (the proofreader has a specific section for this - it does additional checks for over-correction, lost specificity, broken parallelism)
@@ -171,8 +199,8 @@ Skip lengthy issue lists in the final output. The user wants the polished versio
 ## Reference
 
 This skill orchestrates:
-- `~/.claude/skills/humanizer/SKILL.md` (v3.0+)
-- `~/.claude/skills/proofreader/SKILL.md` (v2.0+)
+- English: `~/.claude/skills/humanizer/SKILL.md` (v3.0+) + `~/.claude/skills/proofreader/SKILL.md` (v2.0+)
+- Vietnamese: `~/.claude/skills/humanizer-vi/SKILL.md` + `~/.claude/skills/grammar-checker-vi/SKILL.md`, optional `~/.claude/skills/translationese-cleaner-vi/SKILL.md` pre-pass
 
 When polishing Vietnamese content: also load matching files from `skills/vietnamese-language/` via its SKILL.md routing table — covers platform-specific register, formal document conventions, Gen Z slang shelf-life, advertising regulatory constraints, and more.
 
