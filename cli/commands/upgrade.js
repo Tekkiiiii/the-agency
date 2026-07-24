@@ -25,6 +25,11 @@ const AGENCY_CONFIG_PATH = join(AGENCY_CONFIG_DIR, 'config.json');
 // and must skip fetch/pull entirely — preventing an infinite restart loop.
 const REEXEC_ENV = 'AGENCY_UPGRADE_REEXEC';
 
+// Carries the pre-pull HEAD across the reexec boundary (see REEXEC_ENV above) so
+// the reexec'd child can still print "what changed since your last upgrade" —
+// the child has no other way to know what HEAD was before the pull happened.
+const HEAD_BEFORE_ENV = 'AGENCY_UPGRADE_HEAD_BEFORE';
+
 // Compare two paths by real (symlink-resolved) location, not just string form.
 // `resolve()` alone is not enough: Node's require()/__dirname resolves symlinks
 // (e.g. macOS /tmp -> /private/tmp), while a bare `readlink` does not. Without
@@ -96,6 +101,76 @@ function getHead(repoDir) {
   }
 }
 
+// Prints CHANGELOG.md entries relevant to what was just pulled (best-effort —
+// see the module-level design note in the git history / task notes for why
+// this is date-based rather than commit-hash-based). Returns true if it
+// printed anything, false if the caller should fall back to a bare pointer.
+function printChangelogSince(repoDir, headBefore, console) {
+  const changelogPath = join(repoDir, 'CHANGELOG.md');
+  if (!existsSync(changelogPath)) return false;
+
+  const content = readFileSync(changelogPath, 'utf8');
+  const lines = content.split('\n');
+  const blocks = [];
+  let current = null;
+  for (const line of lines) {
+    if (/^## \[.+\]/.test(line)) {
+      if (current) blocks.push(current);
+      current = { header: line, body: [] };
+    } else if (current) {
+      current.body.push(line);
+    }
+  }
+  if (current) blocks.push(current);
+  if (blocks.length === 0) return false;
+
+  let beforeDate = null;
+  try {
+    beforeDate = execFileSync(
+      'git', ['-C', repoDir, 'log', '-1', '--format=%ad', '--date=short', headBefore],
+      { stdio: 'pipe' }
+    ).toString().trim() || null;
+  } catch (_) {
+    beforeDate = null;
+  }
+
+  let selected;
+  if (beforeDate) {
+    selected = blocks.filter(b => {
+      if (/^## \[Unreleased\]/.test(b.header)) return true;
+      const dates = b.header.match(/\d{4}-\d{2}-\d{2}/g);
+      if (!dates) return false;
+      const maxDate = dates.sort().pop(); // lexicographic sort is correct for YYYY-MM-DD
+      return maxDate > beforeDate;
+    });
+  } else {
+    // Date lookup failed (e.g. headBefore not reachable after a rebase) — least
+    // fragile fallback per spec: show only the topmost block.
+    selected = [blocks[0]];
+  }
+
+  if (selected.length === 0) return false;
+
+  console.log('\nWhat changed:');
+  const CAP = 40;
+  let printed = 0;
+  let truncated = false;
+  outer:
+  for (const block of selected) {
+    if (printed >= CAP) { truncated = true; break; }
+    console.log(block.header.replace(/^## /, ''));
+    printed++;
+    for (const bodyLine of block.body) {
+      if (!bodyLine.trim()) continue; // skip blank lines to keep output dense
+      if (printed >= CAP) { truncated = true; break outer; }
+      console.log(bodyLine);
+      printed++;
+    }
+  }
+  if (truncated) console.log('... see CHANGELOG.md for more');
+  return true;
+}
+
 module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const repoDir = findRepoRoot();
   if (!repoDir) {
@@ -116,8 +191,31 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   // to the post-pull sync steps. This is the loop guard: without it, the fresh
   // process would pull again and potentially re-exec forever.
   const isReexec = process.env[REEXEC_ENV] === '1';
+  // HEAD before the pull — set below in whichever branch runs, used at the end
+  // to select which CHANGELOG.md entries to print. See HEAD_BEFORE_ENV above
+  // for why the reexec'd child can't compute this itself.
+  let resolvedHeadBefore = null;
 
   if (isReexec) {
+    resolvedHeadBefore = process.env[HEAD_BEFORE_ENV] || null;
+    if (!resolvedHeadBefore) {
+      // Transitional fallback: this only fires the very first time a user
+      // upgrades past the commit that introduced HEAD_BEFORE_ENV — the PARENT
+      // process that ran the actual pull was still the old upgrade.js, which
+      // has no code to set the env var. We know for certain a pull just
+      // happened (that's the only way isReexec is ever true), and `git pull
+      // --rebase` already recorded the pre-rebase HEAD as ORIG_HEAD as a side
+      // effect of that exact pull — so recover it from there instead of
+      // silently giving up. Self-limiting: every upgrade after this one has
+      // the env var and never needs this path.
+      try {
+        resolvedHeadBefore = execFileSync(
+          'git', ['-C', repoDir, 'rev-parse', 'ORIG_HEAD'], { stdio: 'pipe' }
+        ).toString().trim() || null;
+      } catch (_) {
+        resolvedHeadBefore = null;
+      }
+    }
     console.log('\nAgency Upgrade (continuing with fresh code)');
     console.log('===========================================');
     console.log('Repo: ' + repoDir);
@@ -142,8 +240,11 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
       process.exit(1);
     }
 
-    // Snapshot HEAD before pull — used to detect whether new code was fetched.
+    // Snapshot HEAD before pull — used to detect whether new code was fetched,
+    // and (via resolvedHeadBefore) to select which CHANGELOG.md entries to
+    // print at the end of this run.
     const headBefore = getHead(repoDir);
+    resolvedHeadBefore = headBefore;
     // Set if `git stash pop` below leaves unresolved conflicts. When true, the
     // working tree is in an unknown state — do NOT re-exec fresh code on top
     // of it, and do NOT report success at the end (see checks below).
@@ -254,7 +355,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
       if (existsSync(freshBin)) {
         console.log('');
         console.log('New code pulled — re-launching with fresh upgrade.js...');
-        const childEnv = { ...process.env, [REEXEC_ENV]: '1' };
+        const childEnv = { ...process.env, [REEXEC_ENV]: '1', [HEAD_BEFORE_ENV]: headBefore || '' };
         const result = spawnSync(process.execPath, [freshBin, 'upgrade', ...args], {
           stdio: 'inherit',
           env: childEnv,
@@ -348,7 +449,22 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
 
   console.log('\nUpgrade complete.');
   if (headCommit) console.log(`Version: ${headCommit}`);
-  console.log('See what changed: CHANGELOG.md');
+
+  // Print CHANGELOG.md entries for what was just pulled, if anything was.
+  // Best-effort — a parse failure here must never fail the upgrade itself.
+  let shownChangelog = false;
+  try {
+    const headNow = getHead(repoDir);
+    if (resolvedHeadBefore && headNow && resolvedHeadBefore !== headNow) {
+      shownChangelog = printChangelogSince(repoDir, resolvedHeadBefore, console);
+    }
+  } catch (_) {
+    shownChangelog = false;
+  }
+  if (!shownChangelog) {
+    console.log('See what changed: CHANGELOG.md');
+  }
+
   console.log('');
   console.log('Quick check: agency tier get   (shows your orchestration tier)');
   console.log('');
