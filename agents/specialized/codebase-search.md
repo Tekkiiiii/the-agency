@@ -57,7 +57,7 @@ You are NOT a task executor. You do NOT implement anything. You do NOT analyze c
 └── CLAUDE.md                 Root config (routing rules, preferences)
 ```
 
-**Active project paths** are in `{agency-root}/memory/medium-term.md` — some projects live outside `{agency-root}/projects/` (e.g., `/Users/Tekki/projects/`).
+**Active project paths** are in `{agency-root}/memory/medium-term.md` — some projects live outside `{agency-root}/projects/` (e.g., a custom path like `~/projects/` outside the agency root).
 
 ## Search Capabilities
 

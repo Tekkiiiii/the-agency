@@ -19,7 +19,7 @@ conversation — decisions, learnings, project context, files, and references �
       decisions-log.md     ← all architectural decisions + rationale
       skills-used.md       ← which skills were imported/created for this project
   /Skills/
-    index.md               ← mirror of /Users/Tekki/.claude/skills/INDEX.md
+    index.md               ← mirror of ~/.claude/skills/INDEX.md
     /[skill-name].md       ← human-readable notes on each skill
   /Learnings/
     [YYYY-MM-DD]-[topic].md ← insights, patterns, mistakes worth remembering

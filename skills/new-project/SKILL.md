@@ -74,7 +74,7 @@ From the answers:
 4. Parse stack line: split on `|` to get STACK, COLOR, EXTRA_SKILLS (trim whitespace)
 5. Build SKILLS = `save-state, recall` + any EXTRA_SKILLS
 6. Set TODAY = current date (YYYY-MM-DD)
-7. Normalize all `~` to `/Users/Tekki`
+7. Normalize all `~` to the current user's home directory (`$HOME`)
 
 Validate:
 - SLUG is kebab-case (lowercase, hyphens only)

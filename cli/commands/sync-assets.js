@@ -1,4 +1,4 @@
-const { existsSync, mkdirSync, copyFileSync, readdirSync, readFileSync } = require('fs');
+const { existsSync, mkdirSync, copyFileSync, readdirSync, readFileSync, chmodSync } = require('fs');
 const { join } = require('path');
 const { createHash } = require('crypto');
 
@@ -14,8 +14,10 @@ function shouldCopy(srcPath, destPath) {
   return fileHash(srcPath) !== fileHash(destPath);
 }
 
-// Never sync macOS junk regardless of caller filter.
-const ALWAYS_SKIP = new Set(['.DS_Store']);
+// Never sync macOS junk or Python bytecode cache regardless of caller filter.
+// Checked against entry.name before the isDirectory() branch in syncDir, so
+// this already covers directories too — '__pycache__' skips the whole dir.
+const ALWAYS_SKIP = new Set(['.DS_Store', '__pycache__']);
 
 // Recursively copies files under `src` into `dest`, hash-comparing each one.
 // `include(filename)` gates which files get copied at each level (agents/
@@ -114,4 +116,35 @@ function syncAgents(repoDir, destDir, console) {
   return { updated: result.updated.length, preserved: result.preserved.length };
 }
 
-module.exports = { syncSkills, syncAgents, syncDirRecursive, shouldCopy, fileHash };
+// scripts/ ships the .py/.sh/.js support tooling that shipped skills invoke
+// by absolute path (e.g. `python3 ~/.claude/scripts/save-state.py`). Prior
+// to this function neither init nor upgrade ever synced scripts/ anywhere,
+// so those invocations 404'd on every clean install. Mirrors syncAgents'
+// shape exactly — everything under scripts/ is copied (no .md-only gate,
+// since .py/.sh/.js all need to land), __pycache__ is excluded via
+// ALWAYS_SKIP, and copied executables get +x so direct invocation
+// (./scripts/foo.sh) works too.
+function syncScripts(repoDir, destDir, console) {
+  const srcDir = join(repoDir, 'scripts');
+  const result = { updated: [], preserved: [] };
+
+  if (!existsSync(srcDir)) {
+    console.log('  ⚠ No scripts/ directory in repo — skipping');
+    return { updated: 0, preserved: 0 };
+  }
+
+  // Belt-and-suspenders: __pycache__ dirs are excluded by ALWAYS_SKIP inside
+  // syncDir already, but also gate stray .pyc files here in case one ever
+  // lands outside a __pycache__ dir.
+  syncDir(srcDir, destDir, '', result, name => !name.endsWith('.pyc'));
+
+  for (const label of result.updated) {
+    if (/\.(sh|py|js)$/.test(label)) {
+      try { chmodSync(join(destDir, label), 0o755); } catch (_) {}
+    }
+  }
+
+  return { updated: result.updated.length, preserved: result.preserved.length };
+}
+
+module.exports = { syncSkills, syncAgents, syncScripts, syncDirRecursive, shouldCopy, fileHash };
