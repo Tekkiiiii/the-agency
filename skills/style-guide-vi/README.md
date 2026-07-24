@@ -1,0 +1,7 @@
+# style-guide-vi
+
+Skill giữ nhất quán cách xưng hô, thuật ngữ và trình bày. Style guide của người dùng được ưu tiên hơn mặc định trong skill.
+
+Ví dụ: `Áp glossary trong docs/glossary.md cho các trang này, giữ nguyên tên API và trích dẫn.`
+
+Vendored from [longhang2004/vietnamese-humanizer](https://github.com/longhang2004/vietnamese-humanizer) (MIT License).

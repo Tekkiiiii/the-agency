@@ -151,10 +151,10 @@ If grade C or below:
 
 Invoke `/content-polish` on the critique-approved draft.
 
-The content-polish skill orchestrates three passes in sequence:
+The content-polish skill orchestrates three passes in sequence (language-branched: English → humanizer/proofreader, Vietnamese → humanizer-vi/grammar-checker-vi with optional translationese-cleaner-vi pre-pass):
 1. **Humanizer** (format-calibrated) — removes AI patterns, calibrated to the document type
 2. **Anti-fragmentation pass** — catches over-fragmentation, restores connective tissue, preserves parallelism
-3. **Proofreader** (post-humanizer mode) — catches typos, grammar, lost specifics, broken flow
+3. **Proofreader / grammar check** (post-humanizer mode) — catches typos, grammar, lost specifics, broken flow
 
 This stage is MANDATORY per CLAUDE.md rules. Never skip.
 

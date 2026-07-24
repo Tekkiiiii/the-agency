@@ -113,7 +113,11 @@
 |-------|-------------|
 | `humanizer` | Remove signs of AI-generated writing from text |
 | `proofreader` | Proofread English or Vietnamese text — typos, grammar, clarity |
-| `content-polish` | End-to-end polishing: humanizer -> anti-fragmentation -> proofreader |
+| `content-polish` | End-to-end polishing: humanizer -> anti-fragmentation -> proofreader (EN) / humanizer-vi -> grammar-checker-vi (VN) |
+| `humanizer-vi` | Vietnamese humanizer — fix templated/flat/cliché VN prose, preserve author voice |
+| `translationese-cleaner-vi` | Remove English-influenced word order and phrasing from Vietnamese text |
+| `grammar-checker-vi` | Vietnamese grammar/spelling/punctuation checker (deeper than proofreader's VN pass) |
+| `style-guide-vi` | Vietnamese style consistency — terminology, pronouns, numbers/dates, capitalization |
 | `content-creator` | 14 copywriting formulas, 18 psychology effects, 10 NLP techniques |
 | `content-strategy` | Editorial calendars, content pillars, TOFU/MOFU/BOFU planning |
 | `copywriting` | Conversion-focused copy for any medium |

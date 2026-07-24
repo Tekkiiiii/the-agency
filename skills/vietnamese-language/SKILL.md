@@ -24,6 +24,7 @@ Pure reference layer. No workflows, no agents, no presets — just knowledge fil
 - Ad copy structure (6 variants), TOFU/MOFU/BOFU templates, compliance checklist → `marketing/05-copy-quang-cao/`
 - Email sequence strategy, automation, KPIs → `marketing/14-email-marketing/`
 - Grammar rules, tone mark errors, code-switching → `proofreader/SKILL.md`
+- Active VN editing (de-template prose, translationese cleanup, deep grammar check, style consistency) → `humanizer-vi`, `translationese-cleaner-vi`, `grammar-checker-vi`, `style-guide-vi`
 - Platform format specs (character limits, aspect ratios, hashtag counts) → `content-creator/references/platforms.md`
 
 **This skill fills the gap for:** deep platform cultural dynamics, formal/legal/press Vietnamese, viral pattern mechanics, SEO diacritic strategy, regional dialects, Gen Z slang formation patterns, advertising cultural values framework, and email/messaging register conventions.
