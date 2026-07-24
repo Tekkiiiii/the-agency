@@ -188,6 +188,29 @@ The bootstrap system is in `core/bootstrap/`. To customize:
 
 ---
 
+## Release Notes
+
+Users install The Agency via `git clone` + `agency upgrade` — there's no package
+registry and no version prompts. That means a change is invisible to users unless
+it shows up in `CHANGELOG.md`. Follow this rule:
+
+> Every commit pushed to `main` that changes user-facing behavior — a new CLI
+> command or flag, a change to what `agency init`/`agency upgrade` installs or
+> does, a bug fix a user would have hit, a new or removed skill/agent a user
+> would notice, or a security/privacy fix — MUST add a `CHANGELOG.md` entry in
+> the **same commit**.
+
+Add the entry under a `## [Unreleased]` section at the top of `CHANGELOG.md`
+(create one if it isn't there yet). It gets a dated header the next time someone
+does a release-note pass — don't date it yourself.
+
+Skip the entry for purely internal changes: refactors with no behavior change,
+comment typo fixes, CI-only tweaks.
+
+Date headers are `YYYY-MM-DD`. This repo has no semver and no version file —
+never introduce one. Git history plus dated changelog headers are the only
+source of truth this project needs.
+
 ## Upgrading
 
 ```bash
