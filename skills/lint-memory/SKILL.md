@@ -24,6 +24,12 @@ Memory health check. Finds problems, auto-fixes safe ones, flags the rest.
 Default: `~/.claude/memory/` (global) + `~/.claude/projects/-Users-Tekki--claude/memory/` (per-conversation).
 Override: `/lint-memory [path]` to lint a specific directory.
 
+Within a target directory, "in scope" excludes control/handoff filenames and
+managed/log directories — defined once in `scripts/memory_scope.py`
+(`EXCLUDE_NAMES` — next-session.md, decisions.md, heartbeat.md, .canary.md, etc.;
+`EXCLUDE_DIRS` — sessions/, qa/, tasks/, inter-spawn-tasks/, agents/, outputs/) —
+rather than restated inline here or duplicated per-script.
+
 ## Steps
 
 ### Step 1 — Read Indexes

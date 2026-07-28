@@ -14,14 +14,21 @@ Usage:
     python3 memory-frontmatter-add.py --dir /path/to/memory --dry-run
     python3 memory-frontmatter-add.py --dir /path/to/memory --apply
 
-Scope contract (P1 blast-radius findings, 2026-07-10):
+Scope contract (P1 blast-radius findings, 2026-07-10; canonicalized into
+memory_scope.py 2026-07-27 — that module is now the single source of truth
+for both EXCLUDE_NAMES and EXCLUDE_DIRS, imported here, not redefined):
   - Only *.md files directly inside the target dir and its `lessons/` subdir
     (no recursion into sessions/, tasks/, inter-spawn-tasks/, qa/, agents/,
     outputs/ — those are managed/log/control dirs, not knowledge memory).
+    This script achieves that non-recursion structurally (glob("*.md") on
+    the target dir + one explicit lessons/ pass, never rglob) rather than by
+    consulting EXCLUDE_DIRS directly — EXCLUDE_DIRS exists so mem-scorecard.py
+    and mem-graph-build.py, which DO rglob, can enforce the identical boundary.
   - Hard-excluded filenames (mechanically owned by save-state.py / recall /
     pd-resume — schema must never touch these): next-session.md, decisions.md,
     decisions-archive.md, heartbeat.md, STATE.md, PROJECT.md, MEMORY.md,
-    wiki-log.md, wiki-schema.md, pd-scratch.md, index.md, README.md, CLAUDE.md.
+    wiki-log.md, wiki-schema.md, pd-scratch.md, index.md, README.md,
+    CLAUDE.md, .canary.md.
   - Any file already starting with `---` is left untouched (idempotent).
 """
 
@@ -32,19 +39,9 @@ import re
 import subprocess
 import sys
 
-EXCLUDE_NAMES = {
-    "next-session.md", "decisions.md", "decisions-archive.md", "heartbeat.md",
-    "STATE.md", "PROJECT.md", "MEMORY.md", "wiki-log.md", "wiki-schema.md",
-    "pd-scratch.md", "index.md", "README.md", "CLAUDE.md",
-    # L0 integrity fixture — fixed content, SHA-256 byte-compared daily (R1).
-    # Frontmatter would change its bytes and break the canary check.
-    ".canary.md",
-}
-EXCLUDE_DIRS = {
-    "sessions", "tasks", "inter-spawn-tasks", "qa", "agents", "outputs",
-    "graphify-out", "obsidian", ".git", "node_modules", "revisions",
-    "ongoing", "completed",
-}
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from memory_scope import EXCLUDE_NAMES, EXCLUDE_DIRS  # noqa: E402
+
 PROJECT_TYPE_NAMES = {"pd-structure.md", "dev-plan.md", "brand-guidelines.md"}
 
 

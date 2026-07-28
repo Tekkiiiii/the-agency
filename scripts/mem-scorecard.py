@@ -2,7 +2,8 @@
 """
 mem-scorecard.py — Memory v2 30-check scorecard (R1-R10, D1-D10, S1-S10).
 
-Spec: core/memory/memory-v2.md §3 (Read-path, Distillation, Storage families)
+Spec: ~/.claude/projects/system-improvement/outputs/memory-audit/
+      2026-07-10-memory-system-audit/memory-v2-target-architecture.html §3
 
 Each check is a function returning (status, evidence):
   status   — "PASS" | "FAIL" | "NOT_IMPLEMENTED"  (NOT_IMPLEMENTED counts as fail)
@@ -30,28 +31,37 @@ from pathlib import Path
 HOME = Path.home()
 CLAUDE = HOME / ".claude"
 MEMORY = CLAUDE / "memory"
-# Claude Code auto-memory slug: cwd path with "/" and "." replaced by "-".
-AUTO_MEMORY_SLUG = str(CLAUDE).replace("/", "-").replace(".", "-")
-AUTO_MEMORY = HOME / "projects" / AUTO_MEMORY_SLUG / "memory"
+AUTO_MEMORY = CLAUDE / "projects/-Users-Tekki--claude/memory"
+SYS_IMPROVE = CLAUDE / "projects/system-improvement/memory"
 SCRIPTS = CLAUDE / "scripts"
+
+sys.path.insert(0, str(SCRIPTS))
+from memory_scope import EXCLUDE_NAMES, EXCLUDE_DIRS  # noqa: E402
 
 GRAPH_JSON = MEMORY / "graphify-out/memory-graph.json"
 GRAPH_HTML = MEMORY / "graphify-out/memory-graph.html"
 CANARY_FILE = MEMORY / ".canary.md"
 CANARY_HASH = MEMORY / ".canary.sha256"
 CANARY_SESSION = MEMORY / ".canary-session.json"
-DEAD_LINKS = MEMORY / "qa/dead-links.txt"
+DEAD_LINKS = SYS_IMPROVE / "qa/dead-links.txt"
 EXTERNAL_STORES = MEMORY / "external-stores.md"
-DECISIONS_MD = MEMORY / "decisions.md"
+DECISIONS_MD = SYS_IMPROVE / "decisions.md"
 SCORECARD_MD = MEMORY / "scorecard.md"
 EVENTS_JSONL = MEMORY / "metrics/events.jsonl"
 EMIT = MEMORY / "metrics/emit-metric.sh"
-GARDENER_MARKER = MEMORY / "ops/gardener-last-run.json"
-RECALL_EVALS = MEMORY / "qa/recall-evals.md"
-CONTRADICTION_QUEUE = MEMORY / "ops/contradiction-queue.md"
+GARDENER_MARKER = SYS_IMPROVE / "ops/gardener-last-run.json"
+RECALL_EVALS = SYS_IMPROVE / "qa/recall-evals.md"
+CONTRADICTION_QUEUE = SYS_IMPROVE / "ops/contradiction-queue.md"
+SCORECARD_HISTORY = SYS_IMPROVE / "ops/scorecard-history.jsonl"
 
 BUNDLES = [MEMORY, AUTO_MEMORY]
-CONTROL_FILES = {"MEMORY.md", "index.md"}
+# CONTROL_FILES was a local {"MEMORY.md", "index.md"} pair (2026-07-10) that
+# never matched memory_scope.EXCLUDE_NAMES's full 14-name control-file list
+# (next-session.md, decisions.md, heartbeat.md, .canary.md, README.md, etc.)
+# — those files failed R4 forever even though they're excluded from
+# frontmatter migration BY DESIGN, which was never a real schema gap, just a
+# scope bug. Now the single EXCLUDE_NAMES import (below) is authoritative;
+# MEMORY.md/index.md are already members of it.
 VALID_TYPES = {"feedback", "lesson", "decision", "reference", "note", "project", "registry", "user"}
 REQUIRED_FIELDS = ["name", "type", "description", "created"]
 STORE_NAMES = ["Pinecone", "graphify", "NotebookLM", "Obsidian", "tokensave"]
@@ -105,12 +115,21 @@ def parse_frontmatter(text):
 
 
 def all_memory_files():
+    """Every in-scope knowledge-memory file across both bundles. Scope =
+    memory_scope.EXCLUDE_NAMES (control/index/handoff filenames) +
+    memory_scope.EXCLUDE_DIRS (managed/log dirs: sessions/, qa/, tasks/,
+    inter-spawn-tasks/, agents/, outputs/) — the same boundary
+    memory-frontmatter-add.py's docstring documents. 2026-07-27: narrowed
+    from a bare rglob to match; see memory_scope.py for the full rationale."""
     files = []
     for base in BUNDLES:
         if not base.exists():
             continue
         for p in sorted(base.rglob("*.md")):
-            if p.name in CONTROL_FILES or "graphify-out" in p.parts:
+            if "graphify-out" in p.parts:
+                continue
+            rel_parts = p.relative_to(base).parts[:-1]
+            if p.name in EXCLUDE_NAMES or any(part in EXCLUDE_DIRS for part in rel_parts):
                 continue
             files.append(p)
     return files
@@ -121,7 +140,7 @@ def slugify(stem):
 
 
 def py_bin():
-    venv = Path.home() / ".local/share/uv/tools/graphifyy/bin/python"
+    venv = Path("/Users/Tekki/.local/share/uv/tools/graphifyy/bin/python")
     return str(venv) if venv.exists() else sys.executable
 
 
@@ -182,8 +201,38 @@ def check_r1():
 
 
 def check_r2():
+    """R2 = two genuinely different questions, previously conflated into one
+    'non_control' set (2026-07-27 root fix, found while investigating a
+    3-link FAIL that wouldn't clear no matter how complete the index got):
+      1. Does an index link RESOLVE — does the target file exist on disk at
+         all? This must check against EVERY real file (control files
+         included) — a link to wiki-schema.md or wiki-log.md from MEMORY.md
+         is a legitimate navigation cross-reference to a real, existing file.
+         It was being counted as "unresolved" (implying broken/missing)
+         purely because those filenames are excluded from the *coverage*
+         set below — an existing file was being scored as if it didn't
+         exist, which is a different question with a different wrong answer.
+      2. What fraction of in-scope KNOWLEDGE files are covered by the index?
+         This one correctly stays scoped to non_control (memory_scope's
+         EXCLUDE_NAMES/EXCLUDE_DIRS) — control files were never meant to be
+         "covered" by the index in the first place (see memory-frontmatter-
+         add.py's docstring: they're not knowledge memory), so they don't
+         belong in either the numerator or denominator of a coverage ratio.
+    A genuinely broken link (target doesn't exist anywhere on disk) still
+    fails resolution under this fix — this is a v2 measurement-scope
+    correction (what "resolved" means), not a denominator change, so no new
+    Scope trend-table row; documented instead in decisions.md.
+    """
     files = load_memory_files_cache()
     non_control = {f["path"] for f in files}
+    all_real_files = set()
+    for base in BUNDLES:
+        if not base.exists():
+            continue
+        for p in base.rglob("*.md"):
+            if "graphify-out" in p.parts:
+                continue
+            all_real_files.add(p)
     index_files = []
     for base in BUNDLES:
         for name in ("MEMORY.md", "index.md"):
@@ -193,26 +242,28 @@ def check_r2():
 
     resolved_targets, unresolved_targets = 0, 0
     referenced_files = set()
+    unresolved_examples = []
     for idx in index_files:
         text = idx.read_text(encoding="utf-8", errors="replace")
         for m in MD_LINK_RE.finditer(text):
             target = m.group(1).lstrip("./")
-            found = None
-            for f in non_control:
-                if f.name == Path(target).name:
-                    found = f
-                    break
-            if found:
+            found_real = next((f for f in all_real_files if f.name == Path(target).name), None)
+            if found_real:
                 resolved_targets += 1
-                referenced_files.add(found)
+                found_control = next((f for f in non_control if f.name == Path(target).name), None)
+                if found_control:
+                    referenced_files.add(found_control)
             else:
                 unresolved_targets += 1
+                if len(unresolved_examples) < 3:
+                    unresolved_examples.append(target)
 
     total_files = len(non_control)
     coverage = len(referenced_files) / total_files if total_files else 0
     all_resolve = unresolved_targets == 0
     status = "PASS" if (all_resolve and coverage >= 0.99) else "FAIL"
-    return status, (f"{resolved_targets} index links resolve, {unresolved_targets} unresolved; "
+    ex = f"; unresolved examples: {', '.join(unresolved_examples)}" if unresolved_examples else ""
+    return status, (f"{resolved_targets} index links resolve, {unresolved_targets} unresolved{ex}; "
                      f"file coverage {len(referenced_files)}/{total_files} ({coverage:.1%}) "
                      f"— corpus is link-sparse by design decision (per-project files aren't all "
                      f"globally indexed), so full 100% coverage is a real backlog item")
@@ -288,31 +339,48 @@ def check_r6():
 MEDIUM_TERM = MEMORY / "medium-term.md"
 MEDIUM_TERM_ROW_RE = re.compile(
     r"^\|\s*[\w.-]+\s*\|\s*`([^`]+)`\s*\|[^|]*\|\s*(active|dormant)\s*\|\s*$", re.M)
+MEDIUM_TERM_ARCHIVED_LINE_RE = re.compile(r"^Archived:\s*(.+)$", re.M)
 
 
 def get_dormant_project_dirs():
-    """Parse medium-term.md's Active Projects table (slug | path | PD | flag) for
-    Flag=dormant rows, returning the set of directory names (last path segment
-    before /memory/) so check_r7 can skip them.
+    """Dormant/archived-equivalent project directory names for check_r7 to skip.
+    Two sources, both from medium-term.md — the single registry SSOT:
+      1. Active Projects table rows with Flag=dormant (structured).
+      2. The prose "Archived:" line at the bottom (unstructured names, comma-
+         separated, each optionally followed by a "(...)" note).
 
-    PROVISIONAL / minimal-viable: this only covers projects tracked in the
-    structured table. It does NOT cover a separate prose "Archived:" list that
-    may exist at the bottom of medium-term.md, which is a different,
-    unstructured category — those projects can still false-FAIL this check.
-    Extending the flag scheme to cover archived projects is a real gap, not
-    something to invent unilaterally here; flagged for your own dormant/archived
-    project list.
+    2026-07-27 root fix: source 2 was previously NOT parsed (see git history /
+    p1-blast-radius-findings.md) — 7 of R7's 8 stale-file false positives were
+    archived projects measured as if they were live, because "archived" only
+    existed as prose Tekki's eyes read, never as data this check could see.
+    Root cause was the checker's blind spot, not the projects' timestamps —
+    fixed by reading what was already there, not by touching any project's
+    next-session.md to fake a fresh edit (that would be metric theater on dead
+    projects). Directory-name matching here is best-effort: the Archived line
+    has no path, so a name is treated as a directory basename match against
+    projects/*/memory/next-session.md's parent-parent dir name. Case-sensitive
+    exact match only — deliberately no fuzzy matching, to avoid silently
+    exempting an active project that happens to share a substring with an
+    archived one.
     """
     dormant_dirs = set()
     if not MEDIUM_TERM.exists():
         return dormant_dirs
-    for m in MEDIUM_TERM_ROW_RE.finditer(MEDIUM_TERM.read_text(errors="replace")):
+    text = MEDIUM_TERM.read_text(errors="replace")
+    for m in MEDIUM_TERM_ROW_RE.finditer(text):
         path, flag = m.group(1), m.group(2)
         if flag != "dormant":
             continue
         seg = path.rstrip("/").split("/memory")[0].rstrip("/").split("/")[-1]
         if seg:
             dormant_dirs.add(seg)
+    archived_m = MEDIUM_TERM_ARCHIVED_LINE_RE.search(text)
+    if archived_m:
+        for raw in archived_m.group(1).split(","):
+            name = raw.strip()
+            name = re.sub(r"\s*\(.*\)\s*$", "", name).strip()  # drop "(merged into ...)" etc.
+            if name:
+                dormant_dirs.add(name)
     return dormant_dirs
 
 
@@ -332,11 +400,10 @@ def check_r7():
             stale.append(f"{proj} ({age_d:.0f}d)")
     status = "PASS" if checked and not stale else ("FAIL" if stale else "NOT_IMPLEMENTED")
     return status, (f"{checked} project next-session.md file(s) checked, {skipped} skipped "
-                     f"(dormant per medium-term.md), {len(stale)} stale >14d" +
+                     f"(dormant/archived per medium-term.md structured table + Archived: prose "
+                     f"line, 2026-07-27 root fix), {len(stale)} stale >14d" +
                      (f" ({', '.join(stale)})" if stale else "") +
-                     ("; PROVISIONAL — dormant-dir match only covers medium-term.md's structured "
-                      "table, not its separate prose Archived: list" if dormant_dirs else
-                      "; no dormant flags parsed from medium-term.md"))
+                     ("" if dormant_dirs else "; no dormant/archived names parsed from medium-term.md"))
 
 
 def check_r8():
@@ -362,7 +429,7 @@ def check_r9():
 
 def check_r10():
     if not GARDENER_MARKER.exists():
-        return "FAIL", "no gardener run recorded yet (memory/ops/gardener-last-run.json missing) — infra built this session, first scheduled run pending the user's launchd approval"
+        return "FAIL", "no gardener run recorded yet (memory/ops/gardener-last-run.json missing) — infra built this session, first scheduled run pending Tekki's launchd approval"
     try:
         rec = json.loads(GARDENER_MARKER.read_text())
         last = datetime.strptime(rec["ts"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -502,7 +569,16 @@ def check_d9():
 
 
 def check_d10():
-    return "NOT_IMPLEMENTED", "requires a completed gardener run to diff against (no gardener cycle has run yet — infra built this session)"
+    if not SCORECARD_HISTORY.exists():
+        return "NOT_IMPLEMENTED", "no scorecard-history.jsonl yet — this run is the first snapshot, diff needs a second run"
+    rows = [json.loads(l) for l in SCORECARD_HISTORY.read_text().splitlines() if l.strip()]
+    if len(rows) < 2:
+        return "NOT_IMPLEMENTED", f"only {len(rows)} snapshot(s) recorded — diff needs >=2 gardener runs"
+    prev, cur = rows[-2], rows[-1]
+    flipped = [cid for cid in cur["results"] if prev["results"].get(cid) != cur["results"][cid]]
+    status = "PASS"
+    return status, (f"diffed {prev['ts']} -> {cur['ts']}: {len(flipped)} check(s) changed status "
+                     f"({', '.join(flipped) if flipped else 'none'})")
 
 
 # ============================================================
@@ -723,7 +799,19 @@ def write_scorecard(results, run_ts):
         passed = sum(1 for cid, _ in checks if results[cid]["status"] == "PASS")
         scores[fam] = (passed, len(checks), 10 * passed / len(checks))
 
+    # This function fully rewrites scorecard.md every run — any frontmatter
+    # added by hand or by memory-frontmatter-add.py gets clobbered the next
+    # time this runs (discovered 2026-07-27 while migrating this exact file).
+    # Generate it here instead, every time, so it's durable across runs.
     lines = []
+    lines.append("---")
+    lines.append("name: Memory v2 Scorecard")
+    lines.append("type: reference")
+    lines.append("description: Auto-regenerated by scripts/mem-scorecard.py -- R/D/S check results (30 checks) plus the 12-week trend table. Read for current memory-system health status, not a static reference.")
+    lines.append("created: 2026-07-10")
+    lines.append("links: []")
+    lines.append("---")
+    lines.append("")
     lines.append("# Memory v2 Scorecard")
     lines.append("")
     lines.append(f"Last run: {run_ts}")
@@ -749,10 +837,33 @@ def write_scorecard(results, run_ts):
             lines.append(f"| {cid} | {mark} | {r['evidence']} |")
         lines.append("")
 
+    # Scope column (added 2026-07-27): R4 scan-scope narrowing changed what
+    # counts as "memory" for R2/R4/S1/S2/S3/S6/S7/S8 (excluded sessions/,
+    # qa/, tasks/, inter-spawn-tasks/, agents/, outputs/ — see memory_scope.py).
+    # A score change on/after this date can be a real improvement OR a
+    # measurement-scope artifact — v1/v2 tags make that distinguishable
+    # instead of silently presenting a jump as apples-to-apples progress.
+    SCOPE_NARROWING_DATE = date(2026, 7, 27)
+    # R2_FIX_TS (same day as the v1->v2 cutover, later that day): check_r2()'s
+    # own resolution logic was redefined — "does this link resolve" now
+    # checks against ALL real files, not just the non_control coverage set
+    # (a link to a control file like wiki-schema.md was wrongly scored as
+    # "unresolved" before this). This changes what R2's number means a
+    # second time on the same calendar day, so a bare v1/v2 date-cutover tag
+    # can't distinguish pre-fix v2 rows from post-fix v2 rows — v2b marks
+    # rows at/after this specific fix, not just the date.
+    R2_FIX_TS = datetime(2026, 7, 27, 10, 30, tzinfo=timezone.utc)
+    if date.today() < SCOPE_NARROWING_DATE:
+        current_scope_tag = "v1"
+    elif datetime.now(timezone.utc) >= R2_FIX_TS:
+        current_scope_tag = "v2b"
+    else:
+        current_scope_tag = "v2"
+
     lines.append("## 12-Week Trend")
     lines.append("")
-    lines.append("| Week | R | D | S | Total |")
-    lines.append("|------|---|---|---|-------|")
+    lines.append("| Week | R | D | S | Total | Scope |")
+    lines.append("|------|---|---|---|-------|-------|")
 
     trend_path = SCORECARD_MD
     prior_rows = []
@@ -760,16 +871,58 @@ def write_scorecard(results, run_ts):
         old = trend_path.read_text(errors="replace")
         m = re.search(r"## 12-Week Trend\n\n\|.*?\|\n\|[-\s|]+\|\n((?:\|.*\|\n?)*)", old)
         if m:
-            prior_rows = [l for l in m.group(1).splitlines() if l.strip().startswith("|")]
+            for l in m.group(1).splitlines():
+                l = l.strip()
+                if not l.startswith("|"):
+                    continue
+                cells = [c.strip() for c in l.strip("|").split("|")]
+                if len(cells) == 5:
+                    # pre-2026-07-27 row, written before the Scope column
+                    # existed — tag it v1 (old rglob-everything denominator)
+                    # rather than silently backfilling it as if comparable.
+                    l = "| " + " | ".join(cells + ["v1"]) + " |"
+                prior_rows.append(l)
 
     week_label = date.today().isoformat()
-    new_row = f"| {week_label} | {scores['R'][2]:.1f} | {scores['D'][2]:.1f} | {scores['S'][2]:.1f} | {scores['R'][2]+scores['D'][2]+scores['S'][2]:.1f}/30 |"
+    new_row = (f"| {week_label} | {scores['R'][2]:.1f} | {scores['D'][2]:.1f} | {scores['S'][2]:.1f} | "
+               f"{scores['R'][2]+scores['D'][2]+scores['S'][2]:.1f}/30 | {current_scope_tag} |")
     all_rows = (prior_rows + [new_row])[-12:]
     lines.extend(all_rows)
     lines.append("")
+    if any(r.rstrip().endswith("v1 |") for r in all_rows) and current_scope_tag == "v2":
+        lines.append("**Scope v1 -> v2 (2026-07-27):** R2/R4/S1/S2/S3/S6/S7/S8 denominators "
+                      "narrowed to exclude memory/{sessions,qa,tasks,inter-spawn-tasks,agents,outputs}/ "
+                      "— managed/log/control dirs that memory-frontmatter-add.py's docstring already "
+                      "excluded from schema migration, but that mem-scorecard.py/mem-graph-build.py "
+                      "were still counting as \"memory\" needing frontmatter. v1 rows are NOT directly "
+                      "comparable to v2 rows for these checks — a score change spanning the boundary "
+                      "may be a real fix, a scope change, or both. See scripts/memory_scope.py and "
+                      "memory/decisions.md (2026-07-27 entry) for the full rationale.")
+        lines.append("")
+    if any(r.rstrip().endswith("v2 |") for r in all_rows) and current_scope_tag == "v2b":
+        lines.append("**Scope v2 -> v2b (2026-07-27, same day):** check_r2()'s own resolution logic "
+                      "was redefined — \"does this link resolve\" now checks against ALL real files "
+                      "on disk, not just the non_control coverage set. A link to a control file (e.g. "
+                      "wiki-schema.md) was previously scored as \"unresolved\" purely because that "
+                      "filename is excluded from the coverage set, even though the file genuinely "
+                      "exists — the checker was wrong, not the link. Coverage-percentage scoping is "
+                      "unchanged (still non_control only); only what \"resolved\" means changed. v2 "
+                      "rows before this fix are NOT directly comparable to v2b rows for R2 specifically. "
+                      "See memory/decisions.md (2026-07-27 entry) for the full rationale.")
+        lines.append("")
 
     SCORECARD_MD.write_text("\n".join(lines))
     return scores
+
+
+def write_snapshot(results, run_ts):
+    """D10: append this run's per-check PASS/FAIL/N/A status to a history file,
+    so a real gardener diff (which checks flipped between runs) is computable —
+    not just the aggregate FAIL-count delta mem-gardener.sh already self-grades on."""
+    SCORECARD_HISTORY.parent.mkdir(parents=True, exist_ok=True)
+    row = {"ts": run_ts, "results": {cid: r["status"] for cid, r in results.items()}}
+    with open(SCORECARD_HISTORY, "a") as f:
+        f.write(json.dumps(row) + "\n")
 
 
 def main():
@@ -777,6 +930,7 @@ def main():
     emit("scorecard_run_start")
     results = run_all()
     scores = write_scorecard(results, run_ts)
+    write_snapshot(results, run_ts)
     emit("scorecard_run_end",
          r=round(scores["R"][2], 1), d=round(scores["D"][2], 1), s=round(scores["S"][2], 1),
          total_passed=scores["R"][0] + scores["D"][0] + scores["S"][0])
