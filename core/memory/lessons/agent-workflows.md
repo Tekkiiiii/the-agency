@@ -45,7 +45,35 @@
 - Step 5b — completion path branches; parent_ai variant adds REQUIRED `**Output:**` line so operator can find the deliverable
 - Spawn-prompt template — caller-name + caller-completion-path substitution rules
 
-**Principle:** parent-ai = operator direct uses inbox; PD = inter-PD uses delegated-{task-id}.md. Both write the same Completion block format with different target paths.
+**Principle (superseded — see correction below):** parent-ai = operator direct uses inbox; PD = inter-PD uses delegated-{task-id}.md. Both write the same Completion block format with different target paths.
+
+## pd-spawn caller_type branch — inbox misfiling correction
+
+**Symptom:** the 2026-06-04 fix above routed every parent-ai-initiated PD
+delegation into the global inbox. `/pd-spawn` always names a `{target-slug}`
+in Step 1, so the target project is the task's real owner — but the inbox
+route meant project-owned tasks sat in a global pool instead of that
+project's own `memory/tasks/`, invisible to `/pd-resume [{target-slug}]`.
+
+**Root cause:** the 2026-06-04 fix treated "caller has no project of its own"
+as "task has no owner," conflating the initiating session with the subject of
+the work. Those are different things — a parent-ai-direct caller can still be
+delegating work that is entirely about an existing project.
+
+**Fix applied:** `skills/pd-spawn/SKILL.md` Steps 3, 3.5, 4, 5, 5b, 6,
+"Handling the Completion," and "Handling Failure/Blocker" now file the
+`caller_type = parent_ai` delegation-tracking file inside the **target**
+project's own `{target-memory-path}/tasks/ongoing/delegated-{task-id}.md` —
+the same convention already used for `caller_type = pd` — never the global
+inbox. `skills/wrap/SKILL.md` gained a Step 1.5 (ownership backstop: cross-
+check every inbox task against the project registry before continuing to
+manage it as inbox-owned) and Step 2.5 (relocate confirmed-misfiled tasks to
+their owning project).
+
+**Principle (current):** task ownership follows the project the work is
+ABOUT, not the session that initiated it. The global inbox
+(`{agency-root}/tasks/inbox/`) is reserved exclusively for tasks with no
+existing owning project at all — `/pd-spawn` by construction always has one.
 
 ## 2026-06-17 — PD fabricated both deliverable and data
 
