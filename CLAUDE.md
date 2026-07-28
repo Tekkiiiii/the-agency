@@ -184,9 +184,14 @@ This is a default behavior, not optional. Skip only if the user explicitly says
 ### During a Session
 Plan first. Track progress. Document results. Capture lessons immediately after correction.
 
-### Inbox Task Management (Default — No Project)
+### Inbox Task Management (Ownerless Tasks Only)
 
-Unless a PD is spawned for a task, all work goes into the inbox:
+Before filing any task tracker, check `{agency-root}/memory/medium-term.md` —
+does the task's SUBJECT match an existing project? If yes, its tracking file
+goes in that project's own `memory/tasks/` (see `skills/pd-spawn/SKILL.md` for
+the delegation-file convention when a PD is spawned) — even when the
+initiating session is parent-ai direct with no project of its own. Only
+genuinely ownerless tasks go into the inbox:
 
 ```
 {agency-root}/tasks/inbox/
@@ -199,10 +204,11 @@ Unless a PD is spawned for a task, all work goes into the inbox:
 ```
 
 **Rules:**
+- A task's tracking file follows what it's ABOUT, never the session that filed it
 - At **session end**: move active inbox tasks to `ongoing/`, completed tasks to `completed/`, abandoned tasks to `archived/`
-- **Every new task** (no PD, no project): create `inbox/ongoing/{slug}/TASK.md` immediately at session start
-- The `TASK.md` format is defined in `inbox/index.md` — always follow it
-- If a task later maps to a project, move its folder into that project's task list
+- **Every new genuinely-ownerless task** (no matching project): create `inbox/ongoing/{slug}/TASK.md` immediately at session start
+- The `TASK.md` format and lifecycle rules are defined in `inbox/index.md` — always follow it
+- If a task later maps to a project, move its folder into that project's task list (see `wrap`'s Step 2.5 relocation protocol)
 - PD-spawned tasks belong to the PD's project — do NOT put them in the inbox
 
 ---

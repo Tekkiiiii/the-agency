@@ -49,15 +49,19 @@ Generate: `{YYYYMMDD}-{slug}-{n}` e.g. `20260416-website-pitch-1`
 
 ## Step 3 — Create Incoming Briefing
 
+`{caller-name}` used below resolves per Step 3.5/5's rule (`{caller-pd-name}` if
+the caller is a PD, else `parent-ai (Tekki direct)`) — resolve `caller_type` now,
+even though Step 3.5 documents the rule in full.
+
 Write to the **target PD's** inter-spawn-tasks folder:
 `{target-memory-path}/inter-spawn-tasks/incoming/inter-spawn-{task-id}.md`
 
 ```markdown
 # Inter-Spawn Task — {task-id}
 
-**Created by:** {caller-pd-name} (on behalf of Tekki)
+**Created by:** {caller-name} (on behalf of Tekki)
 **Created at:** {ISO timestamp} UTC
-**From PD:** {caller-pd-name}
+**From PD:** {caller-name}
 **To PD:** {target-pd-name}
 **Status:** INCOMING
 
@@ -80,26 +84,27 @@ Write to the **target PD's** inter-spawn-tasks folder:
 Determine the caller before Step 4:
 
 - **Caller = PD** (default): caller is `{caller-pd-name}`, owns `{caller-project}/memory/tasks/`. Use canonical paths in Steps 4 + 5b.
-- **Caller = parent-ai** (Tekki direct): no `{caller-project}` exists. Use the inbox per CLAUDE.md:
-  - Caller's delegation file → `~/.claude/tasks/inbox/ongoing/{task-slug}/TASK.md` (Tekki creates this; if missing, caller must create it before spawning)
-  - Completion target in Step 5b → same inbox TASK.md
-  - Spawn prompt MUST replace `{caller-project}` references with the inbox path
-  - Spawn prompt MUST state `Caller: parent-ai (Tekki direct)` for traceability
+- **Caller = parent-ai** (Tekki direct): parent-ai has no `{caller-project}` of its own — it has no durable memory folder at all. This does NOT mean the task is ownerless. `/pd-spawn` always names a `{target-slug}` in Step 1, and that target project IS the task's owner (task ownership follows the project the work is ABOUT, not the session that initiated it — see `core/memory/lessons/agent-workflows.md`, "pd-spawn caller_type branch — inbox misfiling correction" entry). File the delegation-tracking file inside the **target** project instead:
+  - Caller's delegation file → `{target-memory-path}/tasks/ongoing/delegated-{task-id}.md`
+  - Completion target in Step 5b → same file
+  - Spawn prompt's `{caller-completion-path}` resolves to this same in-target-project path — no external write outside `{target-project-root}/` is ever needed for a parent-ai caller
+  - The delegation file MUST state `**Delegated by:** parent-ai (Tekki direct)` for traceability
+  - **The global inbox (`{agency-root}/tasks/inbox/`) is NEVER used by `/pd-spawn`.** Inbox is reserved exclusively for tasks with no existing owning project at all — `/pd-spawn` by construction always has one (the target project named in Step 1).
 
 Record `caller_type = pd | parent_ai` for use in Steps 4 + 5 + 5b.
 
 ## Step 4 — Create Caller's Delegation Task
 
-**IF `caller_type = pd`:** write `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md`:
+Write the canonical delegation file to:
+- `caller_type = pd` → `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md`
+- `caller_type = parent_ai` → `{target-memory-path}/tasks/ongoing/delegated-{task-id}.md` (inside the **target** project — see Step 3.5 rationale)
 
-**IF `caller_type = parent_ai`:** the inbox task file `~/.claude/tasks/inbox/ongoing/{task-slug}/TASK.md` already exists (Tekki created it) — skip creation. Append a "Delegated to" line referencing the target PD + briefing path.
-
-Canonical PD-caller delegation file format:
+Canonical delegation file format (both caller types — `{caller-name}` resolves per Step 5's substitution rule: `{caller-pd-name}` for `pd`, `parent-ai (Tekki direct)` for `parent_ai`):
 
 ```markdown
 # Delegated Task — {task-id}
 
-**Delegated by:** {caller-pd-name}
+**Delegated by:** {caller-name}
 **Delegated to:** {target-pd-name}
 **Status:** DELEGATED — awaiting report
 
@@ -137,8 +142,8 @@ Use the Agent tool to spawn the target PD.
 
 **Caller-type substitution rules (apply BEFORE rendering the prompt):**
 - `{caller-name}` = `{caller-pd-name}` if `caller_type = pd`, else `parent-ai (Tekki direct)`
-- `{caller-completion-path}` = `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md` if `caller_type = pd`, else `~/.claude/tasks/inbox/ongoing/{task-slug}/TASK.md`
-- The "Do NOT read/write {caller-project}" block applies only when `caller_type = pd`. For `caller_type = parent_ai`, replace with: "Do NOT read or write any files outside {target-project-root}/ EXCEPT the completion record at {caller-completion-path}. ~/.claude/ root is READ-ONLY for reference."
+- `{caller-completion-path}` = `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md` if `caller_type = pd`, else `{target-memory-path}/tasks/ongoing/delegated-{task-id}.md`
+- The "Do NOT read/write {caller-project}" block applies only when `caller_type = pd`. For `caller_type = parent_ai`, there is no external-write exception needed — `{caller-completion-path}` already lives inside `{target-project-root}/`.
 
 ```
 prompt: |
@@ -172,9 +177,9 @@ prompt: |
   Do NOT write any files to {caller-project}/.
 
   {IF caller_type = parent_ai:}
-  Do NOT read or write any files outside {target-project-root}/ EXCEPT:
-  - READ-ONLY: ~/.claude/ root (config/skills/agents/memory) for reference
-  - WRITE: the completion record at {caller-completion-path}
+  Do NOT read or write any files outside {target-project-root}/.
+  (No exception needed — the completion record at {caller-completion-path} is
+  already inside {target-project-root}/memory/tasks/ongoing/.)
 
   Start now. Read your identity file first.
 
@@ -220,7 +225,7 @@ based on `caller_type` (set in Step 3.5):**
 **Status:** DONE — [1-sentence summary of what was delivered]
 ```
 
-**IF `caller_type = parent_ai`:** append to `~/.claude/tasks/inbox/ongoing/{task-slug}/TASK.md`:
+**IF `caller_type = parent_ai`:** append to `{target-memory-path}/tasks/ongoing/delegated-{task-id}.md` (inside the target project — see Step 3.5):
 
 ```markdown
 ## Completion — {ISO timestamp} UTC
@@ -228,14 +233,15 @@ based on `caller_type` (set in Step 3.5):**
 **Output:** [path to deliverable, e.g. plans/2026-06-04-foo.html]
 ```
 
-The `**Output:**` line is REQUIRED for parent-ai callers — Tekki uses it to find the deliverable without re-reading the spawn briefing.
+The `**Output:**` line is REQUIRED for parent-ai callers — Tekki uses it to find the deliverable without re-reading the spawn briefing. Tekki (or parent-ai on a later session) learns of completion via `/pd-resume [{target-slug}]`, which surfaces the target project's own `memory/tasks/ongoing/` — NOT via the global inbox.
 
 Then in BOTH cases, append the same Completion block to the briefing file:
 `{target-memory-path}/inter-spawn-tasks/completed/inter-spawn-{task-id}.md`
 
 **This is the ONLY way the caller learns the task is done.** The caller (PD or parent-ai)
-must read its own delegation/inbox file to know when the task completed — it
-cannot wait for a SendMessage that will never arrive.
+must read the delegation file (in the caller's own project for `pd`, in the target
+project for `parent_ai` — never the global inbox) to know when the task completed —
+it cannot wait for a SendMessage that will never arrive.
 
 ## Inter-Spawn Notify Protocol
 
@@ -263,32 +269,38 @@ PD SPAWN: {task-id}
   Spawned: {target-pd-name}
   Project: {target-slug}
   Briefing: {target-memory-path}/inter-spawn-tasks/incoming/inter-spawn-{task-id}.md
-  Delegation task: {caller-project}/memory/tasks/ongoing/delegated-{task-id}.md
+  Delegation task: {caller-project}/memory/tasks/ongoing/delegated-{task-id}.md   [caller_type=pd]
+                or {target-memory-path}/tasks/ongoing/delegated-{task-id}.md      [caller_type=parent_ai]
 
-Spawned PD running. Completion record written to caller's `delegated-{task-id}.md` on finish — caller learns via /pd-resume.
+Spawned PD running. Completion record written to `delegated-{task-id}.md` on finish — caller learns via /pd-resume [{caller-slug}] (pd), or /pd-resume [{target-slug}] (parent-ai — the record lives in the target project it's about).
 ```
 
 ## Handling the Completion — Filesystem Protocol
 
-The caller PD does NOT wait for a SendMessage (it will never arrive).
-Instead, it polls its own `memory/tasks/ongoing/delegated-{task-id}.md` file.
+The caller does NOT wait for a SendMessage (it will never arrive).
+Instead it polls the delegation file written in Step 4 — location depends on `caller_type`:
+- `caller_type = pd` → caller PD polls its own `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md`
+- `caller_type = parent_ai` → there is no caller project to poll. The record lives in `{target-memory-path}/tasks/ongoing/delegated-{task-id}.md`, which surfaces automatically the next time anyone runs `/pd-resume [{target-slug}]` (Startup Priority reads `memory/tasks/ongoing/` for every PD) — Tekki never needs to check the global inbox for this.
 
-**Trigger:** When `/pd-resume [{caller-slug}]` is run and the delegation task
-is found with a "Completion" section, the caller PD:
+**Trigger:** When `/pd-resume [{slug}]` is run and a delegation task
+is found with a "Completion" section, the PD:
 1. Reads the completion record from `delegated-{task-id}.md`
 2. Moves `memory/tasks/ongoing/delegated-{task-id}.md` → `memory/tasks/completed/`
 3. Logs the completion to Tekki: "✅ {task-id} complete — [summary from completion record]"
-4. Runs /save-state [{caller-slug}]
+4. Runs /save-state [{slug}]
 
-**How the caller knows a task is done between sessions:**
-`/pd-resume [{caller-slug}]` reads `memory/tasks/ongoing/delegated-*.md` files.
+**How completion is discovered between sessions:**
+`/pd-resume [{slug}]` reads `memory/tasks/ongoing/delegated-*.md` files for that project.
 Any with a "Completion" section are marked done, others remain "DELEGATED — awaiting report."
 
 ## Handling Failure / Blocker — Filesystem Protocol
 
-If the spawned PD encounters a blocker, it writes to the caller's delegation task:
+If the spawned PD encounters a blocker, it writes to the caller's delegation task —
+same location rule as Step 5b: `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md`
+for `caller_type = pd`, or `{target-memory-path}/tasks/ongoing/delegated-{task-id}.md`
+for `caller_type = parent_ai`.
 
-Append to `{caller-project}/memory/tasks/ongoing/delegated-{task-id}.md`:
+Append:
 ```markdown
 ## Blocker — {ISO timestamp} UTC
 **Reason:** [what is blocking progress]
