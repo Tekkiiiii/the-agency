@@ -4,6 +4,8 @@
 #          3) body grep  4) 1-hop links (links:/[[wikilinks]] from tier 1-3 hits)
 # Usage: mem-find.sh <query>
 # Portable /bin/bash (macOS bash 3.2) — no associative arrays, no bash4isms.
+# Self-logs one mem_find event per invocation (D9) via the standard emit-metric
+# path — fire-and-forget, backgrounded so it never adds to search latency (S9).
 
 QUERY="$1"
 if [ -z "$QUERY" ]; then
@@ -12,11 +14,11 @@ if [ -z "$QUERY" ]; then
 fi
 
 CLAUDE_DIR="$HOME/.claude"
-# Claude Code auto-memory slug: cwd path with "/" and "." replaced by "-".
-AUTO_MEMORY_SLUG=$(printf '%s' "$CLAUDE_DIR" | tr '/.' '--')
-AUTO_MEMORY_DIR="$HOME/projects/$AUTO_MEMORY_SLUG/memory"
-BUNDLES="$CLAUDE_DIR/memory $AUTO_MEMORY_DIR"
-MEMORY_INDEXES="$CLAUDE_DIR/memory/MEMORY.md $AUTO_MEMORY_DIR/MEMORY.md $AUTO_MEMORY_DIR/index.md"
+( "$CLAUDE_DIR/memory/metrics/emit-metric.sh" \
+  '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"mem_find","query_len":'"${#QUERY}"'}' \
+  >/dev/null 2>&1 & )
+BUNDLES="$CLAUDE_DIR/memory $CLAUDE_DIR/projects/-Users-Tekki--claude/memory"
+MEMORY_INDEXES="$CLAUDE_DIR/memory/MEMORY.md $CLAUDE_DIR/projects/-Users-Tekki--claude/memory/MEMORY.md $CLAUDE_DIR/projects/-Users-Tekki--claude/memory/index.md"
 
 TMP=$(mktemp)
 trap 'rm -f "$TMP"' EXIT

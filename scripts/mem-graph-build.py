@@ -6,10 +6,8 @@ exporter (no custom visualizer — per memory-v2-target-architecture.html §6).
 
 Scope (matches P1 schema-unification scope — two bundles, no per-project
 memory/ dirs yet):
-  - ~/.claude/memory/**/*.md                                 (global memory)
-  - ~/.claude/projects/{cwd-slug}/memory/**/*.md              (auto-memory —
-    Claude Code's per-cwd memory folder; slug = cwd path with "/" and "."
-    replaced by "-", e.g. running from ~/.claude gives -Users-you--claude)
+  - ~/.claude/memory/**/*.md                                (global memory)
+  - ~/.claude/projects/-Users-Tekki--claude/memory/**/*.md   (auto-memory)
 
 Frontmatter schema (P1, unified 2026-07-10): name/type/description/created/links
 
@@ -32,7 +30,7 @@ import sys
 from pathlib import Path
 from datetime import datetime, timezone
 
-GRAPHIFY_SITE = str(Path.home() / ".local/share/uv/tools/graphifyy/lib/python3.12/site-packages")
+GRAPHIFY_SITE = "/Users/Tekki/.local/share/uv/tools/graphifyy/lib/python3.12/site-packages"
 sys.path.insert(0, GRAPHIFY_SITE)
 import networkx as nx  # noqa: E402
 from graphify.build import build_from_json  # noqa: E402
@@ -40,15 +38,22 @@ from graphify.export import to_html, to_json  # noqa: E402
 
 HOME = Path.home()
 CLAUDE_DIR = HOME / ".claude"
-# Claude Code auto-memory slug: cwd path with "/" and "." replaced by "-".
-AUTO_MEMORY_SLUG = str(CLAUDE_DIR).replace("/", "-").replace(".", "-")
+SCRIPTS_DIR = CLAUDE_DIR / "scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
+from memory_scope import EXCLUDE_NAMES, EXCLUDE_DIRS  # noqa: E402
+
 BUNDLES = [
     (CLAUDE_DIR / "memory", "global_memory"),
-    (HOME / "projects" / AUTO_MEMORY_SLUG / "memory", "auto_memory"),
+    (CLAUDE_DIR / "projects/-Users-Tekki--claude/memory", "auto_memory"),
 ]
+# CONTROL_FILES = index files (curated pointer lists) — excluded because they
+# aren't individual knowledge nodes, not because of the P1 scope boundary.
+# memory_scope.EXCLUDE_NAMES (imported above) is the P1 boundary and already
+# a superset of this pair; kept separate for the same reason documented in
+# mem-scorecard.py.
 CONTROL_FILES = {"MEMORY.md", "index.md"}  # OKF-equivalent index files — not concept nodes
 OUT_DIR = CLAUDE_DIR / "memory/graphify-out"
-DEAD_LINKS_REPORT = CLAUDE_DIR / "memory/qa/dead-links.txt"
+DEAD_LINKS_REPORT = CLAUDE_DIR / "projects/system-improvement/memory/qa/dead-links.txt"
 
 WIKILINK_RE = re.compile(r"\[\[([a-zA-Z0-9_\-]+)\]\]")
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
@@ -108,12 +113,22 @@ def parse_frontmatter(text: str) -> dict:
 
 
 def collect():
+    """Scope = memory_scope.EXCLUDE_NAMES + memory_scope.EXCLUDE_DIRS (same
+    boundary as mem-scorecard.py's all_memory_files() and
+    memory-frontmatter-add.py's docstring). 2026-07-27: narrowed from a bare
+    rglob so sessions/qa/tasks/inter-spawn-tasks/agents/outputs dirs — which
+    are managed/log content, not knowledge memory — stop inflating the graph
+    and the R4/R2/S-family denominators with files that were never meant to
+    carry frontmatter in the first place."""
     files = []
     for root, bundle_type in BUNDLES:
         if not root.exists():
             continue
         for p in sorted(root.rglob("*.md")):
-            if p.name in CONTROL_FILES or "graphify-out" in p.parts:
+            if "graphify-out" in p.parts:
+                continue
+            rel_parts = p.relative_to(root).parts[:-1]
+            if p.name in CONTROL_FILES or p.name in EXCLUDE_NAMES or any(part in EXCLUDE_DIRS for part in rel_parts):
                 continue
             files.append((p, bundle_type))
 

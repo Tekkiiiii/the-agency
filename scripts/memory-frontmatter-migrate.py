@@ -17,6 +17,10 @@ is left untouched.
 Usage:
     python3 memory-frontmatter-migrate.py --dir /path/to/memory --dry-run
     python3 memory-frontmatter-migrate.py --dir /path/to/memory --apply
+
+EXCLUDE_NAMES is imported from memory_scope.py (canonicalized 2026-07-27) —
+the same control-file list memory-frontmatter-add.py, mem-scorecard.py, and
+mem-graph-build.py all use. Do not redefine it locally here.
 """
 
 import argparse
@@ -24,12 +28,10 @@ import datetime
 import pathlib
 import re
 import subprocess
+import sys
 
-EXCLUDE_NAMES = {
-    "next-session.md", "decisions.md", "decisions-archive.md", "heartbeat.md",
-    "STATE.md", "PROJECT.md", "MEMORY.md", "wiki-log.md", "wiki-schema.md",
-    "pd-scratch.md", "index.md", "README.md", "CLAUDE.md", ".canary.md",
-}
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from memory_scope import EXCLUDE_NAMES, REVIEW_BY_HORIZON_DAYS  # noqa: E402
 
 
 def infer_type_from_name(path: pathlib.Path) -> str:
@@ -101,6 +103,14 @@ def candidate_files(target: pathlib.Path):
             yield f
 
 
+def existing_field(block, key):
+    for l in block:
+        m = re.match(rf"^{key}:\s*(\S.*)$", l)
+        if m:
+            return m.group(1).strip()
+    return None
+
+
 def process(target: pathlib.Path, apply: bool):
     migrated, skipped_ok, skipped_no_fm = [], [], []
     for f in candidate_files(target):
@@ -121,19 +131,38 @@ def process(target: pathlib.Path, apply: bool):
         has_type = any(re.match(r"^type:\s*\S", l) for l in block)
         has_created = any(re.match(r"^created:\s*\S", l) for l in block)
         has_links = any(re.match(r"^links:\s*", l) for l in block)
-
-        if has_type and has_created and has_links:
-            skipped_ok.append(f)
-            continue
+        has_review_by = any(re.match(r"^review-by:\s*\S", l) for l in block)
 
         additions = []
         if not has_type:
             t = extract_nested_type(block) or infer_type_from_name(f)
             additions.append(f"type: {t}")
+        else:
+            t = existing_field(block, "type")
         if not has_created:
-            additions.append(f"created: {infer_created(f)}")
+            created_val = infer_created(f)
+            additions.append(f"created: {created_val}")
+        else:
+            created_val = existing_field(block, "created")
         if not has_links:
             additions.append("links: []")
+
+        # D6: backfill review-by per the type-based cadence in memory_scope.py.
+        # Recurring (not one-time) — every gardener cycle re-checks this, so a
+        # file that gains/changes type later still gets a review-by, and this
+        # doesn't decay into a one-time backfill the way the harness-rewrite
+        # bug did for created/links.
+        if not has_review_by and t in REVIEW_BY_HORIZON_DAYS and created_val:
+            try:
+                base = datetime.datetime.strptime(created_val, "%Y-%m-%d").date()
+                review_by_val = (base + datetime.timedelta(days=REVIEW_BY_HORIZON_DAYS[t])).isoformat()
+                additions.append(f"review-by: {review_by_val}")
+            except ValueError:
+                pass  # created wasn't a clean YYYY-MM-DD — leave review-by unset rather than guess
+
+        if not additions:
+            skipped_ok.append(f)
+            continue
 
         new_lines = lines[:close_idx] + additions + lines[close_idx:]
         migrated.append((f, additions))
