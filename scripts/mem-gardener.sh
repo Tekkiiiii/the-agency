@@ -25,7 +25,7 @@ APPROVAL_QUEUE="$OPS_DIR/approval-queue.md"
 SCORECARD="$CLAUDE_DIR/memory/scorecard.md"
 EMIT="$CLAUDE_DIR/memory/metrics/emit-metric.sh"
 
-PYBIN="/Users/Tekki/.local/share/uv/tools/graphifyy/bin/python"
+PYBIN="$HOME/.local/share/uv/tools/graphifyy/bin/python"
 [ -x "$PYBIN" ] || PYBIN="python3"
 
 exec > >(tee -a "$LOG") 2>&1
@@ -49,7 +49,11 @@ echo "--- 1. Lint ---"
 # touches the metadata: block (memory-frontmatter-migrate.py). Runs before Score
 # so the same gardener cycle that measures R4 also fixes newly-drifted files.
 "$PYBIN" "$CLAUDE_DIR/scripts/memory-frontmatter-migrate.py" --dir "$CLAUDE_DIR/memory" --apply
-"$PYBIN" "$CLAUDE_DIR/scripts/memory-frontmatter-migrate.py" --dir "$CLAUDE_DIR/projects/-Users-Tekki--claude/memory" --apply
+# Claude Code encodes the working directory into the project-dir name by
+# replacing "/" and "." with "-". Derive it rather than hardcoding one
+# machine's slug.
+AUTO_SLUG=$(printf '%s' "$CLAUDE_DIR" | tr '/.' '--')
+"$PYBIN" "$CLAUDE_DIR/scripts/memory-frontmatter-migrate.py" --dir "$CLAUDE_DIR/projects/$AUTO_SLUG/memory" --apply
 
 echo "--- 2. Curate ---"
 # Near-duplicate / contradiction detection needs embedding similarity or LLM

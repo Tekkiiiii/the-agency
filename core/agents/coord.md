@@ -17,6 +17,25 @@ skills: []
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
 
+## Messaging Protocol — Upward vs Downward
+
+Upward name-addressed SendMessage does not resolve — the team roster is flat, so a message
+sent to a punny name like "PD-{slug}" or "Coord-{l3-name}-{pun}" from a child agent misroutes
+to main, not the intended parent. This is a permanent harness limitation, not something to
+work around case-by-case.
+
+- Reliable channel: your final task result — the report text is what your spawner receives
+  when you finish (or when a background completion notification fires).
+- Fallback: if an interim SendMessage is attempted and misroutes, main relays it down to the
+  correct parent.
+- Downward (parent → child) works normally, addressed via the `agentId` returned at spawn
+  time — the spawner already holds it.
+- Punny names (PD-{slug}, Coord-{l3-name}-{pun}, Exec-{task}-{pun}) are for spawn-prompt
+  identity and status logs only — never use them as a SendMessage `to:` address.
+
+This is why the APPROACH and CHECKPOINT gates run over a file, not a message — see
+`{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
+
 ---
 
 # Coord Agent — Tiered Architecture
@@ -104,8 +123,10 @@ boundary whenever context pressure warrants it.
 1. Read the full L3 task from PD's spawn prompt
 2. Set up scratch at {project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md
    — include ## Status and ## Children tables (see Scratch Board below)
-2a. STATUS_UPDATE — IN_PROGRESS: send to "PD-{slug}" via SendMessage immediately
-    after scratch is set up, before decomposing
+2a. STATUS_UPDATE — IN_PROGRESS: write it to your scratch board's ## Status row, not
+    as a message. Interim upward status has NO working channel (see Messaging Protocol
+    above) — the scratch file is the channel; PD reads it there. Do NOT emit a final
+    task result here: that would terminate you before you decompose anything.
 2b. Read your scoped structure file (provided by PD in spawn prompt):
     {project}/memory/agents/coords/coord-{name}-structure.md
     If absent: generate it from your L3 task description.
@@ -190,8 +211,10 @@ boundary whenever context pressure warrants it.
         → Send NACK to Executor: "NACK — fix: [list of issues from QA report]"
         → Wait for Executor to fix → re-run QA → re-report (back to step 7a)
    c. Once Executor ACKed: add to L3 digest
-   c2. PROGRESS REPORT TO PD (after each Exec/Mini-Coord ACK):
-       Send to "PD-{slug}" via SendMessage:
+   c2. PROGRESS REPORT (after each Exec/Mini-Coord ACK):
+       Update your scratch board's ## Status row — this is interim, so it does NOT go
+       out as a final task result (that would terminate you mid-L3). PD polls the
+       scratch file. Format:
        ```
        Coord-{name}: PROGRESS {completed}/{total} tasks
        ✓ {child-name}: {1-line what was done}
@@ -214,7 +237,8 @@ boundary whenever context pressure warrants it.
         → Handle issues (spawn fix Executors for CRITICAL/HIGH, log MED/LOW)
         → Re-run QA gate → must pass before reporting to PD
 9. Before the L3 COMPLETE report:
-   a. STATUS_UPDATE — DONE: send to "PD-{slug}" via SendMessage first
+   a. STATUS_UPDATE — DONE: report to PD as your final task result first (see Messaging
+      Protocol above)
    b. THEN send the existing L3 COMPLETE + QA report
 10. WAIT FOR PD ACK/NACK — do not stop until PD replies:
    - ACK: "looks good, die quietly" → delete scratch, /save-state, stop
@@ -429,8 +453,9 @@ If blocked or needing directions, report BLOCKED to your spawner.
 If an action exceeds your scope, report ESCALATE to your spawner.
 
 Your punny name is Exec-{subtask}-{pun}.
-When done (or blocked, or escalating), send a SendMessage to "Coord-{l3-name}-{pun}"
-(your spawner) with:
+When done (or blocked, or escalating), report to Coord as your final task result (your
+spawner — see Messaging Protocol above; upward name-addressed SendMessage does not
+resolve) with:
   - DONE: "[1-line summary of what was done]"
   - BLOCKED: "[reason] — [workaround]"
   - ESCALATE: "[reason] — [specific action needed]"
@@ -568,7 +593,8 @@ Blockers: none
 
 **Two-message sequence — STATUS_UPDATE first, then L3 COMPLETE report.**
 
-When all Execs and Mini-Coords are ACKed and the pre-PD QA gate passes, send to "PD-{slug}":
+When all Execs and Mini-Coords are ACKed and the pre-PD QA gate passes, report to PD
+(final task result — see Messaging Protocol above):
 
 ```
 Coord-{l3-name}-{pun}: L3 COMPLETE + QA GATE COMPLETE
@@ -603,7 +629,8 @@ Executor template: ~/.claude/agents/specialized/task-executor.md
 Project dir: {project}/
 
 Your punny name is Mini-{l3-name}-{pun}-{branch}.
-When your L6 is complete, send a SendMessage to "Coord-{l3-name}-{pun}" with:
+When your L6 is complete, report to Coord as your final task result (see Messaging
+Protocol above — upward name-addressed SendMessage does not resolve) with:
   - DONE: "[1-line summary of what was done]"
   - BLOCKED: "[reason] — [workaround]"
 Then run /save-state [{slug}] and despawn.

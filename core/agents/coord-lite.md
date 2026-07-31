@@ -21,6 +21,11 @@ dispatches Task-Executors, reviews ACK/NACK reports. No hands-on implementation.
 **What is stripped vs STANDARD:**
 - Approach Gate (Exec must send APPROACH plan before file edits) — removed
 - Mandatory 50% Check-In (CHECKPOINT mid-task) — removed
+  - Because both gates are removed here, `runbooks/checkpoint-handshake-protocol.md`
+    (the file-poll handshake that carries them in the standard tier) does NOT apply to
+    the lite tier. Only the Messaging Protocol correction below propagates. If you ever
+    re-enable either gate in lite, adopt the handshake runbook with it — never the old
+    SendMessage-and-wait pattern, which deadlocks.
 - TIER_A/TIER_B classification system and metric emissions — removed
 - Topological wave-batch spawn loop — removed; spawns all Execs in parallel
 
@@ -41,6 +46,25 @@ dispatches Task-Executors, reviews ACK/NACK reports. No hands-on implementation.
 - Coord = "Coord-{l3-name}-{pun}" (e.g. Coord-auth-Gatekeeper) — L3 owner
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
+
+## Messaging Protocol — Upward vs Downward
+
+Upward name-addressed SendMessage does not resolve — the team roster is flat, so a message
+sent to a punny name like "PD-{slug}" or "Coord-{l3-name}-{pun}" from a child agent misroutes
+to main, not the intended parent. This is a permanent harness limitation, not something to
+work around case-by-case.
+
+- Reliable channel: your final task result — the report text is what your spawner receives
+  when you finish (or when a background completion notification fires).
+- Fallback: if an interim SendMessage is attempted and misroutes, main relays it down to the
+  correct parent.
+- Downward (parent → child) works normally, addressed via the `agentId` returned at spawn
+  time — the spawner already holds it.
+- Punny names (PD-{slug}, Coord-{l3-name}-{pun}, Exec-{task}-{pun}) are for spawn-prompt
+  identity and status logs only — never use them as a SendMessage `to:` address.
+
+This is why the APPROACH and CHECKPOINT gates run over a file, not a message — see
+`{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
 
 ---
 
@@ -112,8 +136,10 @@ structure back to `{project}/memory/dev-plan.md` after decomposing. PD always ha
 1. Read the full L3 task from PD's spawn prompt
 2. Set up scratch at {project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md
    — include ## Status and ## Children tables
-2a. STATUS_UPDATE — IN_PROGRESS: send to "PD-{slug}" via SendMessage immediately
-    after scratch is set up, before decomposing
+2a. STATUS_UPDATE — IN_PROGRESS: write it to your scratch board's ## Status row, not
+    as a message. Interim upward status has NO working channel (see Messaging Protocol
+    above) — the scratch file is the channel; PD reads it there. Do NOT emit a final
+    task result here: that would terminate you before you decompose anything.
 3. Decompose L3 → L4 → L5 → L6 using the two-condition parallel rule.
    (L6 = smallest independently assignable unit — file, function, component)
 4. For each L6 task, decide Path A or Path B:
@@ -161,7 +187,8 @@ structure back to `{project}/memory/dev-plan.md` after decomposing. PD always ha
         → Handle issues (spawn fix Executors for CRITICAL/HIGH, log MED/LOW)
         → Re-run QA gate → must pass before reporting to PD
 9. Before the L3 COMPLETE report:
-   a. STATUS_UPDATE — DONE: send to "PD-{slug}" via SendMessage first
+   a. STATUS_UPDATE — DONE: report to PD as your final task result first (see Messaging
+      Protocol above)
    b. THEN send the L3 COMPLETE + QA report
 10. WAIT FOR PD ACK/NACK — do not stop until PD replies:
    - ACK: "looks good, die quietly" → delete scratch, /save-state, stop
@@ -272,6 +299,9 @@ Blockers: none
 
 **Two-message sequence — STATUS_UPDATE first, then L3 COMPLETE report.**
 
+Report to PD as your final task result (see Messaging Protocol above — upward
+name-addressed SendMessage does not resolve).
+
 ```
 Coord-{l3-name}-{pun}: L3 COMPLETE + QA GATE COMPLETE
 Task: {l3-task-name}
@@ -379,8 +409,9 @@ If blocked or needing directions, report BLOCKED to your spawner.
 If an action exceeds your scope, report ESCALATE to your spawner.
 
 Your punny name is Exec-{subtask}-{pun}.
-When done (or blocked, or escalating), send a SendMessage to "Coord-{l3-name}-{pun}"
-(your spawner) with:
+When done (or blocked, or escalating), report to Coord as your final task result (your
+spawner — see Messaging Protocol above; upward name-addressed SendMessage does not
+resolve) with:
   - DONE: "[1-line summary of what was done]"
   - BLOCKED: "[reason] — [workaround]"
   - ESCALATE: "[reason] — [specific action needed]"

@@ -22,9 +22,22 @@ multiple sources (graph + Pinecone + notebooks + files) or you cannot name
 which source holds the answer. Curator has a restricted tool set (no Agent
 tool) and is read-only.
 
-**Event contract (unchanged):** emit `curator_skip` (lookup answered it — use
-`skip_reason_excerpt`) or `curator_spawn`. Templates:
-`~/.claude/runbooks/metrics-emit-contracts.md`.
+**Event contract — emit immediately, at the decision, not after:**
+
+```bash
+# lookup answered it — no curator spawn:
+bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency","skip_reason_excerpt":"<1-line: what already answered it>"}'
+# curator spawned:
+bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'
+```
+
+F25 note (2026-07-29): this event measures a real, honest thing — compliance
+with lookup-first. A 36-day silent gap is NOT the metric breaking; it is the
+metric doing its job (nobody emitted, including the parent AI, during multi
+verbatim-lookup sessions this same week). Do not auto-emit from a hook that
+fires regardless of whether a lookup happened — that fabricates compliance
+data. The fix is friction removal: the template is now inlined here and in
+CLAUDE.md itself so there is no lookup hop between deciding and emitting.
 
 ## Routing (was: Delegator-first)
 

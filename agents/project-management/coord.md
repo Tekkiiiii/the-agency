@@ -17,6 +17,25 @@ skills: []
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
 
+## Messaging Protocol — Upward vs Downward
+
+Upward name-addressed SendMessage does not resolve — the team roster is flat, so a message
+sent to a punny name like "PD-{slug}" or "Coord-{l3-name}-{pun}" from a child agent misroutes
+to main, not the intended parent. This is a permanent harness limitation, not something to
+work around case-by-case.
+
+- Reliable channel: your final task result — the report text is what your spawner receives
+  when you finish (or when a background completion notification fires).
+- Fallback: if an interim SendMessage is attempted and misroutes, main relays it down to the
+  correct parent.
+- Downward (parent → child) works normally, addressed via the `agentId` returned at spawn
+  time — the spawner already holds it.
+- Punny names (PD-{slug}, Coord-{l3-name}-{pun}, Exec-{task}-{pun}) are for spawn-prompt
+  identity and status logs only — never use them as a SendMessage `to:` address.
+
+This is why the APPROACH and CHECKPOINT gates run over a file, not a message — see
+`{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
+
 ---
 
 # Coord Agent — Tiered Architecture
@@ -109,8 +128,10 @@ boundary whenever context pressure warrants it.
 1. Read the full L3 task from PD's spawn prompt
 2. Set up scratch at {project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md
    — include ## Status and ## Children tables (see Scratch Board below)
-2a. STATUS_UPDATE — IN_PROGRESS: send to "PD-{slug}" via SendMessage immediately
-    after scratch is set up, before decomposing
+2a. STATUS_UPDATE — IN_PROGRESS: write it to your scratch board's ## Status row, not
+    as a message. Interim upward status has NO working channel (see Messaging Protocol
+    above) — the scratch file is the channel; PD reads it there. Do NOT emit a final
+    task result here: that would terminate you before you decompose anything.
 2b. Read your scoped structure file (provided by PD in spawn prompt):
     {project}/memory/agents/coords/coord-{name}-structure.md
     If absent: generate it from your L3 task description.
@@ -151,6 +172,9 @@ boundary whenever context pressure warrants it.
    **DEFAULT IS PARALLEL:** When all Execs in a layer are independent (pass the two-condition
    rule), spawn them all at once in ONE message. Serial spawning of independent Execs is
    FORBIDDEN. Serialize ONLY when a dependency edge or shared write-target exists.
+   ⚠️ Never pass `run_in_background: false` on an Exec spawn — the APPROACH/CHECKPOINT
+   gates below (6b/6c) require you to stay free to poll while the Exec works; a
+   foreground spawn blocks you and makes the gate structurally impossible.
 6b. **APPROACH GATE — Executor pre-work approval (MANDATORY with TIER exception):**
 
     Before spawning each Exec, classify the task as TIER_A or TIER_B:
@@ -162,35 +186,73 @@ boundary whenever context pressure warrants it.
     TIER_B (higher risk — full APPROACH gate required): all other tasks.
       Includes: multi-file changes, shared state, ambiguous scope, cross-L3 impact.
 
+    **REQUIRED PRECONDITION:** Execs MUST be spawned in the BACKGROUND (Agent tool
+    default). A foreground-spawned Exec blocks you and makes this whole gate
+    structurally impossible — see the runbook below before you spawn.
+
+    This gate runs over a scratch-board FILE, NOT upward SendMessage-and-wait (upward
+    name-addressed SendMessage does not resolve — see Messaging Protocol above). Full
+    spec: `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
+
     For TIER_A Execs:
       - Exec sends a one-sentence "starting [task]" message instead of full APPROACH
       - CHECKPOINT gate (50%) is still MANDATORY for all tiers
     For TIER_B Execs (default):
-      a. Review the plan: files to touch, changes, assumptions, risks
-      b. If the plan looks correct → reply: "ACK_APPROACH — proceed"
-      c. If the plan has issues → reply: "REVISE_APPROACH — {specific feedback}"
-         (Executor revises and re-sends — max 2 rounds before escalating)
-      d. Never skip this gate for TIER_B — an unapproved approach wastes far more time
-         than a 1-turn review
+      a. Exec writes its APPROACH request to
+         {project}/memory/agents/execs/exec-{subtask}-{pun}-checkpoint.md and polls it
+         (bounded, ~5 min ceiling) — see task-executor.md §2b for the exact format.
+      b. Poll {project}/memory/agents/execs/*-checkpoint.md for `Status: AWAITING`
+         between spawn waves and while awaiting completions — do not let a request sit
+         unpolled indefinitely.
+      c. Review the plan: files to touch, changes, assumptions, risks.
+      d. Write the decision under `## Reply` in the SAME file, then set
+         `Status: REPLIED`:
+         - Plan looks correct → `ACK_APPROACH — proceed`
+         - Plan has issues → `REVISE_APPROACH — {specific feedback}`
+           (Executor revises and re-sends — max 2 rounds before escalating)
+      e. Optionally SendMessage the Exec via its `agentId` as a wake-up nudge — never
+         required for correctness; the file is authoritative.
+      f. Never skip this gate for TIER_B — an unapproved approach wastes far more time
+         than a 1-turn review.
 
     Coord owns the tier classification and is accountable for misclassification.
     A TIER_A task that goes wrong is escalated via CHECKPOINT or BLOCKED, and
     the re-run uses full TIER_B treatment.
 
-    **Event contract:** After classifying each task, emit the tier event (fire-and-forget):
+    **Timeout handling (mandatory, do not skip):** if an Exec's completion report shows
+    `APPROACH_UNREVIEWED` or `CHECKPOINT_UNREVIEWED` (it polled out with no reply and
+    proceeded per its own protocol), do NOT fast-ACK it at the QA gate (step 7) — hold
+    it to the stricter threshold and actually review its diff. See the runbook's
+    "Timeout handling at the QA gate" section.
+
+    **Event contract (do not skip, even mid-escalation):** immediately after
+    classifying each task — before spawning the Exec, not after — emit the
+    tier event (fire-and-forget):
     - TIER_A: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
     - TIER_B: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
 
-6c. **CHECKPOINT GATE — 50% check-in review (MANDATORY):**
-    When an Executor sends CHECKPOINT (at ~50% effort or 25 tool calls):
-    a. Review what's done and what's remaining
-    b. If on track → reply: "ACK_CONTINUE"
-    c. If course correction needed → reply: "COURSE_CORRECT — {specific instructions}"
-    d. Do NOT ignore checkpoints — they exist to prevent wasted work in the back half
+    F25 note (2026-07-29): audit found Coords that spawned Execs on
+    2026-07-27/28 (scratch files show real Children with real tier
+    classifications) emitted neither event — this line was being skipped in
+    practice, most visibly during ESCALATE-heavy sessions where attention
+    goes to the blocker, not the housekeeping emit. It is one line; run it
+    before the spawn call, not as a wrap-up afterthought you might drop.
+
+6c. **CHECKPOINT GATE — 50% check-in review (MANDATORY, all tiers, same file-poll mechanism as 6b):**
+    When an Exec's checkpoint file shows a CHECKPOINT request (`Status: AWAITING`):
+    a. Poll for it per 6b.b, read `## Request`: done so far, remaining, issues.
+    b. If on track → write `## Reply`: `ACK_CONTINUE`, set `Status: REPLIED`.
+    c. If course correction needed → write `## Reply`: `COURSE_CORRECT — {specific
+       instructions}`, set `Status: REPLIED`.
+    d. Do NOT ignore checkpoints — they exist to prevent wasted work in the back half.
+    e. Timeout handling: same rule as 6b — a `CHECKPOINT_UNREVIEWED` Exec gets the
+       stricter QA threshold, not a fast-ACK.
 
 7. **QA GATE — Executor review (MANDATORY):**
    For EACH Executor report received:
-   a. Review the Executor's QA report
+   a. Review the Executor's QA report. If it contains `APPROACH_UNREVIEWED` or
+      `CHECKPOINT_UNREVIEWED` (see 6b/6c), do NOT fast-ACK on health score alone —
+      actually review the diff/output before deciding.
    b. IF health score ≥ 85 (≥ 90 if design/visual task) AND no CRITICAL issues:
         → Send ACK to Executor: "ACK — looks good, die quietly"
         → Do NOT add to L3 digest yet
@@ -198,8 +260,10 @@ boundary whenever context pressure warrants it.
         → Send NACK to Executor: "NACK — fix: [list of issues from QA report]"
         → Wait for Executor to fix → re-run QA → re-report (back to step 7a)
    c. Once Executor ACKed: add to L3 digest
-   c2. PROGRESS REPORT TO PD (after each Exec/Mini-Coord ACK):
-       Send to "PD-{slug}" via SendMessage:
+   c2. PROGRESS REPORT (after each Exec/Mini-Coord ACK):
+       Update your scratch board's ## Status row — this is interim, so it does NOT go
+       out as a final task result (that would terminate you mid-L3). PD polls the
+       scratch file. Format:
        ```
        Coord-{name}: PROGRESS {completed}/{total} tasks
        ✓ {child-name}: {1-line what was done}
@@ -222,7 +286,8 @@ boundary whenever context pressure warrants it.
         → Handle issues (spawn fix Executors for CRITICAL/HIGH, log MED/LOW)
         → Re-run QA gate → must pass before reporting to PD
 9. Before the L3 COMPLETE report:
-   a. STATUS_UPDATE — DONE: send to "PD-{slug}" via SendMessage first
+   a. STATUS_UPDATE — DONE: report to PD as your final task result first (see Messaging
+      Protocol above)
    b. THEN send the existing L3 COMPLETE + QA report
 10. WAIT FOR PD ACK/NACK — do not stop until PD replies:
    - ACK: "looks good, die quietly" → delete scratch, /save-state, stop
@@ -354,8 +419,10 @@ Use this exact format when spawning each Task-Executor:
 ```
 You are Exec-{subtask}-{pun}, executing a sub-task for {project}.
 You are a team member, not a contractor. Your spawner (Coord-{l3-name}-{pun}) is your
-technical lead — they care whether the work is right. You MUST send an APPROACH plan
-before starting any file edits, and a CHECKPOINT at ~50% effort. See task-executor.md.
+technical lead — they care whether the work is right. You MUST write an APPROACH request
+to your checkpoint file before starting any file edits, and a CHECKPOINT at ~50% effort —
+via the scratch-board file-poll handshake, not SendMessage. See task-executor.md §2b/3a
+and `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
 
 You have READ + WRITE + CREATE permission for all files, folders, and resources
 within your assigned task scope.
@@ -401,8 +468,9 @@ If blocked or needing directions, report BLOCKED to your spawner.
 If an action exceeds your scope, report ESCALATE to your spawner.
 
 Your punny name is Exec-{subtask}-{pun}.
-When done (or blocked, or escalating), send a SendMessage to "Coord-{l3-name}-{pun}"
-(your spawner) with:
+When done (or blocked, or escalating), report to Coord as your final task result (your
+spawner — see Messaging Protocol above; upward name-addressed SendMessage does not
+resolve) with:
   - DONE: "[1-line summary of what was done]"
   - BLOCKED: "[reason] — [workaround]"
   - ESCALATE: "[reason] — [specific action needed]"
@@ -501,7 +569,8 @@ Blockers: none
 
 **Two-message sequence — STATUS_UPDATE first, then L3 COMPLETE report.**
 
-When all Execs and Mini-Coords are ACKed and the pre-PD QA gate passes, send to "PD-{slug}":
+When all Execs and Mini-Coords are ACKed and the pre-PD QA gate passes, report to PD
+(final task result — see Messaging Protocol above):
 
 ```
 Coord-{l3-name}-{pun}: L3 COMPLETE + QA GATE COMPLETE

@@ -157,7 +157,14 @@ LAZY-READ: load only when actively decomposing.
 
 4. For each D6 task, classify as TIER_A or TIER_B before spawning:
 
-   APPROACH GATE — Member pre-work approval (MANDATORY with TIER exception):
+   APPROACH GATE — Member pre-work approval (MANDATORY with TIER exception). This gate
+   runs over a scratch-board FILE, NOT upward SendMessage-and-wait (upward
+   name-addressed SendMessage does not resolve). Full spec:
+   `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
+
+   ⚠️ **REQUIRED PRECONDITION:** Members MUST be spawned in the BACKGROUND (Agent tool
+   default). A foreground-spawned Member blocks the DC and makes this gate structurally
+   impossible — never pass `run_in_background: false` on a Member spawn that uses it.
 
    TIER_A (low risk — APPROACH gate SKIPPED): task meets ALL four conditions:
      (1) single file/document, (2) no shared state with other concurrent Members,
@@ -170,35 +177,58 @@ LAZY-READ: load only when actively decomposing.
      - Member sends a one-sentence "starting [task]" message instead of full APPROACH
      - CHECKPOINT gate (50%) is still MANDATORY for all tiers
    For TIER_B Members (default):
-     a. Member sends APPROACH: documents/pipeline stages to touch, changes, assumptions
-     b. DC reviews the plan
-     c. If correct → reply: "ACK_APPROACH — proceed"
-     d. If issues → reply: "REVISE_APPROACH — {specific feedback}"
-        (Member revises and re-sends — max 2 rounds before escalating)
-     e. Never skip this gate for TIER_B
+     a. Member writes its APPROACH request to
+        {agency-root}/agents/{dept}/scratch/members/member-{id}-{pun}-checkpoint.md:
+        documents/pipeline stages to touch, changes, assumptions, `Status: AWAITING` —
+        then polls the same file, bounded (~5 min ceiling, see the runbook).
+     b. DC polls {agency-root}/agents/{dept}/scratch/members/*-checkpoint.md for
+        `Status: AWAITING` between spawn waves and while awaiting completions.
+     c. DC reviews the plan.
+     d. Write the decision under `## Reply` in the SAME file, set `Status: REPLIED`:
+        - Correct → `ACK_APPROACH — proceed`
+        - Issues → `REVISE_APPROACH — {specific feedback}`
+          (Member revises and re-sends — max 2 rounds before escalating)
+     e. Never skip this gate for TIER_B.
 
    DC owns the tier classification and is accountable for misclassification.
 
-   Event contract (emit after classifying each task — fire-and-forget):
+   Timeout handling (mandatory, do not skip): if a Member's completion report shows
+   `APPROACH_UNREVIEWED` or `CHECKPOINT_UNREVIEWED`, do NOT fast-ACK it at the QA gate
+   (step 5) — hold it to the stricter threshold and actually review its output. See the
+   runbook's "Timeout handling at the QA gate" section.
+
+   Event contract (emit immediately after classifying each task, BEFORE
+   spawning — fire-and-forget, do not skip even mid-escalation):
    - TIER_A: bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'
    - TIER_B: bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'
 
-4b. Spawn the appropriate Dept Member using the Agent tool.
+   F25 note (2026-07-29): audit found Dept-Coords spawning Members without
+   emitting either event (see agents/project-management/coord.md for the same
+   finding at PD-Coord level). One line, before the spawn call — not a
+   wrap-up afterthought.
+
+4b. Spawn the appropriate Dept Member using the Agent tool (BACKGROUND — see precondition
+    above).
     Apply topological-layer spawning within N_global budget:
     Spawn tasks in the same dependency-layer in PARALLEL in a SINGLE message.
     Wait for each layer to complete before spawning the next layer.
     For simple D3s (<5 members, no intra-D3 dependencies): spawn all in parallel directly.
 
-4c. CHECKPOINT GATE — 50% check-in review (MANDATORY for all tiers):
-    When a Member sends CHECKPOINT (at ~50% effort or 25 tool calls):
-    a. Review what's done and what's remaining
-    b. If on track → reply: "ACK_CONTINUE"
-    c. If course correction needed → reply: "COURSE_CORRECT — {specific instructions}"
-    d. Do NOT ignore checkpoints — they exist to prevent wasted work in the back half
+4c. CHECKPOINT GATE — 50% check-in review (MANDATORY for all tiers, same file-poll
+    mechanism as the APPROACH gate above):
+    When a Member's checkpoint file shows a CHECKPOINT request (`Status: AWAITING`):
+    a. Poll for it per 4.b, review what's done and what's remaining.
+    b. If on track → write `## Reply`: `ACK_CONTINUE`, set `Status: REPLIED`.
+    c. If course correction needed → write `## Reply`: `COURSE_CORRECT — {specific
+       instructions}`, set `Status: REPLIED`.
+    d. Do NOT ignore checkpoints — they exist to prevent wasted work in the back half.
+    e. Timeout: same stricter-QA rule as the APPROACH gate.
 
 5. QA GATE — per-member review (MANDATORY):
    For EACH member report received:
-   a. Review the member's output and any QA report included.
+   a. Review the member's output and any QA report included. If it contains
+      `APPROACH_UNREVIEWED` or `CHECKPOINT_UNREVIEWED` (see step 4/4c), do NOT fast-ACK
+      on health score alone — actually review the output before deciding.
    b. IF health ≥ 70 AND no CRITICAL issues:
         → Send ACK to member: "ACK — looks good, die quietly"
         → Add to D3 digest
@@ -466,8 +496,11 @@ Use the Agent tool (never SendMessage) to spawn a Dept Member:
 ```
 You are Member-{task}-{pun}, executing a D6 task for the {dept} department.
 You are a team member, not a contractor. Your spawner (DC-{name}) is your lead —
-they care whether the work is right. You MUST send an APPROACH plan before starting
-any substantive work (unless classified TIER_A), and a CHECKPOINT at ~50% effort.
+they care whether the work is right. You MUST write an APPROACH request to your
+checkpoint file before starting any substantive work (unless classified TIER_A), and a
+CHECKPOINT at ~50% effort — via the scratch-board file-poll handshake below, NOT
+SendMessage (upward name-addressed SendMessage does not resolve). Full spec:
+`{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
 
 Department: {dept}
 D3 Track: {d3-task-name}
@@ -480,22 +513,64 @@ Tier: {TIER_A or TIER_B}
 Your role: execute EXACTLY the task given. Zero decomposition authority.
 If the task is too large or unclear, report BLOCKED immediately — do not guess.
 
+Checkpoint file (one rolling file, reused for both gates):
+  {agency-root}/agents/{dept}/scratch/members/member-{id}-{pun}-checkpoint.md
+
 APPROACH protocol (mandatory unless TIER_A):
-  Before touching any file or pipeline stage, send a message to "DC-{name}" with:
-  - What documents/files you will touch
-  - What changes you will make and why
-  - Assumptions and risks
-  Wait for "ACK_APPROACH" or "REVISE_APPROACH" before proceeding.
-  If TIER_A: send one sentence "starting [task]" and proceed.
+  Before touching any file or pipeline stage, write to the checkpoint file:
+  ```
+  ## Request
+  Type: APPROACH
+  Task: {d6-task-name}
+  Plan: {what documents/files you will touch, what changes and why}
+  Assumptions: {...or "none"}
+  Risks: {...or "none"}
+  Status: AWAITING
 
-CHECKPOINT protocol (mandatory all tiers):
-  At ~50% effort or 25 tool calls, send to "DC-{name}":
-  - What's done
-  - What remains
-  - Any blockers
-  Wait for "ACK_CONTINUE" or "COURSE_CORRECT" before continuing.
+  ## Reply
+  ```
+  Poll the SAME file, bounded (~5 min ceiling):
+  ```bash
+  # Bash tool: pass timeout: 330000 on this call. The DEFAULT is 120s, which would
+  # kill this loop around iteration 8 and return a tool error instead of a clean
+  # timeout — the proceed-and-mark-UNREVIEWED branch below would never run.
+  for i in $(seq 1 20); do
+    grep -q '^Status: REPLIED' "{checkpoint-file}" && break
+    sleep 15
+  done
+  grep -q '^Status: REPLIED' "{checkpoint-file}" \
+    && echo CHECKPOINT_REPLIED || echo CHECKPOINT_TIMEOUT
+  ```
+  - `ACK_APPROACH — proceed`: proceed with your plan.
+  - `REVISE_APPROACH — {feedback}`: update your plan, re-write (Status back to
+    AWAITING), poll again — max 2 revision rounds before escalating.
+  - Timeout (no reply after the loop): PROCEED anyway, but add `APPROACH_UNREVIEWED`
+    to your completion report (mandatory — DC treats you as higher-risk at the QA gate).
+  If TIER_A: send one sentence "starting [task]" and proceed — no file, no poll.
 
-Scratch file: ~/.claude/agents/{dept}/scratch/members/member-{id}-scratch.md
+CHECKPOINT protocol (mandatory all tiers, same file, same poll mechanism):
+  At ~50% effort or 25 tool calls, overwrite `## Request`/`## Reply` in the SAME
+  checkpoint file with:
+  ```
+  ## Request
+  Type: CHECKPOINT
+  Task: {d6-task-name}
+  Done so far: {...}
+  Remaining: {...}
+  Issues: {...or "none"}
+  Status: AWAITING
+
+  ## Reply
+  ```
+  Poll the same bounded loop as APPROACH:
+  - `ACK_CONTINUE`: keep going.
+  - `COURSE_CORRECT — {instructions}`: adjust and continue.
+  - Timeout: PROCEED, add `CHECKPOINT_UNREVIEWED` to your completion report (mandatory).
+
+DC may also SendMessage you (via your `agentId`) as a wake-up nudge for either gate —
+never required for correctness; the checkpoint file is authoritative.
+
+Scratch file: {agency-root}/agents/{dept}/scratch/members/member-{id}-scratch.md
 Set it up now. Delete it when done.
 
 When done (or blocked, or escalating), send a SendMessage to "DC-{name}" with:

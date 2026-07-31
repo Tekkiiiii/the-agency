@@ -17,8 +17,12 @@ CLAUDE_DIR="$HOME/.claude"
 ( "$CLAUDE_DIR/memory/metrics/emit-metric.sh" \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"mem_find","query_len":'"${#QUERY}"'}' \
   >/dev/null 2>&1 & )
-BUNDLES="$CLAUDE_DIR/memory $CLAUDE_DIR/projects/-Users-Tekki--claude/memory"
-MEMORY_INDEXES="$CLAUDE_DIR/memory/MEMORY.md $CLAUDE_DIR/projects/-Users-Tekki--claude/memory/MEMORY.md $CLAUDE_DIR/projects/-Users-Tekki--claude/memory/index.md"
+# Claude Code encodes the working directory into the project-dir name by
+# replacing "/" and "." with "-". Derive it rather than hardcoding one
+# machine's slug.
+AUTO_SLUG=$(printf '%s' "$CLAUDE_DIR" | tr '/.' '--')
+BUNDLES="$CLAUDE_DIR/memory $CLAUDE_DIR/projects/$AUTO_SLUG/memory"
+MEMORY_INDEXES="$CLAUDE_DIR/memory/MEMORY.md $CLAUDE_DIR/projects/$AUTO_SLUG/memory/MEMORY.md $CLAUDE_DIR/projects/$AUTO_SLUG/memory/index.md"
 
 TMP=$(mktemp)
 trap 'rm -f "$TMP"' EXIT
