@@ -24,6 +24,7 @@
 | critique-data | Chart honesty / stat accuracy / accessibility / dashboard UX | Analytics, dashboards, data reports — requires Playwright screenshots |
 | critique-code | Readability / complexity / error handling / dead code / maintainability | General code quality (NOT security — use critique-security for auth/secrets) |
 | critique-imageprompt | Character consistency / prompt layer completeness / specificity / style coherence / generator fit | Image generation prompts, single or series, any generator |
+| critique-social | Social/carousel visual — text coverage, safe zones, swipe continuity | Social media posts, carousels — requires per-frame screenshots at native platform dimensions |
 
 ## Domain → Critic Routing
 
@@ -40,9 +41,10 @@
 | video | video + content |
 | analytics / dashboard / data report | data + product |
 | image generation prompt | imageprompt |
+| social carousel/post | social + content + brand |
 | generic (unknown) | content + brand |
 
-Add pedagogy for any training material. Add SEO (critique-seo) for any publicly-indexed page's copy. Add sag-critique for any live website / production build to audit the technical layer (head tags, image naming, structured data, crawl plumbing).
+Add pedagogy for any training material. Add SEO (critique-seo) for any publicly-indexed page's copy. Add sag-critique for any live website / production build to audit the technical layer (head tags, image naming, structured data, crawl plumbing). Add social (critique-social) for any social media post or carousel deliverable — requires per-frame screenshots at native platform dimensions, never a generic viewport size.
 
 ## Scoring Rubric
 

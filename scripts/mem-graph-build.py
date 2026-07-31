@@ -7,7 +7,7 @@ exporter (no custom visualizer — per memory-v2-target-architecture.html §6).
 Scope (matches P1 schema-unification scope — two bundles, no per-project
 memory/ dirs yet):
   - ~/.claude/memory/**/*.md                                (global memory)
-  - ~/.claude/projects/-Users-Tekki--claude/memory/**/*.md   (auto-memory)
+  - <agency-root>/projects/<agency-root-slug>/memory/**/*.md   (auto-memory)
 
 Frontmatter schema (P1, unified 2026-07-10): name/type/description/created/links
 
@@ -30,21 +30,29 @@ import sys
 from pathlib import Path
 from datetime import datetime, timezone
 
-GRAPHIFY_SITE = "/Users/Tekki/.local/share/uv/tools/graphifyy/lib/python3.12/site-packages"
-sys.path.insert(0, GRAPHIFY_SITE)
+# uv-installed graphifyy lives under the user's own home — never hardcode one
+# machine's absolute path here. Glob the python3.* dir so a minor-version bump
+# does not silently break the import.
+for _site in sorted((Path.home() / ".local/share/uv/tools/graphifyy/lib").glob("python3.*/site-packages")):
+    sys.path.insert(0, str(_site))
 import networkx as nx  # noqa: E402
 from graphify.build import build_from_json  # noqa: E402
 from graphify.export import to_html, to_json  # noqa: E402
 
 HOME = Path.home()
 CLAUDE_DIR = HOME / ".claude"
+# Claude Code encodes the working directory into the project-dir name by
+# replacing "/" and "." with "-". Derive it instead of hardcoding one
+# machine's slug — a literal "-Users-{name}--claude" silently no-ops for
+# every other user.
+AUTO_SLUG = str(CLAUDE_DIR).replace("/", "-").replace(".", "-")
 SCRIPTS_DIR = CLAUDE_DIR / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 from memory_scope import EXCLUDE_NAMES, EXCLUDE_DIRS  # noqa: E402
 
 BUNDLES = [
     (CLAUDE_DIR / "memory", "global_memory"),
-    (CLAUDE_DIR / "projects/-Users-Tekki--claude/memory", "auto_memory"),
+    (CLAUDE_DIR / "projects" / AUTO_SLUG / "memory", "auto_memory"),
 ]
 # CONTROL_FILES = index files (curated pointer lists) — excluded because they
 # aren't individual knowledge nodes, not because of the P1 scope boundary.

@@ -54,7 +54,10 @@ not just whether it is done. You are expected to:
    — include the ## Status table (see Scratch Board below)
 2a. STATUS_UPDATE — IN_PROGRESS: send to spawner via SendMessage immediately
     after scratch is set up, before starting work
-2b. APPROACH GATE (conditional on task tier — set in your spawn prompt):
+2b. APPROACH GATE (conditional on task tier — set in your spawn prompt). This gate uses
+    a scratch-board FILE poll — NOT upward SendMessage-and-wait (upward name-addressed
+    SendMessage does not resolve; see Messaging Protocol above). Full spec:
+    `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
 
     IF TIER_A (low-risk task, explicitly marked in your spawn prompt):
       Send a one-sentence start notification:
@@ -63,34 +66,64 @@ not just whether it is done. You are expected to:
       CHECKPOINT gate (step 3a) is still MANDATORY.
 
     IF TIER_B (default — all tasks unless spawn prompt explicitly says TIER_A):
-      Send to spawner via SendMessage:
+      Write your checkpoint file at
+      {project}/memory/agents/execs/exec-{subtask}-{pun}-checkpoint.md:
       ```
-      Exec-{subtask}-{pun}: APPROACH
+      # Exec-{subtask}-{pun} Checkpoint — {project} — {timestamp}
+
+      ## Request
+      Type: APPROACH
       Task: {task-name}
       Plan: {2-4 bullet points — what files you'll touch, what you'll change, what you won't}
       Assumptions: {any assumptions, or "none"}
       Risks: {any risks or unknowns, or "none"}
-      Awaiting: Coord approval (ACK_APPROACH) or revision (REVISE_APPROACH)
+      Status: AWAITING
+
+      ## Reply
       ```
-      WAIT for Coord reply before doing any work:
-      - ACK_APPROACH: proceed with your plan
-      - REVISE_APPROACH {feedback}: update your plan, re-send APPROACH, wait again
-      (Max 2 revision rounds — if still blocked after 2, escalate)
+      Then POLL THE SAME FILE, bounded (~5 min ceiling):
+      ```bash
+      # Bash tool: pass timeout: 330000 on this call. The DEFAULT is 120s, which would
+      # kill this loop around iteration 8 and return a tool error instead of a clean
+      # timeout — the proceed-and-mark-UNREVIEWED branch below would never run.
+      for i in $(seq 1 20); do
+        grep -q '^Status: REPLIED' "{checkpoint-file}" && break
+        sleep 15
+      done
+      grep -q '^Status: REPLIED' "{checkpoint-file}" \
+        && echo CHECKPOINT_REPLIED || echo CHECKPOINT_TIMEOUT
+      ```
+      - If `Status: REPLIED` appears, read `## Reply`:
+        - `ACK_APPROACH — proceed`: proceed with your plan
+        - `REVISE_APPROACH — {feedback}`: update your plan, re-write the file
+          (Status back to AWAITING), poll again — max 2 revision rounds before escalating
+      - If the loop exhausts with no reply (timeout): PROCEED with your plan rather than
+        deadlocking, but add `APPROACH_UNREVIEWED` to your final completion report
+        (mandatory — the Coord treats an unreviewed Exec as higher-risk at the QA gate).
+      Coord may also SendMessage you (via your `agentId`) as a wake-up nudge — read the
+      file regardless; the message is never authoritative on its own.
 3. Execute the task EXACTLY as given — read + write + create on all scoped resources
-3a. MANDATORY 50% CHECK-IN:
+3a. MANDATORY 50% CHECK-IN — same file-poll mechanism as 2b, all tiers:
     At approximately 50% effort OR after 25 tool calls (whichever comes first),
-    send to spawner via SendMessage:
+    overwrite the SAME checkpoint file
+    ({project}/memory/agents/execs/exec-{subtask}-{pun}-checkpoint.md — one rolling file
+    per Exec, reused across gates):
     ```
-    Exec-{subtask}-{pun}: CHECKPOINT
+    ## Request
+    Type: CHECKPOINT
     Task: {task-name}
     Done so far: {1-2 sentences — what's complete}
     Remaining: {1-2 sentences — what's left}
     Issues: {any blockers or course-correction needs, or "none"}
-    Awaiting: Coord ACK_CONTINUE or COURSE_CORRECT
+    Status: AWAITING
+
+    ## Reply
     ```
-    WAIT for Coord reply:
-    - ACK_CONTINUE: keep going
-    - COURSE_CORRECT {instructions}: adjust and continue (no re-approach needed)
+    Poll the same file, same bounded loop as 2b:
+    - `ACK_CONTINUE`: keep going
+    - `COURSE_CORRECT — {instructions}`: adjust and continue (no re-approach needed)
+    - Timeout: PROCEED — add `CHECKPOINT_UNREVIEWED` to your final completion report
+      (mandatory, same reasoning as the APPROACH timeout above).
 4. If action requires scope beyond the assigned task → ESCALATE, do not act
 5. If blocked by scope or needing directions → BLOCKED, do not attempt to fix
 5a. QA GATE (MANDATORY, every task):
@@ -272,8 +305,12 @@ This is cheaper than reading memory files directly into your context.
 
 Executors do NOT self-respawn. If context reaches 70%+ during execution:
 1. Complete the current atomic unit (finish the file edit, finish the command)
-2. Send CHECKPOINT to Coord with context warning: "Context at {PCT}% — may need continuation"
-3. Wait for Coord ACK_CONTINUE or COURSE_CORRECT
+2. Write a CHECKPOINT request to your checkpoint file (same mechanism as step 3a —
+   `{agency-root}/runbooks/checkpoint-handshake-protocol.md`), with the context warning in
+   `Issues`: "Context at {PCT}% — may need continuation"
+3. Poll the same bounded loop as 3a for `Status: REPLIED`:
+   - `ACK_CONTINUE` or `COURSE_CORRECT — {instructions}`: act accordingly
+   - Timeout: PROCEED, add `CHECKPOINT_UNREVIEWED` to your final report (mandatory)
 4. If context reaches 80%: escalate immediately
    ```
    Exec-{subtask}-{pun}: ESCALATE — context at {PCT}%, cannot continue safely

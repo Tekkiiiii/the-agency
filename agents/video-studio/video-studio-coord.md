@@ -61,7 +61,13 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
    (D6 = smallest independently assignable unit — one video file, one format conversion, one platform package)
 3b. Write your D4-D6 task structure back to the master dev-plan:
     `{agency-root}/agents/video-studio/state/dev-plan.md` — append under your D3 section.
-4. APPROACH GATE — classify each D6 task as TIER_A or TIER_B before spawning:
+4. APPROACH GATE — classify each D6 task as TIER_A or TIER_B before spawning. This gate
+   runs over a scratch-board FILE, NOT upward SendMessage-and-wait (upward
+   name-addressed SendMessage does not resolve). Full spec:
+   `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
+
+   ⚠️ **REQUIRED PRECONDITION:** Members MUST be spawned in the BACKGROUND (Agent tool
+   default) — a foreground spawn blocks the DC and makes this gate impossible.
 
    TIER_A (low risk — APPROACH gate SKIPPED): task meets ALL four conditions:
      (1) single file/segment, (2) no shared state with concurrent Members,
@@ -70,25 +76,32 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
    TIER_B (higher risk — full APPROACH gate required): all other tasks.
 
    For TIER_A: Member sends one-sentence "starting [task]"; CHECKPOINT still MANDATORY.
-   For TIER_B: Member sends APPROACH plan; DC replies ACK_APPROACH or REVISE_APPROACH
-   (max 2 rounds). Never skip TIER_B gate.
+   For TIER_B: Member writes its APPROACH request to
+   {agency-root}/agents/video-studio/scratch/members/member-{id}-{pun}-checkpoint.md and
+   polls it (bounded, ~5 min); DC polls the same directory for `Status: AWAITING` and
+   replies under `## Reply` with `ACK_APPROACH — proceed` or `REVISE_APPROACH —
+   {feedback}` (max 2 rounds), then sets `Status: REPLIED`. Never skip TIER_B gate.
+
+   Timeout: if a Member's report shows `APPROACH_UNREVIEWED` or `CHECKPOINT_UNREVIEWED`,
+   hold it to the stricter QA threshold at step 5 — do not fast-ACK.
 
    Event contract (fire-and-forget after classifying):
    - TIER_A: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
    - TIER_B: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
 
 4b. For each D6 task, spawn the appropriate department member agent
-    **USE THE `Agent` TOOL (NOT SendMessage) TO SPAWN MEMBERS.**
+    **USE THE `Agent` TOOL (NOT SendMessage) TO SPAWN MEMBERS, IN THE BACKGROUND.**
     Apply topological-layer spawning within N_global budget.
     Spawn tasks in the same dependency-layer in PARALLEL in a SINGLE message.
     Wait for each layer to complete before spawning the next layer.
     For simple D3s (<5 members, no intra-D3 dependencies): spawn all in parallel directly.
 
-4c. CHECKPOINT GATE — 50% check-in (MANDATORY all tiers):
-    When a Member sends CHECKPOINT (~50% effort or 25 tool calls):
+4c. CHECKPOINT GATE — 50% check-in (MANDATORY all tiers, same file-poll mechanism):
+    When a Member's checkpoint file shows a CHECKPOINT request (`Status: AWAITING`):
     a. Review what's done and what's remaining
-    b. If on track → reply: "ACK_CONTINUE"
-    c. If course correction needed → reply: "COURSE_CORRECT — {specific instructions}"
+    b. If on track → write `## Reply`: `ACK_CONTINUE`, set `Status: REPLIED`
+    c. If course correction needed → write `## Reply`: `COURSE_CORRECT — {specific
+       instructions}`, set `Status: REPLIED`
 
 5. QA GATE — Member review (MANDATORY):
    For EACH member report:
@@ -246,18 +259,59 @@ Read it. That is your complete definition.
 Project dir: {project}/
 Task: {specific atomic task}
 
-APPROACH protocol (mandatory unless TIER_A):
-  Before touching any file, send a message to "DC-vs-{name}" with:
-  - What files/segments you will touch
-  - What changes you will make and why
-  - Any risks
-  Wait for "ACK_APPROACH" before proceeding.
-  If TIER_A: send one sentence "starting [task]" and proceed.
+Checkpoint file (one rolling file, reused for both gates):
+  {agency-root}/agents/video-studio/scratch/members/member-{id}-{pun}-checkpoint.md
+Full handshake spec: `{agency-root}/runbooks/checkpoint-handshake-protocol.md`
+(upward name-addressed SendMessage does not resolve — use the file, not SendMessage).
 
-CHECKPOINT protocol (mandatory all tiers):
-  At ~50% effort or 25 tool calls, send CHECKPOINT to "DC-vs-{name}":
-  - What's done, what remains, any blockers
-  Wait for "ACK_CONTINUE" or "COURSE_CORRECT" before continuing.
+APPROACH protocol (mandatory unless TIER_A):
+  Before touching any file, write to the checkpoint file:
+  ```
+  ## Request
+  Type: APPROACH
+  Task: {d6-task-name}
+  Plan: {what files/segments you will touch, what changes and why}
+  Risks: {...or "none"}
+  Status: AWAITING
+
+  ## Reply
+  ```
+  Poll the SAME file, bounded (~5 min ceiling):
+  ```bash
+  # Bash tool: pass timeout: 330000 on this call. The DEFAULT is 120s, which would
+  # kill this loop around iteration 8 and return a tool error instead of a clean
+  # timeout — the proceed-and-mark-UNREVIEWED branch below would never run.
+  for i in $(seq 1 20); do
+    grep -q '^Status: REPLIED' "{checkpoint-file}" && break
+    sleep 15
+  done
+  grep -q '^Status: REPLIED' "{checkpoint-file}" \
+    && echo CHECKPOINT_REPLIED || echo CHECKPOINT_TIMEOUT
+  ```
+  - `ACK_APPROACH — proceed`: proceed.
+  - `REVISE_APPROACH — {feedback}`: update, re-write (Status back to AWAITING), poll again.
+  - Timeout: PROCEED anyway, add `APPROACH_UNREVIEWED` to your completion report
+    (mandatory — DC treats you as higher-risk at the QA gate).
+  If TIER_A: send one sentence "starting [task]" and proceed — no file, no poll.
+
+CHECKPOINT protocol (mandatory all tiers, same file, same poll mechanism):
+  At ~50% effort or 25 tool calls, overwrite `## Request`/`## Reply` in the SAME file:
+  ```
+  ## Request
+  Type: CHECKPOINT
+  Task: {d6-task-name}
+  Done so far / Remaining / Issues: {...}
+  Status: AWAITING
+
+  ## Reply
+  ```
+  Poll the same bounded loop:
+  - `ACK_CONTINUE`: keep going.
+  - `COURSE_CORRECT — {instructions}`: adjust and continue.
+  - Timeout: PROCEED, add `CHECKPOINT_UNREVIEWED` to your completion report (mandatory).
+
+DC may also SendMessage you (via your `agentId`) as a wake-up nudge — never required
+for correctness; the checkpoint file is authoritative.
 
 Complete the task. Report DONE + health score to "DC-vs-{name}" via SendMessage.
 Include: what was produced, file paths, any quality notes.

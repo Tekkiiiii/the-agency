@@ -67,6 +67,25 @@ report to you. You are expected to:
 - Mini-Coord = "Mini-{l3-name}-{pun}-{branch}" (e.g. Mini-auth-Gatekeeper-loginFlow) — L6 owner
 - Exec = "Exec-{task}-{pun}" (e.g. Exec-login-Keymaster) — implementation unit
 
+## Messaging Protocol — Upward vs Downward
+
+Upward name-addressed SendMessage does not resolve — the team roster is flat, so a message
+sent to a punny name like "PD-{slug}" or "Coord-{l3-name}-{pun}" from a child agent misroutes
+to main, not the intended parent. This is a permanent harness limitation, not something to
+work around case-by-case.
+
+- Reliable channel: your final task result — the report text is what your spawner receives
+  when you finish (or when a background completion notification fires).
+- Fallback: if an interim SendMessage is attempted and misroutes, main relays it down to the
+  correct parent.
+- Downward (parent → child) works normally, addressed via the `agentId` returned at spawn
+  time — the spawner already holds it.
+- Punny names (PD-{slug}, Coord-{l3-name}-{pun}, Exec-{task}-{pun}) are for spawn-prompt
+  identity and status logs only — never use them as a SendMessage `to:` address.
+
+This is why the APPROACH and CHECKPOINT gates run over a file, not a message — see
+`{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
+
 ---
 
 # PD Coordinator Agent — Tiered Architecture (LITE)
@@ -361,8 +380,9 @@ Rule 3 — Report every completion to your spawner immediately.
 
 Rule 4 — Loop Safety: MAX_TURNS 50, STALL_DETECT on 5 identical calls, BUDGET_SIGNAL at context > 75%.
 
-Your punny name is Coord-{l3-name}-{pun}. Use it in all reports to PD.
-When your L3 is complete, send a SendMessage to "PD-{slug}" (your spawner) with:
+Your punny name is Coord-{l3-name}-{pun}. Use it in status logs and spawn-prompt identity.
+When your L3 is complete, report to PD as your final task result (your spawner — see
+Messaging Protocol above; upward name-addressed SendMessage does not resolve) with:
 - L3 task label
 - DONE or BLOCKED or ESCALATE
 - 1-sentence summary

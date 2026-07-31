@@ -31,7 +31,12 @@ from pathlib import Path
 HOME = Path.home()
 CLAUDE = HOME / ".claude"
 MEMORY = CLAUDE / "memory"
-AUTO_MEMORY = CLAUDE / "projects/-Users-Tekki--claude/memory"
+# Claude Code encodes the working directory into the project-dir name by
+# replacing "/" and "." with "-". Derive it instead of hardcoding one
+# machine's slug — a literal "-Users-{name}--claude" silently no-ops for
+# every other user.
+AUTO_SLUG = str(CLAUDE).replace("/", "-").replace(".", "-")
+AUTO_MEMORY = CLAUDE / "projects" / AUTO_SLUG / "memory"
 SYS_IMPROVE = CLAUDE / "projects/system-improvement/memory"
 SCRIPTS = CLAUDE / "scripts"
 
@@ -53,6 +58,7 @@ GARDENER_MARKER = SYS_IMPROVE / "ops/gardener-last-run.json"
 RECALL_EVALS = SYS_IMPROVE / "qa/recall-evals.md"
 CONTRADICTION_QUEUE = SYS_IMPROVE / "ops/contradiction-queue.md"
 SCORECARD_HISTORY = SYS_IMPROVE / "ops/scorecard-history.jsonl"
+D8_SAMPLE = SYS_IMPROVE / "ops/d8-correction-latency.json"
 
 BUNDLES = [MEMORY, AUTO_MEMORY]
 # CONTROL_FILES was a local {"MEMORY.md", "index.md"} pair (2026-07-10) that
@@ -140,7 +146,7 @@ def slugify(stem):
 
 
 def py_bin():
-    venv = Path("/Users/Tekki/.local/share/uv/tools/graphifyy/bin/python")
+    venv = Path.home() / ".local/share/uv/tools/graphifyy/bin/python"
     return str(venv) if venv.exists() else sys.executable
 
 
@@ -553,7 +559,36 @@ def check_d7():
 
 
 def check_d8():
-    return "NOT_IMPLEMENTED", "requires session-log sampling infrastructure (transcript scan for correction->lesson-delta latency) — not built yet, flagged as backlog"
+    """PROXY (same honesty class as D1) -- scripts/mem-d8-sample.py mechanically
+    scans raw session transcripts (the agency-root project transcript dir)
+    for Edit/Write tool_use calls targeting memory/lessons/*.md or
+    memory/feedback_*.md (CLAUDE.md's exact Self-Improvement Loop write targets),
+    and records elapsed time since the nearest preceding user turn in the same
+    transcript. This is NOT semantic correction detection -- it does not verify
+    the preceding user turn was actually a correction, and does not filter out
+    batch/maintenance edits to the same file class. Re-run the sampler
+    (`python3 scripts/mem-d8-sample.py`) to refresh before scoring; this check
+    only reads its output file."""
+    if not D8_SAMPLE.exists():
+        return "NOT_IMPLEMENTED", "no D8 sample yet — run scripts/mem-d8-sample.py first"
+    try:
+        rec = json.loads(D8_SAMPLE.read_text())
+    except Exception as e:
+        return "NOT_IMPLEMENTED", f"d8-correction-latency.json unreadable: {e}"
+    n = rec.get("deltas_found", 0)
+    median = rec.get("median_latency_s")
+    sessions = rec.get("sessions_scanned", 0)
+    if n == 0:
+        return "FAIL", f"PROXY: 0 lesson/feedback-delta event(s) found across {sessions} sampled session(s) — either no corrections landed in the sampled window or the Self-Improvement Loop isn't being followed"
+    # Sanity bound only (not a tuned SLA): a delta showing up more than an hour
+    # after the nearest preceding user turn is more likely a stale
+    # parentUuid/turn-tracking artifact or an unrelated batch edit than a
+    # same-session correction response, per the spec's "within that session" wording.
+    status = "PASS" if median is not None and median < 3600 else "FAIL"
+    return status, (f"PROXY: {n} lesson/feedback-delta event(s) across {sessions} sampled "
+                     f"session(s), median latency {median}s from nearest preceding user turn "
+                     f"(mechanical file-write signal, not semantic correction detection -- "
+                     f"see scripts/mem-d8-sample.py docstring)")
 
 
 def check_d9():

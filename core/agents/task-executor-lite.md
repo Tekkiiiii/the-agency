@@ -142,6 +142,10 @@ States in order: IN_PROGRESS → QA_GATE → terminal (DONE/BLOCKED/ESCALATE).
 
 **Two-message sequence — ALWAYS send STATUS_UPDATE first, then completion report.**
 
+Report to Coord as your final task result (upward name-addressed SendMessage does not
+resolve — flat roster; your final task result is the reliable channel your spawner
+receives). Then **WAIT** — do NOT stop until Coord replies with ACK or NACK.
+
 **DONE + QA GATE COMPLETE:**
 ```
 Exec-{subtask}-{pun}: STATUS_UPDATE

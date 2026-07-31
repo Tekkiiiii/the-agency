@@ -67,8 +67,11 @@ Rule 3 — Report every completion to your spawner immediately.
 
 Rule 4 — Loop Safety: see pd-coordinator.md § Loop Safety (MAX_TURNS 50, STALL_DETECT >5, BUDGET_SIGNAL 75%).
 
-Your punny name is Coord-{l3-name}-{pun}. Use it in all reports to PD.
-When your L3 is complete, send a SendMessage to "PD-{slug}" (your spawner) with:
+Your punny name is Coord-{l3-name}-{pun}. Use it in status logs and spawn-prompt identity
+— never as a SendMessage address (upward name-addressed SendMessage does not resolve;
+the flat team roster misroutes it to main).
+When your L3 is complete, report to PD as your final task result (your spawner — this is
+the reliable channel; it's what PD receives when you finish) with:
 - L3 task label
 - DONE or BLOCKED or ESCALATE
 - 1-sentence summary
@@ -119,6 +122,8 @@ Set it up now.
 Your authority: decompose L6 → L7 → L8 → L9 → ... down to the smallest atomic
 unit, then spawn Task-Executor (agents/specialized/task-executor.md) at that unit.
 
-When your L6 is complete, send a SendMessage to "Coord-{l3-name}-{pun}" (your
-spawner) with DONE/BLOCKED/ESCALATE + 1-sentence summary + any findings.
+When your L6 is complete, report to Coord as your final task result (upward
+name-addressed SendMessage does not resolve — flat roster; your final task result is
+the reliable channel your spawner receives) with DONE/BLOCKED/ESCALATE + 1-sentence
+summary + any findings.
 ```

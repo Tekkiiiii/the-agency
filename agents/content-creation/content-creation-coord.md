@@ -60,7 +60,13 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
    (D6 = smallest independently assignable unit — one file, one document, one pipeline stage)
 3b. Write your D4-D6 task structure back to the master dev-plan:
     `{agency-root}/agents/content-creation/state/dev-plan.md` — append under your D3 section.
-4. APPROACH GATE — classify each D6 task as TIER_A or TIER_B before spawning:
+4. APPROACH GATE — classify each D6 task as TIER_A or TIER_B before spawning. This gate
+   runs over a scratch-board FILE, NOT upward SendMessage-and-wait (upward
+   name-addressed SendMessage does not resolve). Full spec:
+   `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
+
+   ⚠️ **REQUIRED PRECONDITION:** Members MUST be spawned in the BACKGROUND (Agent tool
+   default) — a foreground spawn blocks the DC and makes this gate impossible.
 
    TIER_A (low risk — APPROACH gate SKIPPED): task meets ALL four conditions:
      (1) single file/document, (2) no shared state with concurrent Members,
@@ -69,25 +75,32 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
    TIER_B (higher risk — full APPROACH gate required): all other tasks.
 
    For TIER_A: Member sends one-sentence "starting [task]"; CHECKPOINT still MANDATORY.
-   For TIER_B: Member sends APPROACH plan; DC replies ACK_APPROACH or REVISE_APPROACH
-   (max 2 rounds). Never skip TIER_B gate.
+   For TIER_B: Member writes its APPROACH request to
+   {agency-root}/agents/content-creation/scratch/members/member-{id}-{pun}-checkpoint.md and
+   polls it (bounded, ~5 min); DC polls the same directory for `Status: AWAITING` and
+   replies under `## Reply` with `ACK_APPROACH — proceed` or `REVISE_APPROACH —
+   {feedback}` (max 2 rounds), then sets `Status: REPLIED`. Never skip TIER_B gate.
+
+   Timeout: if a Member's report shows `APPROACH_UNREVIEWED` or `CHECKPOINT_UNREVIEWED`,
+   hold it to the stricter QA threshold at step 5 — do not fast-ACK.
 
    Event contract (fire-and-forget after classifying):
    - TIER_A: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
    - TIER_B: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
 
 4b. For each D6 task, spawn the appropriate department member agent
-    **USE THE `Agent` TOOL (NOT SendMessage) TO SPAWN MEMBERS.**
+    **USE THE `Agent` TOOL (NOT SendMessage) TO SPAWN MEMBERS, IN THE BACKGROUND.**
     Apply topological-layer spawning within N_global budget.
     Spawn tasks in the same dependency-layer in PARALLEL in a SINGLE message.
     Wait for each layer to complete before spawning the next layer.
     For simple D3s (<5 members, no intra-D3 dependencies): spawn all in parallel directly.
 
-4c. CHECKPOINT GATE — 50% check-in (MANDATORY all tiers):
-    When a Member sends CHECKPOINT (~50% effort or 25 tool calls):
+4c. CHECKPOINT GATE — 50% check-in (MANDATORY all tiers, same file-poll mechanism):
+    When a Member's checkpoint file shows a CHECKPOINT request (`Status: AWAITING`):
     a. Review what's done and what's remaining
-    b. If on track → reply: "ACK_CONTINUE"
-    c. If course correction needed → reply: "COURSE_CORRECT — {specific instructions}"
+    b. If on track → write `## Reply`: `ACK_CONTINUE`, set `Status: REPLIED`
+    c. If course correction needed → write `## Reply`: `COURSE_CORRECT — {specific
+       instructions}`, set `Status: REPLIED`
 
 5. QA GATE — Member review (MANDATORY):
    For EACH member report:

@@ -21,7 +21,9 @@ Memory health check. Finds problems, auto-fixes safe ones, flags the rest.
 
 ## Scope
 
-Default: `~/.claude/memory/` (global) + `~/.claude/projects/-Users-Tekki--claude/memory/` (per-conversation).
+Default: `{agency-root}/memory/` (global) + `{agency-root}/projects/{agency-root-slug}/memory/` (per-conversation).
+The per-conversation slug is the agency root path with `/` and `.` replaced by `-`
+(e.g. `/home/ada/.claude` → `-home-ada--claude`) — derive it, never hardcode it.
 Override: `/lint-memory [path]` to lint a specific directory.
 
 Within a target directory, "in scope" excludes control/handoff filenames and
