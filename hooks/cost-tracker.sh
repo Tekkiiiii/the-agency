@@ -19,6 +19,9 @@ fi
 
 mkdir -p "$AGENCY_ROOT/metrics"
 METRICS_FILE="$AGENCY_ROOT/metrics/costs.jsonl"
+# Fixed path, overwritten every run: bounded by construction, and whatever the
+# last failure printed is still there to read.
+COST_ERR="$AGENCY_ROOT/metrics/.cost-tracker.err"
 
 # Same idiom as hooks/emit-metric.sh (Wave 13, 3383ea9): no absolute path crosses
 # the bash -> python3 boundary, since a Windows box's native python3 cannot open
@@ -117,8 +120,17 @@ print(json.dumps(row))
 in_k = input_tokens / 1000
 out_k = output_tokens / 1000
 print(f'Session cost: \${cost:.4f} ({in_k:.0f}k in, {out_k:.0f}k out, {tier})', file=sys.stderr)
-" 2>/dev/null
+" 2>"$COST_ERR"
 ) || true
+
+# The python block above prints "Session cost: ..." to stderr on purpose — it is
+# the only thing this hook ever shows a human. A blanket `2>/dev/null` used to
+# swallow it along with any traceback, so the feature had been dead since it was
+# written. Now stderr goes to a fixed, overwritten file (self-bounding, and
+# still inspectable after a failure) and only the intended line is re-emitted.
+# A traceback stays out of the UI: failure isolation was the point of the
+# suppression, and it is preserved.
+grep -m1 '^Session cost:' "$COST_ERR" >&2 2>/dev/null || true
 
 if [ -n "$ROW" ]; then
   printf '%s\n' "$ROW" >> "$METRICS_FILE" 2>/dev/null || true

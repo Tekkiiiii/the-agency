@@ -220,7 +220,7 @@ Note: `general-purpose` is **deliberately NOT** on this exact-match allowlist (t
 
 **Block behavior:** Any spawn that does not match the allowlist, lacks the PD prefix, and contains no routing/skill marker receives `permissionDecision: ask` with a message explaining the two valid paths (hardcoded routing vs. Delegator routing) and listing all pre-approved subagent_type values. The message also references `{agency-root}/memory/agency-dispatch.md` Step 1.5 for the full routing protocol.
 
-Respects the `.hook-profile` system: in `minimal` profile, the hook exits immediately with `{}` (all spawns allowed). Note this hook reads its profile flag from `~/.agency/.hook-profile` — other hooks in this set (e.g. `spawn-completion.sh`, `spawn-logger.sh`) read `~/.claude/.hook-profile` instead; verify which path applies to your install when troubleshooting profile behavior.
+Respects the `.hook-profile` system: in `minimal` profile, the hook exits immediately with `{}` (all spawns allowed). It reads `{agency-root}/.hook-profile`, the same file as every other profile-aware hook. (Before Wave 16 this one hook read `~/.agency/.hook-profile` — a path nothing has ever written, so the documented way to turn this gate off silently did nothing.)
 
 ### spawn-logger.sh (PreToolUse: Agent)
 

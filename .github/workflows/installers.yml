@@ -147,6 +147,13 @@ jobs:
       - name: Assert every shell script parses under bash 3.2 (macOS)
         run: bash .github/scripts/check-bash32-parse.sh
 
+      # install.sh's design-system deployment is asserted above. `agency
+      # upgrade` uses a different code path (syncDesignSystem -> syncTree, with
+      # update/preserve semantics) and Wave 14 could only verify it by reading
+      # the source. This runs that exact function end to end.
+      - name: Assert agency upgrade's design-system sync works end to end
+        run: node .github/scripts/check-design-system-sync.js
+
   install-ps1:
     name: install.ps1 (windows)
     runs-on: windows-latest
