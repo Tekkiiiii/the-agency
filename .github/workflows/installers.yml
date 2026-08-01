@@ -355,10 +355,12 @@ jobs:
           # skill-audit.py is the ideal probe: read-only, and it reads
           # AGENCY_ROOT/skills at import time. Right root -> "skills=N" on
           # stderr. Wrong root -> FileNotFoundError. It cannot half-succeed.
+          # `set -e` is on (GitHub's default bash flags), so the failing case
+          # has to be caught, not measured after the fact.
           probe() {
             local label="$1"
-            local rc
-            python3 "$script" >/dev/null 2>"$RUNNER_TEMP/probe.err"; rc=$?
+            local rc=0
+            python3 "$script" >/dev/null 2>"$RUNNER_TEMP/probe.err" || rc=$?
             echo "---- [$label] rc=$rc"
             tail -3 "$RUNNER_TEMP/probe.err" || true
           }
