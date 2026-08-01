@@ -8,10 +8,32 @@ set -euo pipefail
 
 AGENCY_REPO="https://github.com/Tekkiiiii/the-agency.git"
 
+# Root precedence must match hooks/lib/resolve-root.sh exactly:
+#   $AGENCY_HOME -> $CLAUDE_CONFIG_DIR -> $HOME/.claude
+#
+# Inlined rather than sourced, deliberately, and for a reason specific to this
+# script: rescue.sh is meant to run as `curl ... | bash`, where there is no
+# script directory to resolve a sibling from — ${BASH_SOURCE[0]} is not a path
+# at all. install.sh makes the same inline mirror on its line 9;
+# hooks/lib/resolve-root.sh remains the place the precedence is DEFINED.
+#
+# Before this existed, rescue.sh addressed $HOME/.claude unconditionally: a user
+# who installed with AGENCY_HOME=/opt/agency and then ran the rescue got a
+# SECOND clone in a directory their install does not read from, and was told it
+# had been rescued.
+AGENCY_ROOT="${AGENCY_HOME:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
+
 echo ""
 echo "The Agency — Rescue"
 echo "==================="
 echo ""
+if [ -n "${AGENCY_HOME:-}" ]; then
+    echo "  Agency root: $AGENCY_ROOT (from AGENCY_HOME)"
+    echo ""
+elif [ -n "${CLAUDE_CONFIG_DIR:-}" ]; then
+    echo "  Agency root: $AGENCY_ROOT (from CLAUDE_CONFIG_DIR)"
+    echo ""
+fi
 
 is_agency_repo() {
     local dir="$1"
@@ -30,9 +52,13 @@ if [ -n "$CANDIDATE" ] && is_agency_repo "$CANDIDATE"; then
     REPO_DIR="$CANDIDATE"
 fi
 
-# b) Check common install locations
+# b) Check common install locations, resolved root FIRST.
+#    The remaining three are legacy/alternate layouts kept as a courtesy: this
+#    is a rescue tool, and finding an existing verified repo is always better
+#    than cloning a duplicate. They are only ever ADOPTED, never written to as
+#    a root — every write below goes to $AGENCY_ROOT.
 if [ -z "$REPO_DIR" ]; then
-    for loc in "$HOME/.claude" "$HOME/the-agency" "$HOME/.agency/the-agency"; do
+    for loc in "$AGENCY_ROOT" "$HOME/.claude" "$HOME/the-agency" "$HOME/.agency/the-agency"; do
         if [ -d "$loc" ] && is_agency_repo "$loc"; then
             REPO_DIR="$loc"
             break
@@ -42,11 +68,11 @@ fi
 
 # c) Not found — clone it
 if [ -z "$REPO_DIR" ]; then
-    echo "  The Agency repo not found locally. Cloning to ~/.claude/ ..."
-    CLONE_TARGET="$HOME/.claude"
+    CLONE_TARGET="$AGENCY_ROOT"
+    echo "  The Agency repo not found locally. Cloning to $CLONE_TARGET/ ..."
 
     if [ -d "$CLONE_TARGET" ] && [ "$(ls -A "$CLONE_TARGET" 2>/dev/null)" ]; then
-        # ~/.claude/ exists with files — clone into it without overwriting
+        # the root exists with files — clone into it without overwriting
         TEMP_DIR="$(mktemp -d)"
         if git clone "$AGENCY_REPO" "$TEMP_DIR/the-agency" 2>&1; then
             cp -rn "$TEMP_DIR/the-agency/"* "$CLONE_TARGET/" 2>/dev/null || true
@@ -166,7 +192,7 @@ fi
 echo ""
 echo "  Rescue complete. Next steps:"
 echo ""
-echo "    agency upgrade       Sync skills and agents to ~/.claude/"
+echo "    agency upgrade       Sync skills and agents to $AGENCY_ROOT/"
 echo "    agency onboard       Interactive setup wizard (if first time)"
 echo "    ./install.sh         Full reinstall (if agency command not found)"
 echo ""

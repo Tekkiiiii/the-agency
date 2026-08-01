@@ -20,11 +20,24 @@ cd "$(dirname "$0")/../.." || exit 1
 #   4. skill-audit.py's content matchers  — they match the literal "~/.claude/"
 #                                           TEXT authored inside SKILL.md files,
 #                                           not a path this repo resolves.
+#   5. the INLINED ladder in install.sh    — neither can source resolve-root.sh:
+#      and rescue.sh                         install.sh may be the thing that
+#                                           puts it there, and rescue.sh is run
+#                                           as `curl ... | bash`, where there is
+#                                           no script directory at all. Both
+#                                           write the full three-level ladder
+#                                           verbatim; the pattern below matches
+#                                           only that exact expression.
+#   6. rescue.sh's discovery candidate list — a list of places an EXISTING repo
+#                                           may already sit (alongside
+#                                           ~/the-agency), searched after
+#                                           $AGENCY_ROOT. It adopts a repo, it
+#                                           never resolves a root to write to.
 #
 # The twin's tail (`or os.path.join(home, ".claude")`) is allowed only when the
 # expression ENDS there — i.e. it yields the root itself. The same call with a
 # path glued on (`".claude/logs/spawns.jsonl"`) is the bug and must still fail.
-ALLOW='resolve-root\.sh" 2>/dev/null \|\| AGENCY_ROOT=|or \(Path\.home\(\) / "\.claude"\)|or \(HOME / "\.claude"\)|or os\.path\.join\(home, .\.claude.\)[[:space:]]*$|RUNTIME_ROOTS|HOME_REF_RE|p\[len\("~/\.claude/"\):\]|"~/\.claude/state/"|"~/\.claude/\.context/"'
+ALLOW='resolve-root\.sh" 2>/dev/null \|\| AGENCY_ROOT=|or \(Path\.home\(\) / "\.claude"\)|or \(HOME / "\.claude"\)|or os\.path\.join\(home, .\.claude.\)[[:space:]]*$|RUNTIME_ROOTS|HOME_REF_RE|p\[len\("~/\.claude/"\):\]|"~/\.claude/state/"|"~/\.claude/\.context/"|="\$\{AGENCY_HOME:-\$\{CLAUDE_CONFIG_DIR:-\$HOME/\.claude\}\}"$|^[0-9]+:[[:space:]]*for loc in "\$AGENCY_ROOT" "\$HOME/\.claude" '
 
 offenders=0
 
@@ -54,7 +67,11 @@ scan() {
   fi
 }
 
-for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh scripts/*.py; do
+# install.sh and rescue.sh are in the list as of Wave 16. They are the two
+# entry points a user runs BEFORE anything is deployed, so a hardcoded root
+# there sends the whole install to the wrong directory — the loudest possible
+# version of the defect, and the only two files that were never checked for it.
+for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh scripts/*.py install.sh rescue.sh; do
   [ -f "$f" ] || continue
   case "$f" in
     hooks/lib/resolve-root.sh) continue ;;

@@ -136,6 +136,13 @@ jobs:
       - name: Assert no script still hardcodes the default root
         run: bash .github/scripts/check-hardcoded-root.sh
 
+      # Both runners are bash 5. macOS — where every one of these scripts is
+      # actually run — is bash 3.2, and has already been broken by a construct
+      # bash 5 accepts silently (a literal backtick inside a quoted heredoc
+      # inside `$( )`). This step parses everything with the real 3.2.
+      - name: Assert every shell script parses under bash 3.2 (macOS)
+        run: bash .github/scripts/check-bash32-parse.sh
+
   install-ps1:
     name: install.ps1 (windows)
     runs-on: windows-latest
@@ -328,6 +335,124 @@ jobs:
           # The case every real Git Bash user hits: MSYS2 converts it first.
           unset MSYS2_ENV_CONV_EXCL
           probe_hooks "msys2-converted" || exit 1
+
+      # PROBE (Wave 16, temporary): Wave 15 deferred scripts/*.py on the stated
+      # grounds that a native python3 "cannot load its own script path when it
+      # is handed to it in MSYS form". That was an inference, never measured —
+      # the same class of inference that made the first version of the step
+      # above vacuous. Measure it before deciding.
+      - name: PROBE — scripts/*.py under Git Bash
+        env:
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+          script="$AGENCY_HOME/scripts/skill-audit.py"
+          echo "script arg as bash sees it: $script"
+          echo "python3: $(command -v python3)"
+          python3 -c 'import sys; print("interpreter:", sys.executable, sys.platform)'
+
+          # skill-audit.py is the ideal probe: read-only, and it reads
+          # AGENCY_ROOT/skills at import time. Right root -> "skills=N" on
+          # stderr. Wrong root -> FileNotFoundError. It cannot half-succeed.
+          probe() {
+            local label="$1"
+            local rc
+            python3 "$script" >/dev/null 2>"$RUNNER_TEMP/probe.err"; rc=$?
+            echo "---- [$label] rc=$rc"
+            tail -3 "$RUNNER_TEMP/probe.err" || true
+          }
+
+          echo "=== 1. plain Git Bash (args and env both converted by MSYS2)"
+          probe default
+
+          echo "=== 2. arg conversion OFF (python gets the raw /d/... script path)"
+          export MSYS2_ARG_CONV_EXCL='*'
+          probe raw-arg
+          unset MSYS2_ARG_CONV_EXCL
+
+          echo "=== 3. env conversion OFF (AGENCY_HOME arrives raw inside python)"
+          export MSYS2_ENV_CONV_EXCL='AGENCY_HOME'
+          probe raw-env
+          unset MSYS2_ENV_CONV_EXCL
+
+          echo "=== 4. both OFF"
+          export MSYS2_ARG_CONV_EXCL='*' MSYS2_ENV_CONV_EXCL='AGENCY_HOME'
+          probe raw-both
+          unset MSYS2_ARG_CONV_EXCL MSYS2_ENV_CONV_EXCL
+          echo "=== probe complete (informational — this step never fails)"
+
+      # rescue.ps1 could `git reset --hard origin/main` on ANY git repository it
+      # was run inside, and searched no install location at all. Wave 16 gave it
+      # the same remote-verified discovery and the same root ladder as
+      # rescue.sh. Assert the negative path: found nothing -> exits 1, names the
+      # resolved root, touches nothing.
+      - name: Assert rescue.ps1 honours the root ladder and refuses unknown repos
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\rescue-root
+        run: |
+          $ErrorActionPreference = 'Continue'
+          # Parse check first — a PowerShell syntax error is otherwise only
+          # discovered by the user who needed the rescue.
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path .\rescue.ps1), [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Host $_ }; throw "rescue.ps1 does not parse" }
+
+          # Run it from a temp dir, NOT the checkout: its own script directory
+          # is a legitimate discovery candidate, and adopting the checkout would
+          # mean pulling and resetting the CI working tree.
+          $sandbox = Join-Path $env:RUNNER_TEMP 'rescue-sandbox'
+          Remove-Item -Recurse -Force $sandbox -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
+          Copy-Item .\rescue.ps1 $sandbox
+          $fakeHome = Join-Path $env:RUNNER_TEMP 'rescue-home'
+          New-Item -ItemType Directory -Force -Path $fakeHome | Out-Null
+
+          Push-Location $sandbox
+          $env:USERPROFILE = $fakeHome
+          $out = & pwsh -NoProfile -File (Join-Path $sandbox 'rescue.ps1') 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Pop-Location
+          Write-Host $out
+          if ($code -ne 1) { throw "expected exit 1 when no agency repo exists, got $code" }
+          if ($out -notmatch 'not found') { throw "expected a not-found message" }
+          # The searched root must be the one AGENCY_HOME names, not ~/.claude.
+          if ($out -notmatch [regex]::Escape($env:AGENCY_HOME)) {
+            throw "rescue.ps1 did not search AGENCY_HOME ($env:AGENCY_HOME)"
+          }
+
+      - name: Assert rescue.ps1 adopts the repo AGENCY_HOME points at
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\rescue-adopt
+        run: |
+          $ErrorActionPreference = 'Continue'
+          # A repo is "the agency repo" by its origin URL. An empty repo with
+          # the right remote is enough to prove discovery, and pulling into an
+          # unborn branch is a normal fast-forward.
+          Remove-Item -Recurse -Force $env:AGENCY_HOME -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $env:AGENCY_HOME | Out-Null
+          git -C $env:AGENCY_HOME init -q
+          git -C $env:AGENCY_HOME remote add origin https://github.com/Tekkiiiii/the-agency.git
+
+          $sandbox = Join-Path $env:RUNNER_TEMP 'rescue-sandbox2'
+          Remove-Item -Recurse -Force $sandbox -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
+          Copy-Item .\rescue.ps1 $sandbox
+          $fakeHome = Join-Path $env:RUNNER_TEMP 'rescue-home2'
+          New-Item -ItemType Directory -Force -Path $fakeHome | Out-Null
+
+          Push-Location $sandbox
+          $env:USERPROFILE = $fakeHome
+          $out = & pwsh -NoProfile -File (Join-Path $sandbox 'rescue.ps1') 2>&1 | Out-String
+          Pop-Location
+          Write-Host $out
+          if ($out -notmatch [regex]::Escape("Repo: $env:AGENCY_HOME")) {
+            throw "rescue.ps1 did not adopt the repo at AGENCY_HOME"
+          }
+          if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'install.ps1'))) {
+            throw "rescue.ps1 reported success but pulled nothing"
+          }
 
       - name: Second install into a DIFFERENT AGENCY_HOME
         env:
