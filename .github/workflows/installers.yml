@@ -119,7 +119,11 @@ jobs:
             [ "$AGENCY_ROOT" = "$AGENCY_HOME" ] \
               || { echo "FAIL: resolver returned $AGENCY_ROOT"; exit 1; } )
 
-          # Python twin must agree with the shell resolver.
+          # Python twin must agree with the shell resolver. This asserts the
+          # PRECEDENCE only, which is all that is observable on Linux — it is
+          # not the canonical twin and must not be copied into a script. That
+          # form (with the nt branch) lives in hooks/lib/resolve-root.sh and is
+          # exercised on the Windows job.
           python3 - <<'PY'
           import os, pathlib, sys
           root = pathlib.Path(
@@ -336,53 +340,80 @@ jobs:
           unset MSYS2_ENV_CONV_EXCL
           probe_hooks "msys2-converted" || exit 1
 
-      # PROBE (Wave 16, temporary): Wave 15 deferred scripts/*.py on the stated
-      # grounds that a native python3 "cannot load its own script path when it
-      # is handed to it in MSYS form". That was an inference, never measured —
-      # the same class of inference that made the first version of the step
-      # above vacuous. Measure it before deciding.
-      - name: PROBE — scripts/*.py under Git Bash
+      - name: Assert scripts/*.py resolve the root under Git Bash
         env:
           AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
         shell: bash
         run: |
+          # Fourth and last variant of the Windows path defect. Wave 15 left
+          # scripts/*.py on the plain three-line twin, reasoning that a native
+          # python3 could not load their MSYS-form script path anyway, so
+          # normalising the env read would not help. That was an inference. It
+          # was measured here (run 30689704116, informational probe) and it was
+          # wrong: MSYS2 converts path-shaped ARGUMENTS to native binaries just
+          # as it converts path-shaped environment variables, so the script
+          # loads fine and it is the ENV read that breaks —
+          #   FileNotFoundError: '\d\a\_temp\agency-default\skills'
+          # exactly the hooks' defect. That probe run IS the red check for the
+          # raw-env case below; this step is the green one.
+          #
+          # skill-audit.py and agent-tools-audit.py are the right probes: both
+          # read a tree under the resolved root at import time, both print a
+          # count, and neither writes anything. Wrong root -> hard error, never
+          # a quiet zero.
           export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
-          script="$AGENCY_HOME/scripts/skill-audit.py"
-          echo "script arg as bash sees it: $script"
-          echo "python3: $(command -v python3)"
-          python3 -c 'import sys; print("interpreter:", sys.executable, sys.platform)'
+          echo "posix root: $AGENCY_HOME"
 
-          # skill-audit.py is the ideal probe: read-only, and it reads
-          # AGENCY_ROOT/skills at import time. Right root -> "skills=N" on
-          # stderr. Wrong root -> FileNotFoundError. It cannot half-succeed.
-          # `set -e` is on (GitHub's default bash flags), so the failing case
-          # has to be caught, not measured after the fact.
-          probe() {
-            local label="$1"
+          audit() {   # $1 label, $2 script, $3 expected key
             local rc=0
-            python3 "$script" >/dev/null 2>"$RUNNER_TEMP/probe.err" || rc=$?
-            echo "---- [$label] rc=$rc"
-            tail -3 "$RUNNER_TEMP/probe.err" || true
+            python3 "$AGENCY_HOME/scripts/$2" >/dev/null 2>"$RUNNER_TEMP/a.err" || rc=$?
+            local line
+            line=$(tail -1 "$RUNNER_TEMP/a.err")
+            echo "[$1] $2 rc=$rc :: $line"
+            [ "$rc" -eq 0 ] || { echo "FAIL[$1]: $2 exited $rc"; tail -3 "$RUNNER_TEMP/a.err"; return 1; }
+            case "$line" in
+              *"$3"=0*|*"$3"=" "*) echo "FAIL[$1]: $2 resolved a root with nothing in it"; return 1 ;;
+              *"$3"=*) : ;;
+              *) echo "FAIL[$1]: $2 printed no $3 summary"; return 1 ;;
+            esac
           }
 
-          echo "=== 1. plain Git Bash (args and env both converted by MSYS2)"
-          probe default
+          # 1. What every real Git Bash user hits.
+          audit msys2-converted skill-audit.py skills || exit 1
+          audit msys2-converted agent-tools-audit.py agent_files || exit 1
 
-          echo "=== 2. arg conversion OFF (python gets the raw /d/... script path)"
-          export MSYS2_ARG_CONV_EXCL='*'
-          probe raw-arg
-          unset MSYS2_ARG_CONV_EXCL
-
-          echo "=== 3. env conversion OFF (AGENCY_HOME arrives raw inside python)"
-          export MSYS2_ENV_CONV_EXCL='AGENCY_HOME'
-          probe raw-env
+          # 2. The case that actually failed before the fix: the root arrives
+          #    inside python as a raw MSYS string.
+          export MSYS2_ENV_CONV_EXCL="AGENCY_HOME"
+          audit raw-msys-env skill-audit.py skills || exit 1
+          audit raw-msys-env agent-tools-audit.py agent_files || exit 1
           unset MSYS2_ENV_CONV_EXCL
 
-          echo "=== 4. both OFF"
-          export MSYS2_ARG_CONV_EXCL='*' MSYS2_ENV_CONV_EXCL='AGENCY_HOME'
-          probe raw-both
-          unset MSYS2_ARG_CONV_EXCL MSYS2_ENV_CONV_EXCL
-          echo "=== probe complete (informational — this step never fails)"
+          # 3. Argument conversion disabled — the one case that is NOT fixable
+          #    from inside the script, because the interpreter never opens the
+          #    file (no code in it runs). The invariant that still has to hold
+          #    is "loud, not silently wrong": either it fails, or it succeeds
+          #    against the correct root. Written as an invariant rather than as
+          #    `must fail` so that a future MSYS2 or python that handles this
+          #    turns the step green, not red.
+          export MSYS2_ARG_CONV_EXCL='*'
+          rc=0
+          python3 "$AGENCY_HOME/scripts/skill-audit.py" >/dev/null 2>"$RUNNER_TEMP/b.err" || rc=$?
+          unset MSYS2_ARG_CONV_EXCL
+          if [ "$rc" -eq 0 ]; then
+            tail -1 "$RUNNER_TEMP/b.err" | grep -qE 'skills=[1-9]' \
+              || { echo "FAIL: raw-msys-arg succeeded against the WRONG root"; tail -3 "$RUNNER_TEMP/b.err"; exit 1; }
+            echo "[raw-msys-arg] now works (rc=0) — the documented limitation has lifted"
+          else
+            echo "[raw-msys-arg] fails loudly with rc=$rc, as documented in hooks/lib/resolve-root.sh"
+            tail -2 "$RUNNER_TEMP/b.err"
+          fi
+
+          # Nothing may have leaked into Git Bash's own $HOME/.claude.
+          if [ -d "$HOME/.claude/skills" ]; then
+            echo "FAIL: a script created \$HOME/.claude/skills despite AGENCY_HOME"
+            exit 1
+          fi
 
       # rescue.ps1 could `git reset --hard origin/main` on ANY git repository it
       # was run inside, and searched no install location at all. Wave 16 gave it
@@ -423,6 +454,8 @@ jobs:
           if ($out -notmatch [regex]::Escape($env:AGENCY_HOME)) {
             throw "rescue.ps1 did not search AGENCY_HOME ($env:AGENCY_HOME)"
           }
+          # rescue.ps1 exited 1 on purpose; without this the step inherits it.
+          $global:LASTEXITCODE = 0
 
       - name: Assert rescue.ps1 adopts the repo AGENCY_HOME points at
         env:
@@ -455,6 +488,7 @@ jobs:
           if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'install.ps1'))) {
             throw "rescue.ps1 reported success but pulled nothing"
           }
+          $global:LASTEXITCODE = 0
 
       - name: Second install into a DIFFERENT AGENCY_HOME
         env:

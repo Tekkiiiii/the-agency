@@ -90,9 +90,9 @@ Use the shared resolver instead:
   hooks/lib/foo.sh  . "$(dirname "${BASH_SOURCE[0]:-$0}")/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
   scripts/foo.sh    . "$(dirname "${BASH_SOURCE[0]:-$0}")/../hooks/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
-  *.py              AGENCY_ROOT = Path(os.environ.get("AGENCY_HOME")
-                                       or os.environ.get("CLAUDE_CONFIG_DIR")
-                                       or (Path.home() / ".claude"))
+  *.py              copy the agency_root(home) twin from
+                    hooks/lib/resolve-root.sh VERBATIM, then
+                    AGENCY_ROOT = Path(agency_root(str(HOME)))
 
 If a hit is genuinely prose or a content matcher rather than a path this repo
 resolves, add it to ALLOW in this script with a one-line reason.
@@ -100,23 +100,26 @@ EOF
   exit 1
 fi
 
-echo "OK: no hardcoded agency root in hooks/ or scripts/"
+echo "OK: no hardcoded agency root in hooks/, scripts/, install.sh or rescue.sh"
 
 # ---------------------------------------------------------------------------
 # Second guard: the Python twin must stay ONE idiom.
 #
-# Every python block under hooks/ resolves the root through an inlined
-# `agency_root(home)` whose nt branch rewrites an MSYS-style AGENCY_HOME
-# (/c/Users/me/.claude) into a form native Windows python can open. The
-# duplication is forced — under Git Bash a hook's own directory is an MSYS path
-# too, so an import bootstrap would trip over the very string format the helper
-# exists to fix (hooks/lib/resolve-root.sh explains this in full).
+# Every python block under hooks/ — and, since Wave 16, every scripts/*.py —
+# resolves the root through an inlined `agency_root(home)` whose nt branch
+# rewrites an MSYS-style AGENCY_HOME (/c/Users/me/.claude) into a form native
+# Windows python can open. The duplication is forced for the hooks — under Git
+# Bash a hook's own directory is an MSYS path too, so an import bootstrap would
+# trip over the very string format the helper exists to fix
+# (hooks/lib/resolve-root.sh explains this in full). scripts/*.py could import
+# it; they inline it anyway so that ONE form of this function exists in the repo
+# and this check can see all of them.
 #
 # Forced duplication drifts. These two checks stop it:
 #   A. every copy of agency_root() is byte-identical
-#   B. no python block under hooks/ resolves the root any OTHER way — the count
-#      of raw twin expressions in a file must equal its count of agency_root
-#      definitions, so a second, unnormalised resolve cannot slip in beside it.
+#   B. no python block resolves the root any OTHER way — the count of raw twin
+#      expressions in a file must equal its count of agency_root definitions,
+#      so a second, unnormalised resolve cannot slip in beside it.
 # ---------------------------------------------------------------------------
 twin_text=""
 twin_ref=""
@@ -126,7 +129,14 @@ extract_twin() {
   awk '/def agency_root\(home\):/,/^    return root$/' "$1"
 }
 
-for f in hooks/*.sh hooks/lib/*.sh; do
+# scripts/*.py joined this list in Wave 16. Wave 15 had left them on the plain
+# three-line twin, reasoning that a native python3 could not load their MSYS-form
+# script path anyway so normalising the env read would not help. Measured on
+# windows-latest (run 30689704116): under plain Git Bash the script loads fine —
+# MSYS2 converts the path argument — and it is the ENV read that breaks, exactly
+# as it did in the hooks (FileNotFoundError on '\d\a\_temp\...\skills'). The
+# deferral rested on an inference; the inference was wrong.
+for f in hooks/*.sh hooks/lib/*.sh scripts/*.py; do
   [ -f "$f" ] || continue
   case "$f" in
     hooks/lib/resolve-root.sh) continue ;;  # carries the twin as documentation
@@ -173,4 +183,4 @@ EOF
   exit 1
 fi
 
-echo "OK: python root twin identical across all hooks/ copies"
+echo "OK: python root twin identical across all hooks/ and scripts/ copies"

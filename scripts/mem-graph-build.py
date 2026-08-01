@@ -41,12 +41,23 @@ from graphify.build import build_from_json  # noqa: E402
 from graphify.export import to_html, to_json  # noqa: E402
 
 HOME = Path.home()
-# Python twin of hooks/lib/resolve-root.sh — same precedence, same default.
-CLAUDE_DIR = Path(
-    os.environ.get("AGENCY_HOME")
-    or os.environ.get("CLAUDE_CONFIG_DIR")
-    or (HOME / ".claude")
-)
+# Python twin of hooks/lib/resolve-root.sh — same precedence, same default,
+# and byte-identical to the copy carried by every hook (enforced by
+# .github/scripts/check-hardcoded-root.sh). resolve-root.sh explains why it
+# is inlined rather than imported, and why the nt rewrite exists.
+def agency_root(home):
+    # MSYS-aware Python twin of hooks/lib/resolve-root.sh. That file documents
+    # the precedence, why the /c/... rewrite is nt-only, and why this is inlined
+    # at every call site instead of imported.
+    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
+    if os.name == 'nt':
+        m = re.fullmatch(r'/(?:cygdrive/)?([A-Za-z])(/.*)?', root)
+        if m:
+            root = m.group(1).upper() + ':' + (m.group(2) or '/')
+    return root
+
+
+CLAUDE_DIR = Path(agency_root(str(HOME)))
 # Claude Code encodes the working directory into the project-dir name by
 # replacing "/" and "." with "-". Derive it instead of hardcoding one
 # machine's slug — a literal "-Users-{name}--claude" silently no-ops for
