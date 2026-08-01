@@ -1,7 +1,7 @@
 #!/bin/bash
 # canary-session-check.sh — Memory v2 R1 in-session read-path check.
 # Companion to canary-check.sh (disk-only). This variant is invoked by a LIVE
-# AGENT after it has read ~/.claude/memory/.canary.md via its own Read tool
+# AGENT after it has read {agency-root}/memory/.canary.md via its own Read tool
 # (i.e. through the real context/compression pipeline, not a raw disk read).
 # The agent pipes exactly the text it saw via stdin; this script hashes it
 # and compares to the recorded .canary.sha256, then records the result to
@@ -21,10 +21,12 @@
 
 set -euo pipefail
 
-HASH_FILE="$HOME/.claude/memory/.canary.sha256"
-RECORD_FILE="$HOME/.claude/memory/.canary-session.json"
-LOG_FILE="$HOME/.claude/memory/metrics/canary-check.log"
-EMIT="$HOME/.claude/hooks/emit-metric.sh"
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/../hooks/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+HASH_FILE="$AGENCY_ROOT/memory/.canary.sha256"
+RECORD_FILE="$AGENCY_ROOT/memory/.canary-session.json"
+LOG_FILE="$AGENCY_ROOT/memory/metrics/canary-check.log"
+EMIT="$AGENCY_ROOT/hooks/emit-metric.sh"
 BLOAT_THRESHOLD=100000
 
 # --- Startup-bloat check (additive) -----------------------------------------
@@ -38,7 +40,12 @@ BLOAT_THRESHOLD=100000
 # below (canary_session_check). Does not require piping content through it.
 #
 # Usage: canary-session-check.sh --check-startup-bloat [path/to/session.jsonl]
-#   (no path -> resolves the mtime-newest *.jsonl under ~/.claude/projects/*/)
+#   (no path -> resolves the mtime-newest *.jsonl under {agency-root}/projects/*/)
+#   Note: those transcripts are written by Claude Code, not by the agency. They
+#   live under whatever directory Claude Code treats as its config dir — which is
+#   the same directory the agency is installed into for any install that works at
+#   all (Claude Code would not load the installed skills otherwise). If no
+#   transcript is found the check SKIPs; it never hard-fails on this.
 # macOS bash 3.2 compatible — no bash-4isms.
 check_startup_bloat() {
   local jsonl_path="${1:-}"
@@ -46,7 +53,7 @@ check_startup_bloat() {
   ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
   if [ -z "$jsonl_path" ]; then
-    jsonl_path=$(find "$HOME/.claude/projects" -type f -name "*.jsonl" \
+    jsonl_path=$(find "$AGENCY_ROOT/projects" -type f -name "*.jsonl" \
       -exec stat -f "%m %N" {} \; 2>/dev/null \
       | sort -rn | awk 'NR==1 { $1=""; sub(/^ /, ""); print }')
   fi

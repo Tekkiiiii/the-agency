@@ -4,7 +4,10 @@
 # FAILURE ISOLATION: errors are always silent — hook never raises exceptions.
 set +e
 
-PROFILE=$(cat "$HOME/.claude/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
+HOOK_DIR="$(dirname "${BASH_SOURCE[0]:-$0}")"
+. "$HOOK_DIR/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+PROFILE=$(cat "$AGENCY_ROOT/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
 if [ "$PROFILE" = "minimal" ]; then
   exit 0
 fi
@@ -12,14 +15,14 @@ fi
 INPUT=$(cat)
 
 # Resolve project log file
-if [ -f "$HOME/.claude/hooks/lib/resolve-project.sh" ]; then
-  source "$HOME/.claude/hooks/lib/resolve-project.sh" 2>/dev/null || true
+if [ -f "$HOOK_DIR/lib/resolve-project.sh" ]; then
+  source "$HOOK_DIR/lib/resolve-project.sh" 2>/dev/null || true
   resolve_project_path 2>/dev/null || true
 fi
 
 if [ -z "${SPAWN_LOG_FILE:-}" ]; then
-  mkdir -p "$HOME/.claude/logs" 2>/dev/null || true
-  SPAWN_LOG_FILE="$HOME/.claude/logs/spawns.jsonl"
+  mkdir -p "$AGENCY_ROOT/logs" 2>/dev/null || true
+  SPAWN_LOG_FILE="$AGENCY_ROOT/logs/spawns.jsonl"
 fi
 
 # Parse completion data and write spawn_end entry — pass INPUT as argv to avoid stdin conflict

@@ -29,6 +29,7 @@ Output: projects/system-improvement/memory/ops/d8-correction-latency.json
 """
 import json
 import glob
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,10 +38,15 @@ HOME = Path.home()
 # replacing "/" and "." with "-". Derive it instead of hardcoding one
 # machine's slug — a literal "-Users-{name}--claude" silently no-ops for
 # every other user.
-CLAUDE = HOME / ".claude"
+# Python twin of hooks/lib/resolve-root.sh — same precedence, same default.
+CLAUDE = Path(
+    os.environ.get("AGENCY_HOME")
+    or os.environ.get("CLAUDE_CONFIG_DIR")
+    or (HOME / ".claude")
+)
 AUTO_SLUG = str(CLAUDE).replace("/", "-").replace(".", "-")
 TRANSCRIPT_DIR = CLAUDE / "projects" / AUTO_SLUG
-OUT_PATH = HOME / ".claude/projects/system-improvement/memory/ops/d8-correction-latency.json"
+OUT_PATH = CLAUDE / "projects/system-improvement/memory/ops/d8-correction-latency.json"
 
 DELTA_PATTERNS = ("/memory/lessons/", "/memory/feedback_")
 

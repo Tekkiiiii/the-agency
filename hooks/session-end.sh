@@ -3,7 +3,9 @@
 # Marks session as cleanly ended. Idempotent (safe to call from both Stop and SessionEnd).
 set -euo pipefail
 
-STATE_FILE="$HOME/.claude/session-state.json"
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+STATE_FILE="$AGENCY_ROOT/session-state.json"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 python3 -c "

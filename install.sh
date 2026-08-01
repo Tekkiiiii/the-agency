@@ -4,7 +4,9 @@ set -euo pipefail
 # The Agency — Install script for macOS/Linux
 # Copies skills and agents into ~/.claude/ for Claude Code
 
-CLAUDE_HOME="${AGENCY_HOME:-$HOME/.claude}"
+# Root precedence must match hooks/lib/resolve-root.sh exactly — otherwise the
+# installer writes to one directory and the deployed scripts read from another.
+CLAUDE_HOME="${AGENCY_HOME:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo ""
@@ -130,34 +132,38 @@ if [ -f "$SETTINGS" ]; then
     fi
 else
     # Create minimal settings.json with hooks wired
+    # Hook commands are written with the RESOLVED root, not a literal ~/.claude.
+    # Under a custom AGENCY_HOME the two are different directories, and a
+    # settings.json pointing at ~/.claude/hooks/ would silently run nothing.
     python3 -c "
 import json
+H = '$CLAUDE_HOME/hooks'
 hooks_config = {
     'hooks': {
         'PreToolUse': [
             {'matcher': 'Edit|Write', 'hooks': [
-                {'type': 'command', 'command': 'bash ~/.claude/hooks/gate-guard.sh'},
-                {'type': 'command', 'command': 'bash ~/.claude/hooks/config-protection.sh'}
+                {'type': 'command', 'command': f'bash {H}/gate-guard.sh'},
+                {'type': 'command', 'command': f'bash {H}/config-protection.sh'}
             ]},
             {'matcher': 'Bash', 'hooks': [
-                {'type': 'command', 'command': 'bash ~/.claude/hooks/secret-scanner.sh'}
+                {'type': 'command', 'command': f'bash {H}/secret-scanner.sh'}
             ]}
         ],
         'PostToolUse': [
             {'matcher': 'Edit|Write', 'hooks': [
-                {'type': 'command', 'command': 'bash ~/.claude/hooks/track-edits.sh'}
+                {'type': 'command', 'command': f'bash {H}/track-edits.sh'}
             ]}
         ],
         'SessionStart': [
-            {'matcher': '', 'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/startup-sync.sh'}]},
-            {'matcher': '', 'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/check-settings-secrets.sh'}]},
-            {'matcher': '', 'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/check-session-state.sh'}]}
+            {'matcher': '', 'hooks': [{'type': 'command', 'command': f'bash {H}/startup-sync.sh'}]},
+            {'matcher': '', 'hooks': [{'type': 'command', 'command': f'bash {H}/check-settings-secrets.sh'}]},
+            {'matcher': '', 'hooks': [{'type': 'command', 'command': f'bash {H}/check-session-state.sh'}]}
         ],
         'Stop': [
-            {'matcher': '', 'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/session-end.sh && bash ~/.claude/hooks/batch-check.sh && bash ~/.claude/hooks/cost-tracker.sh'}]}
+            {'matcher': '', 'hooks': [{'type': 'command', 'command': f'bash {H}/session-end.sh && bash {H}/batch-check.sh && bash {H}/cost-tracker.sh'}]}
         ],
         'UserPromptSubmit': [
-            {'hooks': [{'type': 'command', 'command': 'bash ~/.claude/hooks/fable-on-opus.sh'}]}
+            {'hooks': [{'type': 'command', 'command': f'bash {H}/fable-on-opus.sh'}]}
         ]
     }
 }

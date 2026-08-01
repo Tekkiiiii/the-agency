@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 mem-graph-build.py — build memory-graph.json + memory-graph.html from the
-~/.claude memory estate, reusing graphify's own node-link schema and HTML
+{agency-root} memory estate, reusing graphify's own node-link schema and HTML
 exporter (no custom visualizer — per memory-v2-target-architecture.html §6).
 
 Scope (matches P1 schema-unification scope — two bundles, no per-project
 memory/ dirs yet):
-  - ~/.claude/memory/**/*.md                                (global memory)
+  - <agency-root>/memory/**/*.md                             (global memory)
   - <agency-root>/projects/<agency-root-slug>/memory/**/*.md   (auto-memory)
 
 Frontmatter schema (P1, unified 2026-07-10): name/type/description/created/links
@@ -25,6 +25,7 @@ real usage found in the corpus, not worth the code (YAGNI).
 Broken link targets from either source are reported, never silently dropped
 (OKF §9: "Consumers MUST tolerate broken links") -> memory/qa/dead-links.txt
 """
+import os
 import re
 import sys
 from pathlib import Path
@@ -40,7 +41,12 @@ from graphify.build import build_from_json  # noqa: E402
 from graphify.export import to_html, to_json  # noqa: E402
 
 HOME = Path.home()
-CLAUDE_DIR = HOME / ".claude"
+# Python twin of hooks/lib/resolve-root.sh — same precedence, same default.
+CLAUDE_DIR = Path(
+    os.environ.get("AGENCY_HOME")
+    or os.environ.get("CLAUDE_CONFIG_DIR")
+    or (HOME / ".claude")
+)
 # Claude Code encodes the working directory into the project-dir name by
 # replacing "/" and "." with "-". Derive it instead of hardcoding one
 # machine's slug — a literal "-Users-{name}--claude" silently no-ops for

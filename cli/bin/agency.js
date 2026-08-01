@@ -8,7 +8,11 @@
 const { resolve } = require('path');
 const os = require('os');
 
-const AGENCY_ROOT = process.env.AGENCY_HOME || resolve(os.homedir(), '.claude');
+// Root precedence must match hooks/lib/resolve-root.sh exactly — otherwise the
+// CLI writes to one directory and the deployed scripts read from another.
+const AGENCY_ROOT = process.env.AGENCY_HOME
+  || process.env.CLAUDE_CONFIG_DIR
+  || resolve(os.homedir(), '.claude');
 
 const COMMANDS = {
   init:      () => require('../commands/init.js'),

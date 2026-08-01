@@ -8,7 +8,9 @@
 # Plugin users: Claude will offer to set this up on first session.
 # Standalone users: install.sh wires this automatically.
 
-FLAG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.caveman-active"
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
+
+FLAG="$AGENCY_ROOT/.caveman-active"
 
 # Refuse symlinks — a local attacker could point the flag at ~/.ssh/id_rsa and
 # have the statusline render its bytes (including ANSI escape sequences) to
@@ -42,7 +44,7 @@ fi
 # the suffix file is absent and nothing is rendered — so the default is safe
 # for fresh installs (no fake number, no crash).
 if [ "${CAVEMAN_STATUSLINE_SAVINGS:-1}" != "0" ]; then
-  SAVINGS_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.caveman-statusline-suffix"
+  SAVINGS_FILE="$AGENCY_ROOT/.caveman-statusline-suffix"
   if [ -f "$SAVINGS_FILE" ] && [ ! -L "$SAVINGS_FILE" ]; then
     SAVINGS=$(head -c 64 "$SAVINGS_FILE" 2>/dev/null | tr -d '\000-\037')
     [ -n "$SAVINGS" ] && printf ' \033[38;5;172m%s\033[0m' "$SAVINGS"

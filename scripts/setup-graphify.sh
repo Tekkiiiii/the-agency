@@ -10,15 +10,17 @@
 # "graphify" (single-y). `uv tool install graphify` FAILS — must be graphifyy.
 #
 # Usage:
-#   bash ~/.claude/scripts/setup-graphify.sh
-#   bash ~/.claude/scripts/setup-graphify.sh --upgrade   # also bump graphifyy to latest
+#   bash {agency-root}/scripts/setup-graphify.sh
+#   bash {agency-root}/scripts/setup-graphify.sh --upgrade   # also bump graphifyy to latest
 #
 set -euo pipefail
+
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/../hooks/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
 UPGRADE=0
 [ "${1:-}" = "--upgrade" ] && UPGRADE=1
 
-GRAPH_DIR="$HOME/.claude/graphify-out/unified"
+GRAPH_DIR="$AGENCY_ROOT/graphify-out/unified"
 GRAPH_JSON="$GRAPH_DIR/graph.json"
 
 say() { printf '\033[1;36m==>\033[0m %s\n' "$1"; }

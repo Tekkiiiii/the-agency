@@ -143,8 +143,14 @@ try:
     print("[artifact-verify] Verify the agent's work before marking done.", flush=True)
     print("", flush=True)
 
-    # Also log to a persistent file for audit
-    log_dir = os.path.join(home, ".claude", "logs")
+    # Also log to a persistent file for audit.
+    # Python twin of hooks/lib/resolve-root.sh — this heredoc is quoted ('PYEOF'),
+    # so the shell's AGENCY_ROOT is not interpolated; resolve it here instead.
+    # `home` stays $HOME above: it expands '~/' inside agent-claimed artifact
+    # paths, which is a different job from locating the agency root.
+    root = os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") \
+        or os.path.join(home, ".claude")
+    log_dir = os.path.join(root, "logs")
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, "artifact-verify.jsonl")
     entry = {

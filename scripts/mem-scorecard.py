@@ -2,14 +2,14 @@
 """
 mem-scorecard.py — Memory v2 30-check scorecard (R1-R10, D1-D10, S1-S10).
 
-Spec: ~/.claude/projects/system-improvement/outputs/memory-audit/
+Spec: {agency-root}/projects/system-improvement/outputs/memory-audit/
       2026-07-10-memory-system-audit/memory-v2-target-architecture.html §3
 
 Each check is a function returning (status, evidence):
   status   — "PASS" | "FAIL" | "NOT_IMPLEMENTED"  (NOT_IMPLEMENTED counts as fail)
   evidence — one-line human-readable proof/explanation
 
-Score per family = 10 * (checks passed / 10). Writes ~/.claude/memory/scorecard.md
+Score per family = 10 * (checks passed / 10). Writes {agency-root}/memory/scorecard.md
 (current scores + per-check table + 12-week trend) and emits one metric event per
 check plus a summary event, via hooks/emit-metric.sh.
 
@@ -21,6 +21,7 @@ session-log sampling) — this is intentional per the P3 task spec: an honest
 baseline beats an inflated one.
 """
 import json
+import os
 import re
 import subprocess
 import sys
@@ -29,7 +30,12 @@ from datetime import datetime, timezone, date
 from pathlib import Path
 
 HOME = Path.home()
-CLAUDE = HOME / ".claude"
+# Python twin of hooks/lib/resolve-root.sh — same precedence, same default.
+CLAUDE = Path(
+    os.environ.get("AGENCY_HOME")
+    or os.environ.get("CLAUDE_CONFIG_DIR")
+    or (HOME / ".claude")
+)
 MEMORY = CLAUDE / "memory"
 # Claude Code encodes the working directory into the project-dir name by
 # replacing "/" and "." with "-". Derive it instead of hardcoding one
@@ -421,7 +427,7 @@ def check_r8():
     status = "PASS" if exemption_found else "FAIL"
     return status, ("memory-path exemption found in hooks/rtk-rewrite.sh" if exemption_found else
                      "no memory-path exemption found in hooks/rtk-rewrite.sh; no headroom config "
-                     "located under ~/.claude — this run's tool-output compression appears to be a "
+                     "located under the agency root — this run's tool-output compression appears to be a "
                      "platform-level feature, not a configurable/exempt-able hook")
 
 

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # resolve-project.sh — shared function: resolve cwd to project path
 # Source this file; call resolve_project_path; result in SPAWN_LOG_FILE var.
-# Usage: source ~/.claude/hooks/lib/resolve-project.sh && resolve_project_path
+# Usage: source {agency-root}/hooks/lib/resolve-project.sh && resolve_project_path
+
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
 resolve_project_path() {
-  local MEDIUM_TERM="$HOME/.claude/memory/medium-term.md"
-  local FALLBACK="$HOME/.claude/logs/spawns.jsonl"
+  local MEDIUM_TERM="$AGENCY_ROOT/memory/medium-term.md"
+  local FALLBACK="$AGENCY_ROOT/logs/spawns.jsonl"
   local CWD="${CLAUDE_PROJECT_DIR:-$PWD}"
 
   # Ensure fallback log dir exists

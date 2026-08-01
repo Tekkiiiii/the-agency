@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Skill system audit — mechanical reliability checks over ~/.claude/skills/*/SKILL.md.
+"""Skill system audit — mechanical reliability checks over {agency-root}/skills/*/SKILL.md.
 
 Checks per skill:
   A1 skill_md_missing     — no SKILL.md in dir
@@ -12,7 +12,8 @@ Checks per skill:
   A8 no_trigger_language  — description lacks any trigger phrasing
   A9 body_oversize        — SKILL.md > 40 KB (advisory only: context cost per invoke)
   B1 dead_local_ref       — references a file inside skill dir that doesn't exist
-  B2 dead_home_ref        — references ~/.claude/... path that doesn't exist
+  B2 dead_home_ref        — SKILL.md cites a home-style agency path that does not
+                            exist under the resolved agency root
   B3 todo_markers         — TODO/FIXME/XXX/PLACEHOLDER in body
   B4 dup_name             — same frontmatter name used by another skill dir
 
@@ -24,8 +25,13 @@ import re
 import sys
 from pathlib import Path
 
-SKILLS = Path("~/.claude/skills").expanduser()
-HOME = Path("~").expanduser()
+# Python twin of hooks/lib/resolve-root.sh — same precedence, same default.
+AGENCY_ROOT = Path(
+    os.environ.get("AGENCY_HOME")
+    or os.environ.get("CLAUDE_CONFIG_DIR")
+    or (Path.home() / ".claude")
+)
+SKILLS = AGENCY_ROOT / "skills"
 
 try:
     import yaml
@@ -120,7 +126,10 @@ def audit_skill(d):
         if not (d / rel).exists() and not (SKILLS / rel).exists():
             issues.append({"code": "B1", "detail": f"dead local ref: {rel}"})
 
-    # runtime-created paths — not install-time defects
+    # runtime-created paths — not install-time defects.
+    # These prefixes match the LITERAL "~/.claude/..." text authored inside
+    # SKILL.md, which is why they are not AGENCY_ROOT-relative. Resolution to a
+    # real path happens below and *is* AGENCY_ROOT-aware.
     RUNTIME_ROOTS = ("~/.claude/state/", "~/.claude/outputs/", "~/.claude/tasks/",
                      "~/.claude/.context/", "~/.claude/logs/", "~/.claude/todos/")
     for m in set(HOME_REF_RE.findall(body)):
@@ -133,7 +142,11 @@ def audit_skill(d):
         # per-domain notes created at runtime by browser-domain-skills
         if "/browser-domain-skills/" in p:
             continue
-        target = Path(p).expanduser()
+        # A skill that writes "~/.claude/runbooks/x.md" means "the runbooks tree
+        # of the install it is deployed into" — which under a custom AGENCY_HOME
+        # is NOT $HOME/.claude. Rewriting the prefix (rather than expanduser())
+        # is what stops every such ref reading as a false B2 on a custom root.
+        target = AGENCY_ROOT / p[len("~/.claude/"):]
         if not target.exists():
             issues.append({"code": "B2", "detail": f"dead path: {p}"})
 

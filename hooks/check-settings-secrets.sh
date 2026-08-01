@@ -3,7 +3,9 @@
 # Warns if settings.json has plaintext secrets in env blocks. Non-blocking.
 set -euo pipefail
 
-SETTINGS="$HOME/.claude/settings.json"
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+SETTINGS="$AGENCY_ROOT/settings.json"
 [ -f "$SETTINGS" ] || exit 0
 
 COUNT=$(python3 -c "

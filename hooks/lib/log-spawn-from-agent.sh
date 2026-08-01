@@ -3,7 +3,7 @@
 # Writes a spawn_start JSONL entry and outputs a fresh spawn_id to stdout.
 #
 # Usage:
-#   spawn_id=$(bash ~/.claude/hooks/lib/log-spawn-from-agent.sh \
+#   spawn_id=$(bash {agency-root}/hooks/lib/log-spawn-from-agent.sh \
 #     --parent-agent "PD-myproject" \
 #     --child-subagent-type "coord" \
 #     --description "L3 task: auth" \
@@ -46,9 +46,11 @@ SPAWN_ID=$(python3 -c "
 import sys, json, os, re, uuid, hashlib
 from datetime import datetime
 
-def resolve_log_file(home):
-    fallback = os.path.join(home, '.claude/logs/spawns.jsonl')
-    medium_term = os.path.join(home, '.claude/memory/medium-term.md')
+def resolve_log_file(home, root):
+    # root = agency root (AGENCY_HOME-aware). home stays $HOME because it is used
+    # separately below to expand a literal '~' inside medium-term.md project paths.
+    fallback = os.path.join(root, 'logs/spawns.jsonl')
+    medium_term = os.path.join(root, 'memory/medium-term.md')
     cwd = os.environ.get('CLAUDE_PROJECT_DIR', os.getcwd())
     if not os.path.exists(medium_term):
         return fallback
@@ -87,7 +89,8 @@ try:
     prompt_hash = hashlib.sha256(prompt_excerpt[:200].encode()).hexdigest()[:12]
 
     # Resolve log file and project
-    log_file = resolve_log_file(home)
+    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
+    log_file = resolve_log_file(home, root)
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     project_name = os.path.basename(os.path.dirname(os.path.dirname(log_file)))
 

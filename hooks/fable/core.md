@@ -201,7 +201,7 @@ Before every substantive reply, verify:
 
 ## Specialist modules (load on demand)
 
-Nine extensions of this discipline live as separate files in `~/.claude/hooks/fable/`. They are auto-injected when your prompt matches the task type; if you find yourself doing this work and the module is not in context, Read it before proceeding:
+Nine extensions of this discipline live as separate files in `{agency-root}/hooks/fable/`. They are auto-injected when your prompt matches the task type; if you find yourself doing this work and the module is not in context, Read it before proceeding:
 
 - `visual.md` — visual work: UI, pages, slides, charts, images
 - `content.md` — content work: articles, posts, emails, scripts, teaching material

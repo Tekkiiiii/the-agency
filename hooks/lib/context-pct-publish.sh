@@ -4,16 +4,18 @@
 # as an environment variable for agent self-monitoring (Self-Respawn Protocol).
 #
 # Called by: PostToolUse hook (any tool)
-# Writes:    ~/.claude/state/context-pct.txt — current context percentage (integer 0-100)
+# Writes:    {agency-root}/state/context-pct.txt — current context percentage (integer 0-100)
 #
-# Agents read ~/.claude/state/context-pct.txt to monitor their own context budget.
+# Agents read {agency-root}/state/context-pct.txt to monitor their own context budget.
 # Thresholds:
 #   70% — warn (log to scratch, complete current task, no new L3s)
 #   80% — mandatory /save-state + respawn (max 3 respawns per project per 24h)
 
 set -euo pipefail
 
-STATE_DIR="$HOME/.claude/state"
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+STATE_DIR="$AGENCY_ROOT/state"
 PCT_FILE="$STATE_DIR/context-pct.txt"
 RESPAWN_COUNTER_DIR="$STATE_DIR/respawn-counters"
 

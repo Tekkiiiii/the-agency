@@ -11,7 +11,8 @@
 
 set -euo pipefail
 
-CLAUDE_DIR="$HOME/.claude"
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/../hooks/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+CLAUDE_DIR="$AGENCY_ROOT"
 cd "$CLAUDE_DIR"
 
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

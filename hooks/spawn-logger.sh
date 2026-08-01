@@ -6,7 +6,9 @@
 # FAILURE ISOLATION: errors NEVER block spawns. All failures return plain {}.
 set +e
 
-PROFILE=$(cat "$HOME/.claude/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+PROFILE=$(cat "$AGENCY_ROOT/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
 if [ "$PROFILE" = "minimal" ]; then
   printf '{}'
   exit 0
@@ -20,10 +22,14 @@ RESULT=$(python3 -c '
 import sys, json, hashlib, uuid, os, re
 from datetime import datetime
 
-def resolve_log_file(home):
-    """Resolve spawns.jsonl path via medium-term.md longest-prefix match."""
-    fallback = os.path.join(home, ".claude/logs/spawns.jsonl")
-    medium_term = os.path.join(home, ".claude/memory/medium-term.md")
+def resolve_log_file(home, root):
+    """Resolve spawns.jsonl path via medium-term.md longest-prefix match.
+
+    root = agency root (AGENCY_HOME-aware). home stays $HOME because it is used
+    separately below to expand a literal "~" inside medium-term.md project paths.
+    """
+    fallback = os.path.join(root, "logs/spawns.jsonl")
+    medium_term = os.path.join(root, "memory/medium-term.md")
     cwd = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
 
     if not os.path.exists(medium_term):
@@ -92,7 +98,8 @@ try:
         parent_spawn_id = os.environ.get("CLAUDE_PARENT_SPAWN_ID", "")
 
     # Resolve project log file
-    log_file = resolve_log_file(home)
+    root = os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(home, ".claude")
+    log_file = resolve_log_file(home, root)
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     project_name = os.path.basename(os.path.dirname(os.path.dirname(log_file)))
 
