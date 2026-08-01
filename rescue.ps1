@@ -4,22 +4,68 @@
 
 $ErrorActionPreference = "Continue"
 
+# Root precedence must match hooks/lib/resolve-root.sh and install.ps1 exactly:
+#   $env:AGENCY_HOME -> $env:CLAUDE_CONFIG_DIR -> $env:USERPROFILE\.claude
+# This is the PowerShell equivalent of the ladder rescue.sh inlines; there is no
+# .sh to source from a native PowerShell session, so it is written out the same
+# way install.ps1 writes it.
+$AgencyRoot = if ($env:AGENCY_HOME) { $env:AGENCY_HOME }
+              elseif ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR }
+              else { Join-Path $env:USERPROFILE ".claude" }
+
 Write-Host ""
 Write-Host "The Agency — Rescue"
 Write-Host "==================="
 Write-Host ""
 
-# 1. Find repo root
-$RepoDir = git rev-parse --show-toplevel 2>$null
+# Verify a directory is THE agency repo by its remote, not by "has a .git".
+# rescue.sh has always done this; rescue.ps1 did not, and step 5 below can
+# `git reset --hard origin/main`. Run from inside an unrelated repository, the
+# old version would have reset THAT repository. The check is the fix.
+function Test-AgencyRepo {
+    param([string]$Dir)
+    if (-not $Dir) { return $false }
+    if (-not (Test-Path (Join-Path $Dir ".git"))) { return $false }
+    $url = git -C $Dir remote get-url origin 2>$null
+    if (-not $url) { return $false }
+    return ($url -like "*Tekkiiiii/the-agency*") -or ($url -like "*the-agency/the-agency*")
+}
+
+# 1. Find the-agency repo
+$RepoDir = $null
+
+# a) already inside it?
+$Candidate = git rev-parse --show-toplevel 2>$null
+if (Test-AgencyRepo $Candidate) { $RepoDir = $Candidate }
+
+# b) the script's own directory
 if (-not $RepoDir) {
     $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-    if (Test-Path (Join-Path $ScriptDir ".git")) {
-        $RepoDir = $ScriptDir
-    } else {
-        Write-Host "  Error: not inside a git repository."
-        Write-Host "  Run this from inside the-agency repo."
-        exit 1
+    if (Test-AgencyRepo $ScriptDir) { $RepoDir = $ScriptDir }
+}
+
+# c) the resolved root first, then the legacy/alternate layouts rescue.sh also
+#    searches. Adopted only — never written to as a root.
+if (-not $RepoDir) {
+    foreach ($loc in @($AgencyRoot,
+                       (Join-Path $env:USERPROFILE ".claude"),
+                       (Join-Path $env:USERPROFILE "the-agency"),
+                       (Join-Path $env:USERPROFILE ".agency\the-agency"))) {
+        if (Test-AgencyRepo $loc) { $RepoDir = $loc; break }
     }
+}
+
+if (-not $RepoDir) {
+    Write-Host "  Error: the-agency repo not found."
+    Write-Host "  Searched: the current directory, this script's directory,"
+    Write-Host "            $AgencyRoot"
+    Write-Host "            $(Join-Path $env:USERPROFILE 'the-agency')"
+    Write-Host "            $(Join-Path $env:USERPROFILE '.agency\the-agency')"
+    Write-Host ""
+    Write-Host "  Clone it, then run the installer:"
+    Write-Host "    git clone https://github.com/Tekkiiiii/the-agency.git `"$AgencyRoot`""
+    Write-Host "    cd `"$AgencyRoot`"; .\install.ps1"
+    exit 1
 }
 
 Write-Host "  Repo: $RepoDir"
@@ -102,7 +148,7 @@ if ($Changes) {
 Write-Host ""
 Write-Host "  Rescue complete. Next steps:"
 Write-Host ""
-Write-Host "    agency upgrade       Sync skills and agents"
+Write-Host "    agency upgrade       Sync skills and agents to $AgencyRoot"
 Write-Host "    agency onboard       Interactive setup wizard (if first time)"
 Write-Host "    .\install.ps1        Full reinstall (if agency command not found)"
 Write-Host ""

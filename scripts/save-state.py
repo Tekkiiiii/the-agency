@@ -51,12 +51,23 @@ import subprocess
 import sys
 
 HOME = pathlib.Path.home()
-# Python twin of hooks/lib/resolve-root.sh — same precedence, same default.
-AGENCY_ROOT = pathlib.Path(
-    os.environ.get("AGENCY_HOME")
-    or os.environ.get("CLAUDE_CONFIG_DIR")
-    or (HOME / ".claude")
-)
+# Python twin of hooks/lib/resolve-root.sh — same precedence, same default,
+# and byte-identical to the copy carried by every hook (enforced by
+# .github/scripts/check-hardcoded-root.sh). resolve-root.sh explains why it
+# is inlined rather than imported, and why the nt rewrite exists.
+def agency_root(home):
+    # MSYS-aware Python twin of hooks/lib/resolve-root.sh. That file documents
+    # the precedence, why the /c/... rewrite is nt-only, and why this is inlined
+    # at every call site instead of imported.
+    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
+    if os.name == 'nt':
+        m = re.fullmatch(r'/(?:cygdrive/)?([A-Za-z])(/.*)?', root)
+        if m:
+            root = m.group(1).upper() + ':' + (m.group(2) or '/')
+    return root
+
+
+AGENCY_ROOT = pathlib.Path(agency_root(str(HOME)))
 OVERSEER_INCOMING = HOME / "projects/overseer/memory/inter-spawn-tasks/incoming"
 EMIT = AGENCY_ROOT / "hooks/emit-metric.sh"
 PINECONE_SCRIPT = AGENCY_ROOT / "skills/save-state/pinecone_upsert.py"

@@ -30,12 +30,23 @@ from datetime import datetime, timezone, date
 from pathlib import Path
 
 HOME = Path.home()
-# Python twin of hooks/lib/resolve-root.sh — same precedence, same default.
-CLAUDE = Path(
-    os.environ.get("AGENCY_HOME")
-    or os.environ.get("CLAUDE_CONFIG_DIR")
-    or (HOME / ".claude")
-)
+# Python twin of hooks/lib/resolve-root.sh — same precedence, same default,
+# and byte-identical to the copy carried by every hook (enforced by
+# .github/scripts/check-hardcoded-root.sh). resolve-root.sh explains why it
+# is inlined rather than imported, and why the nt rewrite exists.
+def agency_root(home):
+    # MSYS-aware Python twin of hooks/lib/resolve-root.sh. That file documents
+    # the precedence, why the /c/... rewrite is nt-only, and why this is inlined
+    # at every call site instead of imported.
+    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
+    if os.name == 'nt':
+        m = re.fullmatch(r'/(?:cygdrive/)?([A-Za-z])(/.*)?', root)
+        if m:
+            root = m.group(1).upper() + ':' + (m.group(2) or '/')
+    return root
+
+
+CLAUDE = Path(agency_root(str(HOME)))
 MEMORY = CLAUDE / "memory"
 # Claude Code encodes the working directory into the project-dir name by
 # replacing "/" and "." with "-". Derive it instead of hardcoding one
