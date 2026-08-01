@@ -43,17 +43,6 @@ python3 -c "
 import sys, json, os, re
 from datetime import datetime
 
-def agency_root(home):
-    # MSYS-aware Python twin of hooks/lib/resolve-root.sh. That file documents
-    # the precedence, why the /c/... rewrite is nt-only, and why this is inlined
-    # at every call site instead of imported.
-    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
-    if os.name == 'nt':
-        m = re.fullmatch(r'/(?:cygdrive/)?([A-Za-z])(/.*)?', root)
-        if m:
-            root = m.group(1).upper() + ':' + (m.group(2) or '/')
-    return root
-
 def resolve_log_file(home, root):
     # root = agency root (AGENCY_HOME-aware). home stays $HOME because it is used
     # separately below to expand a literal '~' inside medium-term.md project paths.
@@ -94,7 +83,7 @@ try:
     if not spawn_id:
         sys.exit(0)
 
-    root = agency_root(home)
+    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
     log_file = resolve_log_file(home, root)
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     ts = datetime.now().astimezone().isoformat(timespec='seconds')

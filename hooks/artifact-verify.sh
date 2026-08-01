@@ -101,17 +101,6 @@ def resolve_path(p, home):
         return p
     return None  # relative paths can't be checked without cwd
 
-def agency_root(home):
-    # MSYS-aware Python twin of hooks/lib/resolve-root.sh. That file documents
-    # the precedence, why the /c/... rewrite is nt-only, and why this is inlined
-    # at every call site instead of imported.
-    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
-    if os.name == 'nt':
-        m = re.fullmatch(r'/(?:cygdrive/)?([A-Za-z])(/.*)?', root)
-        if m:
-            root = m.group(1).upper() + ':' + (m.group(2) or '/')
-    return root
-
 try:
     raw_input = sys.argv[1]
     d = json.loads(raw_input)
@@ -155,11 +144,12 @@ try:
     print("", flush=True)
 
     # Also log to a persistent file for audit.
-    # This heredoc is quoted ('PYEOF'), so the shell's AGENCY_ROOT is not
-    # interpolated; resolve it here instead.
+    # Python twin of hooks/lib/resolve-root.sh — this heredoc is quoted ('PYEOF'),
+    # so the shell's AGENCY_ROOT is not interpolated; resolve it here instead.
     # `home` stays $HOME above: it expands '~/' inside agent-claimed artifact
     # paths, which is a different job from locating the agency root.
-    root = agency_root(home)
+    root = os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") \
+        or os.path.join(home, ".claude")
     log_dir = os.path.join(root, "logs")
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, "artifact-verify.jsonl")

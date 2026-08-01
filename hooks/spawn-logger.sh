@@ -18,29 +18,9 @@ INPUT=$(cat)
 
 # All work happens in python3 — pass INPUT as argv to avoid stdin conflict
 # Returns JSON: either {} (pass through) or {"toolInput": {...modified input...}} (prompt-marker injection)
-#
-# The body is a QUOTED heredoc rather than python3 -c with a single-quoted bash
-# string. A single-quoted bash string cannot contain a single quote, which
-# silently forbids one of python's two string delimiters and forced this block
-# into a dialect of its own. The shared agency_root() twin below is written once
-# for every site and uses single quotes (it also has to survive the double-quoted
-# python3 -c blocks in hooks/lib/, where DOUBLE quotes are the forbidden
-# delimiter). A quoted heredoc forbids neither, so the one idiom fits unchanged.
-# Its one rule: no literal backtick anywhere in the body — see \x60 below.
-RESULT=$(python3 - "$INPUT" 2>/dev/null <<'PYEOF'
+RESULT=$(python3 -c '
 import sys, json, hashlib, uuid, os, re
 from datetime import datetime
-
-def agency_root(home):
-    # MSYS-aware Python twin of hooks/lib/resolve-root.sh. That file documents
-    # the precedence, why the /c/... rewrite is nt-only, and why this is inlined
-    # at every call site instead of imported.
-    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
-    if os.name == 'nt':
-        m = re.fullmatch(r'/(?:cygdrive/)?([A-Za-z])(/.*)?', root)
-        if m:
-            root = m.group(1).upper() + ':' + (m.group(2) or '/')
-    return root
 
 def resolve_log_file(home, root):
     """Resolve spawns.jsonl path via medium-term.md longest-prefix match.
@@ -60,14 +40,8 @@ def resolve_log_file(home, root):
     try:
         with open(medium_term) as f:
             for line in f:
-                # Match table rows: | project | <backtick>path<backtick> | ...
-                # \x60 IS that backtick. It is written as an escape because a
-                # literal one cannot appear anywhere in this block: bash 3.2
-                # (macOS default) pairs backticks while scanning for the end of
-                # a $( ) even inside a QUOTED heredoc, so an odd number of them
-                # makes the whole script unparseable. Verified — `bash -n` fails
-                # with "unexpected EOF while looking for matching backtick".
-                m = re.match(r"^\|[^|]+\|\s*\x60([^\x60]+)\x60", line)
+                # Match table rows: | project | `path` | ...
+                m = re.match(r"^\|[^|]+\|\s*`([^`]+)`", line)
                 if not m:
                     continue
                 raw = m.group(1).replace("~", home).rstrip("/")
@@ -124,7 +98,7 @@ try:
         parent_spawn_id = os.environ.get("CLAUDE_PARENT_SPAWN_ID", "")
 
     # Resolve project log file
-    root = agency_root(home)
+    root = os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(home, ".claude")
     log_file = resolve_log_file(home, root)
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     project_name = os.path.basename(os.path.dirname(os.path.dirname(log_file)))
@@ -165,8 +139,7 @@ try:
 except Exception:
     # On any error: pass through without modification
     print("{}")
-PYEOF
-)
+' "$INPUT" 2>/dev/null)
 
 # If python3 failed or returned empty, pass through
 if [ -z "$RESULT" ]; then

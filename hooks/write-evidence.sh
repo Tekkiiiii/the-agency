@@ -52,17 +52,6 @@ def is_deliverable_path(path):
 
     return False
 
-def agency_root(home):
-    # MSYS-aware Python twin of hooks/lib/resolve-root.sh. That file documents
-    # the precedence, why the /c/... rewrite is nt-only, and why this is inlined
-    # at every call site instead of imported.
-    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
-    if os.name == 'nt':
-        m = re.fullmatch(r'/(?:cygdrive/)?([A-Za-z])(/.*)?', root)
-        if m:
-            root = m.group(1).upper() + ':' + (m.group(2) or '/')
-    return root
-
 try:
     import sys as _sys
     raw_input = sys.stdin.read() if not _sys.argv[1:] else _sys.argv[1]
@@ -110,9 +99,10 @@ try:
         "exists": file_size >= 0,
     }
 
-    # This heredoc is quoted ('PYEOF'), so the shell's AGENCY_ROOT is not
-    # interpolated; resolve it here instead.
-    root = agency_root(home)
+    # Python twin of hooks/lib/resolve-root.sh — this heredoc is quoted ('PYEOF'),
+    # so the shell's AGENCY_ROOT is not interpolated; resolve it here instead.
+    root = os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") \
+        or os.path.join(home, ".claude")
 
     log_dir = os.path.join(root, "logs")
     os.makedirs(log_dir, exist_ok=True)

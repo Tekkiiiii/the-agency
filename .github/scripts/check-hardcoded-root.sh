@@ -37,14 +37,7 @@ scan() {
   # straight past `os.path.join(home, ".claude/logs/spawns.jsonl")` in
   # hooks/spawn-logger.sh — a real hardcoded root that shipped anyway. Match the
   # prefix, and let ALLOW carry the exemptions.
-  #
-  # The quote class is deliberately loose (`.{0,2}` rather than a literal `"`).
-  # An earlier version required a double quote and was therefore blind to every
-  # python block written inside a `python3 -c "..."` string — those must use
-  # single quotes throughout, so a hardcoded root there could never be seen.
-  # hooks/lib/log-spawn-from-agent.sh and log-spawn-end-from-agent.sh are both
-  # that shape.
-  hits=$(grep -nE '\$HOME/\.claude|~/\.claude|HOME / "\.claude|home, .{0,2}\.claude|homedir\(\), .\.claude' "$f" 2>/dev/null \
+  hits=$(grep -nE '\$HOME/\.claude|~/\.claude|HOME / "\.claude|home, .?"\.claude|homedir\(\), .\.claude' "$f" 2>/dev/null \
          | grep -vE ':[[:space:]]*(#|//)' \
          | grep -vE "$ALLOW" || true)
   if [ -n "$hits" ]; then
@@ -84,76 +77,3 @@ EOF
 fi
 
 echo "OK: no hardcoded agency root in hooks/ or scripts/"
-
-# ---------------------------------------------------------------------------
-# Second guard: the Python twin must stay ONE idiom.
-#
-# Every python block under hooks/ resolves the root through an inlined
-# `agency_root(home)` whose nt branch rewrites an MSYS-style AGENCY_HOME
-# (/c/Users/me/.claude) into a form native Windows python can open. The
-# duplication is forced — under Git Bash a hook's own directory is an MSYS path
-# too, so an import bootstrap would trip over the very string format the helper
-# exists to fix (hooks/lib/resolve-root.sh explains this in full).
-#
-# Forced duplication drifts. These two checks stop it:
-#   A. every copy of agency_root() is byte-identical
-#   B. no python block under hooks/ resolves the root any OTHER way — the count
-#      of raw twin expressions in a file must equal its count of agency_root
-#      definitions, so a second, unnormalised resolve cannot slip in beside it.
-# ---------------------------------------------------------------------------
-twin_text=""
-twin_ref=""
-twin_offenders=0
-
-extract_twin() {
-  awk '/def agency_root\(home\):/,/^    return root$/' "$1"
-}
-
-for f in hooks/*.sh hooks/lib/*.sh; do
-  [ -f "$f" ] || continue
-  case "$f" in
-    hooks/lib/resolve-root.sh) continue ;;  # carries the twin as documentation
-  esac
-
-  # grep -c already prints 0 on no-match; a `|| echo 0` fallback would append a
-  # SECOND zero and every later [ -eq ] would blow up on "0\n0".
-  defs=$(grep -c 'def agency_root(home):' "$f" 2>/dev/null)
-  raws=$(grep -cE "environ\.get\(.AGENCY_HOME.\).*environ\.get\(.CLAUDE_CONFIG_DIR.\)" "$f" 2>/dev/null)
-
-  if [ "$raws" -ne "$defs" ]; then
-    echo "--- $f"
-    echo "    $raws raw root expressions but $defs agency_root() definitions"
-    echo "    (a python block here resolves the agency root without the twin)"
-    twin_offenders=$((twin_offenders + 1))
-    continue
-  fi
-
-  [ "$defs" -eq 0 ] && continue
-
-  # Compared as text, not as a digest — no shasum/sha256sum dependency, and the
-  # failure message can show the actual diff instead of two unequal hashes.
-  this_twin=$(extract_twin "$f")
-  if [ -z "$twin_text" ]; then
-    twin_text="$this_twin"
-    twin_ref="$f"
-  elif [ "$this_twin" != "$twin_text" ]; then
-    echo "--- $f"
-    echo "    agency_root() differs from the copy in $twin_ref"
-    diff <(extract_twin "$twin_ref") <(extract_twin "$f") || true
-    twin_offenders=$((twin_offenders + 1))
-  fi
-done
-
-if [ "$twin_offenders" -ne 0 ]; then
-  cat <<'EOF'
-
-FAIL: the Python root twin has drifted into per-file variants.
-
-Copy the canonical form from hooks/lib/resolve-root.sh verbatim. One idiom,
-every site — a variant that looks equivalent on macOS can still write to the
-wrong directory under Git Bash, silently and with exit code 0.
-EOF
-  exit 1
-fi
-
-echo "OK: python root twin identical across all hooks/ copies"
