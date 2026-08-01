@@ -89,11 +89,32 @@
 # could load. The duplication is forced by the defect, which is why the wording
 # above is the single source of truth for it.
 #
-# Carried by every python block under hooks/. NOT yet carried by scripts/*.py,
-# which still use the plain three-line twin: those are user-invoked and have a
-# second, larger Windows problem first (python3 cannot load their own script
-# path when it is handed to it in MSYS form), so fixing only their env read
-# would not make them work. Tracked separately.
+# Carried by every python block under hooks/ AND by every scripts/*.py that
+# resolves a root (Wave 16). scripts/*.py could import it — python puts the
+# script's own directory on sys.path[0] and mem-graph-build.py already imports
+# a sibling that way — but they inline it so that exactly one form of this
+# function exists in the repo and check-hardcoded-root.sh can compare them all.
+#
+# Wave 15 deferred them on the grounds that a native python3 "cannot load its
+# own script path when that is handed to it in MSYS form", which would have made
+# fixing the env read pointless. That was an inference, and measuring it on
+# windows-latest (run 30689704116, Git Bash + python 3.12 win32, invoked as
+# `python3 /d/a/_temp/.../scripts/skill-audit.py`) showed:
+#
+#   plain Git Bash                       loads, resolves the right root  (rc=0)
+#   MSYS2_ENV_CONV_EXCL=AGENCY_HOME      loads, FileNotFoundError on
+#                                        '\d\a\_temp\...\skills'         (rc=1)
+#   MSYS2_ARG_CONV_EXCL='*'              cannot load the script at all   (rc=2)
+#
+# So the script path is normally fine — MSYS2 converts path-shaped ARGUMENTS to
+# native binaries just as it converts path-shaped environment variables — and
+# the env read was broken in exactly the way the hooks were. That is what the
+# twin now fixes here too.
+#
+# The third row is real and is NOT fixed, because it cannot be: with argument
+# conversion disabled the interpreter never opens the file, so no code inside it
+# runs. A caller in that configuration must pass a native path (or `cygpath -w`
+# it). Documented rather than papered over.
 
 AGENCY_ROOT="${AGENCY_HOME:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
 export AGENCY_ROOT
