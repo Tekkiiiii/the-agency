@@ -2,7 +2,7 @@ const { execFileSync, spawnSync } = require('child_process');
 const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync, realpathSync, readdirSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
-const { syncSkills, syncAgents, syncScripts } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks } = require('./sync-assets.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -392,6 +392,17 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const scriptsDest = join(agencyRoot, 'scripts');
   const scripts = syncScripts(repoDir, scriptsDest, console);
   console.log(`Scripts: ${scripts.updated} updated, ${scripts.preserved} preserved`);
+
+  // hooks/ and runbooks/ — see the deploy matrix in docs/INSTALL-LAYOUT.md.
+  // Both carry paths that shipped agent defs reference as `{agency-root}/...`,
+  // so a missing sync here is a dangling reference, not a cosmetic gap.
+  const hooksDest = join(agencyRoot, 'hooks');
+  const hooks = syncHooks(repoDir, hooksDest, console);
+  console.log(`Hooks: ${hooks.updated} updated, ${hooks.preserved} preserved`);
+
+  const runbooksDest = join(agencyRoot, 'runbooks');
+  const runbooks = syncRunbooks(repoDir, runbooksDest, console);
+  console.log(`Runbooks: ${runbooks.updated} updated, ${runbooks.preserved} preserved`);
 
   // Sync core docs
   const coreSrc = join(repoDir, 'core');

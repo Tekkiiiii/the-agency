@@ -370,8 +370,8 @@ Rule 2 — Three Mandatory Service Agents (ALWAYS invoke):
   Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
 - **Curator**: spawn before any investigation, decision, or delegating with project context.
   Skip when: the exact decision is already present VERBATIM in the current spawn prompt. "Approximately covered" is NOT sufficient.
-  After deciding to skip (context-sufficiency): emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency","skip_reason_excerpt":"<1-line reason agent judged context sufficient>"}'`. (F17: skip_reason_excerpt enables audit of over-skipping.)
-  After spawning: emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`.
+  After deciding to skip (context-sufficiency): emit `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency","skip_reason_excerpt":"<1-line reason agent judged context sufficient>"}'`. (F17: skip_reason_excerpt enables audit of over-skipping.)
+  After spawning: emit `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`.
   Agent({ subagent_type: "curator", model: "sonnet", description: "Curator — {topic}", prompt: "Project: {slug}\nPath: {path}\nQuestion: {q}" })
 - **codebase-search**: spawn INSTEAD of running find/grep/rg across the project.
   Agent({ subagent_type: "codebase-search", model: "sonnet", description: "codebase-search — {what}", prompt: "Find {what} in {path}" })

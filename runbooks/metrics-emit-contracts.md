@@ -3,7 +3,7 @@
 Full bash templates for all emit-metric events. The parent AI fires these at decision points — NOT subagents.
 Event **names** and **triggers** stay inline in CLAUDE.md. This file provides the verbatim JSON templates for copy-paste.
 
-SSOT: `~/.claude/memory/metrics/emit-metric.sh` — fire-and-forget, non-blocking.
+SSOT: `{agency-root}/hooks/emit-metric.sh` — fire-and-forget, non-blocking.
 
 ---
 
@@ -12,7 +12,7 @@ SSOT: `~/.claude/memory/metrics/emit-metric.sh` — fire-and-forget, non-blockin
 **Trigger:** After deciding to skip Curator (context-sufficiency skip).
 
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency","skip_reason_excerpt":"<1-line reason agent judged context sufficient — what specific info in the prompt made Curator unnecessary>"}'
 ```
 
@@ -27,7 +27,7 @@ F24 audit (2026-06-23): 23 skips / 10 spawns = 70% skip rate. Of the 5 auditable
 **Trigger:** After spawning Curator for an investigation.
 
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'
 ```
 
@@ -38,7 +38,7 @@ bash ~/.claude/memory/metrics/emit-metric.sh \
 **Trigger:** Cache hit in `~/.claude/memory/delegator-cache.md` — Delegator spawn skipped.
 
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_cache_hit","route":"<route>","project":"<slug>","matched_pattern":"<first-8-words-of-matched-cache-key>"}'
 ```
 
@@ -51,7 +51,7 @@ F15 note: `matched_pattern` enables cache diagnostic — which patterns hit vs. 
 **Trigger:** Cache miss — Delegator spawned. Emit AFTER Delegator returns its route.
 
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_spawn","route":"<route>","project":"<slug>","miss_pattern":"<first-8-words-of-task-pattern-that-missed>"}'
 ```
 
@@ -65,7 +65,7 @@ After emitting: append `(task-pattern → route)` entry to `~/.claude/memory/del
 Emit, then STOP and spawn Delegator instead. Do NOT proceed with the generalist spawn.
 
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"generalist_ban_violation","subagent_type":"general-purpose","context":"<one-word reason>"}'
 ```
 
@@ -76,7 +76,7 @@ bash ~/.claude/memory/metrics/emit-metric.sh \
 **Trigger:** After verifying all deliverables claimed by a background agent (PD, Coord, or any `run_in_background:true` spawn).
 
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"bg_agent_verified","agent":"<name>","files_checked":<n>,"all_present":<true|false>}'
 ```
 
@@ -91,7 +91,7 @@ If file missing or 0 bytes: mark BLOCKED, not DONE.
 BEFORE the gated action executes. Full gate protocol: `runbooks/autonomy-tier-gate.md`.
 
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_checked","action_type":"<action_type>","tier":"<auto_ack|agent_gated|operator_gated>","path":"fast_path|full_lookup"}'
 ```
 
@@ -107,7 +107,7 @@ agent-behavior harness (`evals/config.json` defines this exact schema;
 or Gardener-triggered pass — there is no automated scheduler.
 
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"eval_run","case_id":"<eval-NNN>","dimension":"success|trajectory|cost|safety|composite","verdict":"PASS|FAIL|Unknown","failure_class":"tool-execution|data-grounding|reasoning|none","cost_usd":<n>,"project":"<slug>"}'
 ```
 

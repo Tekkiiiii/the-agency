@@ -25,19 +25,24 @@ $SkillsDest = Join-Path $ClaudeHome "skills"
 $skillCount = 0
 
 if (Test-Path $SkillsSrc) {
-    $skillFiles = Get-ChildItem -Path $SkillsSrc -Filter "*.md" |
-        Where-Object { $_.Name -notin @("INDEX.md", "README.md") }
+    # Canonical skill layout is directory-only: skills/<name>/SKILL.md, plus any
+    # supporting assets alongside it. This loop previously globbed skills/*.md —
+    # the flat layout the repo abandoned and now fails CI on
+    # (scripts/check-flat-skills.js) — so install.ps1 silently installed ZERO
+    # skills while printing a success line. Copy whole skill directories.
+    $skillDirs = Get-ChildItem -Path $SkillsSrc -Directory |
+        Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }
 
-    foreach ($file in $skillFiles) {
-        $name = $file.BaseName
-        $skillDir = Join-Path $SkillsDest $name
-        $destFile = Join-Path $skillDir "SKILL.md"
+    foreach ($dir in $skillDirs) {
+        $skillDir = Join-Path $SkillsDest $dir.Name
 
         if (-not (Test-Path $skillDir)) {
             New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
         }
 
-        Copy-Item -Path $file.FullName -Destination $destFile -Force
+        Copy-Item -Path (Join-Path $dir.FullName "*") -Destination $skillDir -Recurse -Force
+        $pyCache = Join-Path $skillDir "__pycache__"
+        if (Test-Path $pyCache) { Remove-Item -Path $pyCache -Recurse -Force }
         $skillCount++
     }
 
@@ -48,6 +53,14 @@ if (Test-Path $SkillsSrc) {
     }
 
     Write-Host "  ✓ $skillCount skills installed"
+
+    # Loud mismatch check — a silent repo-vs-installed gap is exactly the
+    # failure mode that hid the flat-layout bug above for this long.
+    $repoSkillCount = (Get-ChildItem -Path $SkillsSrc -Directory |
+        Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }).Count
+    if ($skillCount -ne $repoSkillCount) {
+        Write-Host "  ⚠ Skill count mismatch: repo has $repoSkillCount, installed $skillCount"
+    }
 } else {
     Write-Host "  ⚠ No skills/ directory found"
 }
@@ -93,6 +106,28 @@ $CoreDest = Join-Path $ClaudeHome "core"
 if (Test-Path $CoreSrc) {
     Copy-Item -Path $CoreSrc -Destination $CoreDest -Recurse -Force
     Write-Host "  ✓ Core docs installed"
+}
+
+# --- Hooks, runbooks, scripts ---
+# These three trees carry paths that shipped agent defs, runbooks and skills
+# reference as `{agency-root}/hooks/...`, `{agency-root}/runbooks/...` and
+# `{agency-root}/scripts/...`. install.ps1 previously shipped none of them, so
+# every such reference dangled on a Windows install. Keep this list in sync
+# with install.sh and cli/commands/init.js — see docs/INSTALL-LAYOUT.md.
+foreach ($tree in @("hooks", "runbooks", "scripts")) {
+    $TreeSrc = Join-Path $ScriptDir $tree
+    $TreeDest = Join-Path $ClaudeHome $tree
+    if (Test-Path $TreeSrc) {
+        if (-not (Test-Path $TreeDest)) {
+            New-Item -ItemType Directory -Path $TreeDest -Force | Out-Null
+        }
+        Copy-Item -Path (Join-Path $TreeSrc "*") -Destination $TreeDest -Recurse -Force
+        $PyCache = Join-Path $TreeDest "__pycache__"
+        if (Test-Path $PyCache) { Remove-Item -Path $PyCache -Recurse -Force }
+        Write-Host "  ✓ $tree installed"
+    } else {
+        Write-Host "  ⚠ No $tree/ directory found"
+    }
 }
 
 # --- CLI command ---

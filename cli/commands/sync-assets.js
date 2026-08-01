@@ -116,20 +116,22 @@ function syncAgents(repoDir, destDir, console) {
   return { updated: result.updated.length, preserved: result.preserved.length };
 }
 
-// scripts/ ships the .py/.sh/.js support tooling that shipped skills invoke
-// by absolute path (e.g. `python3 ~/.claude/scripts/save-state.py`). Prior
-// to this function neither init nor upgrade ever synced scripts/ anywhere,
-// so those invocations 404'd on every clean install. Mirrors syncAgents'
-// shape exactly — everything under scripts/ is copied (no .md-only gate,
-// since .py/.sh/.js all need to land), __pycache__ is excluded via
-// ALWAYS_SKIP, and copied executables get +x so direct invocation
-// (./scripts/foo.sh) works too.
-function syncScripts(repoDir, destDir, console) {
-  const srcDir = join(repoDir, 'scripts');
+// Generic top-level-directory sync. Everything under repo/<dirName> is copied
+// into destDir, hash-compared, with __pycache__/.DS_Store excluded via
+// ALWAYS_SKIP. `chmodExec` marks copied .sh/.py/.js +x so direct invocation
+// (./scripts/foo.sh) works. Returns counts, mirroring syncAgents' shape.
+//
+// This is the single mechanism behind every non-skill, non-agent asset tree
+// the deployed layout needs. Adding a new one is a one-line wrapper below —
+// which matters, because every gap in this list is a class of dangling
+// reference in shipped agent/runbook docs (see the deploy matrix in
+// docs/INSTALL-LAYOUT.md).
+function syncTree(repoDir, destDir, dirName, console, { chmodExec = false } = {}) {
+  const srcDir = join(repoDir, dirName);
   const result = { updated: [], preserved: [] };
 
   if (!existsSync(srcDir)) {
-    console.log('  ⚠ No scripts/ directory in repo — skipping');
+    console.log(`  ⚠ No ${dirName}/ directory in repo — skipping`);
     return { updated: 0, preserved: 0 };
   }
 
@@ -138,13 +140,40 @@ function syncScripts(repoDir, destDir, console) {
   // lands outside a __pycache__ dir.
   syncDir(srcDir, destDir, '', result, name => !name.endsWith('.pyc'));
 
-  for (const label of result.updated) {
-    if (/\.(sh|py|js)$/.test(label)) {
-      try { chmodSync(join(destDir, label), 0o755); } catch (_) {}
+  if (chmodExec) {
+    for (const label of result.updated) {
+      if (/\.(sh|py|js)$/.test(label)) {
+        try { chmodSync(join(destDir, label), 0o755); } catch (_) {}
+      }
     }
   }
 
   return { updated: result.updated.length, preserved: result.preserved.length };
 }
 
-module.exports = { syncSkills, syncAgents, syncScripts, syncDirRecursive, shouldCopy, fileHash };
+// scripts/ ships the .py/.sh/.js support tooling that shipped skills invoke
+// by absolute path (e.g. `python3 {agency-root}/scripts/save-state.py`).
+function syncScripts(repoDir, destDir, console) {
+  return syncTree(repoDir, destDir, 'scripts', console, { chmodExec: true });
+}
+
+// hooks/ ships the lifecycle hooks AND emit-metric.sh, which shipped agent
+// defs, runbooks and scripts invoke as `{agency-root}/hooks/emit-metric.sh`.
+// install.sh already deployed hooks/; the CLI path did not, so a CLI-only
+// install had ~90 dangling metric-emit references. Same +x treatment as
+// scripts/ — these are executed directly by settings.json hook wiring.
+function syncHooks(repoDir, destDir, console) {
+  return syncTree(repoDir, destDir, 'hooks', console, { chmodExec: true });
+}
+
+// runbooks/ ships the protocol docs that deployed agents/ files reference by
+// `{agency-root}/runbooks/...` path. Nothing deployed runbooks/ before this,
+// so every one of those references 404'd in every install. Docs only — no +x.
+function syncRunbooks(repoDir, destDir, console) {
+  return syncTree(repoDir, destDir, 'runbooks', console);
+}
+
+module.exports = {
+  syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks,
+  syncTree, syncDirRecursive, shouldCopy, fileHash,
+};

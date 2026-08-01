@@ -23,7 +23,7 @@ mkdir -p "$MARKER_DIR"
 MARKER="$MARKER_DIR/gardener-last-run.json"
 APPROVAL_QUEUE="$OPS_DIR/approval-queue.md"
 SCORECARD="$CLAUDE_DIR/memory/scorecard.md"
-EMIT="$CLAUDE_DIR/memory/metrics/emit-metric.sh"
+EMIT="$CLAUDE_DIR/hooks/emit-metric.sh"
 
 PYBIN="$HOME/.local/share/uv/tools/graphifyy/bin/python"
 [ -x "$PYBIN" ] || PYBIN="python3"

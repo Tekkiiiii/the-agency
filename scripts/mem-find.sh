@@ -14,7 +14,7 @@ if [ -z "$QUERY" ]; then
 fi
 
 CLAUDE_DIR="$HOME/.claude"
-( "$CLAUDE_DIR/memory/metrics/emit-metric.sh" \
+( "$CLAUDE_DIR/hooks/emit-metric.sh" \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"mem_find","query_len":'"${#QUERY}"'}' \
   >/dev/null 2>&1 & )
 # Claude Code encodes the working directory into the project-dir name by

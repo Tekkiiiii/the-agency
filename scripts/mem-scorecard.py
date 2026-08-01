@@ -11,7 +11,7 @@ Each check is a function returning (status, evidence):
 
 Score per family = 10 * (checks passed / 10). Writes ~/.claude/memory/scorecard.md
 (current scores + per-check table + 12-week trend) and emits one metric event per
-check plus a summary event, via memory/metrics/emit-metric.sh.
+check plus a summary event, via hooks/emit-metric.sh.
 
 Honesty rule (per design doc "Honesty Rules" in metrics/README.md): MEASURED vs
 ESTIMATED vs PROXY vs NOT_IMPLEMENTED must stay distinct in evidence text. Several
@@ -53,7 +53,7 @@ EXTERNAL_STORES = MEMORY / "external-stores.md"
 DECISIONS_MD = SYS_IMPROVE / "decisions.md"
 SCORECARD_MD = MEMORY / "scorecard.md"
 EVENTS_JSONL = MEMORY / "metrics/events.jsonl"
-EMIT = MEMORY / "metrics/emit-metric.sh"
+EMIT = CLAUDE / "hooks/emit-metric.sh"
 GARDENER_MARKER = SYS_IMPROVE / "ops/gardener-last-run.json"
 RECALL_EVALS = SYS_IMPROVE / "qa/recall-evals.md"
 CONTRADICTION_QUEUE = SYS_IMPROVE / "ops/contradiction-queue.md"

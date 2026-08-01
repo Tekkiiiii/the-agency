@@ -5,7 +5,7 @@ department: video-studio
 role: dept-coord
 reports_to: video-studio-lead
 modelTier: sonnet
-model: sonnet
+model: sonnet[1m]
 skills: []
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 ---
@@ -86,8 +86,8 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
    hold it to the stricter QA threshold at step 5 — do not fast-ACK.
 
    Event contract (fire-and-forget after classifying):
-   - TIER_A: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
-   - TIER_B: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
+   - TIER_A: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
+   - TIER_B: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
 
 4b. For each D6 task, spawn the appropriate department member agent
     **USE THE `Agent` TOOL (NOT SendMessage) TO SPAWN MEMBERS, IN THE BACKGROUND.**
@@ -242,7 +242,7 @@ Agent({
 
 **Sufficiency-skip rule (strict):** Skip Curator when the exact decision or convention needed is already present VERBATIM in the current spawn prompt. If any doubt → spawn Curator.
 
-**Event contract:** After skip: emit `curator_skip`. After spawn: emit `curator_spawn`. Both fire-and-forget via `~/.claude/memory/metrics/emit-metric.sh`.
+**Event contract:** After skip: emit `curator_skip`. After spawn: emit `curator_spawn`. Both fire-and-forget via `{agency-root}/hooks/emit-metric.sh`.
 
 ---
 

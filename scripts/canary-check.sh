@@ -12,7 +12,7 @@ set -euo pipefail
 CANARY_FILE="$HOME/.claude/memory/.canary.md"
 HASH_FILE="$HOME/.claude/memory/.canary.sha256"
 LOG_FILE="$HOME/.claude/memory/metrics/canary-check.log"
-EMIT="$HOME/.claude/memory/metrics/emit-metric.sh"
+EMIT="$HOME/.claude/hooks/emit-metric.sh"
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 if [ ! -f "$CANARY_FILE" ] || [ ! -f "$HASH_FILE" ]; then

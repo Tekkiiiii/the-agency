@@ -52,7 +52,7 @@ import sys
 
 HOME = pathlib.Path.home()
 OVERSEER_INCOMING = HOME / "projects/overseer/memory/inter-spawn-tasks/incoming"
-EMIT = HOME / ".claude/memory/metrics/emit-metric.sh"
+EMIT = HOME / ".claude/hooks/emit-metric.sh"
 PINECONE_SCRIPT = HOME / ".claude/skills/save-state/pinecone_upsert.py"
 UNIFIED_GRAPH = HOME / ".claude/graphify-out/unified/graph.json"
 

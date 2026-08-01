@@ -108,7 +108,7 @@ try:
     # Also emit to events.jsonl via metrics script for queryability
     # (fire-and-forget subprocess)
     import subprocess
-    metrics_script = os.path.join(home, ".claude", "memory", "metrics", "emit-metric.sh")
+    metrics_script = os.path.join(home, ".claude", "hooks", "emit-metric.sh")
     if os.path.isfile(metrics_script):
         payload = json.dumps({
             "ts": ts,
