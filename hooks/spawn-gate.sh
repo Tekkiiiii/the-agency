@@ -5,7 +5,15 @@
 # Returns {} (pass) or {"permissionDecision":"ask","message":"..."} (interrupt)
 set -euo pipefail
 
-PROFILE=$(cat "$HOME/.agency/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+# This read used to be "$HOME/.agency/.hook-profile" — the only one of the eight
+# profile-reading hooks that looked anywhere other than $AGENCY_ROOT. Nothing
+# has ever written that path: install.sh deploys the template to
+# $AGENCY_ROOT/.hook-profile, and README/docs both document
+# `echo minimal > ~/.claude/.hook-profile`. So the documented way to turn this
+# gate off did nothing, on every platform, since the profile system existed.
+PROFILE=$(cat "$AGENCY_ROOT/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
 if [ "$PROFILE" = "minimal" ]; then
   echo '{}'
   exit 0
