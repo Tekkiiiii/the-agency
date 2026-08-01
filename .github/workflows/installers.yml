@@ -146,17 +146,38 @@ jobs:
 
       - name: Assert emit-metric.sh writes an event line
         env:
-          AGENCY_HOME: ${{ runner.temp }}\agency-default
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
         shell: bash
         run: |
           # Windows runners ship Git Bash; the hooks are bash scripts and this is
           # the only way a Windows user runs them at all. If this step fails, the
           # hooks shipped by install.ps1 are decorative.
+          #
+          # install.ps1 is handed a Windows-style root (D:\a\_temp\...). A bash
+          # hook cannot use that as-is, so convert it the way Git Bash expects.
+          # A real Windows user hits the POSIX form anyway: Claude Code invokes
+          # hooks as `bash ~/.claude/hooks/...` with AGENCY_HOME unset, and
+          # resolve-root.sh then falls back to Git Bash's own $HOME/.claude.
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+          echo "win root:   $AGENCY_HOME_WIN"
+          echo "posix root: $AGENCY_HOME"
+          echo "python3:    $(command -v python3 || echo MISSING)"
+          python3 -c 'import sys; print("interpreter:", sys.executable, sys.platform)' || true
+
           emit="$AGENCY_HOME/hooks/emit-metric.sh"
           [ -f "$emit" ] || { echo "FAIL: $emit missing"; exit 1; }
+          # emit-metric.sh is fire-and-forget by design (set +e, stderr muted), so
+          # a missing python3 would look identical to success. Assert it directly.
+          command -v python3 >/dev/null || { echo "FAIL: python3 not on PATH — emit-metric.sh cannot work"; exit 1; }
+
           bash "$emit" '{"event":"ci_installer_probe","source":"install.ps1"}'
           log="$AGENCY_HOME/memory/metrics/events.jsonl"
-          [ -s "$log" ] || { echo "FAIL: no event written to $log"; exit 1; }
+          if [ ! -s "$log" ]; then
+            echo "FAIL: no event written to $log"
+            echo "--- any events.jsonl under the install: ---"
+            find "$AGENCY_HOME" -name events.jsonl 2>/dev/null || true
+            exit 1
+          fi
           grep -q ci_installer_probe "$log" || { echo "FAIL: event line missing"; cat "$log"; exit 1; }
           grep -q '"ts"' "$log" || { echo "FAIL: emitted line carries no ts"; cat "$log"; exit 1; }
           cat "$log"
