@@ -14,6 +14,11 @@ fi
 
 INPUT=$(cat)
 TRACKER="$AGENCY_ROOT/.tool-call-tracker.jsonl"
+TRACKER_DIR=$(dirname "$TRACKER")
+TRACKER_BASE=$(basename "$TRACKER")
+STATE_FILE="$AGENCY_ROOT/session-state.json"
+STATE_DIR=$(dirname "$STATE_FILE")
+STATE_BASE=$(basename "$STATE_FILE")
 
 # Extract tool name and key input (file_path or command, truncated to 200 chars)
 ENTRY=$(printf '%s' "$INPUT" | python3 -c "
@@ -38,9 +43,13 @@ echo "$ENTRY" >> "$TRACKER"
 tail -10 "$TRACKER" > "$TRACKER.tmp" && mv "$TRACKER.tmp" "$TRACKER"
 
 # Check for stall: 5 identical signatures in a row
-STALL=$(python3 -c "
+# Same idiom as hooks/emit-metric.sh (Wave 13, 3383ea9): cd into TRACKER's
+# directory and hand python a bare filename, never the MSYS-style absolute
+# path a Windows box's native python3 cannot open.
+STALL=$( cd "$TRACKER_DIR" 2>/dev/null || exit 0
+python3 -c "
 import json, sys
-lines = open('$TRACKER').readlines()
+lines = open('$TRACKER_BASE').readlines()
 if len(lines) < 5:
     sys.exit(0)
 sigs = []
@@ -54,7 +63,8 @@ for line in lines:
         pass
 if len(sigs) >= 5 and len(set(sigs[-5:])) == 1:
     print('STALL')
-" 2>/dev/null || true)
+" 2>/dev/null
+) || true
 
 if [ "$STALL" = "STALL" ]; then
   TOOL_NAME=$(python3 -c "import json; print(json.loads('$ENTRY').get('tool','unknown'))" 2>/dev/null || echo "unknown")
@@ -65,10 +75,13 @@ if [ "$STALL" = "STALL" ]; then
   echo "  3. Try a DIFFERENT approach, not the same command again" >&2
   echo "  4. If still blocked, /save-state and stop." >&2
 
-  # Write stall marker for cross-session visibility
-  python3 -c "
+  # Write stall marker for cross-session visibility.
+  # Same idiom as hooks/emit-metric.sh — cd into STATE_FILE's directory, bare
+  # filename to python, no MSYS-style absolute path crosses the boundary.
+  ( cd "$STATE_DIR" 2>/dev/null || exit 0
+    python3 -c "
 import json, datetime
-state_file = '$AGENCY_ROOT/session-state.json'
+state_file = '$STATE_BASE'
 try:
     with open(state_file) as f:
         state = json.load(f)
@@ -80,6 +93,7 @@ state['stall_at'] = datetime.datetime.now().isoformat()
 with open(state_file, 'w') as f:
     json.dump(state, f, indent=2)
 " 2>/dev/null || true
+  )
 
   # Clear tracker to give one fresh chance
   rm -f "$TRACKER"

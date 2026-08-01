@@ -7,11 +7,17 @@ set -euo pipefail
 
 SETTINGS="$AGENCY_ROOT/settings.json"
 [ -f "$SETTINGS" ] || exit 0
+SETTINGS_DIR=$(dirname "$SETTINGS")
+SETTINGS_BASE=$(basename "$SETTINGS")
 
-COUNT=$(python3 -c "
+# Same idiom as hooks/emit-metric.sh (Wave 13, 3383ea9): cd into SETTINGS's
+# directory and hand python a bare filename, never the MSYS-style absolute
+# path a Windows box's native python3 cannot open.
+COUNT=$( cd "$SETTINGS_DIR" 2>/dev/null || exit 0
+python3 -c "
 import json, re
 try:
-    d = json.load(open('$SETTINGS'))
+    d = json.load(open('$SETTINGS_BASE'))
     count = 0
     for srv in d.get('mcpServers', {}).values():
         for v in srv.get('env', {}).values():
@@ -23,7 +29,9 @@ try:
     print(count)
 except:
     print(0)
-" 2>/dev/null || echo 0)
+" 2>/dev/null
+) || true
+COUNT="${COUNT:-0}"
 
 if [ "$COUNT" -gt 0 ]; then
   echo "SECURITY: settings.json has $COUNT plaintext token(s) in mcpServers env blocks." >&2

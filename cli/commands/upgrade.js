@@ -2,7 +2,7 @@ const { execFileSync, spawnSync } = require('child_process');
 const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync, realpathSync, readdirSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
-const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem } = require('./sync-assets.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -403,6 +403,10 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const runbooksDest = join(agencyRoot, 'runbooks');
   const runbooks = syncRunbooks(repoDir, runbooksDest, console);
   console.log(`Runbooks: ${runbooks.updated} updated, ${runbooks.preserved} preserved`);
+
+  const designSystemDest = join(agencyRoot, 'design-system');
+  const designSystem = syncDesignSystem(repoDir, designSystemDest, console);
+  console.log(`Design system: ${designSystem.updated} updated, ${designSystem.preserved} preserved`);
 
   // Sync core docs
   const coreSrc = join(repoDir, 'core');

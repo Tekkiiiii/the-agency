@@ -25,7 +25,17 @@ if [ -z "${SPAWN_LOG_FILE:-}" ]; then
   SPAWN_LOG_FILE="$AGENCY_ROOT/logs/spawns.jsonl"
 fi
 
-# Parse completion data and write spawn_end entry — pass INPUT as argv to avoid stdin conflict
+SPAWN_LOG_DIR=$(dirname "$SPAWN_LOG_FILE")
+SPAWN_LOG_BASE=$(basename "$SPAWN_LOG_FILE")
+mkdir -p "$SPAWN_LOG_DIR" 2>/dev/null || true
+
+# Parse completion data and write spawn_end entry — pass INPUT as argv to avoid
+# stdin conflict. Same idiom as hooks/emit-metric.sh (Wave 13, 3383ea9): cd into
+# SPAWN_LOG_FILE's directory and hand python only its bare filename — SPAWN_LOG_FILE
+# was crossing the bash -> python3 boundary as an absolute path via argv, which a
+# Windows box's native python3 cannot open if it is MSYS-style (both string
+# interpolation AND argv passing are affected by the same underlying defect).
+( cd "$SPAWN_LOG_DIR" 2>/dev/null || exit 0
 python3 -c '
 import sys, json, os, re
 from datetime import datetime
@@ -190,6 +200,7 @@ try:
 
 except Exception:
     pass
-' "$INPUT" "$SPAWN_LOG_FILE" 2>/dev/null || true
+' "$INPUT" "$SPAWN_LOG_BASE" 2>/dev/null || true
+)
 
 exit 0

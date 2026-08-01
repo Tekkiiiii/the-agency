@@ -1,0 +1,142 @@
+/* midcentury-warm.css — layout/density/type-scale/motion overlay.
+ * ZERO HEX. References var(--brand-*) only — load a brands/{name}.css BEFORE
+ * this file so the vars resolve. See ../README.md for the consumption contract.
+ *
+ * The font pairing below (Bricolage Grotesque / DM Sans / DM Mono) is this
+ * overlay's own typographic voice, not brand-owned — only COLOR is expressed
+ * through var(--brand-*).
+ *
+ * Feel: material-tactile, dark warm canvas, single accent, no shadows —
+ * depth comes only from an atmospheric glow anchored bottom-right.
+ *
+ * REQUIRES A BRAND WHOSE --brand-primary-dark READS AS A CANVAS and whose
+ * --brand-depth carries a warm hue — the glow is a color-mix() of --brand-depth,
+ * so a cold or near-black depth value produces a grey smear rather than warmth.
+ * Measure the pairing before shipping (see ../README.md).
+ */
+
+:root {
+  /* Layout — viewport-fluid, no breakpoints */
+  --overlay-pad-x: 5.5vw;
+  --overlay-pad-y: 5.5vh;
+  --overlay-gap-lg: 4.5vh;
+  --overlay-gap-md: 2.8vh;
+  --overlay-gap-sm: 1.4vh;
+
+  /* Type scale */
+  --overlay-display-tracking: -0.03em;
+  --overlay-h1-tracking: -0.025em;
+  --overlay-h2-tracking: -0.02em;
+  --overlay-label-tracking: 0.05em;
+
+  /* Corner radius — NONE. Mid-century material has no rounded structural elements. */
+  --overlay-radius: 0;
+
+  /* Elevation — no shadows, ever. Depth = atmospheric glow only. */
+  --overlay-shadow: none;
+  --overlay-glow-strong: color-mix(in srgb, var(--brand-depth) 28%, transparent);
+  --overlay-glow-soft: color-mix(in srgb, var(--brand-depth) 14%, transparent);
+
+  /* Motion — durations/easings sourced from emil-design-eng (button/modal ranges) */
+  --overlay-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --overlay-duration-button: 120ms;   /* emil-design-eng: button press feedback 100-160ms */
+  --overlay-duration-modal: 300ms;    /* emil-design-eng: modals/drawers 200-500ms */
+
+  /* Fonts — this overlay's own voice, not brand-derived (see header note) */
+  --overlay-font-display: 'Bricolage Grotesque', sans-serif;
+  --overlay-font-body: 'DM Sans', sans-serif;
+  --overlay-font-mono: 'DM Mono', monospace;
+}
+
+.overlay-slide-dark {
+  position: relative;
+  background: var(--brand-primary-dark);
+  color: var(--brand-text-on-primary);
+  padding: var(--overlay-pad-y) var(--overlay-pad-x);
+  border-radius: var(--overlay-radius);
+  overflow: hidden;
+}
+
+/* Atmospheric glow — the system's only depth signal. z-index:0 behind content. */
+.overlay-slide-dark::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  right: 0;
+  bottom: 0;
+  width: 55%;
+  height: 70%;
+  background: radial-gradient(circle at bottom right,
+    var(--overlay-glow-strong) 0%,
+    var(--overlay-glow-soft) 55%,
+    transparent 100%);
+}
+
+.overlay-slide-dark > * {
+  position: relative;
+  z-index: 1;
+}
+
+.overlay-slide-light {
+  background: var(--brand-surface);
+  color: var(--brand-ink);
+  padding: var(--overlay-pad-y) var(--overlay-pad-x);
+  border-radius: var(--overlay-radius);
+}
+
+h1, .overlay-display {
+  font-family: var(--overlay-font-display);
+  font-weight: 700;
+  letter-spacing: var(--overlay-display-tracking);
+}
+h1 { letter-spacing: var(--overlay-h1-tracking); }
+h2 { font-family: var(--overlay-font-display); font-weight: 700; letter-spacing: var(--overlay-h2-tracking); }
+
+body, p, li {
+  font-family: var(--overlay-font-body);
+  font-weight: 400;
+}
+
+.overlay-label {
+  font-family: var(--overlay-font-mono);
+  text-transform: uppercase;
+  letter-spacing: var(--overlay-label-tracking);
+  font-size: 0.7vw;
+}
+
+/* Info-card — the signature material-contrast component: light inset on the
+ * dark field, no border, no shadow, no rounded corners. */
+.overlay-info-card {
+  background: var(--brand-surface);
+  color: var(--brand-ink);
+  padding: var(--overlay-gap-md) calc(var(--overlay-pad-x) * 0.8);
+  border-radius: var(--overlay-radius);
+  box-shadow: var(--overlay-shadow);
+}
+
+/* Hairline dividers — the only divider language, low-opacity, no heavy borders */
+.overlay-hairline {
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--brand-text-on-primary) 20%, transparent);
+}
+
+/* Bullet marker — em-dash in mono, brand accent color */
+.overlay-bullet {
+  display: grid;
+  grid-template-columns: 1.4em 1fr;
+}
+.overlay-bullet::before {
+  content: '\2014';
+  font-family: var(--overlay-font-mono);
+  color: var(--brand-accent);
+}
+
+.overlay-button {
+  background: var(--brand-accent);
+  color: var(--brand-ink);
+  border-radius: var(--overlay-radius);
+  transition: transform var(--overlay-duration-button) var(--overlay-ease-out);
+}
+.overlay-button:hover {
+  transform: translateY(-1px);
+}

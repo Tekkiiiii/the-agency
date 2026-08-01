@@ -2,7 +2,7 @@ const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync, realpathS
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
-const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem } = require('./sync-assets.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -81,6 +81,12 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const runbooksDest = path.join(agencyRoot, 'runbooks');
   const runbooks = syncRunbooks(repoRoot, runbooksDest, console);
   console.log(`  ✓ ${runbooks.updated} runbooks installed, ${runbooks.preserved} preserved`);
+
+  // 4e. Design system (brand-token SSOT resolved by design skills as
+  // `{agency-root}/design-system/brands/{name}.json`).
+  const designSystemDest = path.join(agencyRoot, 'design-system');
+  const designSystem = syncDesignSystem(repoRoot, designSystemDest, console);
+  console.log(`  ✓ ${designSystem.updated} design-system files installed, ${designSystem.preserved} preserved`);
 
   // 5. Core docs
   const coreSrc = path.join(repoRoot, 'core');

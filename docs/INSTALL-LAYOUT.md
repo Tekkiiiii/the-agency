@@ -56,9 +56,15 @@ resolve.
 | `hooks/` | ✓ | ✓ | ✓ | ✓ | incl. `hooks/lib/` (carries `resolve-root.sh`) and `hooks/fable/`; `+x` on `.sh` |
 | `runbooks/` | ✓ | ✓ | ✓ | ✓ | docs only |
 | `scripts/` | ✓ | ✓ | ✓ | ✓ | `+x` on `.sh`/`.py`/`.js`; `__pycache__` excluded |
+| `design-system/` | ✓ | ✓ | ✓ | ✓ | brand-token SSOT; `+x` on `.js`; skills resolve `{agency-root}/design-system/brands/{name}.json` at generation time |
 
 Not deployed by design: `docs/`, `evals/`, `plans/`, `openspec/`, `memory/`,
 `agents-archive/`, `cli/` (the CLI is symlinked, not copied).
+
+`design-system/` is worth calling out separately because its failure mode is the
+quietest on this list. A missing `hooks/` tree makes a hook not run; a missing
+`design-system/` tree makes a design skill fall back to whatever hex it last
+hardcoded and produce a plausible-looking, off-brand deliverable. Nothing errors.
 
 `memory/` is created empty by the installers — the repo's `memory/` is a runtime
 *sample*, not a mirror of anyone's memory, and is never copied over a user's.

@@ -1,0 +1,121 @@
+/* brutalist.css — layout/density/type-scale/motion overlay.
+ * ZERO HEX. References var(--brand-*) only — load a brands/{name}.css BEFORE
+ * this file so the vars resolve. See ../README.md for the consumption contract.
+ *
+ * Disambiguation — this overlay vs. the vendored `industrial-brutalist-ui` skill:
+ *   Brand assigned          -> use THIS overlay (brand-consistent, no color of its own)
+ *   No brand yet / fully    -> use the vendored `industrial-brutalist-ui` skill
+ *   exploratory                directly (it owns its own palette; editing it is a
+ *                              silent fork that dies at the next upstream pull)
+ * They sit one edit away from being confused — this file exists specifically
+ * so a branded surface never needs to fork the vendored skill's palette.
+ *
+ * Feel: Swiss print x military terminal, rigid grid, data-dense, zero curves.
+ * Font pairing is this overlay's own typographic voice, not brand-owned —
+ * only COLOR moved to var(--brand-*).
+ */
+
+:root {
+  /* Layout — rigid grid, visible compartmentalization, no floating elements */
+  --overlay-grid-gap: 1px;
+  --overlay-pad: 1.5rem;
+  --overlay-border-width: 2px;
+
+  /* Type scale — extreme contrast, tight/negative tracking, uppercase */
+  --overlay-h1-tracking: -0.05em;
+  --overlay-h2-tracking: -0.03em;
+  --overlay-label-tracking: 0.08em;
+  --overlay-h1-size: clamp(3rem, 8vw, 9rem);
+  --overlay-h2-size: clamp(1.8rem, 4vw, 3.2rem);
+  --overlay-label-size: 0.75rem;
+
+  /* Corner radius — NONE. All corners exactly 90 degrees. */
+  --overlay-radius: 0;
+
+  /* Elevation — no shadows, no glow. Depth is grid line contrast only. */
+  --overlay-shadow: none;
+
+  /* Motion — sourced from emil-design-eng but pinned to the fast end of range;
+   * brutalist UI signals mechanical instancy, not soft easing. */
+  --overlay-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --overlay-duration-button: 100ms;   /* emil-design-eng: button press feedback floor */
+  --overlay-duration-modal: 200ms;    /* emil-design-eng: modals/drawers floor */
+
+  /* Fonts — this overlay's own voice, not brand-derived (see header note) */
+  --overlay-font-display: 'Archivo Black', 'Neue Haas Grotesk', 'Inter', sans-serif;
+  --overlay-font-mono: 'JetBrains Mono', 'IBM Plex Mono', 'Space Mono', monospace;
+}
+
+body {
+  background: var(--brand-bg);
+  color: var(--brand-ink);
+  font-family: var(--overlay-font-mono);
+}
+
+.overlay-grid {
+  display: grid;
+  gap: var(--overlay-grid-gap);
+  background: var(--brand-border);
+}
+.overlay-grid > * {
+  background: var(--brand-surface);
+  padding: var(--overlay-pad);
+  border-radius: var(--overlay-radius);
+}
+
+h1, .overlay-display {
+  font-family: var(--overlay-font-display);
+  font-size: var(--overlay-h1-size);
+  letter-spacing: var(--overlay-h1-tracking);
+  text-transform: uppercase;
+  color: var(--brand-primary);
+}
+
+h2 {
+  font-family: var(--overlay-font-display);
+  font-size: var(--overlay-h2-size);
+  letter-spacing: var(--overlay-h2-tracking);
+  text-transform: uppercase;
+  color: var(--brand-primary);
+}
+
+.overlay-label, .overlay-meta {
+  font-family: var(--overlay-font-mono);
+  font-size: var(--overlay-label-size);
+  letter-spacing: var(--overlay-label-tracking);
+  text-transform: uppercase;
+  color: var(--brand-text-muted);
+}
+
+.overlay-hr {
+  border: none;
+  border-top: var(--overlay-border-width) solid var(--brand-ink);
+  width: 100%;
+}
+
+.overlay-compartment {
+  border: var(--overlay-border-width) solid var(--brand-ink);
+  border-radius: var(--overlay-radius);
+  box-shadow: var(--overlay-shadow);
+  padding: var(--overlay-pad);
+}
+
+.overlay-alert {
+  background: var(--brand-secondary);
+  color: var(--brand-text-on-primary);
+  text-transform: uppercase;
+  font-family: var(--overlay-font-mono);
+}
+
+.overlay-button {
+  background: var(--brand-accent);
+  color: var(--brand-ink);
+  border: var(--overlay-border-width) solid var(--brand-ink);
+  border-radius: var(--overlay-radius);
+  text-transform: uppercase;
+  font-family: var(--overlay-font-mono);
+  transition: transform var(--overlay-duration-button) var(--overlay-ease-out);
+}
+.overlay-button:hover {
+  transform: translate(1px, 1px);
+}

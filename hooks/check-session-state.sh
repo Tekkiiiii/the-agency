@@ -6,19 +6,27 @@ set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
 STATE_FILE="$AGENCY_ROOT/session-state.json"
+STATE_DIR=$(dirname "$STATE_FILE")
+STATE_BASE=$(basename "$STATE_FILE")
 
+# Same idiom as hooks/emit-metric.sh (Wave 13, 3383ea9): cd into STATE_FILE's
+# directory and hand python a bare filename, never the MSYS-style absolute
+# path a Windows box's native python3 cannot open.
 if [ ! -f "$STATE_FILE" ]; then
-  python3 -c "
+  ( cd "$STATE_DIR" 2>/dev/null || exit 0
+    python3 -c "
 import json
-with open('$STATE_FILE', 'w') as f:
+with open('$STATE_BASE', 'w') as f:
     json.dump({'was_clean': True}, f)
 " 2>/dev/null || true
+  )
   exit 0
 fi
 
+( cd "$STATE_DIR" 2>/dev/null || exit 0
 python3 -c "
 import json
-sf = '$STATE_FILE'
+sf = '$STATE_BASE'
 try:
     with open(sf) as f:
         state = json.load(f)
@@ -40,3 +48,4 @@ try:
 except:
     pass
 " 2>/dev/null || true
+)

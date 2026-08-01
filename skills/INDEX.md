@@ -124,6 +124,7 @@
 | `stop-slop` | Detect and remove AI filler phrases, jargon, passive voice |
 | `tech-writer` | Developer docs, API references, READMEs, tutorials, ADRs |
 | `marp` | Professional slide decks from Markdown using Marp |
+| `deck-narrative` | Deck argument/structure audit — action titles, Minto sequencing, table-vs-chart, decision slides, .pptx font-leak check |
 | `markitdown` | Convert any file (PDF, DOCX, XLSX, etc.) to Markdown |
 | `make-pdf` | Generate PDF documents |
 | `promt-engineering` | Write, optimize, and debug LLM prompts |

@@ -1,0 +1,82 @@
+/* contrast-dark.css — layout/density/type-scale/motion overlay.
+ * ZERO HEX. References var(--brand-*) only — load a brands/{name}.css BEFORE
+ * this file so the vars resolve. See ../README.md for the consumption contract.
+ *
+ * Feel: dark-canvas, high-contrast, TV/large-screen presentation scale.
+ *
+ * REQUIRES A BRAND WHOSE --brand-primary IS DARK. This overlay paints the page
+ * canvas with var(--brand-primary); it is not "dark" in any brand-independent
+ * sense. Pair it with a brand whose primary is a deep navy/indigo/near-black and
+ * it reads as intended; pair it with a brand whose primary is a mid-tone and you
+ * get a mid-tone canvas with light text on it and failing contrast ratios. See
+ * "Overlays are NOT brand-agnostic" in ../README.md — measure before you ship.
+ */
+
+:root {
+  /* Layout */
+  --overlay-max-width: none;
+  --overlay-content-pad: 4vw;
+
+  /* Type scale — TV-display clamp() scale (read at 3+ metres, not at a desk) */
+  --overlay-h1: clamp(3.83rem, 7.65vw, 6.8rem);
+  --overlay-h2: clamp(3rem, 6vw, 5.1rem);
+  --overlay-h3: clamp(1.91rem, 2.98vw, 2.55rem);
+  --overlay-body: clamp(1.53rem, 2.04vw, 1.91rem);
+
+  /* Corner radius — soft, card-forward */
+  --overlay-radius-sm: 6px;
+  --overlay-radius: 10px;
+  --overlay-radius-lg: 16px;
+
+  /* Elevation — dark canvas, subtle raised cards, no hard shadows */
+  --overlay-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+
+  /* Motion — durations/easings sourced from emil-design-eng (button/modal ranges) */
+  --overlay-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --overlay-duration-button: 160ms;   /* emil-design-eng: button press feedback 100-160ms, top of range for TV legibility */
+  --overlay-duration-modal: 400ms;    /* emil-design-eng: modals/drawers 200-500ms */
+}
+
+body {
+  background: var(--brand-primary);
+  color: var(--brand-text-on-primary);
+  font-family: var(--brand-font-body);
+}
+
+.overlay-container {
+  max-width: var(--overlay-max-width);
+  padding: 0 var(--overlay-content-pad);
+}
+
+h1, h2, h3 {
+  font-family: var(--brand-font-display);
+  color: var(--brand-text-on-primary);
+}
+h1 { font-size: var(--overlay-h1); }
+h2 { font-size: var(--overlay-h2); }
+h3 { font-size: var(--overlay-h3); }
+
+.overlay-slide-light {
+  background: var(--brand-surface);
+  color: var(--brand-ink);
+}
+
+.overlay-card {
+  background: var(--brand-primary-light);
+  border-radius: var(--overlay-radius);
+  box-shadow: var(--overlay-shadow);
+  transition: transform var(--overlay-duration-button) var(--overlay-ease-out);
+}
+.overlay-card:hover {
+  transform: translateY(-2px);
+}
+
+.overlay-highlight-box {
+  border-left: 4px solid var(--brand-accent);
+  background: var(--brand-primary-light);
+}
+
+.overlay-bullet::before {
+  content: '\25C6';
+  color: var(--brand-accent);
+}

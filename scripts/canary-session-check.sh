@@ -64,9 +64,20 @@ check_startup_bloat() {
   fi
 
   # Path passed via env var (not string-interpolated into the python source)
-  # to avoid breaking the script on paths containing quotes.
+  # to avoid breaking the script on paths containing quotes. That alone does
+  # NOT fix Windows: env var vs argv vs string interpolation is irrelevant —
+  # the defect is the STRING FORMAT of the path. jsonl_path is built from
+  # AGENCY_ROOT (MSYS-style on a Windows box under Git Bash) and a native
+  # Windows python3 cannot open that format regardless of how it crosses the
+  # bash -> python3 boundary. Same idiom as hooks/emit-metric.sh (Wave 13,
+  # 3383ea9): cd into the file's directory and hand python a bare filename.
+  local jsonl_dir jsonl_base
+  jsonl_dir=$(dirname "$jsonl_path")
+  jsonl_base=$(basename "$jsonl_path")
+
   local tokens
-  tokens=$(JSONL_PATH="$jsonl_path" python3 -c "
+  tokens=$( cd "$jsonl_dir" 2>/dev/null || exit 0
+  JSONL_PATH="$jsonl_base" python3 -c "
 import json, os
 
 path = os.environ['JSONL_PATH']
@@ -93,7 +104,8 @@ except Exception:
     pass
 
 print(total if total is not None else -1)
-" 2>/dev/null)
+" 2>/dev/null
+  )
 
   if [ -z "$tokens" ] || [ "$tokens" = "-1" ]; then
     echo "$ts startup_bloat_check SKIP unparseable session=$jsonl_path" >> "$LOG_FILE"

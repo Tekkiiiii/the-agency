@@ -283,3 +283,14 @@ Combine multiple files:
 | Code blocks | Fenced code with language and Marp extensions |
 | Charts (core) | `` ```chart `` blocks |
 | Math | `` ```math `` blocks via KaTeX |
+
+---
+
+## See also
+
+- `deck-narrative` — co-load for the deck's ARGUMENT (action titles, Minto
+  top-down sequencing, one-message-per-slide, table-vs-chart selection,
+  decision-slide construction) before Marp lays out the visuals. If
+  exporting `--pptx`, run `deck-narrative/scripts/audit_deck.py` on the
+  output before shipping — it mechanically catches system-font leaks
+  (Rule 9) and other file-level defects a rendered preview can't show.
