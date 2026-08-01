@@ -250,6 +250,62 @@ jobs:
           grep -q 'ci-probe-1' "$jobs" || { echo "FAIL: bg_id missing from entry"; cat "$jobs"; exit 1; }
           cat "$jobs"
 
+      - name: Assert the three env-carried-root hooks honour an MSYS-style AGENCY_HOME
+        env:
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          # Third variant of the Windows path defect. The hooks above crossed a
+          # bash-built path into python3; these three build nothing in bash —
+          # they read AGENCY_HOME from the environment INSIDE python. Same
+          # ending: the value a Git Bash user exports is /c/... and a native
+          # Windows python3 reads a leading slash as drive-relative, so it
+          # creates C:\c\... and writes there. Exit 0, nothing under the root.
+          #
+          # cygpath -u produces exactly that MSYS form, so this is the real
+          # shape, not a simulation. Every assertion below spells the path with
+          # $AGENCY_HOME (MSYS) while the hook now writes the C:/ rewrite of it —
+          # they must land on the same file or the fix did not work.
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+          echo "posix root: $AGENCY_HOME"
+
+          logs="$AGENCY_HOME/logs"
+          rm -rf "$logs"
+
+          # 1. write-evidence.sh -> logs/write-evidence.jsonl
+          echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/proj/outputs/ci-probe.html"}}' \
+            | bash "$AGENCY_HOME/hooks/write-evidence.sh" >/dev/null
+          [ -s "$logs/write-evidence.jsonl" ] \
+            || { echo "FAIL: write-evidence.sh wrote no $logs/write-evidence.jsonl"; exit 1; }
+          grep -q 'ci-probe.html' "$logs/write-evidence.jsonl" \
+            || { echo "FAIL: write-evidence entry missing the path"; cat "$logs/write-evidence.jsonl"; exit 1; }
+
+          # 2. artifact-verify.sh -> logs/artifact-verify.jsonl
+          echo '{"tool_response":{"content":"DONE: /nonexistent-ci/probe.pdf"}}' \
+            | bash "$AGENCY_HOME/hooks/artifact-verify.sh" >/dev/null
+          [ -s "$logs/artifact-verify.jsonl" ] \
+            || { echo "FAIL: artifact-verify.sh wrote no $logs/artifact-verify.jsonl"; exit 1; }
+
+          # 3. spawn-logger.sh -> logs/spawns.jsonl, and it must still return the
+          #    modified toolInput on stdout (an empty return would disable the
+          #    lineage marker without failing anything).
+          out=$(echo '{"tool_use_id":"t1","tool_input":{"subagent_type":"ci-probe-agent","description":"d","prompt":"p"}}' \
+            | bash "$AGENCY_HOME/hooks/spawn-logger.sh")
+          grep -q 'ci-probe-agent' "$logs/spawns.jsonl" 2>/dev/null \
+            || { echo "FAIL: spawn-logger.sh wrote no $logs/spawns.jsonl"; exit 1; }
+          case "$out" in
+            *CLAUDE_SPAWN_META*) : ;;
+            *) echo "FAIL: spawn-logger.sh returned no marker: $out"; exit 1 ;;
+          esac
+
+          # Nothing may have leaked into Git Bash's own $HOME/.claude.
+          if [ -e "$HOME/.claude/logs/write-evidence.jsonl" ]; then
+            echo "FAIL: hook ignored AGENCY_HOME and wrote to \$HOME/.claude"
+            exit 1
+          fi
+          head -c 400 "$logs/write-evidence.jsonl"; echo
+          head -c 400 "$logs/spawns.jsonl"; echo
+
       - name: Second install into a DIFFERENT AGENCY_HOME
         env:
           AGENCY_HOME: ${{ runner.temp }}\agency-custom
