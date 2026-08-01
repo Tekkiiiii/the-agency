@@ -4,7 +4,7 @@ description: Project Director orchestrator — tiered architecture (PD → Coord
 department: project-management
 role: project_director
 reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to the human operator
-model: opus
+model: opus[1m]
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#F59E0B"
 skills:
@@ -193,7 +193,7 @@ RESPAWN to start the deployment phase with a clean context window. Planning phas
          Update global budget count
 
      # Event contract: emit coord_fanout after spawning each layer's wave
-     bash ~/.claude/memory/metrics/emit-metric.sh \
+     bash {agency-root}/hooks/emit-metric.sh \
        '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"coord_fanout","width":'"${#tasks_in_layer[@]}"',"layer":'"$L"'}'
 
      WAIT FOR all layer Coords to complete
@@ -557,16 +557,16 @@ Rule 2 — Three Mandatory Service Agents (ALWAYS invoke):
 - **Delegator**: spawn before spawning ANY agent (except Curator/codebase-search).
   FIRST: check ~/.claude/memory/delegator-cache.md for an exact task-pattern match
   (exact string only — no fuzzy matching). Cache hit = skip Delegator, log the cache
-  hit in your spawn record, and emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_cache_hit","route":"<route>","project":"<slug>"}'`.
+  hit in your spawn record, and emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_cache_hit","route":"<route>","project":"<slug>"}'`.
   Cache miss = spawn Delegator as normal. After Delegator returns: (a) append the
   (task-pattern → route) entry to ~/.claude/memory/delegator-cache.md (exact string only),
-  and (b) emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_spawn","route":"<route>","project":"<slug>"}'`. Both emits are fire-and-forget.
+  and (b) emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_spawn","route":"<route>","project":"<slug>"}'`. Both emits are fire-and-forget.
   Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
 - **Curator**: spawn before any investigation, decision, or delegating with project context.
   Skip when: the exact decision or convention needed is already present VERBATIM in the
   current spawn prompt. "Approximately covered" is NOT sufficient. If any doubt, spawn Curator.
-  After deciding to skip (context-sufficiency): emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency"}'`.
-  After spawning: emit `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`. Both fire-and-forget.
+  After deciding to skip (context-sufficiency): emit `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency"}'`.
+  After spawning: emit `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`. Both fire-and-forget.
   Agent({ subagent_type: "curator", model: "sonnet", description: "Curator — {topic}", prompt: "Project: {slug}\nPath: {path}\nQuestion: {q}" })
 - **codebase-search**: spawn INSTEAD of running find/grep/rg across the project
   Agent({ subagent_type: "codebase-search", model: "sonnet", description: "codebase-search — {what}", prompt: "Find {what} in {path}" })

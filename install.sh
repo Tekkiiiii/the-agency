@@ -21,19 +21,34 @@ SKILLS_DEST="$CLAUDE_HOME/skills"
 skill_count=0
 
 if [ -d "$SKILLS_SRC" ]; then
-    for f in "$SKILLS_SRC"/*.md; do
-        [ ! -f "$f" ] && continue
-        name="$(basename "$f" .md)"
-        [ "$name" = "INDEX" ] || [ "$name" = "README" ] && continue
+    # Canonical skill layout is directory-only: skills/<name>/SKILL.md, plus any
+    # supporting assets alongside it (style.css, scripts/, branches/, ...).
+    # This loop previously globbed "$SKILLS_SRC"/*.md — the flat layout the repo
+    # abandoned and now fails CI on (scripts/check-flat-skills.js). The result
+    # was that install.sh silently installed ZERO skills while still printing a
+    # success line. Copy whole skill directories, and never partially: a skill
+    # is only counted once its SKILL.md is confirmed present in the source.
+    for d in "$SKILLS_SRC"/*/; do
+        [ ! -d "$d" ] && continue
+        name="$(basename "$d")"
+        [ ! -f "$d/SKILL.md" ] && continue
 
         mkdir -p "$SKILLS_DEST/$name"
-        cp "$f" "$SKILLS_DEST/$name/SKILL.md"
+        cp -R "$d." "$SKILLS_DEST/$name/"
+        rm -rf "$SKILLS_DEST/$name/__pycache__"
         skill_count=$((skill_count + 1))
     done
 
     # Copy INDEX.md
     [ -f "$SKILLS_SRC/INDEX.md" ] && cp "$SKILLS_SRC/INDEX.md" "$SKILLS_DEST/INDEX.md"
     echo "  ✓ $skill_count skills installed"
+
+    # Loud mismatch check — a silent repo-vs-installed gap is exactly the
+    # failure mode that hid the flat-layout bug above for this long.
+    repo_skill_count=$(find "$SKILLS_SRC" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')
+    if [ "$skill_count" != "$repo_skill_count" ]; then
+        echo "  ⚠ Skill count mismatch: repo has $repo_skill_count, installed $skill_count"
+    fi
 else
     echo "  ⚠ No skills/ directory found"
 fi
@@ -82,6 +97,15 @@ if [ -d "$HOOKS_SRC" ]; then
     if [ -d "$HOOKS_SRC/fable" ]; then
         mkdir -p "$HOOKS_DEST/fable"
         cp "$HOOKS_SRC"/fable/*.md "$HOOKS_DEST/fable/"
+    fi
+
+    # Shared helper library sourced by other hooks (hooks/lib/resolve-project.sh
+    # is `source`d by spawn-completion.sh). The *.sh loop above is top-level
+    # only, so without this the sourced helpers were never on disk.
+    if [ -d "$HOOKS_SRC/lib" ]; then
+        mkdir -p "$HOOKS_DEST/lib"
+        cp "$HOOKS_SRC"/lib/*.sh "$HOOKS_DEST/lib/" 2>/dev/null || true
+        chmod +x "$HOOKS_DEST"/lib/*.sh 2>/dev/null || true
     fi
 
     # Install default profile if not already set
@@ -150,6 +174,33 @@ if [ -d "$CORE_SRC" ]; then
     mkdir -p "$CORE_DEST"
     cp -r "$CORE_SRC"/* "$CORE_DEST/"
     echo "  ✓ Core docs installed"
+fi
+
+# --- Runbooks ---
+# Protocol docs that deployed agents/ files reference as `{agency-root}/runbooks/...`.
+# Not shipping these makes every one of those references dangle. See the deploy
+# matrix in docs/INSTALL-LAYOUT.md — this list must stay in sync with
+# cli/commands/init.js and install.ps1.
+RUNBOOKS_SRC="$SCRIPT_DIR/runbooks"
+RUNBOOKS_DEST="$CLAUDE_HOME/runbooks"
+if [ -d "$RUNBOOKS_SRC" ]; then
+    mkdir -p "$RUNBOOKS_DEST"
+    cp -r "$RUNBOOKS_SRC"/* "$RUNBOOKS_DEST/"
+    echo "  ✓ Runbooks installed"
+fi
+
+# --- Scripts ---
+# Support tooling invoked by shipped skills as `{agency-root}/scripts/...`
+# (save-state.py, mem-gardener.sh, ...). The CLI installer already synced these;
+# install.sh did not, so a shell-installed user had them missing.
+SCRIPTS_SRC="$SCRIPT_DIR/scripts"
+SCRIPTS_DEST="$CLAUDE_HOME/scripts"
+if [ -d "$SCRIPTS_SRC" ]; then
+    mkdir -p "$SCRIPTS_DEST"
+    cp -r "$SCRIPTS_SRC"/* "$SCRIPTS_DEST/"
+    rm -rf "$SCRIPTS_DEST"/__pycache__
+    chmod +x "$SCRIPTS_DEST"/*.sh "$SCRIPTS_DEST"/*.py "$SCRIPTS_DEST"/*.js 2>/dev/null || true
+    echo "  ✓ Scripts installed"
 fi
 
 # --- CLI command ---

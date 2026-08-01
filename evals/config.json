@@ -56,7 +56,7 @@
   },
   "cost_integration": {
     "events_sink": "~/.claude/memory/metrics/events.jsonl",
-    "emit_command": "bash ~/.claude/memory/metrics/emit-metric.sh",
+    "emit_command": "bash {agency-root}/hooks/emit-metric.sh",
     "event_schema": {
       "ts": "ISO8601",
       "event": "eval_run",

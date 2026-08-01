@@ -2,7 +2,7 @@ const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync, realpathS
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
-const { syncSkills, syncAgents, syncScripts } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks } = require('./sync-assets.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -68,6 +68,19 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const scriptsDest = path.join(agencyRoot, 'scripts');
   const scripts = syncScripts(repoRoot, scriptsDest, console);
   console.log(`  ✓ ${scripts.updated} scripts installed, ${scripts.preserved} preserved`);
+
+  // 4c. Hooks (lifecycle hooks + emit-metric.sh). install.sh always deployed
+  // these; the CLI path did not, which left every `{agency-root}/hooks/...`
+  // reference in shipped agents/runbooks/scripts dangling on a CLI-only install.
+  const hooksDest = path.join(agencyRoot, 'hooks');
+  const hooks = syncHooks(repoRoot, hooksDest, console);
+  console.log(`  ✓ ${hooks.updated} hooks installed, ${hooks.preserved} preserved`);
+
+  // 4d. Runbooks (protocol docs referenced as `{agency-root}/runbooks/...` by
+  // deployed agents/ files). Never deployed by any installer before this.
+  const runbooksDest = path.join(agencyRoot, 'runbooks');
+  const runbooks = syncRunbooks(repoRoot, runbooksDest, console);
+  console.log(`  ✓ ${runbooks.updated} runbooks installed, ${runbooks.preserved} preserved`);
 
   // 5. Core docs
   const coreSrc = path.join(repoRoot, 'core');

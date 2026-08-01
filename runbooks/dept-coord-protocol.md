@@ -199,8 +199,8 @@ LAZY-READ: load only when actively decomposing.
 
    Event contract (emit immediately after classifying each task, BEFORE
    spawning — fire-and-forget, do not skip even mid-escalation):
-   - TIER_A: bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'
-   - TIER_B: bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'
+   - TIER_A: bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'
+   - TIER_B: bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'
 
    F25 note (2026-07-29): audit found Dept-Coords spawning Members without
    emitting either event (see agents/project-management/coord.md for the same
@@ -455,8 +455,8 @@ If curator returns "No relevant knowledge found", proceed with best judgment and
 **Sufficiency-skip rule (strict):** Skip Curator when the exact decision or convention needed is already present VERBATIM in the current spawn prompt. "Approximately covered" is NOT sufficient — the specific information must appear word-for-word or by direct structured reference. If any doubt exists, spawn Curator. This skip is mechanical, not a judgment call.
 
 **Event contract (fire-and-forget):**
-- After deciding to skip Curator: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency"}'`
-- After spawning Curator: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`
+- After deciding to skip Curator: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency"}'`
+- After spawning Curator: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`
 
 ---
 

@@ -249,7 +249,7 @@ Clears the buffer after running. Skipped in `minimal` profile.
 
 ### write-evidence.sh (PostToolUse: Write, Edit)
 
-Logs a paper trail for deliverable writes. On every Write/Edit whose target path contains `/outputs/`, `/plans/`, `/reports/`, or `/qa/`, or ends in `.html`, `.htm`, `.pdf`, `.docx`, `.pptx`, or `.xlsx`, it stats the file post-write and appends a `write_evidence` entry (path, byte count, `exists` flag) to `~/.claude/logs/write-evidence.jsonl`. It also fire-and-forgets the same event to `~/.claude/memory/metrics/emit-metric.sh` (if present) so it's queryable alongside other metrics events.
+Logs a paper trail for deliverable writes. On every Write/Edit whose target path contains `/outputs/`, `/plans/`, `/reports/`, or `/qa/`, or ends in `.html`, `.htm`, `.pdf`, `.docx`, `.pptx`, or `.xlsx`, it stats the file post-write and appends a `write_evidence` entry (path, byte count, `exists` flag) to `~/.claude/logs/write-evidence.jsonl`. It also fire-and-forgets the same event to `{agency-root}/hooks/emit-metric.sh` (if present) so it's queryable alongside other metrics events.
 
 **Effect:** pairs with `artifact-verify.sh` — if an agent claims a deliverable is DONE, there must be a corresponding `write_evidence` entry with non-zero bytes, or the fabrication guard has grounds to flag the claim.
 

@@ -4,7 +4,7 @@ description: Project Director orchestrator — tiered architecture (PD → Coord
 department: project-management
 role: project_director
 reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to the human operator
-model: opus
+model: opus[1m]
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#F59E0B"
 skills:
@@ -244,7 +244,7 @@ SendMessage is the fast path; the flag is the guarantee.
      # decomposition drift (multi-domain work incorrectly serialized).
      TASK_TYPE="unknown"
      if [ "${#tasks_in_layer[@]}" -eq 1 ]; then TASK_TYPE="single_domain"; else TASK_TYPE="multi_domain"; fi
-     bash ~/.claude/memory/metrics/emit-metric.sh \
+     bash {agency-root}/hooks/emit-metric.sh \
        '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"coord_fanout","width":'"${#tasks_in_layer[@]}"',"layer":'"$L"',"task_type":"'"$TASK_TYPE"'"}'
 
      WAIT FOR all layer Coords to complete

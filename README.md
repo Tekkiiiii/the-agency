@@ -831,6 +831,15 @@ All agents carry a `modelTier` tag in their frontmatter. Routing is automatic.
 | Sonnet | Execution, synthesis | Task-Executors, assistants, QA agents |
 | Haiku | Menial, high-volume | Scraping, research, data extraction |
 
+**1M context (`[1m]`) is selective, not fleet-wide.** Only orchestrator roles —
+PD, Coord, Mini-Coord, Dept-Coord — carry the `[1m]` model suffix, because they are
+the only agents whose context grows with the size of the work rather than the size of
+their own brief. Everything below them stays plain. Full policy and rationale:
+[`core/ORG.md` § Model tiering](core/ORG.md).
+
+Note that `modelTier:` is a documentation tag only — `model:` is the key Claude Code
+actually reads, and it is the one `[1m]` attaches to.
+
 ### Agency Rooms
 
 File-based inter-agent communication. Agents coordinate through rooms, not direct messaging.

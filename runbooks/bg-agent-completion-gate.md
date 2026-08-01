@@ -46,7 +46,7 @@ PostToolUse hooks fire only for synchronous Agent tool completions. All PDs spaw
 Fire after completing verification (fire-and-forget, non-blocking):
 
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"bg_agent_verified","agent":"<name>","files_checked":<n>,"all_present":<true|false>}'
 ```
 

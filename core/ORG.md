@@ -42,6 +42,47 @@ Dept Head (Opus) ◄──────────────► Project Direct
 
 **Model tiering:** All 175 agents tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
 
+**`modelTier` vs `model` — which one actually does anything:** `model:` is the only
+frontmatter key Claude Code reads for model selection (`sonnet` / `opus` / `haiku` /
+`inherit`, or a full model-id string). `modelTier:` is an agency-internal documentation
+tag and is **inert** at spawn time — it selects nothing. A def carrying only `modelTier:`
+inherits the spawning session's model. Do not "fix" a spawn problem by editing
+`modelTier:`; see `core/memory/lessons/agent-workflows.md` for the verified finding.
+
+### 1M context window (`[1m]`) — SELECTIVE, closed decision
+
+**Policy:** the `[1m]` model suffix (`opus[1m]`, `sonnet[1m]`, `claude-opus-4-7[1m]`) is
+applied to **context-heavy orchestrator defs only**. This question is closed — do not
+re-open it as a fleet-wide proposal.
+
+| Applies to (`role:`) | Does NOT apply to |
+|---|---|
+| `project_director` (PD) | `member`, `specialist`, `leader` (dept heads) |
+| `coord` | `task-executor` |
+| `mini-coord` | `delegator`, `integration-tester` |
+| `dept-coord` | every critic, writer, and single-shot agent |
+
+**Rationale.** Orchestrators are the only roles whose context grows with the *size of the
+work*, not the size of their own prompt: they accumulate every subagent report, QA verdict,
+and aggregation pass in a single session. Everything below them is a bounded, one-shot
+unit whose context is dominated by its own brief. Fleet-wide `[1m]` would pay the premium
+on ~300 defs to solve a problem ~21 of them have.
+
+**Two consequences worth stating, so they are not rediscovered as bugs:**
+
+1. `[1m]` attaches to `model:`, never to `modelTier:` (see above — `modelTier` is inert).
+2. Four orchestrator defs carry no `model:` key at all (`core/agents/PD.md`,
+   `core/agents/pd-coordinator-lite.md`, `core/agents/coord-lite.md`,
+   `agents/project-management/the-agency-pd.md`). They **inherit** the spawning session's
+   model and are intentionally left untouched — pinning a model on them is a separate
+   decision from adopting `[1m]`. If a `model:` key is ever added to one of them, this
+   policy applies and it gets the suffix.
+
+LITE-variant orchestrators are in scope by role even though the lite tier exists to cut
+cost: the driver here is *runtime context accumulation*, not prompt size, and a tier switch
+should not silently change an orchestrator's context ceiling. They are excluded today only
+by consequence 2 above (no `model:` key), not by policy.
+
 **Status loop policy:** Automated recurring loops are DISABLED. Use on-demand status checks only. Dept heads request status when needed — do not automate periodic pings. This avoids the token explosion risk of naive 15-30 min loop implementations (10k-21k reports/week without aggregation). See § on status reporting.
 
 ---

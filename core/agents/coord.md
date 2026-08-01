@@ -4,7 +4,7 @@ description: L3 task owner — autonomous work unit. Receives one L3 chunk from 
 department: project-management
 role: coord
 reports_to: pd-coordinator
-model: claude-opus-4-7
+model: claude-opus-4-7[1m]
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#10B981"
 skills: []
@@ -191,8 +191,8 @@ boundary whenever context pressure warrants it.
     the re-run uses full TIER_B treatment.
 
     **Event contract:** After classifying each task, emit the tier event (fire-and-forget):
-    - TIER_A: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
-    - TIER_B: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
+    - TIER_A: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
+    - TIER_B: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
 
 6c. **CHECKPOINT GATE — 50% check-in review (MANDATORY):**
     When an Executor sends CHECKPOINT (at ~50% effort or 25 tool calls):
@@ -438,7 +438,7 @@ Set task_type correctly so the executor loads the right skills (see Relevant Ski
 Content tasks (task_type: content/blog/social/copywrite/email/ad/script/deck/brief) →
   executor loads pipeline-content, which runs content-request protocol internally.
 Cross-domain task or no table match → escalate to PD; do NOT spawn named specialist agents directly.
-**Ban:** If you find yourself using `subagent_type: "general-purpose"` for Exec spawns without Delegator returning it, emit: `bash ~/.claude/memory/metrics/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"generalist_ban_violation","subagent_type":"general-purpose","context":"coord-exec"}'` then escalate to PD instead.
+**Ban:** If you find yourself using `subagent_type: "general-purpose"` for Exec spawns without Delegator returning it, emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"generalist_ban_violation","subagent_type":"general-purpose","context":"coord-exec"}'` then escalate to PD instead.
 
 Rule 3 — Report every completion to your spawner immediately.
 

@@ -24,7 +24,7 @@ set -euo pipefail
 HASH_FILE="$HOME/.claude/memory/.canary.sha256"
 RECORD_FILE="$HOME/.claude/memory/.canary-session.json"
 LOG_FILE="$HOME/.claude/memory/metrics/canary-check.log"
-EMIT="$HOME/.claude/memory/metrics/emit-metric.sh"
+EMIT="$HOME/.claude/hooks/emit-metric.sh"
 BLOAT_THRESHOLD=100000
 
 # --- Startup-bloat check (additive) -----------------------------------------

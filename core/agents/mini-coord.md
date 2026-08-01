@@ -4,7 +4,7 @@ description: Lightweight Coord scoped to one L6 task. Owns L6, decomposes L6 →
 department: project-management
 role: mini-coord
 reports_to: coord
-model: claude-opus-4-7
+model: claude-opus-4-7[1m]
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 color: "#10B981"
 skills: []

@@ -1185,7 +1185,7 @@ If `verdict: "PASS"`, always set `failure_class: "none"`.
 
 **Emit to events.jsonl** after writing the verdict JSON (fire-and-forget):
 ```bash
-bash ~/.claude/memory/metrics/emit-metric.sh \
+bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"qa_verdict","verdict":"VERDICT","failure_class":"FAILURE_CLASS","health":HEALTH,"project":"PROJECT_SLUG"}'
 ```
 Replace VERDICT, FAILURE_CLASS, HEALTH, PROJECT_SLUG with actual values.
