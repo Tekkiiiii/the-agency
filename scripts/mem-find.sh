@@ -1,5 +1,5 @@
 #!/bin/bash
-# mem-find.sh — ranked search across the ~/.claude memory estate.
+# mem-find.sh — ranked search across the {agency-root} memory estate.
 # Ranking: 1) MEMORY.md/index.md title match  2) frontmatter (name/description/type)
 #          3) body grep  4) 1-hop links (links:/[[wikilinks]] from tier 1-3 hits)
 # Usage: mem-find.sh <query>
@@ -13,7 +13,8 @@ if [ -z "$QUERY" ]; then
   exit 1
 fi
 
-CLAUDE_DIR="$HOME/.claude"
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/../hooks/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+CLAUDE_DIR="$AGENCY_ROOT"
 ( "$CLAUDE_DIR/hooks/emit-metric.sh" \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"mem_find","query_len":'"${#QUERY}"'}' \
   >/dev/null 2>&1 & )

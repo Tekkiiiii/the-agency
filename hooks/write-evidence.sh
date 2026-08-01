@@ -99,7 +99,12 @@ try:
         "exists": file_size >= 0,
     }
 
-    log_dir = os.path.join(home, ".claude", "logs")
+    # Python twin of hooks/lib/resolve-root.sh — this heredoc is quoted ('PYEOF'),
+    # so the shell's AGENCY_ROOT is not interpolated; resolve it here instead.
+    root = os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") \
+        or os.path.join(home, ".claude")
+
+    log_dir = os.path.join(root, "logs")
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, "write-evidence.jsonl")
     with open(log_file, "a") as f:
@@ -108,7 +113,7 @@ try:
     # Also emit to events.jsonl via metrics script for queryability
     # (fire-and-forget subprocess)
     import subprocess
-    metrics_script = os.path.join(home, ".claude", "hooks", "emit-metric.sh")
+    metrics_script = os.path.join(root, "hooks", "emit-metric.sh")
     if os.path.isfile(metrics_script):
         payload = json.dumps({
             "ts": ts,

@@ -3,7 +3,7 @@
 # Writes a spawn_end JSONL entry for the given spawn_id.
 #
 # Usage:
-#   bash ~/.claude/hooks/lib/log-spawn-end-from-agent.sh \
+#   bash {agency-root}/hooks/lib/log-spawn-end-from-agent.sh \
 #     --spawn-id "uuid-from-log-spawn-from-agent" \
 #     --outcome "DONE" \
 #     --summary "First 300 chars of agent result..."
@@ -43,9 +43,11 @@ python3 -c "
 import sys, json, os, re
 from datetime import datetime
 
-def resolve_log_file(home):
-    fallback = os.path.join(home, '.claude/logs/spawns.jsonl')
-    medium_term = os.path.join(home, '.claude/memory/medium-term.md')
+def resolve_log_file(home, root):
+    # root = agency root (AGENCY_HOME-aware). home stays $HOME because it is used
+    # separately below to expand a literal '~' inside medium-term.md project paths.
+    fallback = os.path.join(root, 'logs/spawns.jsonl')
+    medium_term = os.path.join(root, 'memory/medium-term.md')
     cwd = os.environ.get('CLAUDE_PROJECT_DIR', os.getcwd())
     if not os.path.exists(medium_term):
         return fallback
@@ -81,7 +83,8 @@ try:
     if not spawn_id:
         sys.exit(0)
 
-    log_file = resolve_log_file(home)
+    root = os.environ.get('AGENCY_HOME') or os.environ.get('CLAUDE_CONFIG_DIR') or os.path.join(home, '.claude')
+    log_file = resolve_log_file(home, root)
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     ts = datetime.now().astimezone().isoformat(timespec='seconds')
 

@@ -4,9 +4,11 @@
 #   core.md — always, once per session
 #   task modules (visual, content, delegation, research, coding, planning, systems)
 #     — once per session each, when the prompt matches their keyword profile
-# Modules live in ~/.claude/hooks/fable/. Later non-matching prompts get a one-line reminder.
+# Modules live in {agency-root}/hooks/fable/. Later non-matching prompts get a one-line reminder.
 # Model detection order: hook stdin .model → transcript last assistant model → settings.json default.
 # Portable for macOS /bin/bash 3.2. Requires jq.
+
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
 input=$(cat)
 
@@ -19,7 +21,7 @@ if [ -z "$model" ] && [ -n "$transcript" ] && [ -f "$transcript" ]; then
   model=$(grep -o '"model":"claude-[^"]*"' "$transcript" 2>/dev/null | tail -1 | cut -d'"' -f4)
 fi
 if [ -z "$model" ]; then
-  model=$(jq -r '.model // empty' "$HOME/.claude/settings.json" 2>/dev/null)
+  model=$(jq -r '.model // empty' "$AGENCY_ROOT/settings.json" 2>/dev/null)
 fi
 
 TMP="${TMPDIR:-/tmp}"
@@ -32,7 +34,7 @@ case "$model" in
     ;;
 esac
 
-FDIR="$HOME/.claude/hooks/fable"
+FDIR="$AGENCY_ROOT/hooks/fable"
 out=""
 
 if [ ! -f "$TMP/fable-core-$session" ] && [ -f "$FDIR/core.md" ]; then

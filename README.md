@@ -170,7 +170,12 @@ cd ~/.claude
 └── task-store.db        ← SQLite task pipeline (Node.js install only)
 ```
 
-Override the install location with `AGENCY_HOME=/custom/path ./install.sh`.
+Override the install location with `AGENCY_HOME=/custom/path ./install.sh`. The
+installers, the CLI, and every shipped hook and script resolve the same root in the
+same order — `$AGENCY_HOME`, then `$CLAUDE_CONFIG_DIR`, then `~/.claude` — so a
+custom root is installed to *and* read from consistently. CI verifies this on both
+Linux and Windows on every push. See
+[docs/INSTALL-LAYOUT.md](docs/INSTALL-LAYOUT.md#where-the-root-comes-from).
 
 ## Choosing Your Tier
 

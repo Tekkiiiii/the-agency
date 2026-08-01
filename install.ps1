@@ -3,7 +3,11 @@
 
 $ErrorActionPreference = "Stop"
 
-$ClaudeHome = if ($env:AGENCY_HOME) { $env:AGENCY_HOME } else { Join-Path $env:USERPROFILE ".claude" }
+# Root precedence must match hooks/lib/resolve-root.sh exactly — otherwise the
+# installer writes to one directory and the deployed scripts read from another.
+$ClaudeHome = if ($env:AGENCY_HOME) { $env:AGENCY_HOME }
+              elseif ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR }
+              else { Join-Path $env:USERPROFILE ".claude" }
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host ""

@@ -3,13 +3,15 @@
 # Runs lightweight checks on files edited this session. Clears buffer after.
 set -euo pipefail
 
-PROFILE=$(cat "$HOME/.claude/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+PROFILE=$(cat "$AGENCY_ROOT/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
 if [ "$PROFILE" = "minimal" ]; then
-  rm -f "$HOME/.claude/.edit-buffer.txt"
+  rm -f "$AGENCY_ROOT/.edit-buffer.txt"
   exit 0
 fi
 
-BUFFER="$HOME/.claude/.edit-buffer.txt"
+BUFFER="$AGENCY_ROOT/.edit-buffer.txt"
 
 if [ ! -f "$BUFFER" ] || [ ! -s "$BUFFER" ]; then
   exit 0

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # cost-tracker.sh — Stop hook
 # Reads transcript JSONL, computes cumulative token usage and estimated cost.
-# Appends one row per Stop to ~/.claude/metrics/costs.jsonl.
+# Appends one row per Stop to {agency-root}/metrics/costs.jsonl.
 set -euo pipefail
+
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
 INPUT=$(cat)
 
@@ -15,14 +17,14 @@ if [ -z "$TRANSCRIPT" ] || [ ! -f "$TRANSCRIPT" ]; then
   exit 0
 fi
 
-mkdir -p "$HOME/.claude/metrics"
+mkdir -p "$AGENCY_ROOT/metrics"
 
 python3 -c "
 import json, os, sys
 from datetime import datetime, timezone
 
 transcript = '$TRANSCRIPT'
-metrics_file = os.path.expanduser('~/.claude/metrics/costs.jsonl')
+metrics_file = os.path.join('$AGENCY_ROOT', 'metrics', 'costs.jsonl')
 
 rates = {
     'haiku':  {'input': 0.80, 'output': 4.00, 'cache_write': 1.00, 'cache_read': 0.08},

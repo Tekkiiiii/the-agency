@@ -8,8 +8,8 @@ old Steps 0-13 did. One process, no agent spawn, no token cost beyond the
 payload itself.
 
 Usage:
-    python3 ~/.claude/scripts/save-state.py --project /path/to/project --payload payload.json
-    echo '{...}' | python3 ~/.claude/scripts/save-state.py --project /path/to/project --payload -
+    python3 {agency-root}/scripts/save-state.py --project /path/to/project --payload payload.json
+    echo '{...}' | python3 {agency-root}/scripts/save-state.py --project /path/to/project --payload -
 
 Payload schema (all fields optional except slug, phase, next):
 {
@@ -51,10 +51,19 @@ import subprocess
 import sys
 
 HOME = pathlib.Path.home()
+# Python twin of hooks/lib/resolve-root.sh — same precedence, same default.
+AGENCY_ROOT = pathlib.Path(
+    os.environ.get("AGENCY_HOME")
+    or os.environ.get("CLAUDE_CONFIG_DIR")
+    or (HOME / ".claude")
+)
 OVERSEER_INCOMING = HOME / "projects/overseer/memory/inter-spawn-tasks/incoming"
-EMIT = HOME / ".claude/hooks/emit-metric.sh"
-PINECONE_SCRIPT = HOME / ".claude/skills/save-state/pinecone_upsert.py"
-UNIFIED_GRAPH = HOME / ".claude/graphify-out/unified/graph.json"
+EMIT = AGENCY_ROOT / "hooks/emit-metric.sh"
+PINECONE_SCRIPT = AGENCY_ROOT / "skills/save-state/pinecone_upsert.py"
+UNIFIED_GRAPH = AGENCY_ROOT / "graphify-out/unified/graph.json"
+# Written by Python (below) and consumed by the detached bash job in
+# fire_background_jobs() — one definition so the two can never drift apart.
+SESSION_MERGE_FLAG = AGENCY_ROOT / "graphify-out/.session_merge_needed"
 
 
 def now_utc():
@@ -348,7 +357,7 @@ def inject_session_node(project: pathlib.Path, slug: str, date_str: str):
                           "source_file": session_file, "weight": 1.0})
     session_nodes = [n for n in nodes if n.get("file_type") == "session"]
     if len(session_nodes) % 5 == 0:
-        (HOME / ".claude/graphify-out/.session_merge_needed").write_text(str(len(session_nodes)))
+        SESSION_MERGE_FLAG.write_text(str(len(session_nodes)))
     atomic_write(UNIFIED_GRAPH, json.dumps(graph, indent=2))
 
 
@@ -359,14 +368,14 @@ if command -v graphify >/dev/null 2>&1 && [ -d "{project}/memory" ]; then
   cd "{project}"
   graphify memory/ --update --no-viz --exclude "brand/" --exclude "qa/" --exclude "graphify-out/" 2>/dev/null || \
   graphify memory/ --update --no-viz 2>/dev/null || true
-  if [ -f "memory/graphify-out/graph.json" ] && [ -f "$HOME/.claude/graphify-out/unified/graph.json" ]; then
-    graphify merge-graphs "$HOME/.claude/graphify-out/unified/graph.json" memory/graphify-out/graph.json --in-place 2>/dev/null || true
+  if [ -f "memory/graphify-out/graph.json" ] && [ -f "{UNIFIED_GRAPH}" ]; then
+    graphify merge-graphs "{UNIFIED_GRAPH}" memory/graphify-out/graph.json --in-place 2>/dev/null || true
   fi
 fi
-FLAG="$HOME/.claude/graphify-out/.session_merge_needed"
+FLAG="{SESSION_MERGE_FLAG}"
 if [ -f "$FLAG" ]; then
   rm -f "$FLAG"
-  graphify merge-graphs "$HOME/.claude/graphify-out/unified/graph.json" --in-place 2>/dev/null || true
+  graphify merge-graphs "{UNIFIED_GRAPH}" --in-place 2>/dev/null || true
 fi
 '''
     try:

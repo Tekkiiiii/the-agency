@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent-tools audit — mechanical checks over ~/.claude/agents/**/*.md.
+"""Agent-tools audit — mechanical checks over {agency-root}/agents/**/*.md.
 
 Sibling to skill-audit.py; same style (argparse-free, JSON to stdout, summary
 to stderr, Path-based). Report-only — this script NEVER edits agent files
@@ -11,8 +11,8 @@ Checks per agent file:
   2. has_modeltier_key  — frontmatter has a `modelTier:` key. Noted
                            inert/redundant in the 2026-07-07 audit
                            (~150 files expected). Report-only, no action.
-  3. background_spawned — HEURISTIC. Greps ~/.claude/skills/, ~/.claude/
-                           agents/, ~/.claude/runbooks/ for the agent's
+  3. background_spawned — HEURISTIC. Greps {agency-root}/skills/,
+                           {agency-root}/agents/, {agency-root}/runbooks/ for the agent's
                            `name:` frontmatter value or filename stem
                            appearing near a spawn marker (`Agent(`,
                            `subagent_type:`, `run_in_background: true`,
@@ -29,7 +29,7 @@ Checks per agent file:
                            pd | coord | dept-coord | executor | specialist
                            | unknown.
 
-Excludes: ~/.claude/agents-archive/ (sibling dir of ~/.claude/agents/,
+Excludes: {agency-root}/agents-archive/ (sibling dir of {agency-root}/agents/,
 naturally out of scope for the **/*.md walk, guarded anyway in case of
 symlinks) and any path with a `state` directory component — state/*.md
 files (active-coords.md, member-roster.md, dept-state.md, state/incoming/*)
@@ -39,15 +39,22 @@ Output: JSON array to stdout (one object per agent file) + a summary line
 to stderr.
 """
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
-AGENTS = Path("~/.claude/agents").expanduser()
+# Python twin of hooks/lib/resolve-root.sh — same precedence, same default.
+AGENCY_ROOT = Path(
+    os.environ.get("AGENCY_HOME")
+    or os.environ.get("CLAUDE_CONFIG_DIR")
+    or (Path.home() / ".claude")
+)
+AGENTS = AGENCY_ROOT / "agents"
 CORPUS_DIRS = [
-    Path("~/.claude/skills").expanduser(),
-    Path("~/.claude/agents").expanduser(),
-    Path("~/.claude/runbooks").expanduser(),
+    AGENCY_ROOT / "skills",
+    AGENCY_ROOT / "agents",
+    AGENCY_ROOT / "runbooks",
 ]
 
 try:

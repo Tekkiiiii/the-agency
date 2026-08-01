@@ -5,7 +5,7 @@
 #
 # HOW IT WORKS:
 # 1. On every Bash tool call with run_in_background: true, log the command
-#    to ~/.claude/.pending-bg-jobs.jsonl (session-scoped).
+#    to {agency-root}/.pending-bg-jobs.jsonl (session-scoped).
 # 2. On every Bash tool result, if the output says "Command running in
 #    background with ID:", record that ID.
 # 3. On Stop (see session-end.sh), if .pending-bg-jobs.jsonl is non-empty,
@@ -15,8 +15,10 @@
 # FAILURE ISOLATION: any internal error is silent.
 set +e
 
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
 INPUT=$(cat)
-BG_JOB_FILE="$HOME/.claude/.pending-bg-jobs.jsonl"
+BG_JOB_FILE="$AGENCY_ROOT/.pending-bg-jobs.jsonl"
 
 python3 - "$INPUT" "$BG_JOB_FILE" <<'PYEOF'
 import sys, json, os, re

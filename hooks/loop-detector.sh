@@ -5,13 +5,15 @@
 # Also prints a warning to stderr visible to the running agent.
 set -euo pipefail
 
-PROFILE=$(cat "$HOME/.claude/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+PROFILE=$(cat "$AGENCY_ROOT/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
 if [ "$PROFILE" = "minimal" ]; then
   exit 0
 fi
 
 INPUT=$(cat)
-TRACKER="$HOME/.claude/.tool-call-tracker.jsonl"
+TRACKER="$AGENCY_ROOT/.tool-call-tracker.jsonl"
 
 # Extract tool name and key input (file_path or command, truncated to 200 chars)
 ENTRY=$(printf '%s' "$INPUT" | python3 -c "
@@ -66,7 +68,7 @@ if [ "$STALL" = "STALL" ]; then
   # Write stall marker for cross-session visibility
   python3 -c "
 import json, datetime
-state_file = '$HOME/.claude/session-state.json'
+state_file = '$AGENCY_ROOT/session-state.json'
 try:
     with open(state_file) as f:
         state = json.load(f)

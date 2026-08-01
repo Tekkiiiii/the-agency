@@ -1,0 +1,180 @@
+name: installers
+
+# Durable verification for the two shell installers. Wave 12 fixed both after
+# they had each been silently installing ZERO skills; that fix was verified by
+# hand on macOS only, and install.ps1 was never executed at all. This workflow
+# is the thing that stops either regression from reaching main unnoticed.
+#
+# Deliberately minimal: no matrix, no caching. Two jobs, one per installer.
+#
+# SECURITY: no secrets, and no `github.event.*` value is read anywhere. The only
+# interpolated expression is `runner.temp` (runner-controlled, not attacker
+# controlled), and even that is passed through `env:` rather than pasted into a
+# run: body — so there is no injection surface from PR titles, branch names or
+# commit messages.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  install-sh:
+    name: install.sh (ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run install.sh into a sandboxed AGENCY_HOME
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: bash install.sh
+
+      - name: Assert every repo skill was installed
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: |
+          repo=$(find skills -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')
+          got=$(find "$AGENCY_HOME/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')
+          echo "repo=$repo installed=$got"
+          # The bug this guards: both installers globbed the abandoned flat
+          # skills/*.md layout, installed nothing, and printed success.
+          [ "$repo" -gt 0 ] || { echo "FAIL: repo reports 0 skills — check the layout assumption"; exit 1; }
+          [ "$got" = "$repo" ] || { echo "FAIL: installed $got of $repo skills"; exit 1; }
+
+      - name: Assert deployed {agency-root} references resolve
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: bash .github/scripts/verify-agency-refs.sh "$AGENCY_HOME"
+
+      - name: Assert emit-metric.sh writes an event line
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: |
+          emit="$AGENCY_HOME/hooks/emit-metric.sh"
+          [ -x "$emit" ] || { echo "FAIL: $emit missing or not executable"; exit 1; }
+          bash "$emit" '{"event":"ci_installer_probe","source":"install.sh"}'
+          log="$AGENCY_HOME/memory/metrics/events.jsonl"
+          [ -s "$log" ] || { echo "FAIL: no event written to $log"; exit 1; }
+          grep -q ci_installer_probe "$log" || { echo "FAIL: event line missing"; cat "$log"; exit 1; }
+          # "ts" is added by the script, not the caller — prove that still happens.
+          grep -q '"ts"' "$log" || { echo "FAIL: emitted line carries no ts"; cat "$log"; exit 1; }
+          cat "$log"
+
+      # The custom-root case is the one that had no test before Wave 13: every
+      # script under hooks/ and scripts/ used to hardcode $HOME/.claude, so a
+      # custom AGENCY_HOME installed to one place and was read from another.
+      - name: Second install into a DIFFERENT AGENCY_HOME
+        env:
+          AGENCY_HOME: /tmp/agency-custom-root
+        run: bash install.sh
+
+      - name: Assert scripts resolve against the custom root, not $HOME
+        env:
+          AGENCY_HOME: /tmp/agency-custom-root
+        run: |
+          set -e
+          bash .github/scripts/verify-agency-refs.sh "$AGENCY_HOME"
+
+          # emit-metric must land under the custom root...
+          bash "$AGENCY_HOME/hooks/emit-metric.sh" '{"event":"ci_custom_root_probe"}'
+          grep -q ci_custom_root_probe "$AGENCY_HOME/memory/metrics/events.jsonl" \
+            || { echo "FAIL: event did not land under custom root"; exit 1; }
+
+          # ...and must NOT have leaked into $HOME/.claude.
+          if [ -f "$HOME/.claude/memory/metrics/events.jsonl" ] \
+             && grep -q ci_custom_root_probe "$HOME/.claude/memory/metrics/events.jsonl"; then
+            echo "FAIL: event leaked into \$HOME/.claude despite AGENCY_HOME"
+            exit 1
+          fi
+
+          # Every shell script that sources the resolver must agree on the root.
+          ( . "$AGENCY_HOME/hooks/lib/resolve-root.sh"
+            [ "$AGENCY_ROOT" = "$AGENCY_HOME" ] \
+              || { echo "FAIL: resolver returned $AGENCY_ROOT"; exit 1; } )
+
+          # Python twin must agree with the shell resolver.
+          python3 - <<'PY'
+          import os, pathlib, sys
+          root = pathlib.Path(
+              os.environ.get("AGENCY_HOME")
+              or os.environ.get("CLAUDE_CONFIG_DIR")
+              or (pathlib.Path.home() / ".claude")
+          )
+          expected = pathlib.Path(os.environ["AGENCY_HOME"])
+          if root != expected:
+              sys.exit("FAIL: python twin returned %s, expected %s" % (root, expected))
+          print("python twin agrees:", root)
+          PY
+
+      - name: Assert no script still hardcodes the default root
+        run: bash .github/scripts/check-hardcoded-root.sh
+
+  install-ps1:
+    name: install.ps1 (windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run install.ps1 into a sandboxed AGENCY_HOME
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: .\install.ps1
+
+      - name: Assert every repo skill was installed
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: |
+          $repo = (Get-ChildItem skills -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') }).Count
+          $dest = Join-Path $env:AGENCY_HOME 'skills'
+          $got  = (Get-ChildItem $dest -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') }).Count
+          Write-Host "repo=$repo installed=$got"
+          if ($repo -le 0) { throw "repo reports 0 skills - check the layout assumption" }
+          if ($got -ne $repo) { throw "installed $got of $repo skills" }
+
+      - name: Assert deployed {agency-root} references resolve
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: .\.github\scripts\verify-agency-refs.ps1 -AgencyRoot $env:AGENCY_HOME
+
+      - name: Assert emit-metric.sh writes an event line
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          # Windows runners ship Git Bash; the hooks are bash scripts and this is
+          # the only way a Windows user runs them at all. If this step fails, the
+          # hooks shipped by install.ps1 are decorative.
+          emit="$AGENCY_HOME/hooks/emit-metric.sh"
+          [ -f "$emit" ] || { echo "FAIL: $emit missing"; exit 1; }
+          bash "$emit" '{"event":"ci_installer_probe","source":"install.ps1"}'
+          log="$AGENCY_HOME/memory/metrics/events.jsonl"
+          [ -s "$log" ] || { echo "FAIL: no event written to $log"; exit 1; }
+          grep -q ci_installer_probe "$log" || { echo "FAIL: event line missing"; cat "$log"; exit 1; }
+          grep -q '"ts"' "$log" || { echo "FAIL: emitted line carries no ts"; cat "$log"; exit 1; }
+          cat "$log"
+
+      - name: Second install into a DIFFERENT AGENCY_HOME
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-custom
+        run: .\install.ps1
+
+      - name: Assert install.ps1 honours the custom root
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-custom
+        run: |
+          .\.github\scripts\verify-agency-refs.ps1 -AgencyRoot $env:AGENCY_HOME
+          foreach ($tree in @('skills','agents','core','hooks','runbooks','scripts')) {
+            $p = Join-Path $env:AGENCY_HOME $tree
+            if (-not (Test-Path $p)) { throw "missing tree under custom root: $tree" }
+          }
+          if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'hooks\lib\resolve-root.sh'))) {
+            throw "resolve-root.sh not deployed - every sourcing script degrades"
+          }

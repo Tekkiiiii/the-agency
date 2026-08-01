@@ -1,6 +1,13 @@
 # Hook System
 
-The Agency ships a lifecycle hook system that runs shell scripts at key Claude Code events. Hooks are installed at `~/.claude/hooks/` and wired into `~/.claude/settings.json` by `agency init`.
+The Agency ships a lifecycle hook system that runs shell scripts at key Claude Code events. Hooks are installed at `{agency-root}/hooks/` and wired into `{agency-root}/settings.json` by `agency init`.
+
+> **`{agency-root}`** = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`.
+> Every path in this document is written with the default (`~/.claude`) for
+> readability. If you installed with a custom root, substitute it everywhere —
+> the installers already write the resolved path into `settings.json` for you, and
+> every hook resolves its own root via `hooks/lib/resolve-root.sh`. See
+> [INSTALL-LAYOUT.md](INSTALL-LAYOUT.md#where-the-root-comes-from).
 
 This is a significant security and observability upgrade over a bare Claude Code install: 2 → 18 hooks across 5 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below).
 
@@ -11,7 +18,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 | Script | Event | Trigger | Purpose |
 |--------|-------|---------|---------|
 | `fable-on-opus.sh` | UserPromptSubmit | always (self-gates on model) | Inject Fable-style operating-discipline guidance (`hooks/fable/*.md`) when the active model is Opus-line |
-| `startup-sync.sh` | SessionStart | always | Auto-pull `~/.claude` config from GitHub on session open |
+| `startup-sync.sh` | SessionStart | always | Auto-pull the agency root's config from GitHub on session open |
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
 | `gate-guard.sh` | PreToolUse | Edit, Write | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
@@ -327,9 +334,17 @@ Always exits 0 and never raises; if the input is missing or unparseable, it's a 
 
 `hooks/lib/` is **not** a set of directly-registered Claude Code hooks — none of these scripts appear in `settings.json`. They are shared bash/python helper scripts that other hooks and agents `source` or invoke directly to avoid duplicating logic (log-file resolution, spawn lineage IDs, context-percentage publishing). Think of this directory as the hook system's internal library, analogous to a `lib/` or `utils/` folder in an application codebase.
 
+### resolve-root.sh
+
+The single source of truth for **where the agency is installed**. Sourced (never executed) by every script under `hooks/` and `scripts/` that needs to address a sibling tree; it exports one variable, `AGENCY_ROOT`, resolved as `$AGENCY_HOME` → `$CLAUDE_CONFIG_DIR` → `~/.claude`.
+
+Callers source it by a path relative to *their own* location — `. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh"` — because resolving the root is precisely the thing they cannot do yet. Each call site appends `2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"` as a degraded fallback, so a partial install cannot hard-fail a hook on Claude Code's hot path.
+
+Before this existed, every hook and script hardcoded `$HOME/.claude` while the installers honoured `AGENCY_HOME` — so a custom-root install wrote to one directory and was read from another, silently. `.github/scripts/check-hardcoded-root.sh` now fails the build if that pattern returns. Python scripts use the documented inline twin (`os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") or Path.home()/".claude"`) rather than importing, because several are run by absolute path from arbitrary working directories.
+
 ### resolve-project.sh
 
-Defines a single function, `resolve_project_path`, meant to be `source`d (not executed) by callers: `source ~/.claude/hooks/lib/resolve-project.sh && resolve_project_path`. It reads the Active Projects table in `~/.claude/memory/medium-term.md`, expands each row's backtick-quoted path, and longest-prefix-matches it against the current working directory (`$CLAUDE_PROJECT_DIR` or `$PWD`). On a match it sets `SPAWN_LOG_FILE` to `{project_root}/memory/spawns.jsonl`; otherwise it falls back to `~/.claude/logs/spawns.jsonl`. Used by `spawn-completion.sh` and `spawn-gate.sh`-adjacent tooling to keep spawn logs project-scoped. This is the bash/sourced twin of the `resolve_log_file()` python helper duplicated inline inside `spawn-logger.sh`, `spawn-completion.sh`, and `log-spawn-from-agent.sh`.
+Defines a single function, `resolve_project_path`, meant to be `source`d (not executed) by callers: `source {agency-root}/hooks/lib/resolve-project.sh && resolve_project_path`. It reads the Active Projects table in `~/.claude/memory/medium-term.md`, expands each row's backtick-quoted path, and longest-prefix-matches it against the current working directory (`$CLAUDE_PROJECT_DIR` or `$PWD`). On a match it sets `SPAWN_LOG_FILE` to `{project_root}/memory/spawns.jsonl`; otherwise it falls back to `~/.claude/logs/spawns.jsonl`. Used by `spawn-completion.sh` and `spawn-gate.sh`-adjacent tooling to keep spawn logs project-scoped. This is the bash/sourced twin of the `resolve_log_file()` python helper duplicated inline inside `spawn-logger.sh`, `spawn-completion.sh`, and `log-spawn-from-agent.sh`.
 
 ### log-spawn-from-agent.sh
 

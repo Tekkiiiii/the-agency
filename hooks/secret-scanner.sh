@@ -3,7 +3,9 @@
 # Scans bash commands for credential-looking patterns. Profile-aware.
 set -euo pipefail
 
-PROFILE=$(cat "$HOME/.claude/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+PROFILE=$(cat "$AGENCY_ROOT/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
 if [ "$PROFILE" = "minimal" ]; then
   echo '{}'
   exit 0

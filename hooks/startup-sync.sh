@@ -1,7 +1,9 @@
 #!/bin/bash
-# Auto-sync ~/.claude config on Claude Code startup
+# Auto-sync the agency root's git config on Claude Code startup
 
-cd ~/.claude
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+cd "$AGENCY_ROOT" || exit 0
 timeout 5 git fetch origin main 2>/dev/null || { echo "⚠️  Not a git repo yet or fetch timed out — skipping sync"; exit 0; }
 
 LOCAL=$(git rev-parse @ 2>/dev/null)

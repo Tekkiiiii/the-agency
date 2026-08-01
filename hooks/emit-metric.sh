@@ -5,7 +5,9 @@
 # FAILURE ISOLATION: errors never block the caller (set +e).
 set +e
 
-METRICS_FILE="$HOME/.claude/memory/metrics/events.jsonl"
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+METRICS_FILE="$AGENCY_ROOT/memory/metrics/events.jsonl"
 INPUT="${1:-}"
 
 if [ -z "$INPUT" ]; then
@@ -15,7 +17,7 @@ fi
 python3 -c "
 import json, sys, datetime, os
 
-metrics_file = os.path.expanduser('~/.claude/memory/metrics/events.jsonl')
+metrics_file = '$METRICS_FILE'
 os.makedirs(os.path.dirname(metrics_file), exist_ok=True)
 
 try:

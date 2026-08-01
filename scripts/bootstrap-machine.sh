@@ -7,17 +7,20 @@
 # Safe to re-run: every step checks before acting.
 #
 # Usage:
-#   bash ~/.claude/scripts/bootstrap-machine.sh
-#   bash ~/.claude/scripts/bootstrap-machine.sh --upgrade   # also upgrade existing tools
-#   bash ~/.claude/scripts/bootstrap-machine.sh --dry-run   # print plan, do nothing
+#   bash {agency-root}/scripts/bootstrap-machine.sh
+#   bash {agency-root}/scripts/bootstrap-machine.sh --upgrade   # also upgrade existing tools
+#   bash {agency-root}/scripts/bootstrap-machine.sh --dry-run   # print plan, do nothing
 #
 # Requirements: uv, node/npm (for gws + npx MCPs), python3 (for markitdown)
 # Optional: claude CLI (for MCP registration)
 #
 # SAFETY: this script reads no credentials, no ~/.claude.json, no .env files.
-# All paths are $HOME-relative. No hardcoded usernames or system paths.
+# All paths are resolved from $AGENCY_ROOT or $HOME. No hardcoded usernames or
+# system paths.
 #
 set -euo pipefail
+
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/../hooks/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
 UPGRADE=0
 DRY_RUN=0
@@ -155,14 +158,14 @@ fi
 if command -v lightpanda >/dev/null 2>&1 && [ "$UPGRADE" = "0" ]; then
   skip "lightpanda already installed"
 else
-  LIGHTPANDA_SKILL="$HOME/.claude/skills/lightpanda/scripts/install.sh"
+  LIGHTPANDA_SKILL="$AGENCY_ROOT/skills/lightpanda/scripts/install.sh"
   if [ -f "$LIGHTPANDA_SKILL" ]; then
     say "Installing lightpanda via skill install script..."
     run "lightpanda install" bash "$LIGHTPANDA_SKILL"
     ok "lightpanda installed"
   else
     warn "lightpanda install script not found at ${LIGHTPANDA_SKILL}"
-    warn "Install manually: bash \$HOME/.claude/skills/lightpanda/scripts/install.sh"
+    warn "Install manually: bash ${LIGHTPANDA_SKILL}"
   fi
 fi
 
@@ -214,7 +217,7 @@ if [ "$HAS_CLAUDE" = "0" ]; then
   Register these manually once the claude CLI is on PATH:
 
     # graphify (run setup-graphify.sh instead of this raw command):
-    bash ~/.claude/scripts/setup-graphify.sh
+    bash $AGENCY_ROOT/scripts/setup-graphify.sh
 
     # notebooklm-mcp
     NLM_PY=\$(uv tool dir)/notebooklm-mcp-cli/bin/python
@@ -254,19 +257,19 @@ else
   if claude mcp list 2>/dev/null | grep -q '^graphify[: ]'; then
     if [ "$UPGRADE" = "1" ]; then
       say "Re-running setup-graphify.sh --upgrade..."
-      SETUP_GFY="$HOME/.claude/scripts/setup-graphify.sh"
+      SETUP_GFY="$AGENCY_ROOT/scripts/setup-graphify.sh"
       [ -f "$SETUP_GFY" ] && run "setup-graphify" bash "$SETUP_GFY" --upgrade || warn "setup-graphify.sh not found at $SETUP_GFY"
     else
       skip "graphify MCP already registered"
     fi
   else
     say "Running setup-graphify.sh for graphify MCP..."
-    SETUP_GFY="$HOME/.claude/scripts/setup-graphify.sh"
+    SETUP_GFY="$AGENCY_ROOT/scripts/setup-graphify.sh"
     if [ -f "$SETUP_GFY" ]; then
       run "setup-graphify" bash "$SETUP_GFY"
     else
       warn "setup-graphify.sh not found at $SETUP_GFY — install graphify MCP manually:"
-      warn "  bash ~/.claude/scripts/setup-graphify.sh"
+      warn "  bash $SETUP_GFY"
     fi
   fi
 
@@ -311,7 +314,10 @@ echo ""
 #                    Leave out until resolved.
 
 # ── MANUAL AUTH CHECKLIST ────────────────────────────────────────────────────
-cat <<'CHECKLIST'
+# Unquoted heredoc so $AGENCY_ROOT expands — every path printed below is meant to
+# be copy-pasteable, which a literal {agency-root} placeholder would not be. The
+# block contains no other shell-special characters, so unquoting is safe.
+cat <<CHECKLIST
 
 ────────────────────────────────────────────────────────────────────────────────
 MANUAL AUTH CHECKLIST — cannot be scripted; do these by hand after bootstrap
@@ -346,14 +352,14 @@ Restart your Claude Code session after bootstrap so all MCP servers load.
        Zero-install via npx — no clone needed. Just run:
          npx --yes hyperframes <command>
        Or install globally: npm install -g hyperframes
-       Skill docs: ~/.claude/skills/hyperframes/SKILL.md
+       Skill docs: $AGENCY_ROOT/skills/hyperframes/SKILL.md
 
   □  video-use (conversation-driven video editor, ~316MB)
        git clone https://github.com/browser-use/video-use ~/.agents/skills/video-use
        cd ~/.agents/skills/video-use
        uv sync   # or: pip install -e .
        # Then symlink into Claude skills:
-       ln -sfn ~/.agents/skills/video-use ~/.claude/skills/video-use
+       ln -sfn ~/.agents/skills/video-use $AGENCY_ROOT/skills/video-use
        # Requires: ffmpeg (brew install ffmpeg)
        # Optional: ELEVENLABS_API_KEY in .env for speaker diarization
 
