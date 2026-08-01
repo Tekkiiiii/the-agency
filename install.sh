@@ -209,6 +209,27 @@ if [ -d "$SCRIPTS_SRC" ]; then
     echo "  ✓ Scripts installed"
 fi
 
+# --- Design system ---
+# Brand-token SSOT. Shipped design skills resolve brand values from
+# `{agency-root}/design-system/brands/{name}.json` at generation time. Not
+# shipping this tree makes those references dangle SILENTLY — a skill that
+# cannot find its brand file falls back to whatever hex it last hardcoded,
+# which is the exact drift the tree exists to prevent. Keep in sync with
+# install.ps1 and cli/commands/init.js — see docs/INSTALL-LAYOUT.md.
+DESIGN_SYSTEM_SRC="$SCRIPT_DIR/design-system"
+DESIGN_SYSTEM_DEST="$CLAUDE_HOME/design-system"
+if [ -d "$DESIGN_SYSTEM_SRC" ]; then
+    mkdir -p "$DESIGN_SYSTEM_DEST"
+    cp -r "$DESIGN_SYSTEM_SRC"/* "$DESIGN_SYSTEM_DEST/"
+    chmod +x "$DESIGN_SYSTEM_DEST"/*.js 2>/dev/null || true
+    ds_repo_brands=$(ls "$DESIGN_SYSTEM_SRC"/brands/*.json 2>/dev/null | wc -l | tr -d ' ')
+    ds_dest_brands=$(ls "$DESIGN_SYSTEM_DEST"/brands/*.json 2>/dev/null | wc -l | tr -d ' ')
+    echo "  ✓ Design system installed ($ds_dest_brands brand(s), $(ls "$DESIGN_SYSTEM_DEST"/overlays/*.css 2>/dev/null | wc -l | tr -d ' ') overlay(s))"
+    if [ "$ds_repo_brands" != "$ds_dest_brands" ]; then
+        echo "  ⚠ Brand count mismatch: repo=$ds_repo_brands installed=$ds_dest_brands"
+    fi
+fi
+
 # --- CLI command ---
 CLI_SRC="$SCRIPT_DIR/cli/bin/agency.js"
 if [ -f "$CLI_SRC" ]; then

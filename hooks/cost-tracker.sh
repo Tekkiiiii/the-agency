@@ -18,13 +18,27 @@ if [ -z "$TRANSCRIPT" ] || [ ! -f "$TRANSCRIPT" ]; then
 fi
 
 mkdir -p "$AGENCY_ROOT/metrics"
+METRICS_FILE="$AGENCY_ROOT/metrics/costs.jsonl"
 
+# Same idiom as hooks/emit-metric.sh (Wave 13, 3383ea9): no absolute path crosses
+# the bash -> python3 boundary, since a Windows box's native python3 cannot open
+# an MSYS-style path like /d/a/_temp/foo/transcript.jsonl. This hook reads from
+# the transcript's own directory (which can be anywhere Claude Code put it) and
+# writes to AGENCY_ROOT/metrics — two different directories, so it can't use a
+# single cd+bare-filename like emit-metric.sh does. Minimal consistent variant:
+# cd into the transcript's directory and hand python only its bare filename to
+# read; python prints the computed row (JSON) to stdout and the diagnostic cost
+# line to stderr; bash (native redirection — no path translation involved)
+# appends stdout to METRICS_FILE.
+TRANSCRIPT_DIR=$(dirname "$TRANSCRIPT")
+TRANSCRIPT_BASE=$(basename "$TRANSCRIPT")
+
+ROW=$( cd "$TRANSCRIPT_DIR" 2>/dev/null || exit 0
 python3 -c "
 import json, os, sys
 from datetime import datetime, timezone
 
-transcript = '$TRANSCRIPT'
-metrics_file = os.path.join('$AGENCY_ROOT', 'metrics', 'costs.jsonl')
+transcript = '$TRANSCRIPT_BASE'
 
 rates = {
     'haiku':  {'input': 0.80, 'output': 4.00, 'cache_write': 1.00, 'cache_read': 0.08},
@@ -95,10 +109,19 @@ row = {
     'estimated_cost_usd': round(cost, 4),
 }
 
-with open(metrics_file, 'a') as f:
-    f.write(json.dumps(row) + '\n')
+# Print the row to stdout (captured by bash into ROW below) rather than writing
+# it here — this python process's cwd is the TRANSCRIPT's directory, not
+# AGENCY_ROOT/metrics, so it must not be the one to open metrics_file.
+print(json.dumps(row))
 
 in_k = input_tokens / 1000
 out_k = output_tokens / 1000
 print(f'Session cost: \${cost:.4f} ({in_k:.0f}k in, {out_k:.0f}k out, {tier})', file=sys.stderr)
-" 2>/dev/null || true
+" 2>/dev/null
+) || true
+
+if [ -n "$ROW" ]; then
+  printf '%s\n' "$ROW" >> "$METRICS_FILE" 2>/dev/null || true
+fi
+
+exit 0

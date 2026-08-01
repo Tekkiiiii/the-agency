@@ -173,7 +173,18 @@ function syncRunbooks(repoDir, destDir, console) {
   return syncTree(repoDir, destDir, 'runbooks', console);
 }
 
+// design-system/ ships the brand-token SSOT (brands/*.json + generated
+// brands/*.css, overlays/*.css, build.js). Shipped design skills resolve brand
+// values from `{agency-root}/design-system/brands/{name}.json` at generation
+// time, so not deploying it makes every one of those references dangle — and
+// the failure is silent, because a skill that cannot find a brand file just
+// falls back to whatever hex it last hardcoded, which is the exact drift this
+// tree exists to prevent. build.js is executable; the rest is data.
+function syncDesignSystem(repoDir, destDir, console) {
+  return syncTree(repoDir, destDir, 'design-system', console, { chmodExec: true });
+}
+
 module.exports = {
-  syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks,
+  syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem,
   syncTree, syncDirRecursive, shouldCopy, fileHash,
 };

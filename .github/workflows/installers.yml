@@ -65,6 +65,28 @@ jobs:
           grep -q '"ts"' "$log" || { echo "FAIL: emitted line carries no ts"; cat "$log"; exit 1; }
           cat "$log"
 
+      # design-system/ is the quietest tree on the deploy list: a skill that
+      # cannot find its brand file does not error, it falls back to a hardcoded
+      # hex and ships an off-brand deliverable. So assert the DEPLOYED copy is
+      # complete and still functional, not merely that the directory exists.
+      - name: Assert design-system deployed and regenerates identical CSS
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: |
+          ds="$AGENCY_HOME/design-system"
+          [ -f "$ds/brands/neutral.json" ] || { echo "FAIL: brand SSOT not deployed"; exit 1; }
+          [ -f "$ds/brands/neutral.css" ]  || { echo "FAIL: generated brand CSS not deployed"; exit 1; }
+          repo_overlays=$(find design-system/overlays -name '*.css' | wc -l | tr -d ' ')
+          got_overlays=$(find "$ds/overlays" -name '*.css' | wc -l | tr -d ' ')
+          echo "overlays repo=$repo_overlays installed=$got_overlays"
+          [ "$got_overlays" = "$repo_overlays" ] || { echo "FAIL: overlay count mismatch"; exit 1; }
+          # Regenerating from the deployed JSON must reproduce the deployed CSS
+          # byte-for-byte. This catches a truncated copy AND a hand-edited .css.
+          cp "$ds/brands/neutral.css" "$RUNNER_TEMP/neutral.css.before"
+          node "$ds/build.js"
+          diff -u "$RUNNER_TEMP/neutral.css.before" "$ds/brands/neutral.css" \
+            || { echo "FAIL: deployed brand CSS is not what build.js generates"; exit 1; }
+
       # The custom-root case is the one that had no test before Wave 13: every
       # script under hooks/ and scripts/ used to hardcode $HOME/.claude, so a
       # custom AGENCY_HOME installed to one place and was read from another.
@@ -182,6 +204,52 @@ jobs:
           grep -q '"ts"' "$log" || { echo "FAIL: emitted line carries no ts"; cat "$log"; exit 1; }
           cat "$log"
 
+      - name: Assert check-session-state.sh and session-end.sh write session-state.json
+        env:
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          # Same MSYS-path defect class as emit-metric.sh (Wave 13, 3383ea9):
+          # python3 on Windows PATH is native and cannot open the MSYS-style
+          # path Git Bash hands it. Wave 14 applied the same cd+bare-filename
+          # idiom to check-session-state.sh and session-end.sh (both write
+          # $AGENCY_ROOT/session-state.json) — assert the fix holds.
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+
+          state="$AGENCY_HOME/session-state.json"
+          rm -f "$state"
+
+          # First run with no state file: check-session-state.sh creates one.
+          bash "$AGENCY_HOME/hooks/check-session-state.sh"
+          [ -s "$state" ] || { echo "FAIL: check-session-state.sh wrote no $state"; exit 1; }
+          grep -q '"was_clean": true' "$state" || { echo "FAIL: unexpected content"; cat "$state"; exit 1; }
+
+          # session-end.sh marks the session cleanly ended with a fresh ts.
+          bash "$AGENCY_HOME/hooks/session-end.sh"
+          grep -q '"was_clean": true' "$state" || { echo "FAIL: session-end.sh did not mark clean"; cat "$state"; exit 1; }
+          grep -q '"last_stop"' "$state" || { echo "FAIL: session-end.sh wrote no last_stop"; cat "$state"; exit 1; }
+          cat "$state"
+
+      - name: Assert bg-job-warn.sh writes .pending-bg-jobs.jsonl
+        env:
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          # Same MSYS-path defect class as emit-metric.sh. bg-job-warn.sh's
+          # BG_JOB_FILE was crossing the bash -> python3 boundary via argv
+          # (not string interpolation) — proves the fix covers both mechanisms.
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+
+          jobs="$AGENCY_HOME/.pending-bg-jobs.jsonl"
+          rm -f "$jobs"
+
+          echo '{"hook_event_name":"PostToolUse","tool_input":{"run_in_background":true,"command":"npm run build","description":"ci probe"},"tool_response":{"content":[{"type":"text","text":"Command running in background with ID: ci-probe-1"}]}}' \
+            | bash "$AGENCY_HOME/hooks/bg-job-warn.sh"
+
+          [ -s "$jobs" ] || { echo "FAIL: bg-job-warn.sh wrote no $jobs"; exit 1; }
+          grep -q 'ci-probe-1' "$jobs" || { echo "FAIL: bg_id missing from entry"; cat "$jobs"; exit 1; }
+          cat "$jobs"
+
       - name: Second install into a DIFFERENT AGENCY_HOME
         env:
           AGENCY_HOME: ${{ runner.temp }}\agency-custom
@@ -192,10 +260,16 @@ jobs:
           AGENCY_HOME: ${{ runner.temp }}\agency-custom
         run: |
           .\.github\scripts\verify-agency-refs.ps1 -AgencyRoot $env:AGENCY_HOME
-          foreach ($tree in @('skills','agents','core','hooks','runbooks','scripts')) {
+          foreach ($tree in @('skills','agents','core','hooks','runbooks','scripts','design-system')) {
             $p = Join-Path $env:AGENCY_HOME $tree
             if (-not (Test-Path $p)) { throw "missing tree under custom root: $tree" }
           }
           if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'hooks\lib\resolve-root.sh'))) {
             throw "resolve-root.sh not deployed - every sourcing script degrades"
+          }
+          # A brand file that did not deploy fails silently at runtime - the
+          # consuming skill just keeps its last hardcoded hex. Assert the SSOT
+          # is actually there rather than trusting the directory's existence.
+          if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'design-system\brands\neutral.json'))) {
+            throw "design-system brand SSOT not deployed"
           }

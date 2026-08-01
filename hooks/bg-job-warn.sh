@@ -19,8 +19,16 @@ set +e
 
 INPUT=$(cat)
 BG_JOB_FILE="$AGENCY_ROOT/.pending-bg-jobs.jsonl"
+BG_JOB_DIR=$(dirname "$BG_JOB_FILE")
+BG_JOB_BASE=$(basename "$BG_JOB_FILE")
+mkdir -p "$BG_JOB_DIR" 2>/dev/null || true
 
-python3 - "$INPUT" "$BG_JOB_FILE" <<'PYEOF'
+# Same idiom as hooks/emit-metric.sh (Wave 13, 3383ea9): cd into BG_JOB_FILE's
+# directory and hand python a bare filename via argv, never the MSYS-style
+# absolute path a Windows box's native python3 cannot open (argv is affected
+# by the same underlying defect as string interpolation).
+( cd "$BG_JOB_DIR" 2>/dev/null || exit 0
+python3 - "$INPUT" "$BG_JOB_BASE" <<'PYEOF'
 import sys, json, os, re
 from datetime import datetime
 
@@ -69,7 +77,6 @@ try:
         "resolved": False,
     }
 
-    os.makedirs(os.path.dirname(bg_job_file), exist_ok=True)
     with open(bg_job_file, "a") as f:
         f.write(json.dumps(entry) + "\n")
 
@@ -90,4 +97,5 @@ except Exception:
 
 sys.exit(0)
 PYEOF
+)
 exit 0

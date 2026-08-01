@@ -112,13 +112,14 @@ if (Test-Path $CoreSrc) {
     Write-Host "  ✓ Core docs installed"
 }
 
-# --- Hooks, runbooks, scripts ---
-# These three trees carry paths that shipped agent defs, runbooks and skills
-# reference as `{agency-root}/hooks/...`, `{agency-root}/runbooks/...` and
-# `{agency-root}/scripts/...`. install.ps1 previously shipped none of them, so
-# every such reference dangled on a Windows install. Keep this list in sync
-# with install.sh and cli/commands/init.js — see docs/INSTALL-LAYOUT.md.
-foreach ($tree in @("hooks", "runbooks", "scripts")) {
+# --- Hooks, runbooks, scripts, design-system ---
+# These four trees carry paths that shipped agent defs, runbooks and skills
+# reference as `{agency-root}/hooks/...`, `{agency-root}/runbooks/...`,
+# `{agency-root}/scripts/...` and `{agency-root}/design-system/...`.
+# install.ps1 previously shipped none of them, so every such reference dangled
+# on a Windows install. Keep this list in sync with install.sh and
+# cli/commands/init.js — see docs/INSTALL-LAYOUT.md.
+foreach ($tree in @("hooks", "runbooks", "scripts", "design-system")) {
     $TreeSrc = Join-Path $ScriptDir $tree
     $TreeDest = Join-Path $ClaudeHome $tree
     if (Test-Path $TreeSrc) {
