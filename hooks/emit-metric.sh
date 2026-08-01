@@ -7,18 +7,28 @@ set +e
 
 . "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
-METRICS_FILE="$AGENCY_ROOT/memory/metrics/events.jsonl"
+METRICS_DIR="$AGENCY_ROOT/memory/metrics"
+METRICS_FILE="$METRICS_DIR/events.jsonl"
 INPUT="${1:-}"
 
 if [ -z "$INPUT" ]; then
   exit 0
 fi
 
-python3 -c "
-import json, sys, datetime, os
+# The directory is created in bash, and python is handed a BARE FILENAME with the
+# metrics dir as its cwd — never an absolute path.
+#
+# Why: on Windows this runs under Git Bash, but `python3` on PATH is usually
+# native Windows Python. Handing it the MSYS path `/d/a/_temp/.../events.jsonl`
+# fails — that path means nothing to a win32 interpreter — and because this
+# script is fire-and-forget (set +e, stderr muted) the failure was invisible:
+# every metric emitted from a Windows install silently went nowhere. A relative
+# filename needs no path translation and is correct on every platform.
+mkdir -p "$METRICS_DIR" 2>/dev/null || true
 
-metrics_file = '$METRICS_FILE'
-os.makedirs(os.path.dirname(metrics_file), exist_ok=True)
+( cd "$METRICS_DIR" 2>/dev/null || exit 0
+  python3 -c "
+import json, sys, datetime
 
 try:
     d = json.loads('$INPUT'.replace(\"'\", '\"'))
@@ -30,8 +40,9 @@ except Exception:
 
 d['ts'] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
 
-with open(metrics_file, 'a') as f:
+with open('events.jsonl', 'a') as f:
     f.write(json.dumps(d) + '\n')
 " "$INPUT" 2>/dev/null || true
+)
 
 exit 0
