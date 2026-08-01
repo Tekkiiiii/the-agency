@@ -50,14 +50,33 @@
 #               root = m.group(1).upper() + ':' + (m.group(2) or '/')
 #       return root
 #
-# Why the nt branch exists. A Git Bash user who exports
-# AGENCY_HOME=/c/Users/me/.claude hands that exact string to python3. The
-# python3 first on a Windows PATH is the native build, which reads a leading
-# slash as drive-relative-to-the-current-drive, not as an MSYS drive prefix —
-# so it happily creates C:\c\Users\me\.claude and writes there, exit code 0,
-# and nothing under the real root ever appears. Rewriting /c/... to C:/... at
-# this one boundary is the whole fix. The unset (default) case was always fine:
+# Why the nt branch exists — and what it is NOT.
+#
+# If the string /c/Users/me/.claude reaches a native Windows python, that python
+# reads the leading slash as drive-relative-to-the-current-drive, not as an MSYS
+# drive prefix: it creates C:\c\Users\me\.claude, writes there, exits 0, and
+# nothing under the real root ever appears. The nt branch rewrites the value so
+# that cannot happen.
+#
+# What the CI red-check established is that Git Bash normally prevents the
+# string from arriving that way at all. Git Bash is MSYS2, and MSYS2 converts
+# path-shaped environment variables into Windows form whenever it spawns a
+# native binary. So `export AGENCY_HOME=/d/a/x` is already D:\a\x by the time
+# python reads os.environ — the rewrite is a no-op on that path, and an earlier
+# version of the CI step passed against deliberately un-fixed hooks because of
+# it. The step now sets MSYS2_ENV_CONV_EXCL to switch that conversion off and
+# assert BOTH cases.
+#
+# So this branch is a backstop, not a fix for an observed Git Bash failure: it
+# covers any caller outside MSYS2's conversion rules (conversion excluded, a
+# non-MSYS2 POSIX layer, or a value assembled after the process started). It is
+# kept because it is free, provably inert everywhere else, and the alternative
+# is a silent wrong-directory write. The unset (default) case was always fine:
 # python computes expanduser("~")/.claude natively.
+#
+# The two earlier variants are genuinely different and remain real: a path
+# interpolated into python SOURCE, or embedded inside a larger argument, is
+# never touched by MSYS2's conversion. Those are what Waves 13 and 14 fixed.
 #
 # Why it is guarded on os.name. On macOS and Linux /c/anything is a legitimate
 # absolute path and rewriting it would BE the bug. os.name is 'nt' only for a

@@ -255,56 +255,79 @@ jobs:
           AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
         shell: bash
         run: |
-          # Third variant of the Windows path defect. The hooks above crossed a
-          # bash-built path into python3; these three build nothing in bash —
-          # they read AGENCY_HOME from the environment INSIDE python. Same
-          # ending: the value a Git Bash user exports is /c/... and a native
-          # Windows python3 reads a leading slash as drive-relative, so it
-          # creates C:\c\... and writes there. Exit 0, nothing under the root.
+          # Third variant of the Windows path defect. The hooks fixed above
+          # crossed a bash-BUILT path into python3; these three build nothing in
+          # bash — they read AGENCY_HOME from the environment INSIDE python.
           #
-          # cygpath -u produces exactly that MSYS form, so this is the real
-          # shape, not a simulation. Every assertion below spells the path with
-          # $AGENCY_HOME (MSYS) while the hook now writes the C:/ rewrite of it —
-          # they must land on the same file or the fix did not work.
+          # MSYS2_ENV_CONV_EXCL is the whole point of this step, and it is here
+          # because the first version of it was green against the broken code.
+          # Git Bash is MSYS2, and MSYS2 rewrites path-shaped environment
+          # variables into Windows form whenever it spawns a NATIVE binary —
+          # which python3 on the Windows PATH is (verified in the step above:
+          # sys.platform == win32). So `export AGENCY_HOME=/d/a/...` arrives
+          # inside python already reading D:\a\..., and the defect this step was
+          # written to catch cannot occur. Excluding the variable from that
+          # conversion is what reproduces the raw MSYS string a caller outside
+          # MSYS2's conversion rules would deliver. Red against the pre-fix
+          # hooks, green after — checked by PR, not assumed.
+          #
+          # Both cases are asserted: the excluded one because it is the only one
+          # that can fail, and the default one because that is what every real
+          # Git Bash user actually hits.
           export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
           echo "posix root: $AGENCY_HOME"
 
-          logs="$AGENCY_HOME/logs"
-          rm -rf "$logs"
+          probe_hooks() {
+            local logs="$AGENCY_HOME/logs"
+            rm -rf "$logs"
 
-          # 1. write-evidence.sh -> logs/write-evidence.jsonl
-          echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/proj/outputs/ci-probe.html"}}' \
-            | bash "$AGENCY_HOME/hooks/write-evidence.sh" >/dev/null
-          [ -s "$logs/write-evidence.jsonl" ] \
-            || { echo "FAIL: write-evidence.sh wrote no $logs/write-evidence.jsonl"; exit 1; }
-          grep -q 'ci-probe.html' "$logs/write-evidence.jsonl" \
-            || { echo "FAIL: write-evidence entry missing the path"; cat "$logs/write-evidence.jsonl"; exit 1; }
+            # 1. write-evidence.sh -> logs/write-evidence.jsonl
+            echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/proj/outputs/ci-probe.html"}}' \
+              | bash "$AGENCY_HOME/hooks/write-evidence.sh" >/dev/null
+            [ -s "$logs/write-evidence.jsonl" ] \
+              || { echo "FAIL[$1]: write-evidence.sh wrote no $logs/write-evidence.jsonl"; return 1; }
+            grep -q 'ci-probe.html' "$logs/write-evidence.jsonl" \
+              || { echo "FAIL[$1]: write-evidence entry missing the path"; cat "$logs/write-evidence.jsonl"; return 1; }
 
-          # 2. artifact-verify.sh -> logs/artifact-verify.jsonl
-          echo '{"tool_response":{"content":"DONE: /nonexistent-ci/probe.pdf"}}' \
-            | bash "$AGENCY_HOME/hooks/artifact-verify.sh" >/dev/null
-          [ -s "$logs/artifact-verify.jsonl" ] \
-            || { echo "FAIL: artifact-verify.sh wrote no $logs/artifact-verify.jsonl"; exit 1; }
+            # 2. artifact-verify.sh -> logs/artifact-verify.jsonl
+            echo '{"tool_response":{"content":"DONE: /nonexistent-ci/probe.pdf"}}' \
+              | bash "$AGENCY_HOME/hooks/artifact-verify.sh" >/dev/null
+            [ -s "$logs/artifact-verify.jsonl" ] \
+              || { echo "FAIL[$1]: artifact-verify.sh wrote no $logs/artifact-verify.jsonl"; return 1; }
 
-          # 3. spawn-logger.sh -> logs/spawns.jsonl, and it must still return the
-          #    modified toolInput on stdout (an empty return would disable the
-          #    lineage marker without failing anything).
-          out=$(echo '{"tool_use_id":"t1","tool_input":{"subagent_type":"ci-probe-agent","description":"d","prompt":"p"}}' \
-            | bash "$AGENCY_HOME/hooks/spawn-logger.sh")
-          grep -q 'ci-probe-agent' "$logs/spawns.jsonl" 2>/dev/null \
-            || { echo "FAIL: spawn-logger.sh wrote no $logs/spawns.jsonl"; exit 1; }
-          case "$out" in
-            *CLAUDE_SPAWN_META*) : ;;
-            *) echo "FAIL: spawn-logger.sh returned no marker: $out"; exit 1 ;;
-          esac
+            # 3. spawn-logger.sh -> logs/spawns.jsonl, and it must still return
+            #    the modified toolInput on stdout (an empty return would disable
+            #    the lineage marker without failing anything).
+            local out
+            out=$(echo '{"tool_use_id":"t1","tool_input":{"subagent_type":"ci-probe-agent","description":"d","prompt":"p"}}' \
+              | bash "$AGENCY_HOME/hooks/spawn-logger.sh")
+            grep -q 'ci-probe-agent' "$logs/spawns.jsonl" 2>/dev/null \
+              || { echo "FAIL[$1]: spawn-logger.sh wrote no $logs/spawns.jsonl"; return 1; }
+            case "$out" in
+              *CLAUDE_SPAWN_META*) : ;;
+              *) echo "FAIL[$1]: spawn-logger.sh returned no marker: $out"; return 1 ;;
+            esac
 
-          # Nothing may have leaked into Git Bash's own $HOME/.claude.
-          if [ -e "$HOME/.claude/logs/write-evidence.jsonl" ]; then
-            echo "FAIL: hook ignored AGENCY_HOME and wrote to \$HOME/.claude"
-            exit 1
-          fi
-          head -c 400 "$logs/write-evidence.jsonl"; echo
-          head -c 400 "$logs/spawns.jsonl"; echo
+            # Nothing may have leaked into Git Bash's own $HOME/.claude.
+            if [ -e "$HOME/.claude/logs/write-evidence.jsonl" ]; then
+              echo "FAIL[$1]: hook ignored AGENCY_HOME and wrote to \$HOME/.claude"
+              return 1
+            fi
+            echo "OK[$1]"
+            head -c 300 "$logs/write-evidence.jsonl"; echo
+            return 0
+          }
+
+          # The case that can actually fail: MSYS2 hands the raw /d/... string
+          # on. Exported, not prefixed onto the call — the conversion happens in
+          # the INNER bash that spawns python3, so the variable has to be
+          # inherited all the way down.
+          export MSYS2_ENV_CONV_EXCL="AGENCY_HOME"
+          probe_hooks "raw-msys-env" || exit 1
+
+          # The case every real Git Bash user hits: MSYS2 converts it first.
+          unset MSYS2_ENV_CONV_EXCL
+          probe_hooks "msys2-converted" || exit 1
 
       - name: Second install into a DIFFERENT AGENCY_HOME
         env:
