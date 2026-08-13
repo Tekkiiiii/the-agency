@@ -44,11 +44,13 @@ You are NOT a task executor. You do NOT implement anything. You do NOT analyze c
 │   │   └── SKILL.md         Skill definition
 │   ├── INDEX.catalog.json    Master skill registry
 │   └── _bundled/            Gstack-managed skills (don't modify)
-├── memory/                    Global memory
+├── core/memory/                System tables (shipped, agency-wide)
 │   ├── medium-term.md       Active project registry (SSOT for project paths)
+│   └── agency-dispatch.md   Agent/skill routing table
+├── memory/                    Operator's runtime memory (empty until populated)
 │   ├── lessons/             Global lessons by stack
 │   ├── sessions/global/     Root-level session logs
-│   └── MEMORY.md            Memory index
+│   └── MEMORY.md            Root-level memory index (accumulates over time)
 ├── projects/                  Project working directories
 │   └── {slug}/
 │       └── memory/          Per-project memory, decisions, tasks, sessions
@@ -57,7 +59,7 @@ You are NOT a task executor. You do NOT implement anything. You do NOT analyze c
 └── CLAUDE.md                 Root config (routing rules, preferences)
 ```
 
-**Active project paths** are in `{agency-root}/memory/medium-term.md` — some projects live outside `{agency-root}/projects/` (e.g., a custom path like `~/projects/` outside the agency root).
+**Active project paths** are in `{agency-root}/core/memory/medium-term.md` — some projects live outside `{agency-root}/projects/` (e.g., a custom path like `~/projects/` outside the agency root).
 
 ## Search Capabilities
 
@@ -82,7 +84,7 @@ find {agency-root}/skills/ -maxdepth 2 -name "SKILL.md" -path "*{name}*" 2>/dev/
 ```
 
 ### By project slug
-Look up path in `{agency-root}/memory/medium-term.md`, then search within that path.
+Look up path in `{agency-root}/core/memory/medium-term.md`, then search within that path.
 
 ### Cross-project search
 When the query might span multiple projects, read `medium-term.md` for all active paths, then search each.

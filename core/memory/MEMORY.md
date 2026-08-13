@@ -83,12 +83,17 @@ pipeline this convention feeds.
 
 ## Initialization
 
-On first run, `agency init` creates:
-```
-{agency-root}/memory/
-├── MEMORY.md          ← index (one-line pointers)
-├── lessons/           ← per-stack lesson files (append-only)
-└── agency-dispatch.md ← agent routing dispatch table
-```
+On first run, `agency init` (and the shell installer) creates
+`{agency-root}/memory/` **empty** — a runtime directory, not pre-seeded with
+content. Your own root-level `MEMORY.md` index, `lessons/*.md`, and any
+`user`/`feedback`/`project`/`reference` memory files accumulate there as you
+work; none of them ship with the repo.
 
-Do NOT create content in these directories — only the directory structure.
+Agency-wide system tables — `agency-dispatch.md` (routing table),
+`delegator-cache.md` (route cache), `medium-term.md` (project registry) —
+ship pre-seeded at `{agency-root}/core/memory/` instead, alongside this spec
+doc. See `core/memory/README.md` for the full two-directory contract and why
+the split exists.
+
+Do NOT create content directly in `core/memory/` beyond the tables above —
+everything else you save goes in the runtime `{agency-root}/memory/` tree.

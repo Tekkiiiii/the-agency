@@ -90,7 +90,7 @@ Pre-approved spawns (no marker needed):
   Delegator, Explore, Plan, statusline-setup
   Any prompt starting with 'You are PD-' or a known skill-ownership pattern.
 
-See {agency-root}/memory/agency-dispatch.md Step 1.5 for the routing protocol."
+See {agency-root}/core/memory/agency-dispatch.md Step 1.5 for the routing protocol."
 
 MSG_ESCAPED=$(printf '%s' "$MSG" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '%s' "$MSG" | sed 's/"/\\"/g; s/$/\\n/' | tr -d '\n')
 

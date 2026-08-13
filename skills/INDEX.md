@@ -1,6 +1,6 @@
 # Skills Index
 
-256 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+287 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 ## Department Lifecycle
 
@@ -45,6 +45,10 @@
 | `room-manager-digest` | 12-hour dept head digests from rolling.md feeds |
 | `nexus-gatekeeper` | Reality Checker blocking gate — tasks can't advance until cleared |
 | `sync-md-json` | Bidirectional sync between .json and .md files |
+| `respawn-self` | PD context-aware self-respawn at 80% context — saves state, writes continuation manifest |
+| `coord-respawn-self` | Coord context-aware self-respawn at 80% context mid-L3 — saves state, notifies spawner |
+| `pd-showcase` | Toggle PD showcase mode for live demos — foreground spawn with verbose narration |
+| `onboard` | Interactive first-run onboarding for the agency — install check, slash commands, MCP, first project |
 
 ## Planning & Review
 
@@ -71,6 +75,8 @@
 | `pipeline-audit` | Audit: parallel critiques -> aggregate -> QA -> report |
 | `pipeline-deploy` | Deploy: security -> baseline -> deploy -> canary + benchmark |
 | `pipeline-seo-geo-aeo` | SEO/GEO/AEO audit: technical SEO, structured data, E-E-A-T, AEO, GEO |
+| `pipeline-onboard` | New project onboarding: tech-stack profile -> CLAUDE.md setup -> memory init -> skill-routing check |
+| `pipeline-research` | Research pipeline: auto-researcher -> firecrawl-agent -> graphify -> notebooklm-memory |
 
 ## Execution & Shipping
 
@@ -106,6 +112,8 @@
 | `requesting-code-review` | Protocol for requesting structured code reviews |
 | `receiving-code-review` | Protocol for receiving and processing code review feedback |
 | `feedback-pipeline` | User feedback collection and processing pipeline |
+| `cc-loop` | Iterative quality loop — fixer -> polish -> parallel critiques -> score, repeats until pass criteria met |
+| `quality-loop-router` | Routes finished deliverables to Mode A (internal loop) or Mode B (external platform fix-plan + approval) |
 
 ## Content & Writing
 
@@ -131,6 +139,8 @@
 | `full-output-enforcement` | Override default LLM truncation behavior |
 | `xlsx-toolkit` | Full spreadsheet automation |
 | `vietnamese-language` | Vietnamese language reference layer — 17-file modular KB |
+| `html-plan-style` | Locked palette, typography, and component system for HTML plans, reports, and review-ready deliverables |
+| `skill-tekki-strategic-deck` | Builds a 25-30 slide strategic pitch/audit deck in a signature brand style — five-act narrative arc (pptxgenjs) |
 
 ## Engineering — Backend
 
@@ -186,6 +196,8 @@
 | `awesome-design-md` | Design resource collection |
 | `figma-ui-ux-consistency` | Figma UI/UX consistency checks |
 | `brandkit` | Premium brand-kit image generation |
+| `huashu-design` | HTML-based hi-fi prototypes, demos, slide decks, and animation exploration — embodies the right design expert per task |
+| `material-3` | Material Design 3 (M3) design system tokens and integration rules |
 
 ## Engineering — Video & Media
 
@@ -210,6 +222,7 @@
 | `gpt-image-prompts` | 476+ curated GPT-Image-2 prompts across 5 categories |
 | `imagegen-frontend-web` | Premium website design reference images |
 | `imagegen-frontend-mobile` | Premium mobile app screen concepts |
+| `image-prompt-engineer` | Prompt-writing methodology for any image generator — Midjourney, DALL-E, Stable Diffusion, Flux, Higgsfield |
 
 ## Engineering — AI/ML
 
@@ -221,6 +234,7 @@
 | `benchmark` | Performance benchmarking |
 | `benchmark-models` | ML model benchmarking |
 | `graphify` | Any input -> knowledge graph -> clustered communities -> HTML + JSON |
+| `cli-anything` | Turn any GUI-only software into an agent-usable CLI/REPL harness (Blender, GIMP, LibreOffice, etc.) |
 
 ## Deployment
 
@@ -360,6 +374,7 @@
 | `n8n-automation` | n8n workflow JSON for common automation patterns |
 | `legal-contract-review` | Review NDAs, SaaS contracts, MSAs, DPAs — clause-by-clause |
 | `tech-stack` | Technology stack selection and architecture decisions |
+| `crm-onboarding` | Build a lead capture + nurture CRM — onboarding form, state machine, email drip, kanban dashboard |
 
 ## Domain — CMS
 

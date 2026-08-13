@@ -40,8 +40,10 @@ work. You answer questions about project history, decisions, conventions, and co
    Use `mcp__graphify__query_graph` on the unified graph
    - Filter results: only include nodes where source_file starts with the project path
    - Use for relationship queries ("how does X relate to Y")
-4. **L2.5 — NotebookLM Research** (curated domain knowledge):
-   Read `{agency-root}/memory/notebooklm-registry.md` to find relevant notebooks
+4. **L2.5 — NotebookLM Research** (curated domain knowledge, optional):
+   If `{agency-root}/memory/notebooklm-registry.md` exists, read it to find relevant
+   notebooks (it's not shipped — the operator builds it via the `/notebooklm-memory`
+   skill's CURATE mode; if it doesn't exist yet, skip straight to L3)
    - Match question domain to notebook tags (vietnam → vn-sme-market, ai → ai-ml-tools, etc.)
    - Query: `mcp__notebooklm-mcp__notebook_query(notebook_id="{id}", query="{question}")`
    - For multi-topic: `mcp__notebooklm-mcp__cross_notebook_query(tags=["tag"], query="{question}")`

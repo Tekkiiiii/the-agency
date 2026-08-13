@@ -89,4 +89,4 @@ The following trigger phrases cause the parent AI to invoke quality-loop-router:
 - Skill: `{agency-root}/skills/quality-loop-router/SKILL.md`
 - Critics: `{agency-root}/agents/critiques/`
 - cc-loop: `{agency-root}/skills/cc-loop/SKILL.md` (Mode A reuses cc-loop primitives)
-- skill-routing: `{agency-root}/memory/skill-routing.md`
+- Skill routing: trigger phrases live inline in `CLAUDE.md` (Memory — Skill Triggers), and the agent/skill dispatch table is `{agency-root}/core/memory/agency-dispatch.md` — no separate skill-routing.md ships
