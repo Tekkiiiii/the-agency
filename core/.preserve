@@ -1,0 +1,42 @@
+# core/.preserve — the ONE definition of which core/ files survive an upgrade.
+#
+# Read by all four deploy paths: install.sh, install.ps1,
+# cli/commands/init.js and cli/commands/upgrade.js (both via syncCore() in
+# cli/commands/sync-assets.js). If you add a path here it is honoured
+# everywhere; there is deliberately no second list.
+#
+# SEMANTICS — skip-if-exists:
+#   destination has the file  -> leave it exactly as-is, never overwrite
+#   destination does not      -> seed it from the repo copy
+# That single rule is both first-install seeding and upgrade preservation.
+# There is no merge: merging would need per-file format knowledge, and a
+# wrong merge loses rows just as surely as an overwrite does.
+#
+# WHAT BELONGS HERE — files the RUNNING SYSTEM writes rows into at their
+# installed path. Not "files that look like state": something shipped in this
+# repo must actually instruct an agent to write to it. Grep before adding.
+#
+# WHAT DOES NOT BELONG HERE — shipped content. Listing a template freezes
+# every existing install on the version it happens to have; users would stop
+# receiving new agent routes, new lessons and new tier definitions forever.
+# That is a real cost, not a safe default. `memory/agency-dispatch.md`,
+# `memory/autonomy-tiers.json` and `memory/lessons/*.md` are read-only at
+# runtime and are deliberately absent from this list.
+#
+# FORMAT: one path per line, relative to core/, forward slashes, exact file
+# paths only (no globs, no directories). `#` starts a comment.
+# .github/scripts/check-core-preserve.js fails the build if a path listed
+# here does not exist in the repo — a typo here preserves nothing, silently.
+
+# Active Projects registry. project-scaffolder appends a row on every
+# /new-project (agents/specialized/project-scaffolder.md §4c). Losing it
+# breaks slug-to-path resolution for codebase-search, wrap and every PD.
+memory/medium-term.md
+
+# Delegator route cache. CLAUDE.md instructs every caller to append the
+# resolved (task-pattern -> route) pair here on a cache miss.
+memory/delegator-cache.md
+
+# Operator's quality thresholds. skills/quality-loop-router/SKILL.md writes
+# the answer here and states the operator may edit the file directly.
+memory/quality-prefs.md

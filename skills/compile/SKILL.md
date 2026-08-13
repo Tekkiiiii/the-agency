@@ -11,7 +11,7 @@ Load the full pipeline reference before generating or reviewing a marketing asse
 
 1. Read `~/.claude/skills/marketing-assessment-pipeline/SKILL.md` — the full pipeline skill with architecture, key files, Supabase access, and all 24 learned pitfalls
 2. Read `~/.claude/memory/lessons/marketing-pipeline.md` — detailed lessons from production runs
-3. Read `~/.claude/projects/tekki/memory/brand-database.md` — brand colors and deck templates
+3. Resolve brand colors from `{agency-root}/design-system/brands/{brand}.json` (see `strategic-deck` skill's Palette section for the mapping) — if the operator keeps a separate client brand-color log, check that too
 
 ## Output
 
@@ -19,9 +19,9 @@ After loading, confirm:
 ```
 PIPELINE GUARD LOADED
 - 24 pitfalls active (Vietnamese diacritics, PPTX layout, font installation, CTA rules)
-- Brand database loaded (TekkiSolutions defaults + client colors)
+- Brand colors resolved (design-system SSOT defaults + client colors)
 - Quality checklist ready (12 items)
-- Deck template: ~/.claude/skills/skill-tekki-strategic-deck/template.js
+- Deck spec: `{agency-root}/skills/strategic-deck/SKILL.md` (implement directly with pptxgenjs — no template.js ships)
 - Render: node deck.js → soffice --convert-to pdf
 - Review protocol: 4 parallel critics (Design, Content, Marketing, Ops)
 

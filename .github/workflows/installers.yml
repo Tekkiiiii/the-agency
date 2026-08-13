@@ -87,6 +87,53 @@ jobs:
           diff -u "$RUNNER_TEMP/neutral.css.before" "$ds/brands/neutral.css" \
             || { echo "FAIL: deployed brand CSS is not what build.js generates"; exit 1; }
 
+      # core/ is deployed by four paths and all four used to blind-overwrite it.
+      # Some core/memory/ files ship as empty scaffolds that the running system
+      # appends rows to at their INSTALLED path, so every reinstall destroyed
+      # user data with exit code 0. Note this is a second install into the SAME
+      # root — the existing "different AGENCY_HOME" step below cannot see this
+      # class of bug at all, which is why it went unnoticed.
+      #
+      # Both halves are asserted. (a) the user's row survives. (b) a file that
+      # is NOT preserved still refreshes — without (b) this step would pass just
+      # as happily if core syncing were disabled wholesale, which would freeze
+      # every install on whatever version it already had.
+      - name: Assert a second install.sh preserves accumulated core/memory rows
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: |
+          set -e
+          registry="$AGENCY_HOME/core/memory/medium-term.md"
+          template="$AGENCY_HOME/core/memory/agency-dispatch.md"
+          [ -f "$registry" ] || { echo "FAIL: $registry was not seeded by the first install"; exit 1; }
+
+          # Shaped like what project-scaffolder actually appends on /new-project.
+          echo '| ci-probe-project | `/tmp/ci-probe/memory/` | ci-probe-pd | Active |' >> "$registry"
+          # A non-preserved file, locally corrupted: the second install must fix it.
+          echo 'STALE SENTINEL' > "$template"
+
+          bash install.sh
+
+          if ! grep -q 'ci-probe-project' "$registry"; then
+            echo "FAIL: reinstall destroyed an accumulated row in core/memory/medium-term.md"
+            echo "--- installed copy ---"; cat "$registry"; exit 1
+          fi
+          if grep -q 'STALE SENTINEL' "$template"; then
+            echo "FAIL: core/ stopped refreshing — a non-preserved file was left stale"
+            echo "(preserving everything is not a fix: users would never receive new agent routes)"
+            exit 1
+          fi
+          if ! diff -u core/memory/agency-dispatch.md "$template"; then
+            echo "FAIL: refreshed template does not match the repo copy"; exit 1
+          fi
+          echo "OK: user row preserved, template refreshed"
+
+      # The CLI half of the same contract. `agency upgrade` needs a pushed
+      # commit, a remote and a re-exec to run end to end, so drive syncCore
+      # directly — the same approach check-design-system-sync.js takes.
+      - name: Assert agency init/upgrade's core sync preserves accumulated rows
+        run: node .github/scripts/check-core-preserve.js
+
       # The custom-root case is the one that had no test before Wave 13: every
       # script under hooks/ and scripts/ used to hardcode $HOME/.claude, so a
       # custom AGENCY_HOME installed to one place and was read from another.
@@ -496,6 +543,37 @@ jobs:
             throw "rescue.ps1 reported success but pulled nothing"
           }
           $global:LASTEXITCODE = 0
+
+      # Windows twin of the ubuntu core-preserve assertion. A second install
+      # into the SAME root, which no step here did before — and which is also
+      # the only way to see install.ps1's directory-vs-contents copy bug, where
+      # a re-install produced {root}\core\core\ because Copy-Item copies the
+      # DIRECTORY into an existing destination rather than its contents.
+      - name: Assert a second install.ps1 preserves accumulated core/memory rows
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: |
+          $registry = Join-Path $env:AGENCY_HOME 'core\memory\medium-term.md'
+          $template = Join-Path $env:AGENCY_HOME 'core\memory\agency-dispatch.md'
+          if (-not (Test-Path $registry)) { throw "$registry was not seeded by the first install" }
+
+          Add-Content -Path $registry -Value '| ci-probe-project | `/tmp/ci-probe/memory/` | ci-probe-pd | Active |'
+          Set-Content -Path $template -Value 'STALE SENTINEL'
+
+          .\install.ps1
+
+          if (-not (Select-String -Path $registry -Pattern 'ci-probe-project' -Quiet)) {
+            Get-Content $registry | Write-Host
+            throw "reinstall destroyed an accumulated row in core/memory/medium-term.md"
+          }
+          if (Select-String -Path $template -Pattern 'STALE SENTINEL' -Quiet) {
+            throw "core/ stopped refreshing - a non-preserved file was left stale (users would never receive new agent routes)"
+          }
+          # Nesting guard: contents-copy, not directory-copy.
+          if (Test-Path (Join-Path $env:AGENCY_HOME 'core\core')) {
+            throw "install.ps1 copied the core DIRECTORY into the destination - {root}\core\core\ exists"
+          }
+          Write-Host "OK: user row preserved, template refreshed, no core\core nesting"
 
       - name: Second install into a DIFFERENT AGENCY_HOME
         env:

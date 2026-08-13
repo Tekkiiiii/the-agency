@@ -147,11 +147,21 @@ hooks_config = {
             ]},
             {'matcher': 'Bash', 'hooks': [
                 {'type': 'command', 'command': f'bash {H}/secret-scanner.sh'}
+            ]},
+            {'matcher': 'Agent', 'hooks': [
+                {'type': 'command', 'command': f'bash {H}/spawn-gate.sh'}
             ]}
         ],
         'PostToolUse': [
             {'matcher': 'Edit|Write', 'hooks': [
-                {'type': 'command', 'command': f'bash {H}/track-edits.sh'}
+                {'type': 'command', 'command': f'bash {H}/track-edits.sh'},
+                {'type': 'command', 'command': f'bash {H}/write-evidence.sh'}
+            ]},
+            {'matcher': '', 'hooks': [
+                {'type': 'command', 'command': f'bash {H}/loop-detector.sh'}
+            ]},
+            {'matcher': 'Agent', 'hooks': [
+                {'type': 'command', 'command': f'bash {H}/artifact-verify.sh'}
             ]}
         ],
         'SessionStart': [
@@ -171,12 +181,45 @@ with open('$SETTINGS', 'w') as f:
 fi
 
 # --- Core docs ---
+# NOT a blind `cp -r`. A few files under core/memory/ ship as empty scaffolds
+# that the running system appends rows to AT THEIR INSTALLED PATH — the project
+# registry, the delegator route cache, the operator's quality thresholds. A
+# recursive overwrite destroyed those rows on every reinstall, silently and with
+# exit code 0. core/.preserve lists them; the rule is skip-if-exists, so a fresh
+# install still seeds them and everything else still refreshes. That one list is
+# also read by install.ps1 and by syncCore() in cli/commands/sync-assets.js —
+# add a path there, not here.
 CORE_SRC="$SCRIPT_DIR/core"
 CORE_DEST="$CLAUDE_HOME/core"
 if [ -d "$CORE_SRC" ]; then
     mkdir -p "$CORE_DEST"
-    cp -r "$CORE_SRC"/* "$CORE_DEST/"
-    echo "  ✓ Core docs installed"
+
+    # bash 3.2 (macOS) has no associative arrays, so membership is a fixed-string
+    # whole-line grep over a newline-delimited string. Comments and blank lines
+    # are stripped once, here.
+    core_preserve=""
+    if [ -f "$CORE_SRC/.preserve" ]; then
+        core_preserve=$(sed -e 's/#.*$//' -e 's/[[:space:]]*$//' "$CORE_SRC/.preserve" | grep -v '^$' || true)
+    fi
+
+    core_synced=0
+    core_preserved=0
+    while IFS= read -r core_rel; do
+        [ -n "$core_rel" ] || continue
+        case "$core_rel" in
+            .DS_Store|*/.DS_Store|__pycache__/*|*/__pycache__/*|*.pyc) continue ;;
+        esac
+        if [ -e "$CORE_DEST/$core_rel" ] \
+           && printf '%s\n' "$core_preserve" | grep -qxF -- "$core_rel"; then
+            core_preserved=$((core_preserved + 1))
+            continue
+        fi
+        mkdir -p "$CORE_DEST/$(dirname "$core_rel")"
+        cp "$CORE_SRC/$core_rel" "$CORE_DEST/$core_rel"
+        core_synced=$((core_synced + 1))
+    done < <(cd "$CORE_SRC" && find . -type f | sed 's|^\./||')
+
+    echo "  ✓ Core docs installed ($core_synced synced, $core_preserved preserved)"
 fi
 
 # --- Runbooks ---

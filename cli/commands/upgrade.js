@@ -2,7 +2,7 @@ const { execFileSync, spawnSync } = require('child_process');
 const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync, realpathSync, readdirSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
-const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem, syncCore } = require('./sync-assets.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -408,16 +408,14 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const designSystem = syncDesignSystem(repoDir, designSystemDest, console);
   console.log(`Design system: ${designSystem.updated} updated, ${designSystem.preserved} preserved`);
 
-  // Sync core docs
-  const coreSrc = join(repoDir, 'core');
+  // Sync core docs. This was a blind `cp -r` until Wave 18: it overwrote the
+  // core/memory/ tables the running system accumulates rows into (the project
+  // registry, the delegator cache) on EVERY upgrade. syncCore honours
+  // core/.preserve — skip-if-exists — so those survive while the rest of core/
+  // still refreshes normally.
   const coreDest = join(agencyRoot, 'core');
-  if (existsSync(coreSrc)) {
-    mkdirSync(coreDest, { recursive: true });
-    try {
-      execFileSync('cp', ['-r', coreSrc + '/.', coreDest + '/'], { stdio: 'pipe' });
-      console.log('Core docs synced.');
-    } catch (_) {}
-  }
+  const core = syncCore(repoDir, coreDest, console);
+  console.log(`Core: ${core.updated} updated, ${core.preserved} preserved`);
 
   // Restore tier — ensure the upgrade has not altered the user's tier setting.
   // The re-exec'd child reads the tier fresh itself (~/  .agency/config.json is

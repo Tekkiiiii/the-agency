@@ -140,7 +140,7 @@
 | `xlsx-toolkit` | Full spreadsheet automation |
 | `vietnamese-language` | Vietnamese language reference layer — 17-file modular KB |
 | `html-plan-style` | Locked palette, typography, and component system for HTML plans, reports, and review-ready deliverables |
-| `skill-tekki-strategic-deck` | Builds a 25-30 slide strategic pitch/audit deck in a signature brand style — five-act narrative arc (pptxgenjs) |
+| `strategic-deck` | Builds a 25-30 slide strategic pitch/audit deck — gradient hero slides, cream content slides, five-act narrative arc (pptxgenjs); brand colors resolve from the design-system SSOT |
 
 ## Engineering — Backend
 

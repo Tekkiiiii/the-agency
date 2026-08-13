@@ -9,7 +9,7 @@ The Agency ships a lifecycle hook system that runs shell scripts at key Claude C
 > every hook resolves its own root via `hooks/lib/resolve-root.sh`. See
 > [INSTALL-LAYOUT.md](INSTALL-LAYOUT.md#where-the-root-comes-from).
 
-This is a significant security and observability upgrade over a bare Claude Code install: 2 → 18 hooks across 5 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below). Of those 18, `install.sh` wires 11 into `settings.json` by default on a fresh install (see [Settings Wiring](#settings-wiring) below); the remaining 7 — including two safety/guard hooks — ship on disk but are not registered until an operator adds them manually.
+This is a significant security and observability upgrade over a bare Claude Code install: 2 → 18 hooks across 5 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below). Of those 18, `install.sh` wires 14 into `settings.json` by default on a fresh install (see [Settings Wiring](#settings-wiring) below); the remaining 4 — telemetry/convenience hooks plus the deliberately-unregistered `fable-on-opus.sh` — ship on disk but are not registered until an operator adds them manually.
 
 ---
 
@@ -22,13 +22,13 @@ This is a significant security and observability upgrade over a bare Claude Code
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
 | `gate-guard.sh` | PreToolUse | Edit, Write | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
-| `spawn-gate.sh` | PreToolUse | Agent; not wired by `install.sh` — ships unregistered by default (see [Hooks Not Wired By Default](#hooks-not-wired-by-default) below) | Enforce Delegator-first dispatch — block non-allowlisted subagent_type spawns that lack Delegator/hardcoded-routing marker; also emits a `generalist_ban_violation` metric for banned `general-purpose`/`claude` spawns |
+| `spawn-gate.sh` | PreToolUse | Agent | Enforce Delegator-first dispatch — block non-allowlisted subagent_type spawns that lack Delegator/hardcoded-routing marker; also emits a `generalist_ban_violation` metric for banned `general-purpose`/`claude` spawns |
 | `spawn-logger.sh` | PreToolUse | Agent | Log a `spawn_start` event for every agent spawn; injects a `[[CLAUDE_SPAWN_META]]` lineage marker into the child prompt |
 | `secret-scanner.sh` | PreToolUse | Bash | Scan shell commands for credential-looking patterns |
 | `config-protection.sh` | PreToolUse | Edit, Write | Block modification of existing linter/formatter configs |
 | `track-edits.sh` | PostToolUse | Edit, Write | Buffer edited file paths for batch checking at session end |
 | `write-evidence.sh` | PostToolUse | Write, Edit | Log a `write_evidence` event (path + byte count) for deliverable-shaped paths — paper trail against fabricated completions |
-| `loop-detector.sh` | PostToolUse | all tools; not wired by `install.sh` — ships unregistered by default (see [Hooks Not Wired By Default](#hooks-not-wired-by-default) below) | Detect stall loops — 5 identical tool calls in a row triggers warning + stall marker |
+| `loop-detector.sh` | PostToolUse | all tools | Detect stall loops — 5 identical tool calls in a row triggers warning + stall marker |
 | `artifact-verify.sh` | PostToolUse | Agent | Scan a completed agent's output for "done/complete" claims and verify the deliverable file paths it cites actually exist on disk |
 | `spawn-completion.sh` | PostToolUse | Agent | Log a `spawn_end` event for every agent spawn completion (outcome, tokens, tool uses, duration) |
 | `bg-job-warn.sh` | PostToolUse | Bash (`run_in_background`) | Track fire-and-forget background jobs; warn immediately when a render/build command is backgrounded |
@@ -60,13 +60,32 @@ This is a significant security and observability upgrade over a bare Claude Code
         "hooks": [
           { "type": "command", "command": "bash ~/.claude/hooks/secret-scanner.sh" }
         ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          { "type": "command", "command": "bash ~/.claude/hooks/spawn-gate.sh" }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "bash ~/.claude/hooks/track-edits.sh" }
+          { "type": "command", "command": "bash ~/.claude/hooks/track-edits.sh" },
+          { "type": "command", "command": "bash ~/.claude/hooks/write-evidence.sh" }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bash ~/.claude/hooks/loop-detector.sh" }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          { "type": "command", "command": "bash ~/.claude/hooks/artifact-verify.sh" }
         ]
       }
     ],
@@ -90,7 +109,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 }
 ```
 
-That block is a literal transcription of `install.sh`'s `hooks_config` dict — 10 hooks across 4 events, nothing aspirational. Note what is **absent**: of the 18 lifecycle hooks that ship in `hooks/`, only these 10 are ever wired for you. The other 8 are copied to disk and left unregistered — see [Hooks Not Wired By Default](#hooks-not-wired-by-default) below.
+That block is a literal transcription of `install.sh`'s `hooks_config` dict — 14 hooks across 4 events, nothing aspirational. Note what is **absent**: of the 18 lifecycle hooks that ship in `hooks/`, only these 14 are ever wired for you. The other 4 are copied to disk and left unregistered — see [Hooks Not Wired By Default](#hooks-not-wired-by-default) below.
 
 **`fable-on-opus.sh` is no longer wired by the installer.** Earlier releases wrote a `UserPromptSubmit` entry for it on every fresh install. Recent Opus-line models carry the reasoning/behavioral discipline this hook injects natively, so wiring it by default duplicated guidance the model already applies on its own — the installer now leaves it unregistered. The script and its `hooks/fable/` playbooks still ship and stay useful for operators on older model lines, or anyone who wants that discipline injected explicitly regardless of model tier.
 
@@ -114,56 +133,29 @@ See [fable-on-opus.sh](#fable-on-opussh-userpromptsubmit) below for full behavio
 
 ### Hooks Not Wired By Default
 
-Eight of the 18 shipped lifecycle hooks are copied to `hooks/` but never written into `settings.json` by `install.sh`:
+Four of the 18 shipped lifecycle hooks are copied to `hooks/` but never written into `settings.json` by `install.sh`:
 
 | Hook | Event | Unwired because | What you lose |
 |------|-------|-----------------|---------------|
-| `spawn-gate.sh` | PreToolUse: Agent | installer gap (see below) | Unrouted / banned subagent spawns run unchecked |
-| `loop-detector.sh` | PostToolUse: all | installer gap (see below) | Stall loops go undetected |
-| `write-evidence.sh` | PostToolUse: Write, Edit | installer gap | No paper trail against fabricated completion claims |
-| `artifact-verify.sh` | PostToolUse: Agent | installer gap | Agents' "done" claims aren't checked against files on disk |
 | `spawn-logger.sh` | PreToolUse: Agent | telemetry, opt-in is defensible | No `spawn_start` events or lineage markers |
 | `spawn-completion.sh` | PostToolUse: Agent | telemetry, opt-in is defensible | No `spawn_end` events (outcome, tokens, duration) |
 | `bg-job-warn.sh` | PostToolUse: Bash | convenience, opt-in is defensible | No warning when a render/build is backgrounded |
 | `fable-on-opus.sh` | UserPromptSubmit | deliberate — superseded on recent Opus-line models | No Fable discipline injection on older model lines |
 
-The bottom four are unwired on purpose — three are telemetry and convenience, and `fable-on-opus.sh` was deliberately unregistered because recent model lines carry its discipline natively. **The top four are not.** `write-evidence.sh` and `artifact-verify.sh` in particular are anti-fabrication hooks: they exist specifically to catch an agent claiming work it did not do, and they are inert on every default install. Treat that as an open gap, not a setting.
+All four are unwired on purpose — three are telemetry and convenience, and `fable-on-opus.sh` was deliberately unregistered because recent model lines carry its discipline natively. Nothing in this list is a safety gap: `spawn-gate.sh`, `loop-detector.sh`, `write-evidence.sh`, and `artifact-verify.sh` — the four hooks previously documented here as an installer gap — are wired as of this release. See [Settings Wiring](#settings-wiring) above for their entries in `hooks_config`, and [spawn-gate.sh](#spawn-gatesh-pretooluse-agent) / [loop-detector.sh](#loop-detectorsh-posttooluse-all-tools) / [write-evidence.sh](#write-evidencesh-posttooluse-write-edit) / [artifact-verify.sh](#artifact-verifysh-posttooluse-agent) below for full behavior.
 
-The two originally documented as wired — `spawn-gate.sh` and `loop-detector.sh` — are detailed below; the same enable-it-yourself pattern applies to all eight.
-
-**Status: both ship in `hooks/` on every install, but neither is written into `settings.json` by `install.sh`.** This is a different situation from `fable-on-opus.sh` above — that hook was wired by earlier installers and deliberately unregistered. These two were never wired in the first place; `install.sh`'s `hooks_config` dict (the block reproduced in [Settings Wiring](#settings-wiring)) simply doesn't include a `PreToolUse: Agent` entry for `spawn-gate.sh` or a `PostToolUse: ""` entry for `loop-detector.sh`.
-
-**Our read: this looks like an installer gap, not an intentional opt-in design.** Both are safety/guard hooks — `spawn-gate.sh` enforces Delegator-first dispatch and blocks unrouted or banned (`general-purpose`/`claude`) subagent spawns; `loop-detector.sh` catches an agent stuck repeating the same tool call and warns it to reassess. Hooks in this category (enforcement, not convenience) read as things that were meant to ship active by default, with the installer simply behind the `hooks/` directory it copies from. We're not changing `install.sh` in this pass — flagging it here for the repo owner to decide whether `hooks_config` should include them.
-
-To wire them in yourself, merge these entries into the corresponding arrays in your `settings.json` `hooks` block (don't replace the entries already there — add alongside them):
+To wire any of the remaining four in yourself, merge an entry into the corresponding array in your `settings.json` `hooks` block (don't replace the entries already there — add alongside them). For example, for `spawn-logger.sh`:
 
 ```json
 "PreToolUse": [
   {
     "matcher": "Agent",
     "hooks": [
-      { "type": "command", "command": "bash ~/.claude/hooks/spawn-gate.sh" }
+      { "type": "command", "command": "bash ~/.claude/hooks/spawn-logger.sh" }
     ]
   }
 ]
 ```
-
-**What you gain:** every `Agent` tool call is checked against the Delegator-first dispatch rule before it runs, instead of executing unchecked — unrouted or banned spawns get flagged or blocked.
-
-```json
-"PostToolUse": [
-  {
-    "matcher": "",
-    "hooks": [
-      { "type": "command", "command": "bash ~/.claude/hooks/loop-detector.sh" }
-    ]
-  }
-]
-```
-
-**What you gain:** after 5 identical tool calls in a row, the running agent gets a stall warning instead of silently burning context or budget in a loop.
-
-See [spawn-gate.sh](#spawn-gatesh-pretooluse-agent) and [loop-detector.sh](#loop-detectorsh-posttooluse-all-tools) below for full behavior.
 
 ---
 
@@ -293,7 +285,7 @@ Also scans write content for JWT/API key patterns. Returns `permissionDecision: 
 
 ### spawn-gate.sh (PreToolUse: Agent)
 
-**Status: ships in `hooks/` on every install, but not wired into `settings.json` by `install.sh`** — see [Hooks Not Wired By Default](#hooks-not-wired-by-default) above for why this reads as an installer gap rather than an opt-in design, and the snippet to enable it.
+**Status: wired into `settings.json` by `install.sh` as of this release** — see [Settings Wiring](#settings-wiring) above.
 
 Enforces the Delegator-first dispatch rule. Every Agent tool call is intercepted; the hook decides whether the spawn is pre-approved or must demonstrate Delegator consultation (or a hardcoded-routing marker).
 
@@ -369,7 +361,7 @@ Any internal error is silent; the hook never blocks a write.
 
 ### loop-detector.sh (PostToolUse: all tools)
 
-**Status: ships in `hooks/` on every install, but not wired into `settings.json` by `install.sh`** — see [Hooks Not Wired By Default](#hooks-not-wired-by-default) above for why this reads as an installer gap rather than an opt-in design, and the snippet to enable it.
+**Status: wired into `settings.json` by `install.sh` as of this release** — see [Settings Wiring](#settings-wiring) above.
 
 Tracks the last 10 tool calls in `~/.claude/.tool-call-tracker.jsonl`. If 5 identical tool+input signatures appear consecutively, prints a stall warning to stderr visible to the running agent and writes a `stall_detected` marker to `session-state.json`.
 

@@ -292,7 +292,7 @@ def max_font_pt(shape):
 def find_title_shape(slide, slide_height_emu):
     """Largest-font text box in the top zone of the slide, excluding
     page-number footers. Matches the kicker+headline pattern shared by
-    common deck-building skills (e.g. skill-tekki-strategic-deck)."""
+    common deck-building skills (e.g. strategic-deck)."""
     zone_limit = slide_height_emu * TITLE_TOP_ZONE_RATIO
     best_shape, best_size = None, 0.0
     for shape in slide.shapes:

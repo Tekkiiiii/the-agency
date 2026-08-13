@@ -1,6 +1,8 @@
 # notebooklm-research
 
-description: "Topic-based research library via Google NotebookLM MCP. Query curated domain notebooks for market data, tech best practices, and industry patterns. Three modes: QUERY (ask questions across notebooks), CURATE (add sources, create/tag notebooks), AUDIT (check source counts, surface stale notebooks). All operations use mcp__notebooklm-mcp__* MCP tools — no CLI. Registry-first: every operation starts by reading ~/.claude/memory/notebooklm-registry.md."
+description: "Topic-based research library via Google NotebookLM MCP. Query curated domain notebooks for market data, tech best practices, and industry patterns. Three modes: QUERY (ask questions across notebooks), CURATE (add sources, create/tag notebooks), AUDIT (check source counts, surface stale notebooks). All operations use mcp__notebooklm-mcp__* MCP tools — no CLI. Registry-first: every operation starts by reading {agency-root}/memory/notebooklm-registry.md, if it exists."
+
+> `{agency-root}` resolves to `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else the default Claude Code config directory — see `docs/HOOKS.md` for the exact resolution order.
 
 ## Activation
 
@@ -18,7 +20,7 @@ description: "Topic-based research library via Google NotebookLM MCP. Query cura
 
 - NotebookLM MCP server running (`mcp__notebooklm-mcp__*` tools available)
 - Authenticated via Google OAuth (your Google account)
-- Registry at `~/.claude/memory/notebooklm-registry.md`
+- Registry at `{agency-root}/memory/notebooklm-registry.md`, if it exists (operator-accumulated — no template ships)
 
 ## Mode 1: QUERY — Ask Questions
 
@@ -26,7 +28,7 @@ Query curated research notebooks for grounded answers with citations.
 
 ### Single Notebook Query
 
-1. Read `~/.claude/memory/notebooklm-registry.md` to find the notebook slug and ID
+1. Read `{agency-root}/memory/notebooklm-registry.md` (if it exists) to find the notebook slug and ID
 2. Call `mcp__notebooklm-mcp__notebook_query` with the notebook ID and question
 3. Return the answer with source citations
 
@@ -64,7 +66,7 @@ For questions spanning multiple domains:
    - Use prefix convention: `[MARKET]`, `[TECH]`, `[SALES]`, `[CONTENT]`, `[AI]`, `[OPS]`
 2. Tag it: `mcp__notebooklm-mcp__tag(action="add", tags=["tag1", "tag2"])`
 3. Seed with 5-10 initial sources (URL preferred)
-4. Add entry to `~/.claude/memory/notebooklm-registry.md`:
+4. Add entry to `{agency-root}/memory/notebooklm-registry.md` (create the file if it doesn't exist yet):
    - slug, notebook_id, title, tags, source count, project dependencies
 5. Update `Last updated` date in registry
 
@@ -83,7 +85,7 @@ For questions spanning multiple domains:
 
 ### Quick Health Check
 
-1. Read `~/.claude/memory/notebooklm-registry.md`
+1. Read `{agency-root}/memory/notebooklm-registry.md`, if it exists
 2. For each active notebook:
    - Call `mcp__notebooklm-mcp__notebook_describe` to verify it exists and get current state
    - Compare source count against the 45-source soft limit
@@ -101,7 +103,7 @@ For questions spanning multiple domains:
 
 ## Integration with Curator Agent
 
-The curator agent (`~/.claude/agents/specialized/curator.md`) uses NotebookLM as L2.5 in its retrieval protocol. When a PD spawns a curator with a domain-level question (market research, tech best practices, industry patterns), the curator:
+The curator agent (`{agency-root}/agents/specialized/curator.md`) uses NotebookLM as L2.5 in its retrieval protocol. When a PD spawns a curator with a domain-level question (market research, tech best practices, industry patterns), the curator:
 
 1. Reads the registry to find relevant notebooks
 2. Matches question domain to notebook tags

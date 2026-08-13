@@ -2,7 +2,7 @@ const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync, realpathS
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
-const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem, syncCore } = require('./sync-assets.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -88,19 +88,12 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const designSystem = syncDesignSystem(repoRoot, designSystemDest, console);
   console.log(`  ✓ ${designSystem.updated} design-system files installed, ${designSystem.preserved} preserved`);
 
-  // 5. Core docs
-  const coreSrc = path.join(repoRoot, 'core');
+  // 5. Core docs. Routed through syncCore (not `cp -r`) so the handful of
+  // core/memory/ tables the running system appends rows to are seeded on a
+  // fresh install and left alone on a reinstall — see core/.preserve.
   const coreDest = path.join(agencyRoot, 'core');
-  if (existsSync(coreSrc)) {
-    mkdirSync(coreDest, { recursive: true });
-    const { execFileSync } = require('child_process');
-    try {
-      execFileSync('cp', ['-r', coreSrc + '/.', coreDest + '/'], { stdio: 'pipe' });
-      console.log('  ✓ Core docs installed');
-    } catch (_) {
-      console.log('  ⚠ Could not copy core docs');
-    }
-  }
+  const core = syncCore(repoRoot, coreDest, console);
+  console.log(`  ✓ ${core.updated} core docs installed, ${core.preserved} preserved`);
 
   // 6. SQLite task store
   const dbPath = path.join(agencyRoot, 'task-store.db');

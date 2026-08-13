@@ -105,11 +105,63 @@ if (Test-Path $AgentsSrc) {
 }
 
 # --- Core docs ---
+# NOT a blind recursive copy. A few files under core/memory/ ship as empty
+# scaffolds that the running system appends rows to AT THEIR INSTALLED PATH —
+# the project registry, the delegator route cache, the operator's quality
+# thresholds. Overwriting them destroyed those rows on every reinstall,
+# silently. core/.preserve lists them; the rule is skip-if-exists, so a fresh
+# install still seeds them and everything else still refreshes. That one list
+# is also read by install.sh and by syncCore() in cli/commands/sync-assets.js.
+#
+# This also copies core's CONTENTS rather than the directory itself. The old
+# `Copy-Item -Path $CoreSrc -Destination $CoreDest -Recurse` only did the right
+# thing when $CoreDest did not exist yet; on a second install into the same
+# root PowerShell copies the directory INTO the target and you get
+# {root}\core\core\. CI never caught it because its second install used a
+# different AGENCY_HOME. install.sh and the CLI path always copied contents.
 $CoreSrc = Join-Path $ScriptDir "core"
 $CoreDest = Join-Path $ClaudeHome "core"
 if (Test-Path $CoreSrc) {
-    Copy-Item -Path $CoreSrc -Destination $CoreDest -Recurse -Force
-    Write-Host "  ✓ Core docs installed"
+    if (-not (Test-Path $CoreDest)) {
+        New-Item -ItemType Directory -Path $CoreDest -Force | Out-Null
+    }
+
+    $CorePreserve = @()
+    $CorePreserveList = Join-Path $CoreSrc ".preserve"
+    if (Test-Path $CorePreserveList) {
+        # @() forced: a one-entry list would otherwise collapse to a scalar
+        # string, and the -contains below would then be a substring-free
+        # equality on the wrong shape.
+        $CorePreserve = @(Get-Content $CorePreserveList |
+            ForEach-Object { ($_ -replace '#.*$', '').Trim() } |
+            Where-Object { $_ -ne '' })
+    }
+
+    $CoreSynced = 0
+    $CorePreserved = 0
+    $CoreSrcRoot = (Resolve-Path $CoreSrc).Path
+    # -Force so dotfiles (.preserve itself) are enumerated, matching the other
+    # two installers, which both copy them.
+    foreach ($CoreFile in (Get-ChildItem -Path $CoreSrc -Recurse -File -Force)) {
+        # Compare and match in forward-slash form — that is what .preserve uses.
+        $CoreRel = $CoreFile.FullName.Substring($CoreSrcRoot.Length).TrimStart('\', '/').Replace('\', '/')
+        if ($CoreRel -eq '.DS_Store' -or $CoreRel -like '*/.DS_Store' -or
+            $CoreRel -like '__pycache__/*' -or $CoreRel -like '*/__pycache__/*' -or
+            $CoreRel -like '*.pyc') { continue }
+
+        $CoreTarget = Join-Path $CoreDest $CoreRel
+        if ((Test-Path $CoreTarget) -and ($CorePreserve -contains $CoreRel)) {
+            $CorePreserved++
+            continue
+        }
+        $CoreTargetDir = Split-Path -Parent $CoreTarget
+        if (-not (Test-Path $CoreTargetDir)) {
+            New-Item -ItemType Directory -Path $CoreTargetDir -Force | Out-Null
+        }
+        Copy-Item -Path $CoreFile.FullName -Destination $CoreTarget -Force
+        $CoreSynced++
+    }
+    Write-Host "  ✓ Core docs installed ($CoreSynced synced, $CorePreserved preserved)"
 }
 
 # --- Hooks, runbooks, scripts, design-system ---

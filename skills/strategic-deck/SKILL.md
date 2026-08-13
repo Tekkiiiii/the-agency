@@ -1,11 +1,11 @@
 ---
-name: tekki-strategic-deck
-description: Build a 25-30 slide strategic pitch / audit deck in Tekki's signature style — TekkiSolutions indigo+amber brand gradient on hero slides, cream content slides with a vertical accent bar, navy ink headlines, amber highlights, and a five-act narrative arc (audit - marketing - market - bet - go-to-market). Use whenever the user asks to "build a strategic deck", "audit company X and recommend a bet", "make a pitch deck in my style", "rebuild this deck for [different company]", or any pitch/audit/strategy slide deliverable. Also triggers on "marketing assessment deck", "candidate gift deck", "30-slide deck", and references to the Pay2Pay deck as a stylistic reference.
+name: strategic-deck
+description: Build a 25-30 slide strategic pitch / audit deck — gradient hero and divider slides, cream content slides with a vertical accent bar, ink headlines, a highlight accent for "the bet", and a five-act narrative arc (audit - marketing - market - bet - go-to-market). Use whenever the user asks to "build a strategic deck", "audit company X and recommend a bet", "make a strategic pitch deck", "rebuild this deck for [different company]", or any pitch/audit/strategy slide deliverable. Also triggers on "marketing assessment deck", "client assessment deck", "30-slide deck".
 ---
 
-# Strategic Deck — Tekki style
+# Strategic Deck
 
-A reusable design system + working template for 25-30 slide strategic decks. Built with `pptxgenjs`. Renders in LibreOffice for QA. Adapted from the Pay2Pay 2026 strategic audit deck. Default palette: TekkiSolutions brand (Deep Indigo + Warm Amber + Off-White).
+A reusable design system + pattern library for 25-30 slide strategic decks. Built with `pptxgenjs`. Renders in LibreOffice for QA. Default palette below is one worked example (originally built for an indigo+amber brand) — resolve your own palette from the design-system brand SSOT per "Palette" below; the roles and contrast reasoning are what's reusable, not the specific hex values.
 
 ---
 
@@ -13,11 +13,11 @@ A reusable design system + working template for 25-30 slide strategic decks. Bui
 
 | Task | Where to look |
 |------|---------------|
-| Build a new deck | `template.js` — copy, edit `BRIEF` block at top, run with node |
-| Change brand colors | Edit the `// ---------- Palette ----------` section in template.js |
-| Add a slide pattern | Section comments in template.js — copy a pattern block, swap content |
-| Render & QA | `npm install` — `node template.js` — convert to PDF/JPG — visually inspect |
-| Brand database | `~/.claude/projects/tekki/memory/brand-database.md` — per-client colors |
+| Build a new deck | No template ships with this skill — implement directly with `pptxgenjs`, following "Slide patterns" and "Design system" below as the spec |
+| Choose brand colors | "Palette" section — resolve from the design-system brand SSOT, or reuse the worked example as-is |
+| Add a slide pattern | "Slide patterns" section — each is described precisely enough to implement directly |
+| Render & QA | `npm install` — run your deck script — convert to PDF/JPG — visually inspect |
+| Per-client colors | Your own project's brand notes, if you keep one — this skill has no built-in brand registry |
 | Common pitfalls | See "Pitfalls" section below |
 
 ---
@@ -25,22 +25,26 @@ A reusable design system + working template for 25-30 slide strategic decks. Bui
 ## When to use this skill
 
 **Use it when the user wants:**
-- A strategic audit deck on a company (the Pay2Pay use case)
-- A marketing assessment deck for a TekkiSolutions prospect
+- A strategic audit deck on a company
+- A marketing assessment deck for a prospect or client
 - A pitch deck framed as "current state - my bet"
 - A multi-act narrative deck (typically 5 sections x 4-6 slides each)
-- Anything that should match Tekki's visual language
+- Anything that should match this skill's visual language (gradient heroes, cream content slides, vertical accent bars)
 
 **Don't use it for:**
 - One-off pitch decks under 10 slides — overkill
-- Quick content slides — use Marp with `tekkisolutions.css` theme instead
+- Quick content slides — use Marp with a lightweight theme instead
 - Decks where the user wants a completely different visual system
 
 ---
 
 ## Design system
 
-### Palette (TekkiSolutions default)
+### Palette
+
+This skill does not hardcode a brand. Resolve real values from the brand-token SSOT at `{agency-root}/design-system/brands/` (see `{agency-root}/design-system/brands/neutral.json` for the generic fallback, and `skills/html-plan-style/SKILL.md` → "Brand Resolution at Generation Time" for the established idiom other skills use to consume that SSOT). Map the brand's `roles` — `primary`, `primary-dark`, `secondary`, `accent`, `bg`, `surface`, `border`, `text-muted` — onto the PRIMARY/PRIMARY_DEEP/LAVENDER/AMBER/BG/... slots below.
+
+**Worked example** (the palette this skill was originally designed against — an indigo+amber brand; use as-is if no brand SSOT entry exists yet, or as a reference for how the roles map):
 
 ```
 PRIMARY      1B1F3B   Deep Indigo — accents, kickers, card outlines, dark backgrounds
@@ -56,12 +60,14 @@ BORDER       E0DBCE   Cream border — card outlines on white bg
 SUBTLE       F5F3EE   Very pale cream — table alt rows
 ```
 
-**To rebrand for a client deck:** check `~/.claude/projects/tekki/memory/brand-database.md` for client-specific colors. Swap PRIMARY, PRIMARY_DEEP, LAVENDER for the target company's colors. The structure doesn't depend on these specifically.
+Why these roles exist (carries over regardless of which brand's hex values you plug in): PRIMARY anchors dark backgrounds and structural accents; a lighter PRIMARY_DEEP variant gives the gradient somewhere to go without going flat; one high-contrast complementary color (AMBER here) is reserved exclusively for "this is the recommendation" callouts so it never gets diluted by decorative use; BG/BG_ALT/SUBTLE are three cream steps apart just far enough to read as distinct table-row shading without any of them reading as "white."
+
+**To rebrand for a client deck:** resolve the target company's brand from `{agency-root}/design-system/brands/{brand}.json` if one exists, or ask for their brand colors directly. Swap PRIMARY, PRIMARY_DEEP, LAVENDER for the target company's colors. The structure doesn't depend on these specifically.
 
 ### Typography
 
-- **Headline font:** DM Serif Display (install locally: `~/.claude/projects/tekki/assets/fonts/dm-serif/`)
-- **Body font:** Inter (install locally: `~/.claude/projects/tekki/assets/fonts/inter/`)
+- **Headline font:** DM Serif Display (install locally — download from Google Fonts or your OS font manager)
+- **Body font:** Inter (install locally — download from Google Fonts or your OS font manager)
 - **Fallback:** Calibri (universal, Vietnamese-friendly)
 - **Title sizes:** 56pt (cover), 40-54pt (section dividers), 26-28pt (content slide titles)
 - **Body sizes:** 14pt (intro paragraphs), 11-12pt (cards), 10-10.5pt (table cells)
@@ -69,10 +75,10 @@ SUBTLE       F5F3EE   Very pale cream — table alt rows
 
 ### Visual motifs (use consistently)
 
-1. **Vertical accent bar** to the left of every content-slide title — `0.07" wide`, indigo, height matches title block.
-2. **Radial gradient** on hero/divider slides — subtle lighter center fading to deep navy at edges (NOT flat navy, NOT white center).
-3. **Decorative ovals** on hero/divider slides — amber + lavender + white-with-transparency, partially off-slide so they bleed.
-4. **Cards with left accent** — content cards have a thin colored vertical strip on the left edge (indigo for default, amber for "win/bet").
+1. **Vertical accent bar** to the left of every content-slide title — `0.07" wide`, PRIMARY, height matches title block.
+2. **Radial gradient** on hero/divider slides — subtle lighter center fading to the deep variant at edges (NOT flat, NOT white center).
+3. **Decorative ovals** on hero/divider slides — accent + secondary + white-with-transparency, partially off-slide so they bleed.
+4. **Cards with left accent** — content cards have a thin colored vertical strip on the left edge (PRIMARY for default, the complementary highlight color for "win/bet").
 5. **No accent lines under titles** — never. They're the AI-deck giveaway.
 6. **Footer** on every content slide: "[Deck name] . [page] / [total]" in muted slate.
 
@@ -86,9 +92,9 @@ SUBTLE       F5F3EE   Very pale cream — table alt rows
 
 ---
 
-## Gradient specification (TekkiSolutions)
+## Gradient specification
 
-The hero/divider/closing slides use a radial gradient, NOT flat navy. Generated as SVG -> PNG via sharp.
+The hero/divider/closing slides use a radial gradient, NOT a flat fill. Generated as SVG -> PNG via `sharp`. Substitute your resolved PRIMARY / PRIMARY_DEEP hex values for the ones below (this example uses the worked-example indigo palette):
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900">
@@ -108,13 +114,13 @@ The hero/divider/closing slides use a radial gradient, NOT flat navy. Generated 
 </svg>
 ```
 
-This produces a subtle lighter-center gradient that adds depth without washing out text. The center is slightly lighter navy (#242848), edges are deep indigo (#141730). No white, no visible spotlight — just warmth.
+This produces a subtle lighter-center gradient that adds depth without washing out text. The center is a slightly lighter shade of the brand's dark color, edges are the darkest anchor. No white, no visible spotlight — just warmth.
 
 ---
 
 ## Slide patterns (the building blocks)
 
-The template includes one canonical example of each. Reuse / repeat / vary as needed.
+Implement each of these directly in your `pptxgenjs` script — there is no shipped template, so treat the descriptions below as the spec. Reuse / repeat / vary as needed.
 
 ### 1. Cover (gradient background)
 ### 2. Section divider (gradient bg + decorative ovals)
@@ -150,10 +156,10 @@ The template includes one canonical example of each. Reuse / repeat / vary as ne
 30. Closing (gradient + personal note)
 ```
 
-### Marketing Assessment variant (for TekkiSolutions prospects)
+### Marketing Assessment variant (for a prospect / client assessment)
 
 ```
-1.  Cover (gradient) — "Danh Gia Marketing" / "Marketing Assessment Report"
+1.  Cover (gradient) — "Marketing Assessment Report"
 2.  About this report
 3.  Executive scorecard
 4.  PART 1 - Current State divider
@@ -180,7 +186,7 @@ intent:            # "marketing assessment" / pitch / audit / sales
 length:            # 20 / 25-30 / 40 slides
 arc:               # What's the 5-act narrative? Default: audit - marketing - market - bet - GTM
 the_bet:           # If applicable: what's the headline recommendation?
-brand_colors:      # "tekkisolutions" (default) or client-specific from brand-database.md
+brand_colors:      # Worked-example palette (default) or client-specific, resolved per "Palette" above
 language:          # English / Vietnamese / mixed
 sources_visible:   # Should source footnotes appear on slides? (default: yes)
 risk_tone:         # Constructive ("assessment") / pointed ("paid audit") / neutral
@@ -190,12 +196,13 @@ risk_tone:         # Constructive ("assessment") / pointed ("paid audit") / neut
 
 ## Setup
 
+No `template.js` ships with this skill — build the deck script from scratch (or from your own prior deck) using "Slide patterns" and "Design system" above as the spec.
+
 ```bash
 npm init -y
 npm install pptxgenjs react react-dom react-icons sharp
-cp ~/.claude/skills/skill-tekki-strategic-deck/template.js ./
-# Edit BRIEF block, then:
-node template.js
+# Write your deck script (e.g. deck.js) implementing the patterns above, then:
+node deck.js
 ```
 
 ---
@@ -234,13 +241,15 @@ ls slide-*.jpg
 
 ## Customisation cookbook
 
-**Change to original purple (Pay2Pay-style):**
+Two example alternate palettes, showing how PRIMARY/PRIMARY_DEEP/LAVENDER shift while structure stays fixed:
+
+**Purple variant:**
 - PRIMARY: `1B1F3B` -> `6343F0`
 - PRIMARY_DEEP: `141730` -> `5427D4`
 - LAVENDER: `3D4266` -> `859EFF`
 - AMBER stays `F5A623`
 
-**Change to green (9Pay-style):**
+**Green variant:**
 - PRIMARY: `1B1F3B` -> `00A562`
 - PRIMARY_DEEP: `141730` -> `008049`
 - LAVENDER: `3D4266` -> `7FCFB0`
@@ -250,10 +259,8 @@ ls slide-*.jpg
 ## File map
 
 ```
-skill-tekki-strategic-deck/
-├── SKILL.md              — this file
-├── template.js           — working pptxgenjs template
-└── README.md             — installation instructions
+strategic-deck/
+└── SKILL.md              — this file (self-contained spec; no template.js or README.md ship with this skill)
 ```
 
 ---

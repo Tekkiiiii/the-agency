@@ -15,7 +15,7 @@ description: >
   verb-test heuristic, table vs chart counts, reader-only-content (process-
   meta marker) review candidates, a deck-wide font-family inventory with a
   hard system-font (Calibri/Arial/etc.) fail flag, and a title-sequence dump
-  for human/agent read-through. Co-load with `skill-tekki-strategic-deck` or
+  for human/agent read-through. Co-load with `strategic-deck` or
   `marp` (or whichever deck/visual skill your setup uses) — this skill is
   silent on color, aesthetic font choice, and layout; it only decides content,
   order, and one narrow file-level exception (Rule 9: does the .pptx leak an
@@ -34,7 +34,7 @@ description: >
 
 # deck-narrative
 
-Deck-building skills in this system (e.g. `skill-tekki-strategic-deck`, `marp`,
+Deck-building skills in this system (e.g. `strategic-deck`, `marp`,
 or whichever visual/deck skill your setup uses) are all **visual systems** —
 CSS classes, palettes, fonts, slide-type names, build mechanics. None of them
 say anything about whether the *content* is any good: whether the title makes
@@ -47,7 +47,7 @@ chart. This skill is the missing layer underneath all of them. It is a
 | Layer | Decides | Owned by |
 |---|---|---|
 | **Architecture** (this skill) | What goes on the slide, in what order, and whether it makes an argument | `deck-narrative` |
-| **Visual system** | What it looks like — color, type, layout, motion | `skill-tekki-strategic-deck` / `marp` / whichever visual skill your setup uses |
+| **Visual system** | What it looks like — color, type, layout, motion | `strategic-deck` / `marp` / whichever visual skill your setup uses |
 
 **Co-load, don't choose.** When building or reviewing a deck, load `deck-narrative`
 alongside whichever visual skill applies (your project's routing convention
@@ -655,7 +655,7 @@ brand input the script doesn't assume.
 - Your project's brand/visual skill — owns which fonts are correct for your
   decks and the "never use system fonts" convention Rule 9 mechanically
   enforces at the file level; pass its font names to `audit_deck.py --expect`.
-- Pick whichever visual deck skill fits your build — `skill-tekki-strategic-deck`,
+- Pick whichever visual deck skill fits your build — `strategic-deck`,
   `marp`, `gws-slides`, or another visual/deck skill your setup provides —
   `deck-narrative` is silent on that choice.
 - `quality-loop-router` — every deck deliverable still ends here
