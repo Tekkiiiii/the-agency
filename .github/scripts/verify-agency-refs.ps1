@@ -39,7 +39,18 @@ foreach ($tree in $trees) {
         continue
     }
 
-    $pattern = '(?:\{agency-root\}|~/\.claude)/' + [regex]::Escape($tree) + '/([A-Za-z0-9._/-]+\.(?:md|sh|py|js|json))'
+    # Extension alternation is ordered LONGEST-FIRST, and it must stay that way.
+    # .NET regex alternation is leftmost-FIRST: with `js` ahead of `json`, the
+    # path `.../brands/neutral.json` matched `js` and captured `neutral.js` — a
+    # file that does not exist — so this guard reported a dangling reference for
+    # a reference that was perfectly valid. Its twin, verify-agency-refs.sh, uses
+    # POSIX ERE via `grep -E`, which is leftmost-LONGEST and matched `json`
+    # correctly. So the two scripts silently disagreed: every `.json` reference
+    # passed the Linux job and failed the Windows one. The pair only looked like
+    # twins because no `{agency-root}/<tree>/....json` reference existed in the
+    # tree until wave 18 added one. Keep both lists longest-first so the two
+    # engines cannot diverge again.
+    $pattern = '(?:\{agency-root\}|~/\.claude)/' + [regex]::Escape($tree) + '/([A-Za-z0-9._/-]+\.(?:json|md|sh|py|js))'
     $refs = @{}
     foreach ($text in $corpus) {
         if (-not $text) { continue }

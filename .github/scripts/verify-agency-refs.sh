@@ -35,7 +35,13 @@ for tree in $TREES; do
 
   # Both placeholder styles the repo uses for a deployed sibling path.
   # shellcheck disable=SC2086
-  refs=$(grep -rhoE "(\{agency-root\}|~/\.claude)/$tree/[A-Za-z0-9._/-]+\.(md|sh|py|js|json)" \
+  # Extension alternation is ordered longest-first to stay byte-equivalent to
+  # the .NET pattern in verify-agency-refs.ps1. POSIX ERE is leftmost-LONGEST so
+  # order does not matter here — but .NET is leftmost-FIRST, and with `js` ahead
+  # of `json` the twin captured `neutral.js` out of `neutral.json` and failed the
+  # Windows job on a valid reference. Both lists are kept in the same order so
+  # the pair cannot silently disagree again; see the comment in the .ps1.
+  refs=$(grep -rhoE "(\{agency-root\}|~/\.claude)/$tree/[A-Za-z0-9._/-]+\.(json|md|sh|py|js)" \
            $scan_dirs 2>/dev/null | sed -E "s|.*/$tree/||" | sort -u || true)
 
   count=0
