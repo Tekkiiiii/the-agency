@@ -161,9 +161,6 @@ hooks_config = {
         ],
         'Stop': [
             {'matcher': '', 'hooks': [{'type': 'command', 'command': f'bash {H}/session-end.sh && bash {H}/batch-check.sh && bash {H}/cost-tracker.sh'}]}
-        ],
-        'UserPromptSubmit': [
-            {'hooks': [{'type': 'command', 'command': f'bash {H}/fable-on-opus.sh'}]}
         ]
     }
 }

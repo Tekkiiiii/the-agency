@@ -17,7 +17,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 
 | Script | Event | Trigger | Purpose |
 |--------|-------|---------|---------|
-| `fable-on-opus.sh` | UserPromptSubmit | wired by `install.sh`; recommended for unregistration on recent Opus-line models — self-gates on model when active | Inject Fable-style operating-discipline guidance (`hooks/fable/*.md`) when the active model is Opus-line |
+| `fable-on-opus.sh` | UserPromptSubmit | ships unwired — opt-in; self-gates on model when wired | Inject Fable-style operating-discipline guidance (`hooks/fable/*.md`) when the active model is Opus-line |
 | `startup-sync.sh` | SessionStart | always | Auto-pull the agency root's config from GitHub on session open |
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
@@ -85,25 +85,18 @@ This is a significant security and observability upgrade over a bare Claude Code
           }
         ]
       }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          { "type": "command", "command": "bash ~/.claude/hooks/fable-on-opus.sh" }
-        ]
-      }
     ]
   }
 }
 ```
 
-That block is a literal transcription of `install.sh`'s `hooks_config` dict — 11 hooks across 5 events, nothing aspirational. Note what is **absent**: of the 18 lifecycle hooks that ship in `hooks/`, only these 11 are ever wired for you. The other 7 are copied to disk and left unregistered — see [Hooks Not Wired By Default](#hooks-not-wired-by-default) below.
+That block is a literal transcription of `install.sh`'s `hooks_config` dict — 10 hooks across 4 events, nothing aspirational. Note what is **absent**: of the 18 lifecycle hooks that ship in `hooks/`, only these 10 are ever wired for you. The other 8 are copied to disk and left unregistered — see [Hooks Not Wired By Default](#hooks-not-wired-by-default) below.
 
-**`fable-on-opus.sh` is a candidate for unregistration.** It appears in the block above because the installer genuinely writes it — but on recent Opus-line models it is the one wired hook you probably want to remove. Those releases carry the reasoning/behavioral discipline this hook injects natively, so leaving it registered duplicates guidance the model already applies on its own.
+**`fable-on-opus.sh` is no longer wired by the installer.** Earlier releases wrote a `UserPromptSubmit` entry for it on every fresh install. Recent Opus-line models carry the reasoning/behavioral discipline this hook injects natively, so wiring it by default duplicated guidance the model already applies on its own — the installer now leaves it unregistered. The script and its `hooks/fable/` playbooks still ship and stay useful for operators on older model lines, or anyone who wants that discipline injected explicitly regardless of model tier.
 
-Unregistering it is the recommended maintenance step on those model lines: remove the `UserPromptSubmit` entry from your `settings.json` (see [Unregistering a hook without deleting it](#unregistering-a-hook-without-deleting-it) below). The script and its `hooks/fable/` playbooks still ship and stay useful for operators on older model lines, or anyone who wants that discipline injected explicitly regardless of model tier.
+Existing installs are untouched: the installer only writes `settings.json` when creating it fresh, so an entry you already have stays until you remove it (see [Unregistering a hook without deleting it](#unregistering-a-hook-without-deleting-it) below).
 
-To keep it — or to re-add it after removing it — this is the block under `hooks`:
+To wire it in yourself, this is the block under `hooks`:
 
 ```json
 "UserPromptSubmit": [
@@ -121,7 +114,7 @@ See [fable-on-opus.sh](#fable-on-opussh-userpromptsubmit) below for full behavio
 
 ### Hooks Not Wired By Default
 
-Seven of the 18 shipped lifecycle hooks are copied to `hooks/` but never written into `settings.json` by `install.sh`:
+Eight of the 18 shipped lifecycle hooks are copied to `hooks/` but never written into `settings.json` by `install.sh`:
 
 | Hook | Event | Unwired because | What you lose |
 |------|-------|-----------------|---------------|
@@ -132,12 +125,13 @@ Seven of the 18 shipped lifecycle hooks are copied to `hooks/` but never written
 | `spawn-logger.sh` | PreToolUse: Agent | telemetry, opt-in is defensible | No `spawn_start` events or lineage markers |
 | `spawn-completion.sh` | PostToolUse: Agent | telemetry, opt-in is defensible | No `spawn_end` events (outcome, tokens, duration) |
 | `bg-job-warn.sh` | PostToolUse: Bash | convenience, opt-in is defensible | No warning when a render/build is backgrounded |
+| `fable-on-opus.sh` | UserPromptSubmit | deliberate — superseded on recent Opus-line models | No Fable discipline injection on older model lines |
 
-The bottom three are telemetry and convenience — shipping them unwired is a reasonable default. **The top four are not.** `write-evidence.sh` and `artifact-verify.sh` in particular are anti-fabrication hooks: they exist specifically to catch an agent claiming work it did not do, and they are inert on every default install. Treat that as an open gap, not a setting.
+The bottom four are unwired on purpose — three are telemetry and convenience, and `fable-on-opus.sh` was deliberately unregistered because recent model lines carry its discipline natively. **The top four are not.** `write-evidence.sh` and `artifact-verify.sh` in particular are anti-fabrication hooks: they exist specifically to catch an agent claiming work it did not do, and they are inert on every default install. Treat that as an open gap, not a setting.
 
-The two originally documented as wired — `spawn-gate.sh` and `loop-detector.sh` — are detailed below; the same enable-it-yourself pattern applies to all seven.
+The two originally documented as wired — `spawn-gate.sh` and `loop-detector.sh` — are detailed below; the same enable-it-yourself pattern applies to all eight.
 
-**Status: both ship in `hooks/` on every install, but neither is written into `settings.json` by `install.sh`.** This is a different situation from `fable-on-opus.sh` above — that hook *is* wired by the installer and the doc recommends removing it. These two were never wired in the first place; `install.sh`'s `hooks_config` dict (the block reproduced in [Settings Wiring](#settings-wiring)) simply doesn't include a `PreToolUse: Agent` entry for `spawn-gate.sh` or a `PostToolUse: ""` entry for `loop-detector.sh`.
+**Status: both ship in `hooks/` on every install, but neither is written into `settings.json` by `install.sh`.** This is a different situation from `fable-on-opus.sh` above — that hook was wired by earlier installers and deliberately unregistered. These two were never wired in the first place; `install.sh`'s `hooks_config` dict (the block reproduced in [Settings Wiring](#settings-wiring)) simply doesn't include a `PreToolUse: Agent` entry for `spawn-gate.sh` or a `PostToolUse: ""` entry for `loop-detector.sh`.
 
 **Our read: this looks like an installer gap, not an intentional opt-in design.** Both are safety/guard hooks — `spawn-gate.sh` enforces Delegator-first dispatch and blocks unrouted or banned (`general-purpose`/`claude`) subagent spawns; `loop-detector.sh` catches an agent stuck repeating the same tool call and warns it to reassess. Hooks in this category (enforcement, not convenience) read as things that were meant to ship active by default, with the installer simply behind the `hooks/` directory it copies from. We're not changing `install.sh` in this pass — flagging it here for the repo owner to decide whether `hooks_config` should include them.
 
@@ -244,7 +238,7 @@ The template `hooks/.hook-profile.template` ships `standard` as the default.
 
 ### fable-on-opus.sh (UserPromptSubmit)
 
-**Status: still wired by `install.sh` on a fresh install, but recommended for unregistration on recent Opus-line models** — they carry this discipline natively. See [Settings Wiring](#settings-wiring) above for the rationale and the removal/re-add block.
+**Status: ships in `hooks/` but is no longer wired by `install.sh`** — recent Opus-line models carry this discipline natively, so the default registration was removed. See [Settings Wiring](#settings-wiring) above for the rationale and the opt-in wiring block.
 
 Reads the incoming prompt payload from stdin (`session_id`, `transcript_path`, `model`, `prompt`) and determines the active model in order: the hook's own `.model` field, then the last assistant-model entry in the transcript JSONL, then the `model` key in `settings.json`. If the resolved model is not Opus-line, it clears any per-session marker files for that session and exits — a no-op on every other model tier.
 
