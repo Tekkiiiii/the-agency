@@ -54,7 +54,7 @@ threshold: {avg}/{floor}
 ```
 This makes the dialog a one-time setup. Future invocations read the file and skip the dialog.
 
-Tekki can always override by editing `~/.claude/memory/quality-prefs.md` directly, or by
+The operator can always override by editing `{agency-root}/memory/quality-prefs.md` directly, or by
 invoking with an explicit threshold flag (e.g., `quality-loop-router threshold:90/80`).
 
 Store as `THRESHOLD_AVG` and `THRESHOLD_FLOOR` for use in Step 4.

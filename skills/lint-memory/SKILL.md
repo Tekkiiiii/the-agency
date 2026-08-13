@@ -56,7 +56,7 @@ For project-type memories: check the file's last modification date (`git log` or
 Flag project memories not updated in 30+ days.
 
 ### Step 6 — Check Cross-Links
-For memory files that share 2+ topic keywords (e.g., both mention "TekkiSolutions"):
+For memory files that share 2+ topic keywords (e.g., both mention "Acme Corp"):
 Check if they contain `See also:` links to each other.
 Suggest (but do not auto-add) missing cross-links.
 

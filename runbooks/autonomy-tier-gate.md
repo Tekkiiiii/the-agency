@@ -15,7 +15,7 @@ absent or an action type isn't listed, treat it as `operator_gated`.
 Three tiers:
 - `auto_ack` — mechanical verifier only, no human, no critique loop.
 - `agent_gated` — critique-loop gate (LLM judges, optional screenshots).
-- `operator_gated` — human ACK required (Tekki-gated in the live system).
+- `operator_gated` — human ACK required (the operator ACKs, in a live deployment).
 
 ## Lookup procedure
 

@@ -48,7 +48,7 @@ EXCLUDE_DIRS = {
 #   lesson   (270d) — deeper structural pattern, more durable than feedback but
 #                      still tied to specific stack/tool versions
 #   reference(365d) — stable technical fact, changes only on structural shifts
-#   user     (730d) — facts about Tekki himself (name, goals), rarely change
+#   user     (730d) — facts about the operator (name, goals), rarely change
 #   registry — EXEMPT, not point-in-time: registries are continuously
 #              maintained live SSOT (R5 already bans embedded status text in
 #              them), so "staleness" isn't the right frame for this type.

@@ -11,12 +11,12 @@ Burned-in styled captions for short-form video (TikTok, Instagram Reels, YouTube
 
 The original `jurczykpawel/subtitle-burner` GitHub repo has been renamed and merged into `jurczykpawel/reelstack` — a full video pipeline app requiring Docker + Postgres + Redis + multiple API keys. That tool is too heavy for caption-only use.
 
-**Our implementation** achieves the same karaoke-style caption output using tools already on Tekki's machine: OpenAI Whisper (installed at `/opt/homebrew/bin/whisper`) + ffmpeg (8.1.1, Homebrew).
+**Our implementation** achieves the same karaoke-style caption output using two widely available tools: OpenAI Whisper (CLI) + ffmpeg. Neither requires Docker, Postgres, Redis, or API keys.
 
 ## Stack
 
-- Transcription: `whisper` CLI (OpenAI Whisper, Homebrew, `/opt/homebrew/bin/whisper`)
-- Caption burn: `ffmpeg` with ASS subtitle filter for styled open captions
+- Transcription: `whisper` CLI (OpenAI Whisper). Detect the install with `command -v whisper` — the exact path varies by platform and package manager (Homebrew, pip, apt, etc.), so don't hardcode it. If `command -v whisper` returns nothing, install with `pip install -U openai-whisper` or `brew install openai-whisper`.
+- Caption burn: `ffmpeg` with ASS subtitle filter for styled open captions. Any recent ffmpeg (4.x+) supports the `subtitles`/`ass` filters used below — no specific version is required.
 - Alternative: `video-use` Whisper transcription for pipeline integration
 
 ## Short-Form Workflow (TikTok / Reels / Shorts — 9:16)
@@ -108,6 +108,6 @@ The `vs-captioning-specialist.md` agent now defaults to this workflow. For short
 | Live video / broadcast | Whisper real-time | Out of scope for this skill |
 | Vietnamese content | video-use + vietnamese-language agent | Specialized pipeline |
 
-## Follow-Up Needed (Tekki action)
+## Follow-Up Needed (operator action)
 
 The ReelStack hosted demo at `https://reelstack.techskills.academy` includes a karaoke mode. Worth checking once for comparison. No install required — just upload a video.

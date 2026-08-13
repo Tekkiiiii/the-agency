@@ -11,7 +11,7 @@ background-agent completion, so the parent can miss it. The guarantee is the
 **durable flag**: the PD writes `~/.claude/state/respawn-queue/{slug}` when it
 crosses the boundary, and the queue is drained deterministically at three
 points: (1) `respawn-drain.sh` on every SessionStart, (2) the hourly in-session
-heartbeat cron, (3) `com.tekki.pd-heartbeat.plist` headless every hour. A
+heartbeat cron, (3) a headless `pd-heartbeat` launchd agent every hour. A
 stranded PD is always picked up within an hour even if no session sees the
 message.
 

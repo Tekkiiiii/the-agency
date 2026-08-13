@@ -266,14 +266,14 @@ If the action type is one of these, proceed immediately + run mechanical verifie
 - `internal_project_file_edit` (coord scratch, dev-plan slice — not in integration contracts)
 
 **For all other action types:**
-1. Read `~/.claude/memory/autonomy-tiers.json` (if absent: default to `tekki_gated`)
+1. Read `~/.claude/memory/autonomy-tiers.json` (if absent: default to `operator_gated`)
 2. Look up the action type in `action_tiers`
 3. Apply the gate:
    - `auto_ack`: proceed, run mechanical verifier, log to events.jsonl
    - `agent_gated`: spawn critique agents, require pass verdict
-   - `tekki_gated`: STOP. Escalate to PD immediately. Do NOT execute.
+   - `operator_gated`: STOP. Escalate to PD immediately. Do NOT execute.
 4. NEVER self-promote a tier. See `_meta.how_to_promote` in the config.
-5. Unknown action type → default to `tekki_gated`.
+5. Unknown action type → default to `operator_gated`.
 
 ---
 

@@ -45,7 +45,7 @@ aliases:
   - plan-template
 last_updated: "2026-05-22"
 trust_level: human-authored
-author: tekki
+author: operator
 provenance: manual
 quality_gate_passed: true
 ---

@@ -151,14 +151,14 @@ The Dept-Coord system is designed to keep the parent AI context at O(departments
 ## Example: Marketing Campaign Pipeline
 
 ```
-Tekki: "Have marketing run a campaign for our Q3 launch"
+Operator: "Have marketing run a campaign for our Q3 launch"
 ↓
 Parent AI writes incoming task to:
-  agents/marketing/state/incoming/tekki-q3-campaign.md
+  agents/marketing/state/incoming/q3-campaign.md
 ↓
 /dept-resume marketing
 ↓
-Marketing Lead (Opus) resumes, reads incoming/tekki-q3-campaign.md
+Marketing Lead (Opus) resumes, reads incoming/q3-campaign.md
 ↓
 Marketing Lead spawns Dept-Coord:
   "Run pipeline-content for Q3 launch: blog + 3 social posts + email"

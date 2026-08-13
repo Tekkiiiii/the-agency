@@ -4,7 +4,7 @@
 #   1. Lint  2. Curate  3. Distill  4. Rebuild  5. Evaluate  6. Score
 # Safety rails: delta edits only, one git commit per run (one-command rollback),
 # destructive ops (merge/archive/delete) never auto-applied — go to approval
-# queue for Tekki. Self-grading: if total FAIL count increases post-run, revert
+# queue for the operator to review. Self-grading: if total FAIL count increases post-run, revert
 # and flag instead of leaving a regression live.
 # Runbook: memory/gardener-runbook.md — read that first if this script surprises you.
 # macOS bash 3.2 portable — no bash-4isms (matches canary-check.sh convention).
@@ -64,7 +64,7 @@ echo "--- 2. Curate ---"
 # pass" to actually flag duplicates/contradictions and propose delta-edit
 # merges. Trivial fixes (missing index line, malformed row) still auto-apply
 # there; destructive changes (merge/archive/delete) always land in
-# $APPROVAL_QUEUE for Tekki, never auto-applied.
+# $APPROVAL_QUEUE for the operator to review, never auto-applied.
 touch "$APPROVAL_QUEUE"
 
 echo "--- 3. Distill ---"

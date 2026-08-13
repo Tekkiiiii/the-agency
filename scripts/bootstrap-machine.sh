@@ -119,9 +119,10 @@ uv_install "notebooklm-mcp-cli" "notebooklm-mcp"
 # blue — Python formatter
 uv_install "blue" "blue"
 
-# browser-harness — NOT installed: Tekki-local editable package (~/Developer/browser-harness),
-# not published to PyPI. The public `browser-harness` on PyPI is an unrelated empty package
-# (v0.0.1, no executables) and `uv tool install` fails on it. If you need browser-harness,
+# browser-harness — NOT installed: on the original dev machine this is a local editable
+# package (checked out under a personal dev tree, not published to PyPI). The public
+# `browser-harness` on PyPI is an unrelated empty package (v0.0.1, no executables) and
+# `uv tool install` fails on it. If you need browser-harness,
 # obtain the source repo and run: uv tool install --editable <path-to-browser-harness>.
 # Skipped here to keep the bootstrap portable.
 
@@ -198,7 +199,7 @@ else
 fi
 
 # ── dia-tts ───────────────────────────────────────────────────────────────────
-# INTENTIONALLY NOT INSTALLED — dia-tts is unusable (Tekki, 2026-06-18). Excluded
+# INTENTIONALLY NOT INSTALLED — dia-tts is unusable (assessed 2026-06-18). Excluded
 # from bootstrap. Do not re-add.
 
 echo ""
@@ -307,11 +308,13 @@ echo ""
 # telegram-mcp     — private local Node.js script + Telegram credentials.
 #                    Project-local, set up per-project with their own .env.
 #
-# tekkisolutions    — carries live Supabase service-role key + BLOG_PUBLISH_TOKEN.
+# <project>-mcp    — any project-specific MCP that carries live secrets (e.g. a
+#                    Supabase service-role key + publish tokens) belongs in that
+#                    project's own .env, never in this shared bootstrap script.
 #                    Never script, never echo, never touch these credentials.
 #
-# obsidian         — broken: empty command string, Tekki investigating separately.
-#                    Leave out until resolved.
+# obsidian         — broken: empty command string on the original dev machine,
+#                    root cause not yet investigated. Leave out until resolved.
 
 # ── MANUAL AUTH CHECKLIST ────────────────────────────────────────────────────
 # Unquoted heredoc so $AGENCY_ROOT expands — every path printed below is meant to
@@ -363,7 +366,7 @@ Restart your Claude Code session after bootstrap so all MCP servers load.
        # Requires: ffmpeg (brew install ffmpeg)
        # Optional: ELEVENLABS_API_KEY in .env for speaker diarization
 
-  (omnivoice-studio + dia-tts intentionally excluded — unusable, Tekki 2026-06-18)
+  (omnivoice-studio + dia-tts intentionally excluded — unusable, assessed 2026-06-18)
 
 ────────────────────────────────────────────────────────────────────────────────
 

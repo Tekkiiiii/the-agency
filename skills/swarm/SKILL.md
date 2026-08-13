@@ -56,7 +56,7 @@ Include your PD name at the start of your response.
 Send your response via SendMessage to "team-lead".
 
 Example response format:
-examplecrm-pd: BLOCKED — Railway auth needed from Tekki; workaround is local dev
+examplecrm-pd: BLOCKED — Railway auth needed from the operator; workaround is local dev
 ```
 
 **Subagent config:**

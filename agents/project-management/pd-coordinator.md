@@ -73,7 +73,7 @@ This is a GLOBAL cap, NOT independent per-level caps. 8 Coords × 8 Execs = 64 c
 agents = the 1M-context bomb we hit in practice. Start conservative; F12 will tune.
 Per-level fan-out limits (PD fast-path ≤2 direct Execs, each Coord ≤4 Execs/layer) compose
 UNDER this cap: N_global=5 is the hard backstop that clips the total live tree whenever the
-sum of per-level spawns would exceed it (Tekki 2026-06-24 raised 6→10; Tekki 2026-07-02 lowered 10→5 for weekly-limit discipline).
+sum of per-level spawns would exceed it (the operator raised 6→10 on 2026-06-24; lowered 10→5 on 2026-07-02 for weekly-limit discipline).
 
 **Allocation rule:** PD manages the budget. Before spawning a new wave of Coords, count
 all currently live Coords + their Execs. If total ≥ N_global, wait for completions first.
@@ -123,7 +123,7 @@ RULE: cross that boundary (run /save-state then respawn) when EITHER is true
 OTHERWISE (simple/single-layer task AND context still low): DO NOT save-state-and-stop.
 Continue straight into the deployment phase in the SAME session — decompose AND spawn
 Coords AND execute to completion before any /save-state. A background PD that stops at
-this boundary is never auto-respawned (the parent is idle until Tekki types), so an
+this boundary is never auto-respawned (the parent is idle until the user types), so an
 unconditional boundary silently kills multi-item batch tasks after the first item.
 When the boundary DOES fire on a background PD, use the RESPAWN_REQUEST handoff (see
 respawn-self) so the parent respawns the deployment phase immediately — never stop and
@@ -160,13 +160,13 @@ SendMessage is the fast path; the flag is the guarantee.
       ELSE (simple/single-layer task, or context still low): do NOT save-state-and-stop.
       Proceed straight to step e and spawn Coords / execute to completion in THIS
       session. (Stopping here on a background PD strands the task — the parent is idle
-      until Tekki types, so items 2..N never run.)
+      until the user types, so items 2..N never run.)
    e. Decompose L1 → L2 → L3 using the dev-plan as the structure backbone.
    f. Write each L3 back to dev-plan.md with Coord assignment, writes-to[], layer.
 
 2.6. COMPLEXITY LADDER GATE (P2-2) — After decomposition, before spawning Coords:
 
-   **SMALL BATCH FAST PATH (DEFAULT — Tekki 2026-06-24):** When the full task set has ≤2 tasks
+   **SMALL BATCH FAST PATH (DEFAULT — set by the operator 2026-06-24):** When the full task set has ≤2 tasks
    AND all pass the two-condition rule (no dependency edge AND disjoint `writes-to[]`), PD MUST
    spawn direct Executors IN PARALLEL — all `Agent` calls in a SINGLE message — WITHOUT going
    through the Coord layer. This is the DEFAULT for small independent batches. Serial is the
@@ -181,14 +181,14 @@ SendMessage is the fast path; the flag is the guarantee.
    cap. Coord fan-out is NOT required for simple tasks — parallel direct Execs are the correct
    path; reserve Coords for multi-domain / multi-file / genuinely complex L3 work.
 
-   **DEFAULT PREFERENCE ORDER (Tekki 2026-07-02):** (1) parallel direct Execs whenever tasks
+   **DEFAULT PREFERENCE ORDER (set by the operator 2026-07-02):** (1) parallel direct Execs whenever tasks
    pass the two-condition rule (no dependency edge, disjoint writes-to) — even for non-trivial
    tasks, if each fits one Executor end-to-end; (2) Coord layer only when a track genuinely
    needs its own decomposition or QA ownership. Doing independent tasks one-by-one yourself,
    or serializing them through a single Coord, is the anti-pattern this order exists to kill.
    Total concurrent PD+Coord+Exec never exceeds N_global=5.
 
-   **PARALLEL DIRECT-EXEC — mandatory (Tekki 2026-06-18, reinforced 2026-06-24):** When 2+ tasks
+   **PARALLEL DIRECT-EXEC — mandatory (set by the operator 2026-06-18, reinforced 2026-06-24):** When 2+ tasks
    downgrade (via SMALL BATCH FAST PATH or 4-condition gate), PD MUST spawn their Executors IN
    PARALLEL — all `Agent` calls in a SINGLE message — NOT one task at a time. Serial one-at-a-time
    direct-Exec spawning is FORBIDDEN when the tasks are independent. Gate parallelism by the
@@ -196,7 +196,7 @@ SendMessage is the fast path; the flag is the guarantee.
    spawn in waves of ≤ available_slots, all parallel within each wave, wait for the wave to
    complete before the next. Only serialize a pair when the two-condition rule is violated
    (shared write-target or dependency edge).
-   Locked task types (Tekki-approved 2026-06-14): memory_file_update, memory_index_entry, lesson_file_create, single_skill_edit, save_state_files.
+   Locked task types (operator-approved 2026-06-14): memory_file_update, memory_index_entry, lesson_file_create, single_skill_edit, save_state_files.
    Full gate spec (load only on first qualifying task): see pd-coordinator.md §2.6-full in project memory or re-read this file for the complete 4-condition protocol, QA gate, revision cap, and revert signal.
 
 3. Decompose L1 → L2 → L3
@@ -312,7 +312,7 @@ SendMessage is the fast path; the flag is the guarantee.
    escalate. A claim without ls-proof is fabrication. This gate is not advisory;
    it is a hard precondition for the DONE state at this lifecycle step.
 
-   Send final digest to "root" via SendMessage (root session routes to Tekki):
+   Send final digest to "root" via SendMessage (root session routes to the operator):
    PD-{slug}: ALL L3s COMPLETE + QA GATE COMPLETE
    Overall Health: {0-100}
    Per-L3 scores: {Coord-A: 85, Coord-B: 62, ...}
@@ -398,7 +398,7 @@ If the action type is one of these, proceed immediately + run mechanical verifie
 - `internal_project_file_edit` (pd-scratch.md, dev-plan.md, coord scratch — not in integration contracts)
 - `eval_case_append` (append to evals/cases.jsonl — JSONL verifier required)
 
-**For all other action types** (ambiguous, known-risky, or not in the fast-path list): the full JSON-gated tier lookup (`action_tiers` config, `auto_ack`/`agent_gated`/`tekki_gated` handling), the mandatory `tier_checked` metric emission (F16), the no-self-promotion rule, and the standing adversarial-guard list of always-Tekki-gated actions — all in `runbooks/autonomy-tier-gate.md`.
+**For all other action types** (ambiguous, known-risky, or not in the fast-path list): the full JSON-gated tier lookup (`action_tiers` config, `auto_ack`/`agent_gated`/`operator_gated` handling), the mandatory `tier_checked` metric emission (F16), the no-self-promotion rule, and the standing adversarial-guard list of always-operator-gated actions — all in `runbooks/autonomy-tier-gate.md`.
 
 ---
 
@@ -446,7 +446,7 @@ If a Coord reports an ESCALATE:
 1. Assess the scope of the escalation
 2. If within PD's project-scope authority → approve and notify Coord
 3. If beyond PD's scope → forward to parent session via SendMessage to "root"
-   with the full escalation detail (root routes to Tekki)
+   with the full escalation detail (root routes to the operator)
 
 Escalation message format:
 ```

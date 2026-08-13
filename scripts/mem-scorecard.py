@@ -375,7 +375,7 @@ def get_dormant_project_dirs():
     2026-07-27 root fix: source 2 was previously NOT parsed (see git history /
     p1-blast-radius-findings.md) — 7 of R7's 8 stale-file false positives were
     archived projects measured as if they were live, because "archived" only
-    existed as prose Tekki's eyes read, never as data this check could see.
+    existed as prose a human read, never as data this check could see.
     Root cause was the checker's blind spot, not the projects' timestamps —
     fixed by reading what was already there, not by touching any project's
     next-session.md to fake a fresh edit (that would be metric theater on dead
@@ -452,7 +452,7 @@ def check_r9():
 
 def check_r10():
     if not GARDENER_MARKER.exists():
-        return "FAIL", "no gardener run recorded yet (memory/ops/gardener-last-run.json missing) — infra built this session, first scheduled run pending Tekki's launchd approval"
+        return "FAIL", "no gardener run recorded yet (memory/ops/gardener-last-run.json missing) — infra built this session, first scheduled run pending the operator's launchd approval"
     try:
         rec = json.loads(GARDENER_MARKER.read_text())
         last = datetime.strptime(rec["ts"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)

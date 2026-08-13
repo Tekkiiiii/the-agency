@@ -76,7 +76,7 @@ ALL video creation tasks across the agency route to this department by default. 
 |---|---|---|
 | Tier 1 | Approve format choices, tool selection, platform targeting | You alone |
 | Tier 2 | Budget-bearing decisions, external contractors, brand-critical changes | Council Chair approval |
-| Tier 3 | Human judgment required (talent, legal, brand identity conflicts) | Escalate to Tekki |
+| Tier 3 | Human judgment required (talent, legal, brand identity conflicts) | Escalate to the operator |
 
 ## Department Protocols
 

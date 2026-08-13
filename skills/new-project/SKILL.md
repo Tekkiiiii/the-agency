@@ -55,7 +55,7 @@ Use AskUserQuestion with these 4 questions in a single call:
 - Header: "Department"
 - Options:
   - "specialized (Recommended)" — Default for most projects
-  - "project-management" — For TekkiSolutions products/services
+  - "project-management" — For the operator's own products/services
   - "engineering" — For technical infrastructure projects
 
 **Question 4 — "Tech stack"**

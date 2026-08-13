@@ -2,7 +2,7 @@
 name: pipeline-onboard
 description: >
   New project onboarding pipeline: tech-stack (profile) → CLAUDE.md setup → memory init →
-  skill-routing.md check. Brings a new or inherited project into the Tekki system in one
+  skill-routing.md check. Brings a new or inherited project into the agency in one
   command. Trigger when: starting work on a project that has no ~/.claude/projects/{slug}/
   memory structure yet; taking over an existing codebase; setting up a new repo for
   PD-managed development; when /new-project alone is insufficient (it creates scaffolding
@@ -15,7 +15,7 @@ description: >
 
 # Pipeline: Onboard
 
-Bring a project into the Tekki system. One command, four stages.
+Bring a project into this system. One command, four stages.
 
 **Anti-redundancy:** This pipeline calls tech-stack (profiler mode) in Stage 1.
 Do NOT add a separate `/tech-stack` call after running this pipeline.

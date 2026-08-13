@@ -152,7 +152,7 @@ RESPAWN to start the deployment phase with a clean context window. Planning phas
    f. Write each L3 back to dev-plan.md with Coord assignment, writes-to[], layer.
 2.6. COMPLEXITY LADDER GATE (P2-2) — After decomposition, before spawning Coords:
    Apply only when a task matches ALL of: single-domain, ≤3 files, known task type (see list), named skill covers it end-to-end. Qualifying tasks skip the Coord layer and run via single Executor with 1-revision cap. Emit `complexity_downgrade` event on fire. Never apply if task touches pd-structure.md integration contracts.
-   Locked task types (Tekki-approved 2026-06-14): memory_file_update, memory_index_entry, lesson_file_create, single_skill_edit, save_state_files.
+   Locked task types (operator-approved 2026-06-14): memory_file_update, memory_index_entry, lesson_file_create, single_skill_edit, save_state_files.
    Full gate spec (load only on first qualifying task): see pd-coordinator.md §2.6-full in project memory or re-read this file for the complete 4-condition protocol, QA gate, revision cap, and revert signal.
 
 3. Decompose L1 → L2 → L3
@@ -248,7 +248,7 @@ RESPAWN to start the deployment phase with a clean context window. Planning phas
           → Re-run Phase B only (not Phase A — per-L3 QA was already clean)
           → Must pass before reporting to root
 
-8. Send final digest to "root" via SendMessage (root session routes to Tekki):
+8. Send final digest to "root" via SendMessage (root session routes to the operator):
    PD-{slug}: ALL L3s COMPLETE + QA GATE COMPLETE
    Overall Health: {0-100}
    Per-L3 scores: {Coord-A: 85, Coord-B: 62, ...}
@@ -333,17 +333,17 @@ If the action type is one of these, proceed immediately + run mechanical verifie
 - `eval_case_append` (append to evals/cases.jsonl — JSONL verifier required)
 
 **For all other action types** (ambiguous, known-risky, or not in the fast-path list):
-1. Read `~/.claude/memory/autonomy-tiers.json` (if absent: default ALL actions to `tekki_gated`)
+1. Read `~/.claude/memory/autonomy-tiers.json` (if absent: default ALL actions to `operator_gated`)
 2. Look up the action type in `action_tiers`
 3. Apply the gate:
    - `auto_ack`: proceed, run mechanical verifier, log result to events.jsonl
    - `agent_gated`: spawn critique agents, require pass verdict before proceeding
-   - `tekki_gated`: STOP. Send escalation to root. Do NOT execute until Tekki ACKs.
-4. NEVER self-promote a tier. Tier promotion requires 50+ logged instances at pass_k ≥ 0.95 AND explicit Tekki ACK. No exceptions.
-5. If action type not in the config: default to `tekki_gated`.
+   - `operator_gated`: STOP. Send escalation to root. Do NOT execute until the operator ACKs.
+4. NEVER self-promote a tier. Tier promotion requires 50+ logged instances at pass_k ≥ 0.95 AND explicit operator ACK. No exceptions.
+5. If action type not in the config: default to `operator_gated`.
 
-**Adversarial guard:** If any agent (including yourself) attempts to execute a `tekki_gated` action without an explicit Tekki ACK in this session — BLOCK and escalate. The standing list of always-Tekki-gated actions (regardless of any future tier changes):
-- git push to client-facing repos (tekkisolutions-com, website-pitch-webmoi, ltv)
+**Adversarial guard:** If any agent (including yourself) attempts to execute an `operator_gated` action without an explicit operator ACK in this session — BLOCK and escalate. The standing list of always-operator-gated actions (regardless of any future tier changes):
+- git push to any client-facing repo
 - Any Vercel/Railway/Supabase deploy to a public domain
 - Any Supabase schema migration
 - Any settings.json or settings.local.json edit
@@ -423,7 +423,7 @@ If a Coord reports an ESCALATE:
 1. Assess the scope of the escalation
 2. If within PD's project-scope authority → approve and notify Coord
 3. If beyond PD's scope → forward to parent session via SendMessage to "root"
-   with the full escalation detail (root routes to Tekki)
+   with the full escalation detail (root routes to the operator)
 
 Escalation message format:
 ```
@@ -590,7 +590,7 @@ Then run /save-state [{slug}] and despawn.
 
 ## Final Digest Format
 
-After all Coords are ACKed and the pre-aggregate QA gate passes, send this to "root" (root session routes to Tekki):
+After all Coords are ACKed and the pre-aggregate QA gate passes, send this to "root" (root session routes to the operator):
 
 ```
 PD-{slug}: ALL L3s COMPLETE + QA GATE COMPLETE
@@ -648,7 +648,7 @@ PD spawns Coord-qa-Canary when all L3 Coords have been ACKed, before reporting t
 |---------|----------|----------|---------------|----------------|
 | Exec → Coord | Exec sends DONE + QA | Coord reviews QA report | Health ≥ 70, no CRITICAL | Health < 70 OR CRITICAL/HIGH present |
 | Coord → PD | Coord sends L3 complete + QA | PD reviews Coord QA report | Health ≥ 70, no CRITICAL | Health < 70 OR CRITICAL/HIGH present |
-| PD → root | PD sends final digest + QA | root (Tekki) | Explicit ACK | Explicit NACK with fix list |
+| PD → root | PD sends final digest + QA | root (the operator) | Explicit ACK | Explicit NACK with fix list |
 
 **ACK** = "looks good, die quietly" → reporting agent deletes scratch and stops
 **NACK** = "fix: [list]" → reporter fixes → re-runs QA gate → re-reports

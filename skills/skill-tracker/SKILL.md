@@ -155,7 +155,7 @@ Collect all haiku verdicts.
 
 ```
 SKILL          SCORE  VERDICT  REASON
-humanizer       6.3   MERGE    Upstream adds 3 new AI-tell patterns; local has TekkiSolutions-specific rules
+humanizer       6.3   MERGE    Upstream adds 3 new AI-tell patterns; local has org-specific rules
 lightpanda      8.1   FULL     Major update: new MCP server config, CDP examples; local is vanilla
 animejs         3.2   SKIP     Only timestamp changes, no new content
 ```
