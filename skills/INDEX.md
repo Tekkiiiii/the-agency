@@ -1,6 +1,6 @@
 # Skills Index
 
-257 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+256 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 ## Department Lifecycle
 
@@ -398,7 +398,6 @@
 | `superpowers-unbundle` | Scope reduction — cut without losing value |
 | `superpowers-using-git-worktrees` | Isolated Git worktree for clean work |
 | `superpowers-using-superpowers` | Discover and invoke superpowers |
-| `superpowers-verification-before-completion` | Fresh verification before claiming done |
 | `superpowers-writing-plans` | Write implementation plans from specs |
 | `superpowers-writing-skills` | TDD for process documentation |
 

@@ -60,7 +60,7 @@ Implement the fix identified in Stage 1. Write a regression test that:
 2. Passes WITH the fix (green)
 
 ### 2c: Verify
-Invoke `/superpowers-verification-before-completion`:
+Apply the CLAUDE.md evidence gate (Verification Before Done) — never claim fixed without fresh evidence produced this session:
 - Run the regression test → must pass
 - Run the full test suite → must pass
 - Demonstrate the fix with evidence (command output, not assertions)

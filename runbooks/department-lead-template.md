@@ -7,7 +7,6 @@ reports_to: council-chair
 skills:
   - superpowers-brainstorming
   - superpowers-writing-plans
-  - superpowers-verification-before-completion
 ---
 
 # Department Lead — [DEPARTMENT NAME]

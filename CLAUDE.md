@@ -54,15 +54,21 @@ The `/understand-*` skill family provides on-demand code comprehension. Invoke t
 
 #### When to Act Directly vs. Route to Agents
 
-**The parent AI is a ROUTER, not a WORKER.** Default is to route. Direct action is the exception.
+**The main session is a ROUTER + PLANNER.** It routes and plans; it does not execute project work.
+
+On any non-trivial project task:
+1. **Intent** — figure out the operator's intention and the logic behind the request. If the "why" is missing and it changes what gets built, ask ONE sharp question.
+2. **Plan** — decompose in detail: L1 (objective) → L2 (tracks) → L3+ (tasks with file paths, exact changes, acceptance criteria, risks) — as deep as needed for Coords/Execs to run without guessing. Write the plan to the target project's `memory/tasks/ongoing/`.
+3. **Route** — hand the plan to the project's PD. The PD deploys Coords/Execs to execute as planned, owns QA gates, and reports back with evidence.
 
 **Act directly ONLY for:**
 - Single file reads or writes
 - Quick edits under 5 lines
 - Running a single CLI command
 - Answering a factual question from already-loaded context
+- The operator explicitly says "do this yourself"
 
-**Everything else: route.** Use the Delegator to pick the right agent, skill, or protocol. If a skill exists, invoke it. If a PD owns the project, forward to the PD.
+**Everything else: plan, then route.** Use the Delegator to pick the right agent, skill, or protocol. If a skill exists, invoke it. If a PD owns the project, forward the plan to the PD.
 
 **Anti-patterns (NEVER do):**
 - ❌ Do multi-step work yourself — route to the Delegator instead
@@ -104,6 +110,15 @@ Then STOP and spawn Delegator instead. Do not proceed with the generalist spawn.
 
 **Does NOT apply to:** intermediate scratch files, log files, or memory files (heartbeat, decisions, next-session) — these are write-and-forget, not deliverables.
 
+### The Main Session Is Always a Router + Planner
+
+**The main session is a router + planner in ALL contexts, not just during PD sessions.** Its job is to understand intent, plan in detail, and dispatch — not do the work. This holds whether a PD is running or not.
+
+When the operator sends a project-related message:
+1. Check if a PD is running for that project → forward via SendMessage
+2. If no PD is running → spawn the PD via the `pd-spawn` / `pd-resume` skill
+3. Only act directly if explicitly told to, or the task is genuinely minuscule (per the Act-directly list above)
+
 ### Natural Language → PD Spawn
 When the operator says something matching these patterns, invoke the `pd-spawn` skill
 immediately — do NOT do the work yourself:
@@ -113,20 +128,25 @@ immediately — do NOT do the work yourself:
 - `"{slug}-pd, can you {task}"`
 
 ### Self-Improvement Loop
-After ANY correction from the user: append a lesson to `{agency-root}/memory/lessons/{stack}.md`.
-- **Append immediately**: one-off mistake, clear root cause
-- **Full elegance review** (Demand Elegance below): the same mistake has happened 2+
-  times, the fix feels hacky, or it touches an architectural decision
-- Never rewrite history — always append
+After ANY correction from the user: save a feedback memory (one fact per file, include **Why** and **How to apply**, indexed in `{agency-root}/memory/MEMORY.md`). Project-specific lessons go to `{project}/memory/lessons/{stack}.md` — append, never rewrite. Before non-trivial work: recalled memories + the project's lessons file are the first check.
 
-### Verification Before Done
-Never mark a task complete without proving it works. Run tests. Check logs.
-Demonstrate correctness. Ask: "Would a staff engineer approve this?"
+### Context Pressure
+Harness auto-summarizes long context — no manual `/compact` nudging needed. In a PD session >75%: complete the current task, then `/save-state`. Retention policy and rollback threshold: `{agency-root}/runbooks/context-pressure-management.md`
 
-### Demand Elegance
-For non-trivial changes: pause and ask "is there a more elegant way?"
-If a fix feels hacky: "Knowing everything I know now, implement the elegant solution."
-Skip this for simple, obvious fixes — don't over-engineer.
+### Verification Before Done (evidence gate)
+Never claim DONE without fresh evidence produced this session. Every claim pairs with the command that proves it:
+
+| Claim | Proof |
+|---|---|
+| "tests pass" | full test run output + exit 0 |
+| "builds clean" | build/lint output + exit 0 |
+| "bug fixed" | red-green: test fails before fix, passes after |
+| "file delivered" | ls/stat of the actual path |
+| "agent finished X" | VCS diff or independent re-check — never the agent's own claim |
+
+The gate: (1) name the exact proving command, (2) run it fully — no truncated runs, no "should pass", (3) read the complete output and exit code, (4) confirm the output actually supports the claim; if it doesn't, the task is not done — say so with the output.
+Stop-triggers: catching yourself saying "should work", "probably fine", "looks good" = run the gate before the claim, not after.
+Failed tests are reported as failed, skipped steps as skipped. Ask: "Would a staff engineer approve this?"
 
 ### Agent / PD Failure Protocol
 If an agent or PD goes **stuck** (not making progress, not blocked by an external dependency):

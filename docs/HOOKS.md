@@ -17,7 +17,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 
 | Script | Event | Trigger | Purpose |
 |--------|-------|---------|---------|
-| `fable-on-opus.sh` | UserPromptSubmit | always (self-gates on model) | Inject Fable-style operating-discipline guidance (`hooks/fable/*.md`) when the active model is Opus-line |
+| `fable-on-opus.sh` | UserPromptSubmit | wired by `install.sh`; recommended for unregistration on recent Opus-line models — self-gates on model when active | Inject Fable-style operating-discipline guidance (`hooks/fable/*.md`) when the active model is Opus-line |
 | `startup-sync.sh` | SessionStart | always | Auto-pull the agency root's config from GitHub on session open |
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
@@ -97,17 +97,73 @@ After `agency init`, your `~/.claude/settings.json` contains:
           }
         ]
       }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          { "type": "command", "command": "bash ~/.claude/hooks/fable-on-opus.sh" }
-        ]
-      }
     ]
   }
 }
 ```
+
+**`fable-on-opus.sh` is a candidate for unregistration.** Note that `install.sh` still writes a `UserPromptSubmit` → `fable-on-opus.sh` entry when it creates a fresh `settings.json`, so a new install *does* get it wired — the block above shows the recommended steady state, not what the installer currently produces. Recent Opus-line model releases carry the reasoning/behavioral discipline this hook injects natively, so leaving it registered duplicates guidance the model already applies on its own.
+
+Unregistering it is the recommended maintenance step on those model lines: remove the `UserPromptSubmit` entry from your `settings.json` (see [Unregistering a hook without deleting it](#unregistering-a-hook-without-deleting-it) below). The script and its `hooks/fable/` playbooks still ship and stay useful for operators on older model lines, or anyone who wants that discipline injected explicitly regardless of model tier.
+
+To keep it — or to re-add it after removing it — this is the block under `hooks`:
+
+```json
+"UserPromptSubmit": [
+  {
+    "hooks": [
+      { "type": "command", "command": "bash ~/.claude/hooks/fable-on-opus.sh" }
+    ]
+  }
+]
+```
+
+See [fable-on-opus.sh](#fable-on-opussh-userpromptsubmit) below for full behavior and the playbook inventory.
+
+---
+
+## Settings Hygiene Patterns
+
+`settings.json` accumulates cruft over the life of an install — hooks that get superseded, env flags that outlive the behavior they gated, config keys that get expressed two different ways across upgrades. None of this breaks anything outright; it just makes the file progressively less trustworthy as a description of what's actually running. Apply these patterns periodically, not just when something visibly misbehaves.
+
+### Unregistering a hook without deleting it
+
+When a hook's behavior becomes redundant (superseded by newer model/tool behavior, replaced by another hook, or simply not needed for your workflow), remove its event entry from `settings.json` — do not delete the script from `hooks/`.
+
+This beats deletion for three reasons:
+- **Reversible.** Re-adding the event entry restores the behavior instantly; no need to re-fetch or rewrite the script.
+- **Keeps the script available to operators who still benefit from it** — e.g. a different model tier, a different profile, or a different risk tolerance.
+- **No installer churn.** Deleting a shipped script means every installer and upgrade path (`install.sh`, `install.ps1`, `cli/`) has to know to stop shipping it, and re-adding it later means re-plumbing all of them again. Leaving it on disk, unregistered, avoids that entirely.
+
+**Verify a hook is unregistered:**
+```bash
+grep -A2 '"<EventName>"' ~/.claude/settings.json | grep '<hook-name>.sh'
+```
+No match means the hook is not wired to that event — it will not run regardless of what's on disk in `hooks/`.
+
+### Pruning dead env flags
+
+Env flags in the `env` block of `settings.json` gate behavior. When that behavior becomes default, gets renamed, or is removed upstream, the flag becomes a no-op — but it stays in your file silently, implying control you no longer have.
+
+Watch specifically for **double-negative flags**: a `DISABLE_<FEATURE>` (or `NO_<FEATURE>`) flag set to a falsy value (`false`, `0`, unset-equivalent) reads as "this is off" when it's actually a no-op either way — a common source of "I set this and nothing changed" confusion, because the flag may no longer be read by anything.
+
+Before keeping any env flag across an upgrade, verify it still exists in the current release:
+```bash
+grep -rn "<FLAG_NAME>" {agency-root}/hooks/ {agency-root}/cli/ 2>/dev/null
+```
+No match means nothing reads it anymore — safe to drop from `settings.json`.
+
+### Consolidating duplicated config keys
+
+Some settings are expressible through more than one key — for example, a reasoning-effort or verbosity setting that can be set at the top-level `env` block, inside a specific tool's config, or via a model-line-specific override. When more than one of these is present at once, precedence between them is version-dependent: which key "wins" can silently change on upgrade, producing behavior that doesn't match any key you actually set.
+
+The pattern: pick exactly one key for a given setting and drop the rest. Do not rely on precedence order to resolve duplicates — resolve it yourself, once, explicitly.
+
+**Verify no duplicate keys remain** for a setting you care about:
+```bash
+grep -n "<setting-name>" ~/.claude/settings.json
+```
+More than one match against the same logical setting is the signal to consolidate — read the current release's docs for which key is canonical, keep that one, and remove the others.
 
 ---
 
@@ -136,6 +192,8 @@ The template `hooks/.hook-profile.template` ships `standard` as the default.
 ## Hook Details
 
 ### fable-on-opus.sh (UserPromptSubmit)
+
+**Status: still wired by `install.sh` on a fresh install, but recommended for unregistration on recent Opus-line models** — they carry this discipline natively. See [Settings Wiring](#settings-wiring) above for the rationale and the removal/re-add block.
 
 Reads the incoming prompt payload from stdin (`session_id`, `transcript_path`, `model`, `prompt`) and determines the active model in order: the hook's own `.model` field, then the last assistant-model entry in the transcript JSONL, then the `model` key in `settings.json`. If the resolved model is not Opus-line, it clears any per-session marker files for that session and exits — a no-op on every other model tier.
 

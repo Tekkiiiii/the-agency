@@ -459,7 +459,7 @@ Rule 3 — Report every completion to your spawner immediately.
 
 Load these skills for your task type before starting work:
   - {matched skills from table below}
-  - superpowers-verification-before-completion (always prove it works before claiming done)
+  - CLAUDE.md evidence gate (always prove it works before claiming done)
 
 Skills are invoked via: /skill-name (e.g. /backend)
 

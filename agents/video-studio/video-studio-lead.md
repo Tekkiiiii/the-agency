@@ -9,7 +9,6 @@ model: opus
 skills:
   - superpowers-brainstorming
   - superpowers-writing-plans
-  - superpowers-verification-before-completion
   - video-use
   - ffmpeg
   - hyperframes
