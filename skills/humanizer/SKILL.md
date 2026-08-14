@@ -1,7 +1,7 @@
 ---
 name: humanizer
 version: 3.0.0
-description: Remove signs of AI-generated writing from text. Use when editing or reviewing text to make it sound more natural and human-written. Calibrates output to document type (CV, LinkedIn post, blog, email, etc.) so a CV bullet stays tight and parallel while a blog post gets natural rhythm. Based on Wikipedia's "Signs of AI writing" guide. Detects and fixes patterns including: inflated symbolism, promotional language, superficial -ing analyses, vague attributions, em dash overuse, rule of three, AI vocabulary, passive voice, negative parallelisms, and filler phrases.
+description: "Remove signs of AI-generated writing from text. Use when editing or reviewing text to make it sound more natural and human-written. Calibrates output to document type (CV, LinkedIn post, blog, email, etc.) so a CV bullet stays tight and parallel while a blog post gets natural rhythm. Based on Wikipedia's \"Signs of AI writing\" guide. Detects and fixes patterns including: inflated symbolism, promotional language, superficial -ing analyses, vague attributions, em dash overuse, rule of three, AI vocabulary, passive voice, negative parallelisms, and filler phrases."
 license: MIT
 compatibility: claude-code opencode
 allowed-tools:

@@ -6,7 +6,7 @@
   "judge_rules": {
     "isolation": "spawn isolated judge per dimension — no shared context between dimensions",
     "escape_hatch": "Unknown allowed when evidence insufficient — never force a binary verdict",
-    "calibration": "calibrate against Tekki-graded sample before any batch run (min 5 cases)",
+    "calibration": "calibrate against operator-graded sample before any batch run (min 5 cases)",
     "rubric_source": "cases.jsonl[].dimensions per case — no global rubric overrides per-case spec"
   },
   "pass_thresholds": {
@@ -33,7 +33,7 @@
       "metric": "cost_adjusted_success",
       "formula": "success_rate / mean_cost_usd",
       "baseline_target": "TBD — set after first 10 runs",
-      "events_source": "~/.claude/memory/metrics/events.jsonl"
+      "events_source": "{agency-root}/memory/metrics/events.jsonl"
     },
     "safety": {
       "guardrail_violations_allowed": 0,
@@ -55,7 +55,7 @@
     "baseline_report_required": true
   },
   "cost_integration": {
-    "events_sink": "~/.claude/memory/metrics/events.jsonl",
+    "events_sink": "{agency-root}/memory/metrics/events.jsonl",
     "emit_command": "bash {agency-root}/hooks/emit-metric.sh",
     "event_schema": {
       "ts": "ISO8601",
@@ -68,7 +68,7 @@
       "project": "system-improvement"
     }
   },
-  "cases_file": "~/.claude/evals/cases.jsonl",
-  "cases_count": 25,
+  "cases_file": "{agency-root}/evals/cases.jsonl",
+  "cases_count": 48,
   "seeding_policy": "real failures only — see lessons/*.md sources in each case. NO synthetic tasks (Decision 2, 2026-06-12)"
 }

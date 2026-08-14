@@ -24,11 +24,16 @@ overwrites it:
   Freezing them would be a silent regression, not a safe default.
 - **Accumulating files** — `medium-term.md` (active-projects registry, appended
   by `project-scaffolder` on every `/new-project`), `delegator-cache.md`
-  (task-pattern → route cache, appended by every caller on a Delegator miss),
-  `quality-prefs.md` (thresholds the operator edits directly). The running
-  system writes rows into these **at their installed path**, so an upgrade that
-  overwrote them would destroy real user data. They are listed in
+  (task-pattern → route cache, appended by every caller on a Delegator miss).
+  The running system writes rows into these **at their installed path**, so an
+  upgrade that overwrote them would destroy real user data. They are listed in
   `core/.preserve` and are never overwritten once they exist.
+
+  `quality-prefs.md` (the operator's quality-loop thresholds) is **not** one of
+  these — it is not shipped here at all. It is pure user data with no seed
+  template, so it lives at `{agency-root}/memory/quality-prefs.md` (see below)
+  and is created on first write by `skills/quality-loop-router/SKILL.md`, not
+  installed by any of the four deploy paths.
 
 ### The preserve contract
 
@@ -63,8 +68,11 @@ Created **empty** by the installer (`mkdir -p "$CLAUDE_HOME"/{...,memory}`) —
 nothing ships into it. It exists so operators and running agents have a place
 to accumulate their own memory content: `user`/`feedback`/`project`/
 `reference` type files (see `core/memory/MEMORY.md` for the taxonomy),
-`lessons/`, session logs, and anything else that's genuinely per-operator
-state that should survive an agency upgrade untouched.
+`lessons/`, session logs, `quality-prefs.md` (the operator's quality-loop
+threshold override, created on first write by
+`skills/quality-loop-router/SKILL.md` — absent on a fresh install, and that is
+the expected default, not an error), and anything else that's genuinely
+per-operator state that should survive an agency upgrade untouched.
 
 `lint-memory` scans this directory (plus each project's own `memory/`) for
 health — dead links, orphans, stale entries — because this is where content

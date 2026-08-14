@@ -1,6 +1,6 @@
 ---
 name: musicgen
-description: CLI wrapper for MusicGPT (AudioCraft MusicGen backend) — generates AI music from text prompts. Use for BGM generation in video production. Default model: small (fast, ~1 min for 10s clip on Apple Silicon).
+description: "CLI wrapper for MusicGPT (AudioCraft MusicGen backend) — generates AI music from text prompts. Use for BGM generation in video production. Default model: small (fast, ~1 min for 10s clip on Apple Silicon)."
 ---
 
 # musicgen

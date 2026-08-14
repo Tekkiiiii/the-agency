@@ -37,6 +37,14 @@ memory/medium-term.md
 # resolved (task-pattern -> route) pair here on a cache miss.
 memory/delegator-cache.md
 
-# Operator's quality thresholds. skills/quality-loop-router/SKILL.md writes
-# the answer here and states the operator may edit the file directly.
-memory/quality-prefs.md
+# NOTE: quality-prefs.md used to be listed here as a shipped seed under
+# core/memory/. It is user data, not shipped content — the canonical copy now
+# lives at {agency-root}/memory/quality-prefs.md (the operator's runtime
+# memory dir, never touched by core/ sync), created on first write by
+# skills/quality-loop-router/SKILL.md. It does not belong in this list: this
+# list only covers files that ship a seed copy under core/ AND get written to
+# at their installed path (see the "skip-if-exists" semantics above) — with no
+# repo copy under core/, there is nothing to seed or preserve here, and
+# .github/scripts/check-core-preserve.js fails the build on any listed path
+# that doesn't exist under core/, so a dangling entry is actively wrong, not
+# just harmless.

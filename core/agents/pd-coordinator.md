@@ -350,7 +350,7 @@ If the action type is one of these, proceed immediately + run mechanical verifie
 - Any external send (email send, Slack, Calendar invite, WhatsApp, Telegram)
 - Any Canva publish/export to client
 - Any DNS change
-- Any action involving HTI Group internal data
+- Any action involving client-internal data
 - Any mutation of shared remote servers
 - Any cost-bearing action
 

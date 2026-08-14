@@ -32,12 +32,20 @@ If unclear, default to **Mode A** (safer for quality, no cost risk).
 
 ## Step 2: Load or Ask User for Threshold (Mode A only)
 
-**First: check for stored preference.** Read `~/.claude/memory/quality-prefs.md` (if exists).
-If the file contains a `threshold: {avg}/{floor}` line (e.g., `threshold: 85/75`), use those
-values silently — skip the dialog entirely. This is the user's own stored preference, set on
-first run.
+**First: check for stored preference.** Read `{agency-root}/memory/quality-prefs.md`.
 
-**If no stored preference exists**, ask the user once:
+This file is pure user data — it is never shipped and never seeded by install/upgrade. On a
+fresh install (or any install where the operator has never answered the dialog below) it will
+not exist. That is the expected, normal state, not an error: treat a missing file exactly like
+an empty one and fall through to the "no stored preference" path below. Do not surface a
+read failure to the user.
+
+If the file exists and contains a `threshold: {avg}/{floor}` line (e.g., `threshold: 85/75`),
+use those values silently — skip the dialog entirely. This is the user's own stored preference,
+set on first run.
+
+**If no stored preference exists (file missing, empty, or missing the `threshold:` line)**, ask
+the user once:
 
 > "Quality loop starting. Default threshold: avg score >= 85, no dimension below 75. Max 3 rounds. Accept defaults or override? (e.g. '90/80' for stricter, '75/65' for lenient)"
 
@@ -48,11 +56,14 @@ Accept:
 - "strict" → avg 90, floor 80
 - "lenient" → avg 75, floor 65
 
-After getting the answer, write to `~/.claude/memory/quality-prefs.md`:
+After getting the answer, write to `{agency-root}/memory/quality-prefs.md`:
 ```
 threshold: {avg}/{floor}
 ```
-This makes the dialog a one-time setup. Future invocations read the file and skip the dialog.
+`{agency-root}/memory/` is created empty by the installer on every install path, so this write
+never needs to create the directory first — only the file. This is a create-on-first-write file:
+if it doesn't exist yet, create it; if it exists, overwrite it with the new value. This makes the
+dialog a one-time setup. Future invocations read the file and skip the dialog.
 
 The operator can always override by editing `{agency-root}/memory/quality-prefs.md` directly, or by
 invoking with an explicit threshold flag (e.g., `quality-loop-router threshold:90/80`).

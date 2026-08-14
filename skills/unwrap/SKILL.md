@@ -1,11 +1,7 @@
 ---
 name: unwrap
-description: >
-  Reads inbox task save-state files and resumes work autonomously — briefing + spawn.
-  Trigger when the user invokes /unwrap [task-slug], says "unwrap task", "pick up
-  inbox task", or "continue task". Similar to /pd-resume but for single inbox tasks:
-  spawns a briefing subagent, collects the briefing, then spawns a task worker that
-  starts the next action immediately. SSOT for task paths is ~/.claude/tasks/inbox/.
+description: "Reads inbox task save-state files and resumes work autonomously — briefing + spawn. Trigger when the user invokes /unwrap [task-slug], says \"unwrap task\", \"pick up inbox task\", or \"continue task\". Similar to /pd-resume but for single inbox tasks: spawns a briefing subagent, collects the briefing, then spawns a task worker that starts the next action immediately. SSOT for task paths is ~/.claude/tasks/inbox/."
+---
 
 # Unwrap — Inbox Task Recall + Resume
 

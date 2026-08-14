@@ -101,9 +101,10 @@ Never skip the emission to save time — it's the only audit trail that proves t
 
 ## Event 7 — eval_run
 
-**Trigger:** ONLY an actual live run of the `~/.claude/evals/` cold-recall
+**Trigger:** ONLY an actual live run of the `{agency-root}/evals/` cold-recall
 agent-behavior harness (`evals/config.json` defines this exact schema;
-`evals/cases.jsonl` holds the 25 doctrine/protocol cases). This is a manual
+`evals/cases.jsonl` holds the doctrine/protocol cases — the authoritative count
+is `config.json:cases_count`, never restated here). This is a manual
 or Gardener-triggered pass — there is no automated scheduler.
 
 ```bash
@@ -144,7 +145,7 @@ dead one. Add a row here whenever a new event is introduced.
 | `bg_agent_verified` | Background-agent completion-gate compliance | Verified all deliverables of a `run_in_background:true` spawn | No background agents returned |
 | `save_state` / `save_state_complete` | save-state script execution | `save-state.py` ran (either mode — script cannot distinguish INLINE vs SUBAGENT) | No save-state ran (unlikely — fires constantly in normal use) |
 | `save_state_spawn` | SUBAGENT-mode save-state usage specifically | Caller is about to spawn a `save-state-runner` (`/save-state all` or crash recovery) | Only INLINE saves happened this window — genuinely healthy if no `all` runs or recoveries occurred |
-| `eval_run` | Cold-recall agent-behavior harness (`~/.claude/evals/`) — doctrine/protocol compliance grading | A live harness run executed a case and graded a dimension | No live harness run was triggered (manual/Gardener-only cadence — long gaps are normal unless a Wave-2 gate is pending) |
+| `eval_run` | Cold-recall agent-behavior harness (`{agency-root}/evals/`) — doctrine/protocol compliance grading | A live harness run executed a case and graded a dimension | No live harness run was triggered (manual/Gardener-only cadence — long gaps are normal unless a Wave-2 gate is pending) |
 | `tier_a` / `tier_b` | Coord Exec-tier classification compliance | A Coord classified a subtask before spawning an Exec | No Coord spawned any Exec in the window — **verify via Coord scratch-file mtimes before trusting this**, not just the metric's own silence (F25: 2026-07-29 audit found Coords ran 2026-07-27/28 and spawned Execs without emitting either tier event — real drift, not silence-is-fine) |
 | `coord_fanout` | PD→Coord fan-out width | A PD spawned a wave of Coords | No PD spawned a Coord wave |
 | `scorecard_check` / `scorecard_run_start` / `scorecard_run_end` | `mem-scorecard.py` execution | The memory scorecard script ran | Scorecard not invoked this window |
