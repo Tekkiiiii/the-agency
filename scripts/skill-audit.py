@@ -53,7 +53,12 @@ except ImportError:
 TRIGGER_RE = re.compile(
     r"(use when|when to|trigger|invoke|use this|when the user|when you|use for|also for"
     r"|use before|use after|use (?:it|via)|load when|loaded (?:automatically|on demand)"
-    r"|whenever|apply (?:to|when)|default (?:tool|for|browser)|for (?:any|all) |触发)",
+    r"|whenever|apply (?:to|when)|default (?:tool|for|browser)|for (?:any|all) |触发"
+    # Vietnamese trigger phrasing — skills whose description is written in
+    # Vietnamese state their trigger as "Dùng khi ..." / "Không dùng để ...".
+    # Without these the check reports a false A8 on every vi-language skill
+    # (humanizer-vi, translationese-cleaner-vi, grammar-checker-vi, style-guide-vi).
+    r"|dùng khi|dùng để|dùng cho|áp dụng khi|áp dụng cho|khi người dùng)",
     re.IGNORECASE,
 )
 # local refs: markdown links / backticked paths pointing into the skill dir

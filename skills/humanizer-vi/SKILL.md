@@ -1,10 +1,12 @@
 ---
 name: humanizer-vi
-description: Biên tập văn bản tiếng Việt máy móc, sáo rỗng hoặc đều giọng để câu chữ tự nhiên, rõ và đúng ngữ cảnh. Dùng khi người dùng yêu cầu làm văn bản bớt khuôn mẫu, chỉnh giọng hoặc bảo toàn giọng tác giả; không dùng để suy đoán tác giả là AI, lách detector, sửa thuần ngữ pháp hay biến văn bản chuyên môn thành văn nói.
+description: Biên tập văn bản tiếng Việt máy móc, sáo rỗng hoặc đều giọng để câu chữ tự nhiên, rõ và đúng ngữ cảnh. Dùng khi người dùng yêu cầu làm văn bản bớt khuôn mẫu, chỉnh giọng hoặc bảo toàn giọng tác giả; không dùng để suy đoán tác giả là AI, lách detector, sửa thuần ngữ pháp hay biến văn bản chuyên môn thành văn nói. Không thay thế translationese-cleaner-vi hay grammar-checker-vi.
 license: MIT
 metadata:
   language: vi
-  version: "0.2.1"
+  version: "0.3.0"
+  research: "2026-09-04 NotebookLM, 59 nguồn"
+  based_on: "github:longhang2004/vietnamese-humanizer@611c6e9 (0.2.1)"
 ---
 
 # Humanizer tiếng Việt
@@ -13,7 +15,7 @@ Biên tập chất lượng viết, không phân loại nguồn gốc văn bản
 
 ## Quy trình
 
-1. Xác định loại văn bản, độc giả, mục đích và register. Nếu thiếu dữ kiện, suy ra từ văn bản và chọn mức can thiệp thấp.
+1. Xác định loại văn bản, độc giả, mục đích và register. Nếu thiếu dữ kiện, suy ra từ văn bản và chọn mức can thiệp thấp. Phải chốt register trước khi áp bất kỳ pattern nhóm Pragmatic (P01–P04); nhóm này không bao giờ áp cho văn bản hành chính, pháp lý, học thuật hay kỹ thuật.
 2. Ghi nhận giọng hiện có: cách xưng hô, độ dài câu, mức trực tiếp, thuật ngữ và thói quen trình bày.
 3. Đọc toàn đoạn trước khi sửa. Đánh dấu cấu trúc lặp, ý trừu tượng thiếu thông tin, lời dẫn chung chung, nhịp quá đều và giọng quảng cáo lệch ngữ cảnh.
 4. Sửa cấu trúc câu và đoạn trước khi thay từ. Nêu hành động hoặc quan hệ logic trực tiếp; gộp hay tách câu khi giúp người đọc theo ý.
@@ -39,7 +41,7 @@ Khi một câu mơ hồ theo nhiều cách hợp lý, giữ nguyên phần mơ h
 - Với giọng cá nhân, chỉ giữ hay tăng cá tính khi văn bản gốc đã có cơ sở. Văn bản trung lập không cần thêm "tôi".
 - Nếu đầu vào tự nhiên và phù hợp, trả lại gần như nguyên văn.
 
-Danh mục giải thích nằm ở [patterns](references/patterns.md). Xem [examples](references/examples.md) để phân biệt sửa hợp lý với over-editing.
+Catalog máy đọc nằm ở `patterns/humanizer.yml`: 27 pattern chia bốn nhóm (lexical 9, discourse 7, structural 7, pragmatic 4). Danh mục giải thích nằm ở [patterns](references/patterns.md), bằng chứng nghiên cứu ở [research-2026-09](references/research-2026-09.md). Xem [examples](references/examples.md) để phân biệt sửa hợp lý với over-editing.
 
 ## Anti-goals
 
@@ -48,7 +50,9 @@ Danh mục giải thích nằm ở [patterns](references/patterns.md). Xem [exam
 - Không áp một giọng thân mật cho mọi văn bản.
 - Không làm phẳng khác biệt vùng miền, thế hệ hoặc nghề nghiệp.
 - Không rút gọn nội dung quan trọng chỉ để câu ngắn hơn.
-- Không thay từ đồng nghĩa hàng loạt khi cấu trúc mới là vấn đề.
+- Không thay từ đồng nghĩa hàng loạt hay máy móc khi cấu trúc mới là vấn đề.
+- Không cắt câu thành những mẩu vụn để phá nhịp.
+- Không dùng công cụ "humanize" tự động; chúng tạo ra lỗi ngữ pháp.
 - Không biến nội dung kỹ thuật, học thuật hoặc pháp lý thành bản quảng cáo.
 
 ## Đầu ra

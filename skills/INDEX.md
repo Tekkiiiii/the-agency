@@ -1,6 +1,6 @@
 # Skills Index
 
-286 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+287 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 > **What discovery actually depends on — read before "fixing" missing frontmatter.**
 > A skill is discovered by its **location on disk**, not by its metadata: every code
@@ -146,9 +146,10 @@
 | Skill | Description |
 |-------|-------------|
 | `humanizer` | Remove signs of AI-generated writing from text |
+| `humanizer-writing` | Spot and avoid AI writing — 43 tells from 2026-09 research, for writing time as well as edit time. Invoke as `humanizer-writing`; `hw` is a local symlink alias, not shipped. |
 | `proofreader` | Proofread English or Vietnamese text — typos, grammar, clarity |
 | `content-polish` | End-to-end polishing: humanizer -> anti-fragmentation -> proofreader (EN) / humanizer-vi -> grammar-checker-vi (VN) |
-| `humanizer-vi` | Vietnamese humanizer — fix templated/flat/cliché VN prose, preserve author voice |
+| `humanizer-vi` | Vietnamese humanizer — fix templated/flat/cliché VN prose, preserve author voice. 27-pattern catalog (lexical/discourse/structural/pragmatic) from 2026-09 research. |
 | `translationese-cleaner-vi` | Remove English-influenced word order and phrasing from Vietnamese text |
 | `grammar-checker-vi` | Vietnamese grammar/spelling/punctuation checker (deeper than proofreader's VN pass) |
 | `style-guide-vi` | Vietnamese style consistency — terminology, pronouns, numbers/dates, capitalization |

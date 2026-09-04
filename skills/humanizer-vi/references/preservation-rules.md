@@ -14,5 +14,7 @@ Bản sửa thất bại nếu bịa dữ kiện hoặc đổi số, tên riêng
 - Không sửa trong code block, inline code, URL, path hoặc identifier.
 - Giữ thuật ngữ chuyên ngành nếu chưa có bằng chứng rằng cách dùng sai.
 - Chỉ dùng context được cung cấp rõ. Không dựa vào brief hoặc phần bài không nằm trong dữ liệu.
+- Giữ thuật ngữ cố định và cụm chuyển ý chuẩn trong văn bản hành chính và pháp lý. Đó là quy ước thể loại, không phải chữ thừa; bỏ đi là đổi hiệu lực.
+- Giữ dấu gạch ngang khi đó là quy ước trình bày của tác giả. Đây là dấu câu tiếng Việt hợp lệ, không phải bằng chứng của điều gì.
 
 Nếu mục tiêu tự nhiên xung đột với bảo toàn, chọn bảo toàn và báo điểm chưa thể sửa.

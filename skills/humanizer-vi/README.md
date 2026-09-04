@@ -6,4 +6,4 @@ Ví dụ yêu cầu: `Hãy dùng humanizer-vi để biên tập email này, gi�
 
 Nội dung chi tiết nằm trong `references/` để Agent Skill chỉ nạp phần cần thiết. Catalog máy đọc nằm trong `patterns/humanizer.yml`; bộ ví dụ đầy đủ nằm ở `examples/examples.jsonl`.
 
-Vendored from [longhang2004/vietnamese-humanizer](https://github.com/longhang2004/vietnamese-humanizer) (MIT License).
+Vendored from [longhang2004/vietnamese-humanizer](https://github.com/longhang2004/vietnamese-humanizer) (MIT License), pinned at `611c6e9`. Patterns added in 0.3.0 come from a 2026-09-04 research pass; see `references/research-2026-09.md`.
