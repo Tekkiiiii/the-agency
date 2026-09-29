@@ -40,7 +40,7 @@ Dept Head (Opus) ◄──────────────► Project Direct
 
 **Status reporting:** On-demand only. Dept heads request status from members/projects as needed. No automated loops. This keeps parent AI context at O(departments + exceptions) rather than O(agents).
 
-**Model tiering:** All 175 agents tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
+**Model tiering:** Agents are tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
 
 **`modelTier` vs `model` — which one actually does anything:** `model:` is the only
 frontmatter key Claude Code reads for model selection (`sonnet` / `opus` / `haiku` /

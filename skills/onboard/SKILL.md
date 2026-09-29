@@ -30,14 +30,15 @@ Print this introduction (adapt the tone — friendly, concise, no hype):
 ```
 Welcome to The Agency.
 
-This is a multi-agent orchestration system for Claude Code. Here's what
-it gives you:
+This is Claude Code, fixed: memory that survives sessions, agents that
+finish what they start, QA gates before "done", and token-lean routing.
+Here's what it gives you:
 
-  Agents    225+ specialists across 19 departments (Engineering, Design,
+  Agents    235+ specialists across 16 departments (Engineering, Design,
             Marketing, Content, Sales, Testing, Game Dev, and more).
             Each agent has a role, a model assignment, and a protocol.
 
-  Skills    270+ slash commands you can invoke right here. /save-state,
+  Skills    285+ slash commands you can invoke right here. /save-state,
             /recall, /pd-resume, /delegate, /swarm, /graphify, and more.
 
   Memory    Persistent project state that survives across sessions.
@@ -49,7 +50,7 @@ it gives you:
             supervise, they execute.
 
   Model     Opus for planning, Sonnet for execution, Haiku for bulk
-  routing   work. Every agent carries a model assignment.
+  routing   work. Agents carry a model assignment.
 
 Let's verify your setup and get you running.
 ```

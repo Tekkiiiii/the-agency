@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Agency is a multi-agent command center built on Claude Code. It runs autonomously between sessions, coordinating work through a file-based memory and task system.
+The Agency is a layer of skills, agents, and memory files that installs into Claude Code (`~/.claude/`). It fixes the gaps Claude Code has out of the box: memory that survives sessions, agents that finish what they start, QA gates before "done", and token-lean routing. It coordinates work through a file-based memory and task system — no cloud, no extra API keys.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

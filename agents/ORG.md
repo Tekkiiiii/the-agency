@@ -40,7 +40,7 @@ Dept Head (Opus) ◄──────────────► Project Direct
 
 **Status reporting:** On-demand only. Dept heads request status from members/projects as needed. No automated loops. This keeps parent AI context at O(departments + exceptions) rather than O(agents).
 
-**Model tiering:** All 161 agents tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
+**Model tiering:** Agents are tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
 
 **Status loop policy:** Automated recurring loops are DISABLED. Use on-demand status checks only. Dept heads request status when needed — do not automate periodic pings. This avoids the token explosion risk of naive 15-30 min loop implementations (10k-21k reports/week without aggregation). See § on status reporting.
 

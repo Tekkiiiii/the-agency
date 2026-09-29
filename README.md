@@ -1,13 +1,22 @@
 # The Agency
 
+**Claude Code, fixed for everyone.**
+
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude%20Code-yellow)
 ![Cloud: Zero dependencies](https://img.shields.io/badge/Cloud-Zero%20Dependencies-green)
-![Skills: 270+](https://img.shields.io/badge/Skills-270%2B-orange)
-![Agents: 225+](https://img.shields.io/badge/Agents-225%2B-purple)
+![Skills: 285+](https://img.shields.io/badge/Skills-285%2B-orange)
+![Agents: 235+](https://img.shields.io/badge/Agents-235%2B-purple)
 ![QA: Gates on every handoff](https://img.shields.io/badge/QA-Gates%20%2B%20Health%20Scores-red)
 
-A multi-agent orchestration system for Claude Code. 225+ specialist agents. Autonomous project execution with persistent memory, QA gates on every handoff, and intelligent model routing — all on your machine, no extra API keys.
+Out of the box, Claude Code forgets everything when a session ends. Long tasks stall halfway, or come back marked "done" with nothing to prove it. And every new session burns tokens rebuilding context it already had. The Agency fixes those pains with plain files installed to `~/.claude/`:
+
+- **Memory that survives sessions.** `/save-state` before you close, `/recall` when you come back. Open tasks, decisions, and blockers return with it.
+- **Agents that finish what they start.** A Project Director breaks the work down, hands it to specialists, and owns it until it is delivered.
+- **QA gates before "done".** No handoff is accepted without a health-score pass and evidence.
+- **Token-lean routing.** Cheap lookups before expensive agent spawns, and the right model for each job: Opus plans, Sonnet executes, Haiku does bulk work.
+
+285+ skills and 235+ specialist agents. No cloud, no extra API keys.
 
 ```bash
 agency init                   # standard — full quality gates (default)
@@ -31,7 +40,7 @@ cd ~/.claude && ./install.sh
 cd $HOME\.claude; .\install.ps1
 ```
 
-That's it. 270+ skills and 200+ agents are live in `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
+That's it. 285+ skills and 235+ agents are live in `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
 
 ```bash
 agency onboard                        # Interactive setup wizard (start here)
@@ -64,11 +73,11 @@ Four things make it different from a conversation with an AI:
 
 **1. Memory that persists.** You run `/save-state` before you close Claude Code. Tomorrow you run `/recall`. The agent picks up exactly where it left off — open tasks, decisions made, what was blocked, what shipped. No re-explaining. No context collapse.
 
-**2. A real team structure.** 200+ specialist agents are organized across 19 departments: Engineering, Design, Marketing, Content Creation, Sales, Testing, Game Development, Paid Media, Product, Project Management, Operations, Career, Specialized, Spatial Computing, Strategy, Integrations, and more. The right agent gets the right task automatically.
+**2. A real team structure.** 235+ specialist agents are organized across 16 departments: Engineering, Design, Marketing, Content Creation, Sales, Testing, Game Development, Paid Media, Product, Project Management, Operations, Career, Specialized, Spatial Computing, Critiques, and Video Studio. The right agent gets the right task automatically.
 
 **3. Autonomous coordination.** You give direction to a Project Director. The PD decomposes the work, assigns it to specialists, runs the tasks in parallel, checks the output at every handoff, and reports back. You don't coordinate. You supervise.
 
-**4. Intelligent model routing.** Every agent in the system carries a model assignment. Planning and orchestration work goes to Opus. Execution work goes to Sonnet. High-volume research and scraping goes to Haiku. You get the right model for every task without thinking about it.
+**4. Intelligent model routing.** Agents carry a model assignment. Planning and orchestration work goes to Opus. Execution work goes to Sonnet. High-volume research and scraping goes to Haiku. You get the right model for every task without thinking about it.
 
 ---
 
@@ -99,7 +108,7 @@ You didn't explain anything the second day. The agent remembered.
 - **QA gates on every handoff**: No work gets ACK'd without a health-score pass. Gate: score ≥ 70 + zero CRITICALs. Example: 70 = tests pass but docs missing; 90+ = ship-ready.
 - **Explicit ACK/NACK protocol**: Agents wait for approval before stopping. NACKs return a fix list. Rejected work loops back through QA. Traceability is built into the protocol.
 - **Hook lifecycle system**: shell scripts across 5 lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop, UserPromptSubmit) — security gating, secret scanning, config protection, crash detection, cost tracking, plus an opt-in Fable-on-Opus hook (ships unwired) that injects Fable-style reasoning discipline (`hooks/fable/`) whenever the active model is Opus-line. Profile-aware (`standard` / `strict` / `minimal`). See `docs/HOOKS.md`.
-- **270+ production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, cloud (Cloudflare, Netlify, Terraform), and more — all invoked via `/skill-name`.
+- **285+ production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, cloud (Cloudflare, Netlify, Terraform), and more — all invoked via `/skill-name`.
 - **SQLite task store — nothing leaves your machine**: Task pipeline, gates, retries, blocking in `~/.claude/`. No servers. No API keys.
 - **Session persistence**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where it left off.
 - **Agency Rooms** — file-based inter-agent chat with persistent rooms, RoomManager polling, NEXUS JSON handoffs, and 12-hour department digests.
@@ -147,12 +156,12 @@ cd ~/.claude
 
 ```
 ~/.claude/
-├── skills/              ← 270+ skills as {name}/SKILL.md directories
+├── skills/              ← 285+ skills as {name}/SKILL.md directories
 │   ├── backend/SKILL.md
 │   ├── frontend/SKILL.md
 │   ├── ship/SKILL.md
 │   └── ...
-├── agents/              ← 200+ agents organized by department
+├── agents/              ← 235+ agents organized by department
 │   ├── engineering/
 │   ├── design/
 │   ├── content-creation/
@@ -428,8 +437,8 @@ Each PD spawns independently, runs its workstream, and reports back.
 After this walkthrough:
 
 - **`~/.agency/projects/`** — project state that persists across sessions
-- **`~/.agency/skills/`** — 270+ skills ready to invoke
-- **`~/.agency/agents/`** — 200+ specialist agents organized by department
+- **`~/.agency/skills/`** — 285+ skills ready to invoke
+- **`~/.agency/agents/`** — 235+ specialist agents organized by department
 - **`~/.agency/task-store.db`** — SQLite task pipeline with gate tracking
 
 The PD handles decomposition, delegation, QA gating, and state persistence. You give direction and review results.
@@ -499,7 +508,7 @@ Spawned via `/recall {project}`. Owns the project end-to-end:
 4. Escalate blockers
 5. Persist state via `/save-state`
 
-## Skills Library — 270+ Skills
+## Skills Library — 285+ Skills
 
 **Memory & Session**: `save-state`, `recall`, `pd-resume`, `wrap`, `unwrap`, `project-status`, `context-save`, `context-restore`, `freeze`, `unfreeze`
 
@@ -570,8 +579,8 @@ the-agency/
 │   ├── cost-tracker.sh  # Stop: compute session token cost
 │   ├── fable-on-opus.sh # UserPromptSubmit: inject Fable reasoning discipline on Opus
 │   └── fable/           # Fable playbook modules read by fable-on-opus.sh
-├── agents/              # 204+ agent definitions (19 departments + dept-coords)
-├── skills/              # 270+ reusable workflow skills
+├── agents/              # 235+ agent definitions (16 departments + dept-coords)
+├── skills/              # 285+ reusable workflow skills
 └── plans/               # Architecture decision records
 ```
 

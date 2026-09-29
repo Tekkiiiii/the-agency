@@ -392,7 +392,7 @@ async function continueWithAgent(rl, agencyRoot, projectSlug, TOTAL_STEPS, isExi
   process.stdout.write('  Documentation:\n\n');
   process.stdout.write('    docs/ARCHITECTURE.md              How the system is structured\n');
   process.stdout.write('    docs/SETUP.md                     Full setup reference\n');
-  process.stdout.write('    agents/                           Agent catalog (100+ agents)\n\n');
+  process.stdout.write('    agents/                           Agent catalog (235+ agents)\n\n');
   process.stdout.write('  Tips:\n\n');
   process.stdout.write(`    - Edit STATE.md to track current work and blockers\n`);
   process.stdout.write(`    - Use /pd-resume ${projectSlug} in Claude Code to resume a session\n`);

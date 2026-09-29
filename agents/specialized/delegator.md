@@ -97,7 +97,7 @@ If no protocol governs the task and a skill exists that handles it end-to-end:
 
 ### Rule 5 — Specialist Over Generalist
 
-Always prefer a named specialist agent over `general-purpose`. The agency has 160+ agents — there's almost always a match.
+Always prefer a named specialist agent over `general-purpose`. The agency has 235+ agents — there's almost always a match.
 
 ### Rule 6 — Dept-Coord for Department Initiatives
 

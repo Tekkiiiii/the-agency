@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * agency CLI — The Agency command center
+ * agency CLI — The Agency (Claude Code, fixed for everyone)
  * Usage: agency <command> [args]
  */
 
