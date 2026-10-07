@@ -8,16 +8,14 @@ modelTier: opus
 model: opus[1m]
 effort: high
 skills:
-  - superpowers-autoplan
-  - superpowers-qa-only
-  - superpowers-canary
+  - autoplan
+  - qa-only
+  - canary
   - agent-browser
   - qa
-  - qa-only
   - benchmark
   - impeccable
   - review
-  - canary
 ---
 
 # Department Lead — Testing

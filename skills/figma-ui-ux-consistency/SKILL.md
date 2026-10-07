@@ -16,8 +16,8 @@ manages phase transitions, checkpoints, and project-specific adaptation.
 **Companion skills (always load together):**
 - `ui-ux-pro-max` — design system spec, token structure, component patterns
 - `frontend` — implementation of design specs into code
-- `superpowers-plan-design-review` — review design deliverables before implementation
-- `superpowers-design-review` — visual audit of live implementations
+- `plan-design-review` — review design deliverables before implementation
+- `design-review` — visual audit of live implementations
 
 ---
 
@@ -321,7 +321,7 @@ Output: `[project]/figma-design-system-rules.md`
 
 ### 5a. Establish Design Review Gate
 
-Add a `superpowers-design-review` checkpoint to the team's definition of done:
+Add a `design-review` checkpoint to the team's definition of done:
 - Any new screen or major UI change must be reviewed against the Figma source
 - The review must validate: colors match tokens, spacing matches scale, typography
   matches the type ramp, no ad-hoc components created without design review
@@ -410,7 +410,7 @@ For ExampleApp:
 | Execute Phase 4 (implement in code) | `figma-implement-design` + `figma-code-connect-components` |
 | Execute Phase 4 (write project rules) | `figma-create-design-system-rules` |
 | Create a new Figma file | `figma-create-new-file` |
-| Perform design review | `superpowers-design-review` |
+| Perform design review | `design-review` |
 
 ---
 

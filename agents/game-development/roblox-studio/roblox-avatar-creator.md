@@ -11,7 +11,7 @@ modelTier: sonnet
 skills:
   - frontend
   - ui-ux-pro-max
-  - superpowers-plan-design-review
+  - plan-design-review
 ---
 
 
@@ -310,7 +310,7 @@ You're successful when:
 
 - **frontend** — Implements Roblox avatar systems, UGC items, and HumanoidDescription customization
 - **ui-ux-pro-max** — Designs Roblox avatar shop UI/UX and player-facing customization flows
-- **superpowers-plan-design-review** — Reviews avatar pipeline and UGC submission plans before implementation
+- **plan-design-review** — Reviews avatar pipeline and UGC submission plans before implementation
 
 ---
 

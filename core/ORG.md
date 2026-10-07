@@ -73,9 +73,8 @@ on ~300 defs to solve a problem ~21 of them have.
 **Two consequences worth stating, so they are not rediscovered as bugs:**
 
 1. `[1m]` attaches to `model:`, never to `modelTier:` (see above — `modelTier` is inert).
-2. Four orchestrator defs carry no `model:` key at all (`core/agents/PD.md`,
-   `core/agents/pd-coordinator-lite.md`, `core/agents/coord-lite.md`,
-   `agents/project-management/the-agency-pd.md`). They **inherit** the spawning session's
+2. Three orchestrator defs carry no `model:` key at all (`core/agents/PD.md`,
+   `core/agents/pd-coordinator-lite.md`, `core/agents/coord-lite.md`). They **inherit** the spawning session's
    model and are intentionally left untouched — pinning a model on them is a separate
    decision from adopting `[1m]`. If a `model:` key is ever added to one of them, this
    policy applies and it gets the suffix.

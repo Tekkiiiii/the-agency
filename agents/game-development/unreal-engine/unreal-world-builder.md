@@ -11,7 +11,7 @@ modelTier: sonnet
 skills:
   - frontend
   - ui-ux-pro-max
-  - superpowers-plan-design-review
+  - plan-design-review
 ---
 
 
@@ -286,7 +286,7 @@ You're successful when:
 
 - **frontend** — Implements UE5 World Partition, Landscape, and open-world streaming environments
 - **ui-ux-pro-max** — Designs open-world level flows and spatial player experiences with advanced UX
-- **superpowers-plan-design-review** — Reviews open-world architecture plans for streaming and performance feasibility
+- **plan-design-review** — Reviews open-world architecture plans for streaming and performance feasibility
 
 ---
 

@@ -1,6 +1,6 @@
 # Skills Index
 
-294 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+280 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 > **What discovery actually depends on — read before "fixing" missing frontmatter.**
 > A skill is discovered by its **location on disk**, not by its metadata: every code
@@ -420,26 +420,12 @@
 
 | Skill | Description |
 |-------|-------------|
-| `superpowers-autoplan` | Run CEO + design + eng reviews sequentially |
 | `superpowers-brainstorming` | Explore intent, requirements, design before code |
-| `superpowers-canary` | Post-deploy canary monitoring |
-| `superpowers-codex` | OpenAI Codex CLI wrapper |
-| `superpowers-cso` | Security audit mode |
-| `superpowers-design-review` | Visual QA across all pages |
 | `superpowers-dispatching-parallel-agents` | Parallel agent dispatch for independent problems |
-| `superpowers-document-release` | Post-ship documentation |
 | `superpowers-executing-plans` | Execute written implementation plans |
 | `superpowers-finishing-a-development-branch` | Full ship pipeline on completion |
-| `superpowers-guard` | Maximum safety mode |
-| `superpowers-land-and-deploy` | Merge + deploy + canary |
-| `superpowers-office-hours` | Product exploration and validation |
-| `superpowers-plan-ceo-review` | CEO-level plan review |
-| `superpowers-plan-design-review` | Designer's eye plan review |
-| `superpowers-plan-eng-review` | Engineering plan review |
-| `superpowers-qa-only` | Report-only QA |
 | `superpowers-receiving-code-review` | Process code review feedback |
 | `superpowers-requesting-code-review` | Dispatch structured code review |
-| `superpowers-retro` | Weekly retrospective |
 | `superpowers-subagent-driven-development` | Parallel subagent execution |
 | `superpowers-systematic-debugging` | Root-cause debugging before any fix |
 | `superpowers-test-driven-development` | RED-GREEN-REFACTOR cycle |

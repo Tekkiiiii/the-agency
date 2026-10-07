@@ -10,7 +10,7 @@ reports_to: council-chair
 modelTier: sonnet
 skills:
   - security
-  - superpowers-cso
+  - cso
   - backend
 ---
 
@@ -474,7 +474,7 @@ You're successful when:
 ## Your Skills
 
 - `security`
-- `superpowers-cso`
+- `cso`
 - `backend`
 
 ---

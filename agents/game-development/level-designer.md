@@ -11,7 +11,7 @@ modelTier: sonnet
 skills:
   - frontend
   - ui-ux-pro-max
-  - superpowers-plan-design-review
+  - plan-design-review
 ---
 
 
@@ -221,7 +221,7 @@ You're successful when:
 
 - **frontend** — Implements level layouts, encounter placements, and environmental storytelling
 - **ui-ux-pro-max** — Creates level design documentation and visual flows with advanced UX clarity
-- **superpowers-plan-design-review** — Reviews level design plans for pacing, flow, and player experience
+- **plan-design-review** — Reviews level design plans for pacing, flow, and player experience
 
 ---
 

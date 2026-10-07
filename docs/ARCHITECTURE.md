@@ -229,7 +229,7 @@ The repo ships with ~45 agency-core skills (domain skills install separately) co
 | Ops | `self-healing`, `investigate`, `guard`, `task-store` |
 | Planning | `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review`, `office-hours`, `retro` |
 | Execution | `ship`, `land-and-deploy`, `setup-deploy`, `canary`, `qa` |
-| Quality | `design-review`, `codex`, `cso`, `qa-only`, `document-release`, `superpowers-qa-only` |
+| Quality | `design-review`, `codex`, `cso`, `qa-only`, `document-release` |
 | Engineering | `backend`, `frontend`, `tech-writer`, `github-deploy`, `vercel-deploy`, `railway-deploy`, `supabase-deploy` |
 
 ## Technology

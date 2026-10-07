@@ -112,21 +112,21 @@ When a Dept Head creates a task for a PD:
 
 ---
 
-## Smoke Test: system-improvement ↔ the-agency
+## Smoke Test: project-a ↔ project-b
 
-Scenario: PD-system-improvement delegates a task to PD-the-agency.
+Scenario: PD-project-a delegates a task to PD-project-b.
 
 Step | Who | Action | File
 -----|-----|--------|-----
-1 | system-improvement-pd | Write briefing | `~/projects/the-agency/memory/inter-spawn-tasks/incoming/inter-spawn-20260602-the-agency-N.md`
-2 | system-improvement-pd | Write delegation | `~/.claude/projects/system-improvement/memory/tasks/ongoing/delegated-20260602-the-agency-N.md`
-3 | system-improvement-pd | Spawn the-agency-pd (background) | —
-4 | the-agency-pd (on boot) | pd-resume reads incoming/ → sees briefing | —
-5 | the-agency-pd | Update status to IN_PROGRESS, do work | —
-6 | the-agency-pd | Append Completion to delegation file | `~/.claude/projects/system-improvement/memory/tasks/ongoing/delegated-20260602-the-agency-N.md`
-7 | the-agency-pd | Move briefing to completed/ | `~/projects/the-agency/memory/inter-spawn-tasks/completed/...`
-8 | the-agency-pd | /save-state → stop | —
-9 | system-improvement-pd (next session) | pd-resume detects Completion section | moves to tasks/completed/, reports to user
+1 | project-a-pd | Write briefing | `~/projects/project-b/memory/inter-spawn-tasks/incoming/inter-spawn-20260602-project-b-N.md`
+2 | project-a-pd | Write delegation | `~/.claude/projects/project-a/memory/tasks/ongoing/delegated-20260602-project-b-N.md`
+3 | project-a-pd | Spawn project-b-pd (background) | —
+4 | project-b-pd (on boot) | pd-resume reads incoming/ → sees briefing | —
+5 | project-b-pd | Update status to IN_PROGRESS, do work | —
+6 | project-b-pd | Append Completion to delegation file | `~/.claude/projects/project-a/memory/tasks/ongoing/delegated-20260602-project-b-N.md`
+7 | project-b-pd | Move briefing to completed/ | `~/projects/project-b/memory/inter-spawn-tasks/completed/...`
+8 | project-b-pd | /save-state → stop | —
+9 | project-a-pd (next session) | pd-resume detects Completion section | moves to tasks/completed/, reports to user
 
 No SendMessage at any step.
 
@@ -134,7 +134,7 @@ No SendMessage at any step.
 
 ## References
 
-- Decision: `~/.claude/projects/system-improvement/memory/decisions/2026-06-02-inter-spawn-notify.md`
+- Decision: `~/.claude/projects/project-a/memory/decisions/2026-06-02-inter-spawn-notify.md`
 - Caller implementation: `~/.claude/skills/pd-spawn/SKILL.md` (Steps 3–5b)
 - PD identity template: PD Spawner Protocol sections in `agents/specialized/*-pd.md`
 - The constraint in context: `dept-coord-protocol.md` §14 Dept Head → PD

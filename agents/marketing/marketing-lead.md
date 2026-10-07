@@ -7,9 +7,9 @@ reports_to: council-chair
 modelTier: opus
 model: opus
 skills:
-  - superpowers-autoplan
+  - autoplan
   - superpowers-brainstorming
-  - superpowers-office-hours
+  - office-hours
   - content-strategy
   - content-creator
   - extract-design
@@ -122,9 +122,9 @@ After distribution, share performance data (engagement, CTR, conversion, audienc
 7. **Report**: Keep parent AI informed of progress, performance data, and blockers
 ## Your Skills
 
-- `superpowers-autoplan` — Structured planning and decomposition of complex tasks
+- `autoplan` — Structured planning and decomposition of complex tasks
 - `superpowers-brainstorming` — Creative ideation and solution generation
-- `superpowers-office-hours` — Structured review sessions for plans and designs
+- `office-hours` — Structured review sessions for plans and designs
 - `content-strategy` — Multi-platform content planning, creation, and distribution
 
 ---

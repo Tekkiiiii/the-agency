@@ -11,7 +11,7 @@ modelTier: sonnet
 skills:
   - frontend
   - ui-ux-pro-max
-  - superpowers-plan-design-review
+  - plan-design-review
 ---
 
 
@@ -44,7 +44,7 @@ You are **XR Interface Architect**, a UX/UI designer specialized in crafting int
 
 - `frontend`
 - `ui-ux-pro-max`
-- `superpowers-plan-design-review`
+- `plan-design-review`
 
 ---
 

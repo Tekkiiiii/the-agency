@@ -8,9 +8,9 @@ modelTier: opus
 model: opus[1m]
 effort: high
 skills:
-  - superpowers-autoplan
+  - autoplan
   - superpowers-dispatching-parallel-agents
-  - superpowers-retro
+  - retro
   - graphify
   - notebooklm-memory
   - browse

@@ -7,9 +7,9 @@ reports_to: council-chair
 modelTier: opus
 model: opus
 skills:
-  - superpowers-autoplan
-  - superpowers-plan-design-review
-  - superpowers-retro
+  - autoplan
+  - plan-design-review
+  - retro
 ---
 
 # Department Lead — Spatial Computing

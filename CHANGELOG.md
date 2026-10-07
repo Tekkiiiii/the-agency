@@ -31,6 +31,14 @@ All notable changes to The Agency are documented here, grouped by release wave (
 - Các agent chuyên môn cấp thành viên khỏi `agents/` (xem mục archive ở trên) và `core/agents/task-planner.md`.
 - `skills/pinecone_upsert.py` lạc chỗ (xem Security).
 
+#### Removed — đợt dọn (prune), phần A (đồng bộ 2026-10-07)
+- `skills/superpowers-{autoplan,canary,codex,cso,design-review,document-release,guard,land-and-deploy,office-hours,plan-ceo-review,plan-design-review,plan-eng-review,qa-only,retro}/` (14 thư mục) -> alias đã đánh dấu DEPRECATED, bản không tiền tố vẫn được ship; mọi tham chiếu (agent, `skills/INDEX.md`, `figma-ui-ux-consistency`, `docs/ARCHITECTURE.md`) trỏ sang bản không tiền tố.
+- `agents/project-management/the-agency-pd.md` -> PD cá nhân của bản sao repo này của operator (đường dẫn `~/.claude/projects/`), không phải agent dùng chung; `core/ORG.md` và smoke test trong `runbooks/inter-spawn-notify-protocol.md` đã sửa theo (slug ví dụ chung).
+- `skills-archive/` (3 file) -> git history là archive; không installer hay tài liệu nào trỏ tới. Thay thế mục `skills-archive/` ở phần Added bên dưới.
+- `scripts/bos.sh` -> shim tạm tự ghi là tạm, không còn tham chiếu nào.
+- `docs/DEPT-COORD.md` -> không có link đến, trùng nội dung với `core/runbooks/dept-coord-protocol.md`.
+- Số skill đo lại sau phần A: 280 thư mục skill; README, `docs/SKILLS.md`, `skills/INDEX.md`, `skills/onboard/SKILL.md`, `agents/specialized/codebase-search.md` ghi 280+ (số skill hiển thị công khai đổi từ 290+).
+
 #### Fixed (đồng bộ 2026-10-07)
 - `core/ORG.md` trỏ tới `agents/specialized/infra/room-manager.md` đã archive: đổi sang `/room-manager` skill và đường dẫn trong `agents-archive/`.
 - Các tham chiếu `task-planner` trong `specialized-coord.md` / `specialized-lead.md` nay theo học thuyết generalist.
@@ -139,6 +147,14 @@ All notable changes to The Agency are documented here, grouped by release wave (
 #### Removed (sync 2026-10-07)
 - The member-level specialist agents from `agents/` (see the archive entry above) and `core/agents/task-planner.md`.
 - The stray `skills/pinecone_upsert.py` (see Security).
+
+#### Removed — prune wave, part A (sync 2026-10-07)
+- `skills/superpowers-{autoplan,canary,codex,cso,design-review,document-release,guard,land-and-deploy,office-hours,plan-ceo-review,plan-design-review,plan-eng-review,qa-only,retro}/` (14 directories) -> legacy aliases marked DEPRECATED; the non-prefixed twin still ships. Every reference (agents, `skills/INDEX.md`, `figma-ui-ux-consistency`, `docs/ARCHITECTURE.md`) now points to the non-prefixed skill.
+- `agents/project-management/the-agency-pd.md` -> the operator's personal PD for their own copy of this repo (`~/.claude/projects/` paths), not a shared agent; `core/ORG.md` and the smoke test in `runbooks/inter-spawn-notify-protocol.md` were updated (generic example slugs).
+- `skills-archive/` (3 files) -> git history is the archive; no installer or doc links to it. Supersedes the `skills-archive/` bullet in the Added section below.
+- `scripts/bos.sh` -> temp shim that described itself as temporary; zero references.
+- `docs/DEPT-COORD.md` -> no inbound links; duplicates `core/runbooks/dept-coord-protocol.md`.
+- Skill count re-measured after part A: 280 skill directories; README, `docs/SKILLS.md`, `skills/INDEX.md`, `skills/onboard/SKILL.md` and `agents/specialized/codebase-search.md` now say 280+ (public skill count moves from 290+).
 
 #### Fixed (sync 2026-10-07)
 - `core/ORG.md` pointed at the archived `agents/specialized/infra/room-manager.md`. It now names the `/room-manager` skill and the `agents-archive/` path.

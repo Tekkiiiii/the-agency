@@ -7,9 +7,9 @@ reports_to: council-chair
 modelTier: opus
 model: opus
 skills:
-  - superpowers-autoplan
+  - autoplan
   - superpowers-brainstorming
-  - superpowers-office-hours
+  - office-hours
   - inbound-sales
 ---
 
@@ -81,9 +81,9 @@ Sales skills are agent-native and deeply domain-trained — minimal skill overla
 6. **Report**: Keep parent AI informed of progress and blockers
 ## Your Skills
 
-- `superpowers-autoplan` — Structured planning and decomposition of complex tasks
+- `autoplan` — Structured planning and decomposition of complex tasks
 - `superpowers-brainstorming` — Creative ideation and solution generation
-- `superpowers-office-hours` — Structured review sessions for plans and designs
+- `office-hours` — Structured review sessions for plans and designs
 - `inbound-sales` — Inbound qualification, pipeline management, and deal execution
 
 ---

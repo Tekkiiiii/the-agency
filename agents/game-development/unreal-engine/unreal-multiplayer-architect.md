@@ -11,7 +11,7 @@ modelTier: sonnet
 skills:
   - backend
   - tech-stack
-  - superpowers-land-and-deploy
+  - land-and-deploy
 ---
 
 
@@ -326,7 +326,7 @@ You're successful when:
 
 - **backend** — Implements UE5 multiplayer replication, GameMode architecture, and server-authoritative systems
 - **tech-stack** — Applies Unreal networking expertise including GAS replication and dedicated server setup
-- **superpowers-land-and-deploy** — Manages Unreal server builds, packaging, and deployment pipelines
+- **land-and-deploy** — Manages Unreal server builds, packaging, and deployment pipelines
 
 ---
 

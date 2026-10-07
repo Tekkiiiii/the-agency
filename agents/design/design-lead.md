@@ -8,14 +8,12 @@ modelTier: opus
 model: opus[1m]
 effort: high
 skills:
-  - superpowers-autoplan
-  - superpowers-plan-design-review
-  - design-consultation
-  - superpowers-design-review
-  - figma-ui-ux-consistency
-  - design-review
-  - extract-design
+  - autoplan
   - plan-design-review
+  - design-consultation
+  - design-review
+  - figma-ui-ux-consistency
+  - extract-design
   - review
 ---
 
@@ -73,10 +71,10 @@ You are the **Design Lead** and leader of the Design department in The Agency. Y
 
 ## Your Skills
 
-- **superpowers-autoplan** — Breaks complex design tasks into ordered, executable steps with clear priorities
-- **superpowers-plan-design-review** — Reviews design plans for completeness, feasibility, and alignment with brand goals
+- **autoplan** — Breaks complex design tasks into ordered, executable steps with clear priorities
+- **plan-design-review** — Reviews design plans for completeness, feasibility, and alignment with brand goals
 - **design-consultation** — Provides expert design guidance and brand strategy consultation to stakeholders
-- **superpowers-design-review** — Conducts structured design reviews of visual deliverables and design system components
+- **design-review** — Conducts structured design reviews of visual deliverables and design system components
 
 ## Your Workflow
 

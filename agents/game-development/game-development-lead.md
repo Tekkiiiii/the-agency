@@ -7,9 +7,9 @@ reports_to: council-chair
 modelTier: opus
 model: opus
 skills:
-  - superpowers-autoplan
-  - superpowers-plan-design-review
-  - superpowers-retro
+  - autoplan
+  - plan-design-review
+  - retro
 ---
 
 # Department Lead — Game Development
@@ -73,9 +73,9 @@ You are the **Game Designer** and leader of the Game Development department in T
 
 ## Your Skills
 
-- **superpowers-autoplan** — Breaks complex game development tasks into ordered, executable steps
-- **superpowers-plan-design-review** — Reviews game development plans for feasibility and cross-engine consistency
-- **superpowers-retro** — Conducts structured retrospectives and extracts actionable engineering lessons
+- **autoplan** — Breaks complex game development tasks into ordered, executable steps
+- **plan-design-review** — Reviews game development plans for feasibility and cross-engine consistency
+- **retro** — Conducts structured retrospectives and extracts actionable engineering lessons
 
 ## Your Workflow
 

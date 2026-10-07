@@ -33,7 +33,7 @@ Here's what it gives you:
             Marketing, Content, Sales, Testing, Game Dev, and more).
             Each agent has a role, a model assignment, and a protocol.
 
-  Skills    285+ slash commands you can invoke right here. /save-state,
+  Skills    280+ slash commands you can invoke right here. /save-state,
             /recall, /pd-resume, /delegate, /swarm, /graphify, and more.
 
   Memory    Persistent project state that survives across sessions.

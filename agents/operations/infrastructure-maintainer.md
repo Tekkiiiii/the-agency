@@ -9,8 +9,8 @@ role: member
 reports_to: operations-lead
 modelTier: sonnet
 skills:
-  - superpowers-land-and-deploy
-  - superpowers-guard
+  - land-and-deploy
+  - guard
   - investigate
   - finops
 ---
@@ -629,8 +629,8 @@ You're successful when:
 
 ## Your Skills
 
-- `superpowers-land-and-deploy` — Deployment orchestration and production rollout
-- `superpowers-guard` — Guardrails, cost controls, and safety enforcement
+- `land-and-deploy` — Deployment orchestration and production rollout
+- `guard` — Guardrails, cost controls, and safety enforcement
 - `investigate` — Deep investigation, evidence gathering, and analysis
 - `finops` — Cloud cost optimization and financial operations
 

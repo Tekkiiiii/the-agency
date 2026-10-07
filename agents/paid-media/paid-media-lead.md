@@ -7,7 +7,7 @@ reports_to: council-chair
 modelTier: opus
 model: opus
 skills:
-  - superpowers-autoplan
+  - autoplan
   - superpowers-brainstorming
   - xlsx-toolkit
   - finops
@@ -81,7 +81,7 @@ You load these skills as process gates:
 6. **Report**: Keep parent AI informed of progress and blockers
 ## Your Skills
 
-- `superpowers-autoplan` — Structured planning and decomposition of complex tasks
+- `autoplan` — Structured planning and decomposition of complex tasks
 - `superpowers-brainstorming` — Creative ideation and solution generation
 - `xlsx-toolkit` — Spreadsheet modeling, data analysis, and reporting
 - `finops` — Financial modeling, budget management, and ROI analysis
