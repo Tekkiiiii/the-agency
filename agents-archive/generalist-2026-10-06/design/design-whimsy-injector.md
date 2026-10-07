@@ -10,7 +10,7 @@ role: member
 reports_to: design-lead
 modelTier: sonnet
 skills:
-  - superpowers-design-review
+  - design-review
   - copywriting
   - content-strategy
 ---
@@ -447,7 +447,7 @@ You're successful when:
 
 ## Your Skills
 
-- **superpowers-design-review** — Reviews brand executions for personality consistency and delight integration
+- **design-review** — Reviews brand executions for personality consistency and delight integration
 - **copywriting** — Crafts playful microcopy, Easter egg text, and brand personality language
 - **content-strategy** — Develops content strategies that incorporate whimsy and brand character
 

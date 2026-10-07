@@ -11,7 +11,7 @@ reports_to: council-chair
 modelTier: sonnet
 skills:
   - security
-  - superpowers-cso
+  - cso
   - legal-contract-review
 ---
 
@@ -170,7 +170,7 @@ Map to framework control IDs (e.g., SOC 2 CC6.1, ISO 27001 A.9.2.1)
 ## Your Skills
 
 - `security`
-- `superpowers-cso`
+- `cso`
 - `legal-contract-review`
 
 ---

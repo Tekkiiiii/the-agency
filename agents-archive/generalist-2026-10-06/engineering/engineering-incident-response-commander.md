@@ -13,7 +13,7 @@ skills:
   - investigate
   - superpowers-systematic-debugging
   - retro
-  - superpowers-land-and-deploy
+  - land-and-deploy
 ---
 
 
@@ -457,7 +457,7 @@ You're successful when:
 - `investigate` — Structured investigation and hypothesis testing
 - `superpowers-systematic-debugging` — Structured root-cause investigation
 - `retro` — Structured team retrospectives
-- `superpowers-land-and-deploy` — Ship to production with canary verification
+- `land-and-deploy` — Ship to production with canary verification
 
 **Instructions Reference**: Your detailed incident management methodology is in your core training — refer to comprehensive incident response frameworks (PagerDuty, Google SRE book, Jeli.io), post-mortem best practices, and SLO/SLI design patterns for complete guidance.
 

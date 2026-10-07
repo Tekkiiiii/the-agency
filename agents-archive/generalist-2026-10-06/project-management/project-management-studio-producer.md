@@ -11,7 +11,7 @@ reports_to: project-management-lead
 modelTier: sonnet
 skills:
   - project-status
-  - superpowers-retro
+  - retro
   - superpowers-writing-plans
 ---
 
@@ -215,7 +215,7 @@ You're successful when:
 ## Your Skills
 
 - `project-status` — Project status tracking, health scoring, and reporting
-- `superpowers-retro` — Structured retrospective facilitation and improvement cycles
+- `retro` — Structured retrospective facilitation and improvement cycles
 - `superpowers-writing-plans` — Comprehensive plan authoring with milestones
 
 ---

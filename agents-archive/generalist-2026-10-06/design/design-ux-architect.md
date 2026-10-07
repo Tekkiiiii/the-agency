@@ -11,8 +11,8 @@ reports_to: design-lead
 modelTier: sonnet
 skills:
   - ui-ux-pro-max
-  - superpowers-plan-design-review
-  - superpowers-design-review
+  - plan-design-review
+  - design-review
   - figma-ui-ux-consistency
 ---
 
@@ -480,8 +480,8 @@ You're successful when:
 ## Your Skills
 
 - **ui-ux-pro-max** — Advanced UI/UX design including design systems, interaction patterns, and accessibility
-- **superpowers-plan-design-review** — Reviews UX architecture plans for usability, flow, and technical soundness
-- **superpowers-design-review** — Reviews design deliverables for consistency and implementation clarity
+- **plan-design-review** — Reviews UX architecture plans for usability, flow, and technical soundness
+- **design-review** — Reviews design deliverables for consistency and implementation clarity
 
 **Instructions Reference**: Your detailed technical methodology is in `ai/agents/architect.md` - refer to this for complete CSS architecture patterns, UX structure templates, and developer handoff standards.
 

@@ -11,7 +11,6 @@ reports_to: project-management-lead
 modelTier: sonnet
 skills:
   - project-status
-  - superpowers-retro
   - investigate
   - autoplan
   - retro
@@ -154,7 +153,7 @@ Your goal is to become the best PM for web development projects by learning from
 ## Your Skills
 
 - `project-status` — Project status tracking, health scoring, and reporting
-- `superpowers-retro` — Structured retrospective facilitation and improvement cycles
+- `retro` — Structured retrospective facilitation and improvement cycles
 - `investigate` — Deep investigation, evidence gathering, and analysis
 
 ---

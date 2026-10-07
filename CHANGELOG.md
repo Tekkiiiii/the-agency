@@ -38,6 +38,7 @@ All notable changes to The Agency are documented here, grouped by release wave (
 - `scripts/bos.sh` -> shim tạm tự ghi là tạm, không còn tham chiếu nào.
 - `docs/DEPT-COORD.md` -> không có link đến, trùng nội dung với `core/runbooks/dept-coord-protocol.md`.
 - Số skill đo lại sau phần A: 280 thư mục skill; README, `docs/SKILLS.md`, `skills/INDEX.md`, `skills/onboard/SKILL.md`, `agents/specialized/codebase-search.md` ghi 280+ (số skill hiển thị công khai đổi từ 290+).
+- `agents-archive/generalist-2026-10-06/` (15 role file, 34 chỗ) -> đổi tên alias đã xoá `superpowers-{cso,design-review,guard,land-and-deploy,plan-design-review,retro}` sang skill tương ứng không tiền tố; bỏ 2 mục trùng trong `skills:`. Role file được đọc lúc chạy qua ROLE-MAP nên tên skill chết là lỗi thật.
 
 #### Fixed (đồng bộ 2026-10-07)
 - `core/ORG.md` trỏ tới `agents/specialized/infra/room-manager.md` đã archive: đổi sang `/room-manager` skill và đường dẫn trong `agents-archive/`.
@@ -155,6 +156,7 @@ All notable changes to The Agency are documented here, grouped by release wave (
 - `scripts/bos.sh` -> temp shim that described itself as temporary; zero references.
 - `docs/DEPT-COORD.md` -> no inbound links; duplicates `core/runbooks/dept-coord-protocol.md`.
 - Skill count re-measured after part A: 280 skill directories; README, `docs/SKILLS.md`, `skills/INDEX.md`, `skills/onboard/SKILL.md` and `agents/specialized/codebase-search.md` now say 280+ (public skill count moves from 290+).
+- `agents-archive/generalist-2026-10-06/` (15 role files, 34 sites) -> deleted aliases `superpowers-{cso,design-review,guard,land-and-deploy,plan-design-review,retro}` repointed to their non-prefixed twins; 2 duplicate `skills:` entries dropped. Role files are read at runtime via ROLE-MAP, so a dead skill name was a real bug.
 
 #### Fixed (sync 2026-10-07)
 - `core/ORG.md` pointed at the archived `agents/specialized/infra/room-manager.md`. It now names the `/room-manager` skill and the `agents-archive/` path.

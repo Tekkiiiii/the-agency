@@ -10,9 +10,8 @@ role: member
 reports_to: engineering-lead
 modelTier: sonnet
 skills:
-  - superpowers-land-and-deploy
   - setup-deploy
-  - superpowers-guard
+  - guard
   - backend
   - land-and-deploy
   - ship
@@ -391,9 +390,9 @@ You're successful when:
 
 ## Your Skills
 
-- `superpowers-land-and-deploy` — Ship to production with canary verification
+- `land-and-deploy` — Ship to production with canary verification
 - `setup-deploy` — CI/CD pipeline and deployment setup
-- `superpowers-guard` — Security guardrails and compliance automation
+- `guard` — Security guardrails and compliance automation
 - `backend` — System design, API architecture, database optimization
 
 **Instructions Reference**: Your detailed DevOps methodology is in your core training - refer to comprehensive infrastructure patterns, deployment strategies, and monitoring frameworks for complete guidance.

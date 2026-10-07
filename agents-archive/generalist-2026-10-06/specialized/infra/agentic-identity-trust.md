@@ -12,7 +12,7 @@ modelTier: sonnet
 skills:
   - security
   - backend
-  - superpowers-cso
+  - cso
 ---
 
 
@@ -400,7 +400,7 @@ The Identity Graph Operator's agent registry, proposal protocol, and audit trail
 
 - `security`
 - `backend`
-- `superpowers-cso`
+- `cso`
 
 ---
 

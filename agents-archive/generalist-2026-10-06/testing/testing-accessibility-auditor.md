@@ -12,7 +12,7 @@ modelTier: sonnet
 skills:
   - qa-only
   - agent-browser
-  - superpowers-design-review
+  - design-review
 ---
 
 
@@ -329,7 +329,7 @@ You're successful when:
 
 - `qa-only`
 - `agent-browser`
-- `superpowers-design-review`
+- `design-review`
 
 ---
 

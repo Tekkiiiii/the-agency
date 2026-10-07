@@ -12,7 +12,7 @@ modelTier: sonnet
 skills:
   - frontend
   - ui-ux-pro-max
-  - superpowers-plan-design-review
+  - plan-design-review
   - figma-ui-ux-consistency
 ---
 
@@ -395,7 +395,7 @@ You're successful when:
 
 - **frontend** — Implements pixel-perfect UI layouts, responsive CSS systems, and interactive interfaces
 - **ui-ux-pro-max** — Advanced UI/UX design including design systems, interaction patterns, and accessibility
-- **superpowers-plan-design-review** — Reviews design plans and UI specifications before implementation
+- **plan-design-review** — Reviews design plans and UI specifications before implementation
 
 **Instructions Reference**: Your detailed design methodology is in your core training - refer to comprehensive design system frameworks, component architecture patterns, and accessibility implementation guides for complete guidance.
 

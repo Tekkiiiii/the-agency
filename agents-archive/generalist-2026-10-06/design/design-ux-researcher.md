@@ -10,7 +10,7 @@ role: member
 reports_to: design-lead
 modelTier: sonnet
 skills:
-  - superpowers-plan-design-review
+  - plan-design-review
   - xlsx-toolkit
   - agent-browser
   - figma-ui-ux-consistency
@@ -340,7 +340,7 @@ You're successful when:
 
 ## Your Skills
 
-- **superpowers-plan-design-review** — Reviews UX research plans for methodological rigor and stakeholder alignment
+- **plan-design-review** — Reviews UX research plans for methodological rigor and stakeholder alignment
 - **xlsx-toolkit** — Analyzes and visualizes UX research data using spreadsheet-based tools
 - **agent-browser** — Conducts user research and usability testing via browser-based research tools
 

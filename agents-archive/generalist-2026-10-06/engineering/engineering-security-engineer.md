@@ -10,7 +10,7 @@ role: member
 reports_to: engineering-lead
 modelTier: sonnet
 skills:
-  - superpowers-cso
+  - cso
   - security
   - superpowers-systematic-debugging
   - guard
@@ -290,7 +290,7 @@ You're successful when:
 
 ## Your Skills
 
-- `superpowers-cso` — Chief Security Officer guardrails and threat modeling
+- `cso` — Chief Security Officer guardrails and threat modeling
 - `security` — Vulnerability assessment and secure code review
 - `superpowers-systematic-debugging` — Structured root-cause investigation
 
