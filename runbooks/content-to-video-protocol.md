@@ -20,52 +20,54 @@ Content Creation is responsible for scripts. Video Studio is responsible for eve
 
 | Trigger | Routes To |
 |---|---|
-| "write a video script" | Content Creation → content-video-script-writer |
+| "write a video script" | Content Creation → video script writer role (general-purpose + /youtube-narration, /video-prompt-director) |
 | "make a video", "produce a video", "edit a video" | Video Studio → video-studio-lead |
 | "create a YouTube video", "make a TikTok" | Video Studio → video-studio-lead |
-| "animate", "motion graphics" | Video Studio → vs-animation-director |
-| "thumbnail" | Video Studio → vs-thumbnail-designer |
-| "transcribe video", "add captions" | Video Studio → vs-captioning-specialist |
-| "upload video to YouTube" | Video Studio → vs-upload-automator |
-| "optimize video for SEO" | Video Studio → vs-video-seo-specialist |
+| "animate", "motion graphics" | Video Studio → animation role (general-purpose + /remotion-best-practices, /hyperframes) |
+| "thumbnail" | Video Studio → thumbnail role (general-purpose + /image-prompt-engineer, /social-render) |
+| "transcribe video", "add captions" | Video Studio → captioning role (general-purpose + /subtitle-burner, /ffmpeg) |
+| "upload video to YouTube" | Video Studio → upload role (general-purpose + /n8n-automation) |
+| "optimize video for SEO" | Video Studio → video SEO role (general-purpose + /seo-aeo-best-practices) |
 
 ---
 
 ## End-to-End Production Flow
 
+Video Studio member roles are archived (2026-10-06): each step is spawned as `general-purpose` + the listed skills, reading its role file from `agents-archive/generalist-2026-10-06/video-studio/` first. Map: `{agency-root}/agents-archive/ROLE-MAP.md`.
+
 ```
 CONTENT CREATION DEPT
-  └─ content-video-script-writer
+  └─ video script writer (general-purpose + /youtube-narration, /video-prompt-director)
        └─ Delivers: final script + voice direction + key messages + CTA
 
          ↓ [HANDOFF — via inter-spawn or direct brief]
 
 VIDEO STUDIO DEPT
   ├─ Pre-production
-  │    ├─ vs-storyboard-artist (scene cards from script)
-  │    ├─ vs-shot-planner (production plan)
-  │    └─ vs-voice-director (voice notes, AI voice prompts)
+  │    ├─ storyboard (/video-shotcraft, /video-prompt-director; scene cards from script)
+  │    ├─ shot planner (/video-shotcraft; production plan)
+  │    └─ voice director (/youtube-narration; voice notes, AI voice prompts)
   │
   ├─ Production (parallel where possible)
-  │    ├─ vs-screen-recording-director (screen captures)
-  │    ├─ vs-ai-video-producer (AI-generated clips)
-  │    └─ vs-animation-director (motion graphics, titles)
+  │    ├─ screen recording (/video-use; screen captures)
+  │    ├─ AI video (/higgsfield-functions, /video-prompt-director; AI-generated clips)
+  │    └─ animation (/remotion-best-practices, /hyperframes, /motion-canvas; motion graphics, titles)
   │
   ├─ Post-production
-  │    ├─ vs-video-editor (assembly, rough → fine cut)
-  │    ├─ vs-vfx-motion-designer (motion polish)
-  │    ├─ vs-colorist-audio-engineer (color + audio master)
-  │    ├─ vs-captioning-specialist (SRT + VTT + burned-in)
-  │    └─ vs-thumbnail-designer (3 variants)
+  │    ├─ video editor (/video-use, /ffmpeg; assembly, rough → fine cut)
+  │    ├─ VFX and motion (/hyperframes, /html-video, /gsap; motion polish)
+  │    ├─ color + audio (/ffmpeg; color + audio master)
+  │    ├─ captioning (/subtitle-burner, /ffmpeg; SRT + VTT + burned-in)
+  │    └─ thumbnails (/image-prompt-engineer, /social-render; 3 variants)
   │
   ├─ QA gate (MANDATORY before distribution)
-  │    ├─ vs-video-quality-reviewer (technical + content + brand)
-  │    └─ vs-accessibility-auditor (WCAG 2.1 AA)
+  │    ├─ critique-video agent (kept; technical + content + brand)
+  │    └─ accessibility audit (/subtitle-burner, /design:accessibility-review; WCAG 2.1 AA)
   │
   └─ Distribution
-       ├─ vs-platform-formatter (per-platform video files)
-       ├─ vs-video-seo-specialist (title, desc, tags, chapters)
-       └─ vs-upload-automator (scheduled upload + confirmation)
+       ├─ platform formatter (/ffmpeg, /social-render; per-platform video files)
+       ├─ video SEO (/seo-aeo-best-practices; title, desc, tags, chapters)
+       └─ upload automation (/n8n-automation; scheduled upload + confirmation)
 ```
 
 ---
@@ -81,13 +83,13 @@ VIDEO STUDIO DEPT
 | Target platforms | Required for format planning |
 | Brand asset pack | Logo (SVG/PNG), brand colors (hex), fonts |
 
-Missing any required item → Video Studio Director sends NACK to content-video-script-writer before production starts.
+Missing any required item → Video Studio Director sends NACK to the video script writer role before production starts.
 
 ---
 
 ## QA Gate
 
-All videos pass through vs-video-quality-reviewer before distribution.
+All videos pass through the `critique-video` agent before distribution.
 
 | Score | Action |
 |---|---|
@@ -102,9 +104,9 @@ All videos pass through vs-video-quality-reviewer before distribution.
 
 | Situation | Escalation Path |
 |---|---|
-| Script unclear / incomplete | NACK to content-video-script-writer |
+| Script unclear / incomplete | NACK to the video script writer role |
 | Brand assets missing | Request from Design dept via inter-spawn |
-| AI video fails 3+ iterations | Escalate to vs-ai-video-producer → video-studio-lead → human |
+| AI video fails 3+ iterations | Escalate to the AI video role → video-studio-lead → human |
 | Platform API failure on upload | Log, retry x2, then escalate to user |
 | Score < 50 after redo | Escalate to video-studio-lead + parent AI |
 
@@ -115,4 +117,4 @@ All videos pass through vs-video-quality-reviewer before distribution.
 - `agents/video-studio/INDEX.md` — department member directory
 - `agents/video-studio/protocols/content-to-video.md` — Video Studio side
 - `agents/content-creation/INDEX.md` — Content Creation side
-- `agents/content-creation/content-video-script-writer.md` — upstream script agent
+- `agents-archive/generalist-2026-10-06/content-creation/content-video-script-writer.md` — upstream script role file (archived; spawn general-purpose + /youtube-narration, /video-prompt-director)

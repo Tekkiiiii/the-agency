@@ -1,26 +1,6 @@
 ---
 name: ui-ux-pro-max
-description: >
-  Design-system-first UI/UX skill for generating professional interfaces across
-  React, Next.js, Vue, Nuxt, Svelte, SwiftUI, Flutter, and React Native.
-  Trigger for UI work: landing pages, dashboards, components, UX improvements,
-  visual redesigns, and design-system requests. Balances modern copy-paste ecosystems
-  (shadcn/ui, Magic UI-style motion patterns) with equal framework parity and
-  accessibility-first implementation.
-  Purpose: Generates a complete, implementation-ready design system before UI code
-  is written — tokens, component primitives, interaction states, motion, and full
-  framework mapping. When to trigger: (1) Building a landing page, dashboard, app UI,
-  or component. (2) Improving UX, refreshing visual design, or increasing conversion
-  clarity. (3) Building animated UI while preserving accessibility. (4) Design
-  system work: tokens, component libraries, design-to-code handoff. (5) Visual
-  redesign of an existing interface. (6) Cross-platform work needing parity across
-  web and mobile. Key capabilities: Equal-depth mapping for React, Vue, Svelte,
-  SwiftUI, Flutter, React Native. WCAG AA accessibility gate with focus visibility
-  and reduced-motion fallbacks. Three-tier motion system (minimal/moderate/expressive)
-  with fallbacks. Industry guidance for B2B SaaS, fintech, healthcare, e-commerce,
-  and AI products. Also for: Design consultation, accessibility audits, design
-  token setup. Ideal for: Developers who need quality UI without a dedicated designer,
-  or designers wanting a structured hand-off spec.
+description: "Use for UI work: landing pages, dashboards, components, UX fixes, visual redesigns, design systems, across React, Next.js, Vue, Svelte, SwiftUI, Flutter, React Native. Generates a design system first (tokens, primitives, states, motion) with a WCAG AA gate and reduced-motion fallbacks."
 ---
 
 # UI UX Pro Max

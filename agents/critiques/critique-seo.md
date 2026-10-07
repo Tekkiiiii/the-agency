@@ -4,8 +4,9 @@ description: SEO/GEO/AEO critic. Finds keyword failures, title/heading weakness,
 department: critiques
 role: specialist
 reports_to: critiques-lead
-modelTier: sonnet
-model: sonnet
+modelTier: opus
+model: opus[1m]
+effort: high
 skills:
   - seo-aeo-best-practices
   - content-critique

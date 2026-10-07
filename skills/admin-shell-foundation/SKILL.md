@@ -1,12 +1,6 @@
 ---
 name: admin-shell-foundation
-description: >
-  The shared admin shell scaffold used by all domain skills. Provides the base
-  AdminShell layout, DataTable, StatusBadge, ConfirmDialog, sidebar navigation,
-  and header with user menu. All domain skills (hotel-pms, reservation-booking,
-  restaurant-pos, crm-onboarding) consume this as a shared foundation.
-  Triggers when building any admin dashboard — the layout wrapper that goes
-  around every admin page.
+description: "Use when building any admin dashboard that needs the shared layout wrapper: AdminShell, DataTable, StatusBadge, ConfirmDialog, sidebar navigation, header user menu. Base scaffold that domain skills consume. Not a domain skill itself."
 ---
 
 # Admin Shell Foundation

@@ -57,6 +57,12 @@ def agency_root(home):
 def resolve_log_file(home, root):
     # root = agency root (AGENCY_HOME-aware). home stays $HOME because it is used
     # separately below to expand a literal '~' inside medium-term.md project paths.
+    # Testability override: honor a pre-exported SPAWN_LOG_FILE (points at a
+    # /tmp copy in tests) instead of resolving from medium-term.md.
+    override = os.environ.get('SPAWN_LOG_FILE', '')
+    if override:
+        return override
+
     fallback = os.path.join(root, 'logs/spawns.jsonl')
     medium_term = os.path.join(root, 'memory/medium-term.md')
     cwd = os.environ.get('CLAUDE_PROJECT_DIR', os.getcwd())

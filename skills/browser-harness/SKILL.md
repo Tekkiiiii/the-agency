@@ -1,11 +1,6 @@
 ---
 name: browser-harness
-description: >
-  Self-healing CDP browser automation connecting LLMs directly to a real Chrome instance
-  via WebSocket. Use when you need full browser freedom with the user's actual sessions,
-  cookies, and extensions — not a headless sandbox. Agents write helper code on-the-fly
-  that persists across runs. Triggers on: "use my real browser", "browser-harness",
-  "automate with my Chrome", "self-healing browser", "domain skill", "real browser session".
+description: "Use when automation needs the user's real Chrome with their sessions, cookies and extensions: \"use my real browser\", \"browser-harness\", \"automate with my Chrome\", \"self-healing browser\". CDP over WebSocket; agents write persistent helper code. Not for headless sandbox runs (use /agent-browser)."
 metadata:
   source: "https://github.com/browser-use/browser-harness"
   install_path: "~/Developer/browser-harness"

@@ -1,6 +1,6 @@
 ---
 name: strategic-deck
-description: Build a 25-30 slide strategic pitch / audit deck — gradient hero and divider slides, cream content slides with a vertical accent bar, ink headlines, a highlight accent for "the bet", and a five-act narrative arc (audit - marketing - market - bet - go-to-market). Use whenever the user asks to "build a strategic deck", "audit company X and recommend a bet", "make a strategic pitch deck", "rebuild this deck for [different company]", or any pitch/audit/strategy slide deliverable. Also triggers on "marketing assessment deck", "client assessment deck", "30-slide deck".
+description: "Use on \"build a strategic deck\", \"audit company X and recommend a bet\", \"make a strategic pitch deck\", \"rebuild this deck for [different company]\", \"marketing assessment deck\", \"client assessment deck\", \"30-slide deck\". Builds a 25-30 slide pitch/audit deck: gradient hero and divider slides, cream content slides with a vertical accent bar, a highlight accent for the bet, and a five-act arc (audit, marketing, market, bet, go-to-market)."
 ---
 
 # Strategic Deck

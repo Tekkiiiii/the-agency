@@ -1,19 +1,6 @@
 ---
 name: skill-quality
-description: >
-  Automatically rate any skill's description quality and rewrite it if needed — the quality gate
-  for the skill creation pipeline. Invoked by /skill-creator after skill installation, or
-  directly with /skill-quality [skill-name]. When to trigger: automatically after every new
-  skill is installed via /skill-creator; when manually auditing a skill's description
-  quality; when a skill's description fails to attract correct usage; or when enhancing an
-  existing skill and wanting to verify the description is strong. Key capabilities: two
-  independent critics (Capability + Likelihood to Pick Up, 0–100 each); calibrated gate
-  (avg≥80 AND one≥85 AND none<70); one automatic rewrite cycle on failure; results written
-  to JSON immediately (survives session compaction); and discrepancy detection (flags when
-  critics disagree by >20 points). Also handles: --quality-gate off bypass flag, self-referential
-  check (skill-quality skips its own catalog registration), and idempotent re-rating of
-  already-rated skills. Compare with skill-import (one-off conflict detection) and skill-creator
-  (full creation pipeline that calls this skill automatically).
+description: "Use on /skill-quality [skill-name], after /skill-creator installs a skill, or when auditing a weak skill description. Scores it with two critics (Capability, Likelihood to Pick Up), rewrites once on gate failure, and saves results to JSON. Not for importing (/skill-import) or creating (/skill-creator)."
 ---
 
 # Skill Quality — Description Critic Gate

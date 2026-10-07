@@ -2,7 +2,7 @@ const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync, realpathS
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
-const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem, syncCore } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncAgentsArchive, syncDesignSystem, syncCore } = require('./sync-assets.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -81,6 +81,13 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const runbooksDest = path.join(agencyRoot, 'runbooks');
   const runbooks = syncRunbooks(repoRoot, runbooksDest, console);
   console.log(`  ✓ ${runbooks.updated} runbooks installed, ${runbooks.preserved} preserved`);
+
+  // 4d2. Agents archive (role files + ROLE-MAP.md read by spawners as
+  // `{agency-root}/agents-archive/...`). Plain copy, deliberately NOT under
+  // agents/ so nothing in it registers as an agent type.
+  const archiveDest = path.join(agencyRoot, 'agents-archive');
+  const archive = syncAgentsArchive(repoRoot, archiveDest, console);
+  console.log(`  ✓ ${archive.updated} agents-archive files installed, ${archive.preserved} preserved`);
 
   // 4e. Design system (brand-token SSOT resolved by design skills as
   // `{agency-root}/design-system/brands/{name}.json`).

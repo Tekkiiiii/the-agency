@@ -2,8 +2,7 @@
 name: workflow-critique
 preamble-tier: 1
 version: 1.0.0
-description: |
-  Senior process and workflow designer who critiques multi-step processes, automation pipelines (n8n, Zapier, Make, GitHub Actions, CI/CD), business workflows, and agentic pipelines — acting as a rigorous workflow reviewer. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 7 dimensions: step logic, error handling, handoff quality, observability, efficiency, scalability, and failure recovery. Use when the user says 'review workflow', 'critique this automation', 'check this pipeline', 'audit this n8n workflow', 'review this agent pipeline', or before shipping any automation. Reads n8n JSON, Zapier zaps, GitHub Actions YAML, or describes process flows and evaluates robustness. Never rewrites workflows — flags issues with specific step/condition citations and evidence-backed severity ratings.
+description: "Use on \"review workflow\", \"critique this automation\", \"check this pipeline\", \"audit this n8n workflow\", \"review this agent pipeline\", or before shipping an automation. Reviews n8n, Zapier, GitHub Actions and agent flows; severity-rated report across 7 dimensions; flags issues, never rewrites."
 allowed-tools:
   - Bash
   - Read

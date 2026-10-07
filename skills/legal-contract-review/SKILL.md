@@ -1,6 +1,6 @@
 ---
 name: legal-contract-review
-description: "Reviews NDAs, SaaS contracts, MSAs, DPAs, and other legal documents with clause-by-clause analysis, risk rating (green/yellow/red), and red flag detection. Covers liability caps, IP ownership, confidentiality terms, governing law, indemnification, auto-renewal, and GDPR/SOC2/CCPA compliance language. Escalates to a human immediately for unlimited liability, IP assignment, unfavorable jurisdiction, or regulatory compliance requirements. Best for founders and operators signing vendor agreements, SaaS contracts, or partnership deals who want a structured review without hiring a lawyer for every NDA. Also for: contract comparison baselines, redline drafting, and negotiation alternative language."
+description: "Use when asked to review an NDA, SaaS contract, MSA, DPA or other agreement, or to draft redlines. Gives clause-by-clause analysis with green/yellow/red risk ratings and red flags (liability, IP, governing law, auto-renewal, GDPR); escalates to a human on unlimited liability or IP assignment."
 ---
 
 # Legal Contract Review Skill

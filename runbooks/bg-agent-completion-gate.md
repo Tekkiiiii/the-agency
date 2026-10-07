@@ -1,6 +1,6 @@
 # Background Agent Completion Gate (F11-enhanced)
 
-**Rule (inline in CLAUDE.md):** When a background agent (PD, Coord, any `run_in_background:true` spawn) returns,
+**Rule (summarized in CLAUDE.md §Verification Before Done):** When a background agent (PD, Coord, any `run_in_background:true` spawn) returns,
 the parent AI MUST verify claimed deliverables before accepting the result as DONE.
 
 This file contains the verification protocol and emit template.

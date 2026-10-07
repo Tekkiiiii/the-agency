@@ -20,7 +20,7 @@ This creates `.opencode/agents/<slug>.md` files in your project directory.
 In OpenCode, invoke a subagent with the `@` prefix:
 
 ```
-@frontend-developer help build this component.
+@task-executor help build this component.
 ```
 
 ```
@@ -35,7 +35,7 @@ Each generated agent file contains:
 
 ```yaml
 ---
-name: Frontend Developer
+name: Task Executor
 description: Expert frontend developer specializing in modern web technologies...
 mode: subagent
 color: "#00FFFF"

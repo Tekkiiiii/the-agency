@@ -4,7 +4,7 @@ Skills are reusable workflows that agents invoke to handle common tasks. Each sk
 
 ## Overview
 
-285+ skills are installed to `{agency-root}/skills/` as `{name}/SKILL.md` directories. Invoke any skill with `/skill-name` in Claude Code.
+290+ skills are installed to `{agency-root}/skills/` as `{name}/SKILL.md` directories. Invoke any skill with `/skill-name` in Claude Code.
 
 ## Skill Categories
 

@@ -4,8 +4,9 @@ description: Video quality critic. Finds pacing failures, caption errors, visual
 department: critiques
 role: specialist
 reports_to: critiques-lead
-modelTier: sonnet
-model: sonnet
+modelTier: opus
+model: opus[1m]
+effort: high
 skills:
   - video-use
 tools:

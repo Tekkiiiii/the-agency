@@ -3,52 +3,52 @@
 **Call this department when you need to produce any written or scripted content artifact** — blog posts, social media copy, ad copy, email campaigns, video scripts, developer documentation, presentations, press releases, or editorial polish. This is the default department for all content production tasks.
 
 **Leader**: Chief Content Officer
-**Sub-lead**: Content Director (Opus) — Tier 1 approval authority, editorial gatekeeper
-**Sub-group**: Social Media (12 agents) — see `social-media/INDEX.md`
-**Model tier**: Members = Sonnet, Leaders = Opus
+**Review / approval**: critique-content agent reviews; Chief Content Officer holds Tier 1 approval authority (the former director sub-lead role is archived 2026-10-06).
+**Sub-group**: Social Media (12 platform roles) — see `social-media/INDEX.md`
+**Members**: archived 2026-10-06 (generalist switch). Specialist roles are archived; spawn `general-purpose` + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`. The role tables below list each role, its skills, and its role file.
 
 ## Leadership
 
 | Agent | What it does |
 |---|---|
-| Chief Content Officer | Content governance, pipeline oversight, quality standards, council representation |
-| Content Director | Hands-on editorial review, member assignment, quality gates, Tier 1 approvals |
+| Chief Content Officer | Content governance, pipeline oversight, quality standards, council representation, Tier 1 approvals |
+| critique-content | Editorial review and quality gates (kept agent; replaces the archived director review role) |
 
 ## Social Media Sub-team
 
-See [social-media/INDEX.md](social-media/INDEX.md) — 12 platform-specific writers covering LinkedIn, Twitter/X, Instagram, TikTok, Reddit, Threads, Facebook, Discord, YouTube, Pinterest, Quora, and Telegram.
+See [social-media/INDEX.md](social-media/INDEX.md) — 12 platform-specific roles (general-purpose + skills) covering LinkedIn, Twitter/X, Instagram, TikTok, Reddit, Threads, Facebook, Discord, YouTube, Pinterest, Quora, and Telegram.
 
 ## Long-form & Editorial
 
-| Agent | What it produces |
+| Role (spawn as general-purpose + skills) | What it produces |
 |---|---|
-| Blog & Article Writer | Blog posts, articles, thought leadership, how-to guides |
-| Case Study & Whitepaper Writer | Case studies, whitepapers, industry reports, research summaries |
-| Newsletter & Editorial Writer | Curated newsletters, editorial opinion pieces, subscriber content |
+| Blog/article role: /content-creator, /seo-aeo-best-practices (role file: agents-archive/generalist-2026-10-06/content-creation/content-blog-writer.md) | Blog posts, articles, thought leadership, how-to guides |
+| Case study/whitepaper role: /content-creator, /content-polish (role file: agents-archive/generalist-2026-10-06/content-creation/content-case-study-writer.md) | Case studies, whitepapers, industry reports, research summaries |
+| Newsletter/editorial role: /content-creator, /content-polish (role file: agents-archive/generalist-2026-10-06/content-creation/content-newsletter-writer.md) | Curated newsletters, editorial opinion pieces, subscriber content |
 
 ## Conversion Copy
 
-| Agent | What it produces |
+| Role (spawn as general-purpose + skills) | What it produces |
 |---|---|
-| Ad Copywriter | Meta/Google/TikTok ad copy, display ads, UGC/EGC briefs |
-| Landing Page Copywriter | Sales pages, product pages, squeeze pages, pricing page copy |
-| Email Campaign Writer | Nurture sequences, promotional emails, welcome sequences |
+| Ad copy role: /copywriting, /content-polish (role file: agents-archive/generalist-2026-10-06/content-creation/content-ad-copywriter.md) | Meta/Google/TikTok ad copy, display ads, UGC/EGC briefs |
+| Landing page copy role: /copywriting, /seo-aeo-best-practices (role file: agents-archive/generalist-2026-10-06/content-creation/content-landing-page-copywriter.md) | Sales pages, product pages, squeeze pages, pricing page copy |
+| Email campaign role: /copywriting, /content-polish (role file: agents-archive/generalist-2026-10-06/content-creation/content-email-writer.md) | Nurture sequences, promotional emails, welcome sequences |
 
 ## Production
 
-| Agent | What it produces |
+| Role (spawn as general-purpose + skills) | What it produces |
 |---|---|
-| Video Script Writer | TikTok/Reels/YouTube scripts, video ad scripts, explainer scripts |
-| Video Producer | Direct ffmpeg/ffprobe media ops — transcode, extract, concat, filter, optimize |
-| Technical Writer (Content) | Developer docs, API references, help center articles, tutorials |
-| Presentation Creator | Slide/pitch/speaker/board decks via Marp (Markdown → HTML/PDF/PPTX) |
+| Video script role: no skill (role file: agents-archive/generalist-2026-10-06/content-creation/content-video-script-writer.md) | TikTok/Reels/YouTube scripts, video ad scripts, explainer scripts |
+| Video production role: /ffmpeg, /video-use (role file: agents-archive/generalist-2026-10-06/content-creation/content-video-producer.md) | Direct ffmpeg/ffprobe media ops — transcode, extract, concat, filter, optimize |
+| Technical content role: /tech-writer, /document-release (role file: agents-archive/generalist-2026-10-06/content-creation/content-technical-writer.md) | Developer docs, API references, help center articles, tutorials |
+| Presentation role: /deck-narrative, /marp, /strategic-deck (role file: agents-archive/generalist-2026-10-06/content-creation/content-presentation-creator.md) | Slide/pitch/speaker/board decks via Marp (Markdown → HTML/PDF/PPTX) |
 
 ## Other
 
-| Agent | What it produces |
+| Role (spawn as general-purpose + skills) | What it produces |
 |---|---|
-| Press & PR Writer | Press releases, media kits, company announcements, crisis comms |
-| Content Editor | Quality gate — proofreading, humanizing, AI-slop detection, content critique |
+| Press/PR role: /content-creator, /content-polish (role file: agents-archive/generalist-2026-10-06/content-creation/content-press-writer.md) | Press releases, media kits, company announcements, crisis comms |
+| Editing-pass role: /content-polish, /humanizer-writing, /proofreader (role file: agents-archive/generalist-2026-10-06/content-creation/content-editor.md) | Editing pass — proofreading, humanizing, AI-slop detection (content critique review goes to critique-content) |
 
 ## Skills Assigned to This Department
 

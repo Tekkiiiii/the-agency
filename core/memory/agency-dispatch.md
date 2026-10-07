@@ -5,7 +5,7 @@
 
 # Agency Agent Selection Hierarchy
 
-When spawning a subagent, follow this order — **general-purpose is last resort**:
+When spawning a subagent, follow this order — since 2026-10-06 (generalist switch ACTIVE) **`general-purpose` + 1-3 skills named in the prompt is the DEFAULT**; specialist roles are archived (`agents-archive/ROLE-MAP.md`):
 
 ## Step 0 — Check protocols first
 
@@ -35,23 +35,24 @@ Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, Cura
 | Task domain | Prefer this agent type |
 |---|---|
 | Research, analysis, investigation | `Explore`, `Trend Researcher`, `research-pd` |
-| Frontend, UI, design | `Frontend Developer`, `UI Designer`, `Design Lead` |
-| Backend, API, database | `Backend Architect`, `Data Engineer` |
-| Full-stack / feature work | `Senior Developer`, domain-specific PD |
+| Frontend, UI, design | general-purpose + /frontend, /next-best-practices, /tailwind (role file: agents-archive/generalist-2026-10-06/engineering/engineering-frontend-developer.md); UI: general-purpose + /ui-ux-pro-max, /impeccable (role file: agents-archive/generalist-2026-10-06/design/design-ui-designer.md); `Design Lead` |
+| Backend, API, database | general-purpose + /backend, /postgresql-schema, /plan-eng-review (role file: agents-archive/generalist-2026-10-06/engineering/engineering-backend-architect.md); data: + /xlsx-toolkit (role file: agents-archive/generalist-2026-10-06/engineering/engineering-data-engineer.md) |
+| Full-stack / feature work, Laravel/PHP stack | general-purpose + /laravel-builder, /review (role file: agents-archive/generalist-2026-10-06/engineering/engineering-senior-developer.md), domain-specific PD |
+| Full-stack / feature work, non-Laravel stack (Node.js, Python, bash, docs, etc.) | `coord` (or general-purpose + stack-appropriate skills), domain-specific PD — do NOT use the Laravel/PHP-scoped senior-developer role file on other stacks |
 | Sales, pipeline, revenue | `Sales Lead`, `Deal Strategist`, `Account Strategist` |
 | Content creation, writing, copy, editorial, scripts, docs, decks | `Chief Content Officer`, `content-creation-lead` |
 | Marketing strategy, growth experiments, social media engagement, SEO, China market | `Marketing Lead`, `Growth Hacker` |
 | Operations, tracking, finance | `Operations Lead`, `Finance Tracker`, `Analytics Reporter` |
-| Security, compliance, legal | `Security Engineer`, `Compliance Auditor` |
-| Deployment, DevOps, infra | `DevOps Automator`, `Infrastructure Maintainer` |
-| QA, testing, verification | `Testing Lead`, `Evidence Collector`, `qa` skill |
-| Experiment design, A/B | `Experiment Tracker` |
+| Security, compliance, legal | general-purpose + /security, /cso (role file: agents-archive/generalist-2026-10-06/engineering/engineering-security-engineer.md; review: `critique-security`); compliance: + /legal-contract-review (role file: agents-archive/generalist-2026-10-06/specialized/audit/compliance-auditor.md) |
+| Deployment, DevOps, infra | general-purpose + /pipeline-deploy, /vercel-deploy, /railway-deploy (role file: agents-archive/generalist-2026-10-06/engineering/engineering-devops-automator.md); `Infrastructure Maintainer` |
+| QA, testing, verification | `Testing Lead`, general-purpose + /qa-only, /browse, /webapp-testing (role file: agents-archive/generalist-2026-10-06/testing/testing-evidence-collector.md), `qa` skill |
+| Experiment design, A/B | general-purpose + /content-experimentation-best-practices, /project-status (role file: agents-archive/generalist-2026-10-06/project-management/project-management-experiment-tracker.md) |
 | Proposal, RFP, deal | `Proposal Strategist`, `Deal Strategist` |
 | Game dev | `Game Development Lead` |
 | Spatial/VR/AR | `Spatial Computing Lead` |
 | Knowledge retrieval, project context, history lookup | `curator` |
-| Task planning, decomposition, DAG structuring, sprint planning | `task-planner` (`specialized/task-planner.md`) |
-| Voice cloning, TTS, voice generation, text-to-speech, dubbing, voice design | `Voice & Cast Director` (`video-studio/vs-voice-director.md`) via OmniVoice Studio (default tool) — MCP: `mcp__omnivoice__generate_speech` |
+| Task planning, decomposition, DAG structuring, sprint planning | general-purpose + /superpowers-writing-plans (role file: agents-archive/generalist-2026-10-06/specialized/task-planner.md) |
+| Voice cloning, TTS, voice generation, text-to-speech, dubbing, voice design | general-purpose (no skill; role file: agents-archive/generalist-2026-10-06/video-studio/vs-voice-director.md) via OmniVoice Studio (default tool) — MCP: `mcp__omnivoice__generate_speech` |
 | Video editing, transcription, color grade, subtitles, overlays, raw footage | `/video-use` skill (default), `content-creation-lead` for strategy |
 | Video production (scripted, AI-generated, full pipeline) | Video Studio dept — `video-studio-lead` for strategy, `video-studio-coord` for production coordination |
 | Quality gate for any creative deliverable | `quality-loop-router` skill — always the terminal step; determines Mode A (internal loop) or Mode B (external fix plan) |
@@ -60,9 +61,9 @@ Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, Cura
 | Video deliverable critique | `critique-video` agent or skill |
 | New project onboarding / tech stack decision | `pipeline-onboard` skill → `tech-stack` skill |
 | Research task (multi-source synthesis) | `pipeline-research` skill → auto-researcher → firecrawl → graphify → notebooklm |
-| Web scraping, crawling, data extraction from URLs | `Web Extraction Agent` (`specialized/web-extraction-agent.md`) — 3-layer routing + social ladder |
-| Social media content extraction (FB/IG/LinkedIn/X/TikTok/YouTube/Reddit) | `Web Extraction Agent` — runs social decision ladder (API → Apify → session → FLAG) |
-| Messaging platform read/write (TG/Discord/Slack/WA/Signal/Matrix) | `mcp__hermes__*` tools directly — no Web Extraction Agent needed |
+| Web scraping, crawling, data extraction from URLs | general-purpose + /lightpanda, /scrape, /firecrawl-crawl (role file: agents-archive/generalist-2026-10-06/specialized/web-extraction-agent.md) — 3-layer routing + social ladder |
+| Social media content extraction (FB/IG/LinkedIn/X/TikTok/YouTube/Reddit) | general-purpose + /lightpanda, /scrape, /firecrawl-crawl (role file above) — runs social decision ladder (API → Apify → session → FLAG) |
+| Messaging platform read/write (TG/Discord/Slack/WA/Signal/Matrix) | `mcp__hermes__*` tools directly — no web-extraction spawn needed |
 
 ## Cross-Department Protocol: Marketing ↔ Content Creation
 
@@ -89,14 +90,14 @@ The Delegator was already made mandatory in Step 0.5. This section defines the O
 | `Explore` | Read-only research (no writes, no agent spawns from within) |
 | `Plan` | Planning mode (no writes, no agent spawns from within) |
 | `statusline-setup` | System setup only |
-| `general-purpose` | Only when prompt starts with "You are PD-" OR contains "DELEGATOR ROUTING:" block |
+| `general-purpose` | DEFAULT since 2026-10-06 — name 1-3 skills (and a role file from ROLE-MAP when the role matters) in the prompt; the spawner picks the skills |
 
-**All other agent spawns** require a `DELEGATOR ROUTING:` block in the prompt proving Delegator was consulted. The spawn-gate.sh hook enforces this at runtime.
+**Other agent types** need a `DELEGATOR ROUTING:` / `HARDCODED ROUTING:` marker in the prompt. spawn-gate.sh asks (never blocks) on an unknown `subagent_type`, which catches typos and stale archived specialist names.
 
-Even for Explore and Plan: if you are unsure whether the task needs specialized domain knowledge, spawn Delegator first.
+If unsure which skills fit, use `agents-archive/ROLE-MAP.md` / skills/INDEX.md; spawn Delegator only for ambiguous or cross-domain tasks.
 
-## Step 2 — Route to existing specialized agents before general-purpose.
-Use `Explore` for research, domain-specific agents for domain work.
+## Step 2 — Pick skills from the role map.
+Use `Explore` for research; for domain work spawn general-purpose + the skills listed in `agents-archive/ROLE-MAP.md` (role file when expertise matters). Kept named agents (`*-pd`, Coords, critique-*, dept heads) stay spawnable by name.
 
-## Step 3 — Fallback is general-purpose.
-Only use `general-purpose` when the task is truly generic and no catalog agent matches.
+## Step 3 — general-purpose is the default.
+No ROLE-MAP row? general-purpose + the 1-3 skills from `skills/INDEX.md` that fit the task.

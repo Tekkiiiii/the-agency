@@ -2,6 +2,8 @@
 
 <!-- load only when managing or onboarding agents -->
 
+> **GENERALIST SWITCH (2026-10-06):** all member-level specialist agents are ARCHIVED to `agents-archive/generalist-2026-10-06/`; spawn `general-purpose` + skills per `agents-archive/ROLE-MAP.md`. Dept heads, coords, PDs, critiques, and service agents stay registered. Member names below that point to an archived role are historical.
+
 > **Canonical reference document.** This file defines the complete org chart, leadership, communication protocols, and team structure for The Agency. All other documentation (runbooks, READMEs, agent files) references this as the source of truth.
 
 ---
@@ -279,7 +281,7 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 | Specialized | `agents/specialized/` |
 | Specialized (Infra sub-team) | `agents/specialized/infra/` |
 | **Rooms Infrastructure** | `{agency-root}/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
-| **RoomManager** | `agents/specialized/infra/room-manager.md` — always-on via 15-min cron polling |
+| **Room polling** | ARCHIVED agent 2026-10-06 — use the `/room-manager` skill (see `agents-archive/ROLE-MAP.md`; role file `agents-archive/generalist-2026-10-06/specialized/infra/room-manager.md`) |
 | Specialized (Audit sub-team) | `agents/specialized/audit/` |
 | Spatial Computing | `agents/spatial-computing/` |
 

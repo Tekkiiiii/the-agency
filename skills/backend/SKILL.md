@@ -1,7 +1,6 @@
 ---
 name: backend
-description: >
-  Designs, builds, and reviews backend systems: APIs, databases, server-side logic, authentication, file handling, webhooks, and microservices. Triggers when the user asks to build an API, design a database schema, write server-side code, set up authentication, handle file uploads, build webhooks, design microservices, optimize queries, or work with Node.js, Python, Go, Java, or any server-side technology. Also triggers proactively when reviewing backend code for performance, scalability, or correctness issues — including N+1 queries, missing indexes, connection pool exhaustion, and missing pagination. Key capabilities: layered architecture patterns (routes/controllers/services/repositories), REST design with correct HTTP status codes, UUID-based public IDs with created_at/updated_at timestamps, JWT auth with short-lived access tokens + httpOnly refresh cookies, bcrypt password hashing at cost factor 12+, centralized error handling, structured JSON logging, parameterized queries only, and background job patterns. Ideal for backend engineers building from scratch or debugging existing systems. Also for: architecture reviews, query optimization, security audits on auth flows, and API contract design.
+description: "Use when building or reviewing backend systems: APIs, database schemas, auth, file uploads, webhooks, microservices, query optimization (Node, Python, Go, Java). Covers layered architecture, REST, JWT, error handling, logging, N+1 and indexing. Not for reviewing only (use /backend-critique)."
 ---
 
 # Backend Development Skill

@@ -1,15 +1,6 @@
 ---
 name: figma-ui-ux-consistency
-description: |
-  Orchestrates all 7 Figma MCP plugin skills into a unified, project-aware lifecycle for achieving
-  and maintaining UI/UX consistency — from audit through design system creation, code
-  implementation, and ongoing governance. Use when auditing visual consistency, establishing a new
-  design system, reconciling Figma with an existing codebase, or building a component library from
-  current screens. Works in 5 ordered phases: Audit (extract patterns), Foundations (define tokens),
-  Library (build Figma components), Implement (translate to code), Governance (rules and review loops).
-  Also for re-auditing after significant feature growth, onboarding new designers, or before major
-  releases. Delegates canvas operations to plugin sub-skills; owns phase sequencing and checkpoints.
-  Complements ui-ux-pro-max and frontend skills.
+description: "Use when auditing visual consistency, creating a design system, reconciling Figma with code, or building a component library from existing screens. Sequences the Figma plugin skills in 5 phases: Audit, Foundations, Library, Implement, Governance, with checkpoints. Complements /ui-ux-pro-max and /frontend."
 ---
 
 # Figma UI/UX Consistency — Orchestration Skill

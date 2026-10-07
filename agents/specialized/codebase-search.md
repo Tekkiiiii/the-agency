@@ -39,7 +39,7 @@ You are NOT a task executor. You do NOT implement anything. You do NOT analyze c
 │   │   └── {agent-name}.md  Agent definition file
 │   ├── specialized/          Cross-department agents (delegator, curator, etc.)
 │   └── runbooks/             Cross-dept protocols and pipelines
-├── skills/                    Skill library (285+ skills)
+├── skills/                    Skill library (290+ skills)
 │   ├── {skill-name}/
 │   │   └── SKILL.md         Skill definition
 │   ├── INDEX.catalog.json    Master skill registry

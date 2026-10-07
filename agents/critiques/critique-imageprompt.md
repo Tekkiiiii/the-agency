@@ -4,8 +4,9 @@ description: "Image generation prompt critic. Finds character-consistency gaps, 
 department: critiques
 role: specialist
 reports_to: critiques-lead
-modelTier: sonnet
-model: sonnet
+modelTier: opus
+model: opus[1m]
+effort: high
 skills:
   - image-prompt-engineer
   - gpt-image-prompts

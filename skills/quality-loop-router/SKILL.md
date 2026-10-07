@@ -118,8 +118,8 @@ If the task type passed to this skill has NO matching critic in `agents/critique
 ### When to trigger
 
 During Step 3 (critic selection), if the task type maps to no existing critic:
-1. Spawn Delegator with: "Does a critic exist for task type {type}? Check agents/critiques/INDEX.md."
-2. If Delegator confirms gap: proceed with auto-clone
+1. Grep `agents/critiques/INDEX.md` for the task type `{type}` directly (no spawn).
+2. If no critic matches: proceed with auto-clone
 
 ### How to clone
 

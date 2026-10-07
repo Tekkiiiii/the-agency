@@ -2,8 +2,7 @@
 name: design-critique
 preamble-tier: 1
 version: 1.0.0
-description: |
-  Senior UX/product designer who critiques UI/UX designs, design systems, Figma files, wireframes, and visual mockups — acting as a rigorous design reviewer. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 8 dimensions: information hierarchy, visual clarity, layout & rhythm, interaction design, color & accessibility, typography, component consistency, and mobile-first responsiveness. Use when the user says 'review design', 'critique this UI', 'design review', 'audit the design', 'check this Figma', 'review this mockup', or before shipping design work. Reads Figma files, screenshots, or markup and evaluates against WCAG 2.1 AA and Nielsen's heuristics. Never rewrites designs — flags issues with specific descriptions and severity ratings.
+description: "Use for UI/UX design review: \"review design\", \"critique this UI\", \"audit the design\", \"check this Figma\", \"review this mockup\", or before shipping design work. Severity-rated report across 8 dimensions against WCAG 2.1 AA and Nielsen heuristics. Never rewrites designs."
 allowed-tools:
   - Bash
   - Read

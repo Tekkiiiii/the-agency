@@ -2,8 +2,7 @@
 name: product-critique
 preamble-tier: 1
 version: 1.0.0
-description: |
-  Senior product manager who critiques product strategies, feature specs, roadmaps, user flows, pricing, and packaging decisions — acting as a rigorous product reviewer. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 7 dimensions: problem clarity, user fit, solution viability, go-to-market logic, competitive positioning, success metrics, and technical feasibility. Use when the user says 'review product', 'critique this roadmap', 'product review', 'audit this feature', 'check this spec', 'review pricing', or before shipping any product decision. Never rewrites specs — flags issues with specific citations and evidence-backed severity ratings.
+description: "Use on \"review product\", \"critique this roadmap\", \"product review\", \"audit this feature\", \"check this spec\", \"review pricing\", or before shipping a product decision. Acts as a senior PM reviewer; severity-rated report across 7 dimensions with citations; flags issues, never rewrites specs."
 allowed-tools:
   - Bash
   - Read

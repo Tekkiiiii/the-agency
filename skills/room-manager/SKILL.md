@@ -1,21 +1,6 @@
 ---
 name: room-manager
-description: >
-  Poll all agency chat rooms for new messages, route escalations, handle NEXUS
-  handoffs, fan out PD statuses to department rooms, update shared context, throttle
-  member notifications, and generate 12-hour digests for dept heads. Run as a
-  background subagent on cron. Trigger with /room-manager or when new room activity
-  is suspected. When to trigger: every 10 minutes as a background loop; when a user
-  suspects new room activity; after a handoff file appears in a room handoffs/ dir;
-  when an ESCALATE: pattern is spotted in any message; and when a dept head hasn't
-  received their 12-hour digest yet. Key capabilities: offset-based message
-  checkpointing (never re-reads old messages), 30-minute per-member notification
-  throttle to prevent spam, idempotent digest sends, NEXUS handoff lifecycle
-  management (pending/routed/expired), and automatic DECIDED:/ACTION:/QUESTION:
-  extraction to shared agency context. Ideal for agency leads running multi-project
-  coordination who need a passive, always-on coordination layer. Also for on-call
-  subagents that need to stay informed about cross-project activity without
-  manually polling every room.
+description: "Use on /room-manager, every 10 minutes as a background loop, or when new room activity is suspected (handoff file, ESCALATE: pattern, missing 12h digest). Polls agency chat rooms, routes escalations and NEXUS handoffs, fans out PD statuses, throttles notifications, sends dept-head digests."
 ---
 
 # RoomManager Polling Cycle

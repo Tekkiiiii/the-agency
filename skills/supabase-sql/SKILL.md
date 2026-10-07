@@ -1,7 +1,7 @@
 ---
 name: supabase-sql
-description: >
-  Write, design, optimize, and debug SQL specifically for Supabase's PostgreSQL engine. Covers schema design, queries, Row Level Security (RLS) policies, migrations, query optimization, and Supabase-specific patterns (Auth triggers, Storage path tables, Realtime publications). Trigger when: the user asks to write or edit a SQL query; design a new table or modify an existing schema; optimize a slow query or fix a missing index; write or debug RLS policies; work with Supabase Auth, Storage, or Realtime; paste a Supabase error message or slow query log; asks "how do I store X in my database?" Always explain the SQL in plain English alongside the code — never dump raw code. Key capabilities: golden rules for Supabase table design (uuid IDs, timestamps, snake_case naming); full RLS policy templates for common patterns (own-data access, public read, authenticated write); explain analyze for finding missing indexes; migration-safe patterns for adding columns without downtime. Also for: writing database trigger functions (e.g. auto-creating a profile on user signup), designing junction tables for many-to-many relationships, and understanding when to use jsonb vs. separate columns. Beginner-friendly — defines SQL terms when introduced.
+description: "Use when writing, designing or debugging SQL for Supabase Postgres: schemas, queries, RLS policies, migrations, slow queries or missing indexes, Auth triggers, Storage, Realtime, or \"how do I store X in my database?\". Explains the SQL in plain English alongside the code."
+paths: ["supabase/**", "**/*.sql"]
 ---
 
 # Supabase SQL Skill

@@ -1,9 +1,9 @@
 ---
 name: image-prompt-engineer
-description: "Methodology for writing high-quality image generation prompts across any generator — Midjourney, DALL-E/GPT-Image-2, Stable Diffusion, Flux, Higgsfield, Leonardo, Ideogram. Covers prompt structure, per-generator parameters, style modifier vocabulary, negative prompts, multi-subject composition, and iterative refinement. Use when writing, improving, or troubleshooting an image generation prompt for any tool or any subject (not just photography, not just UI mockups). Triggers on: 'write an image prompt', 'Midjourney prompt', 'DALL-E prompt', 'Stable Diffusion prompt', 'image generation prompt', 'improve this prompt', 'negative prompt'."
+description: "Use when writing, improving or debugging an image-generation prompt: \"write an image prompt\", \"Midjourney prompt\", \"DALL-E prompt\", \"Stable Diffusion prompt\", \"negative prompt\". Any generator (also Flux, Higgsfield, Leonardo, Ideogram): structure, parameters, style vocabulary, composition, iteration."
 ---
 
-# Image Prompt Engineer — Prompt Methodology Skill
+# Image Prompt Methodology Skill
 
 Teaches HOW to write a great image-generation prompt, for any generator and any subject.
 This is a methodology skill, not a lookup library — it gives the structure, vocabulary,
@@ -21,7 +21,7 @@ This skill is the general-purpose methodology underneath all three.
 - Asked to improve, debug, or extend an existing prompt that isn't producing the right output
 - Building a prompt for a generator not covered by another skill (Stable Diffusion, Flux,
   Higgsfield, Leonardo, Ideogram, etc.)
-- Any agent (Image Prompt Engineer, AI Video Producer, content writers, design agents)
+- Any agent (image-prompt role, AI-video role, content writers, design agents)
   needs to produce or QA an image-generation prompt
 
 ## Core Methodology — The Five-Layer Prompt Structure
@@ -184,8 +184,7 @@ Common negative-prompt targets:
 ## Workflow
 
 1. Identify the target generator (if unspecified, ask or default to GPT-Image-2/natural language)
-2. Identify the subject type — is this photography-style (use the Image Prompt Engineer
-   agent's genre patterns for portrait/product/landscape/fashion), a UI mockup (route to
+2. Identify the subject type — is this photography-style (use the image-prompt role file's genre patterns for portrait/product/landscape/fashion), a UI mockup (route to
    `imagegen-frontend-web`/`imagegen-frontend-mobile` instead), or general/illustrative
    (use this skill's five-layer structure directly)
 3. Build the prompt layer by layer: subject → action/composition → environment → lighting → style/technical
@@ -207,9 +206,9 @@ Common negative-prompt targets:
   composition rules (one-image-per-section, hero composition bias, app-native UI patterns).
   Route there first for website/app design-reference image tasks; this skill is the
   general fallback for everything else.
-- **Image Prompt Engineer agent** (`{agency-root}/agents/design/design-image-prompt-engineer.md`) —
-  an autonomous agent specializing in photography-genre prompts (portrait, product, landscape,
-  fashion) with deep genre-specific templates. Spawn that agent for hands-on photography prompt
+- **Image-prompt role file** (`{agency-root}/agents-archive/generalist-2026-10-06/design/design-image-prompt-engineer.md`; archived, spawn `general-purpose` + /image-prompt-engineer, /gpt-image-prompts) —
+  a role specializing in photography-genre prompts (portrait, product, landscape,
+  fashion) with deep genre-specific templates. Spawn general-purpose with that role file for hands-on photography prompt
   production; read this skill directly when you (or any agent) need the general cross-generator
   methodology, non-photography styles, or a generator the agent's templates don't cover
   (Higgsfield, Leonardo, Ideogram, Stable Diffusion parameter tuning).

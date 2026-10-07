@@ -16,11 +16,11 @@ cd /your/project
 In your Aider session, reference the agent by name:
 
 ```
-Use the Frontend Developer agent to refactor this component.
+Use the Task Executor agent to refactor this component.
 ```
 
 ```
-Apply the Reality Checker agent to verify this is production-ready.
+Apply the Testing Lead agent to verify this is production-ready.
 ```
 
 ## Manual Usage

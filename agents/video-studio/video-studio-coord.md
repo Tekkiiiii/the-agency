@@ -4,8 +4,9 @@ description: D3 task owner for video-studio department operations. Receives one 
 department: video-studio
 role: dept-coord
 reports_to: video-studio-lead
-modelTier: sonnet
-model: sonnet[1m]
+modelTier: opus
+model: opus[1m]
+effort: high
 skills: []
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 ---

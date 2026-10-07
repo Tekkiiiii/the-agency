@@ -74,9 +74,10 @@ Only load the one department you need. Not all 8.
    YES → use a skill from ~/.claude/skills/INDEX.md
    NO  → step 4
 
-4. Can you do it directly (Tier 1: <10 line edits, docs, analysis)?
-   YES → do it
-   NO  → escalate
+4. Is it knowledge work (analysis, research, planning, memory/state writes)?
+   YES → do it directly
+   NO  → implementation: delegate to an Exec (atomic, independent) or a Coord;
+         PD QAs direct-Exec results itself (pd-coordinator.md §Role). PD never implements.
 ```
 
 ---

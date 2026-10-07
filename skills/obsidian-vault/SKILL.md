@@ -1,6 +1,6 @@
 ---
 name: obsidian-vault
-description: "Long-term memory layer — forwards architectural decisions, project learnings, skill creations, and generated assets to the Obsidian vault, and reads from it before starting work on known projects. Handles eviction from medium-term memory (30-day inactive projects, 7-day old decisions) into the vault. Vault structure: Projects/, Skills/, Learnings/, Files/, Reference/. Always forward decisions immediately when made; link liberally with [[note-name]] syntax. Best for: engineers working across multiple projects who need long-term memory that survives beyond session logs, and anyone who wants Obsidian as the canonical source for architectural rationale and project context. Also for: cross-project pattern recognition, skill provenance tracking, and decision audit trails."
+description: "Use to forward decisions, project learnings, skill creations and generated assets to the Obsidian vault, and to read it before work on known projects. Also evicts stale medium-term memory (30-day inactive projects, 7-day old decisions) into Projects/, Skills/, Learnings/, Files/, Reference/."
 ---
 
 # Obsidian Vault — Long-Term Memory & Data Vault

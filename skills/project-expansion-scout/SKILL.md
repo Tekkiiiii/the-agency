@@ -1,25 +1,6 @@
 ---
 name: project-expansion-scout
-description: >
-  Configure and run the Project Expansion Scout — an autonomous strategic growth
-  agent that scans active projects for expansion opportunities, consults the BOD
-  for configurable feasibility approval (default >80%), and adds approved expansion
-  phases to PROJECT.md. Trigger when you want to set up, configure, invoke, or
-  manage the expansion scout loop. Scenarios: when you want to be more intentional
-  about growth than reactive firefighting, when a project has stalled with no next
-  phase in sight, when you suspect there are cross-project synergies going unexploited,
-  when the team lacks bandwidth for strategic planning and wants an automated scout
-  to surface candidates, or when doing quarterly roadmapping and needing a quick scan
-  of all projects for expansion signals. Key capabilities: configurable scan schedule
-  (daily/weekly/biweekly via cron), multi-project portfolio scanning in parallel,
-  autonomous BOD consultation loop with configurable approval threshold, draft
-  revision cycles before voting, mid-vote resume on session restart, and automatic
-  PROJECT.md updates with audit trail. Ideal for: portfolio owners managing
-  multiple projects simultaneously, solo founders running several products, and
-  anyone responsible for translating strategic vision into per-project roadmaps.
-  Also for surfacing expansion opportunities in adjacent markets, feeding an
-  automated strategic pipeline into executive planning, and providing early warning
-  signals when a project's current scope is underrunning.
+description: "Use to set up, configure or run the expansion scout: scans active projects for growth opportunities, gets BOD feasibility approval (default >80%), and adds approved phases to PROJECT.md. For stalled projects, cross-project synergies, or quarterly roadmapping; schedule is daily/weekly/biweekly cron."
 ---
 
 # Project Expansion Scout
@@ -34,7 +15,7 @@ An autonomous strategic growth agent that runs on a configurable schedule, finds
 
 | File | Purpose |
 |------|---------|
-| `~/.claude/agents/specialized/project-expansion-scout.md` | The agent definition |
+| `{agency-root}/agents-archive/generalist-2026-10-06/specialized/project-expansion-scout.md` | Archived role definition (read as the scout's role file) |
 | `~/.claude/memory/expansion-scouts/` | Storage for drafts and voting state |
 | `~/.claude/memory/expansion-scouts/voting-state.json` | Configuration + per-project voting state |
 
@@ -67,7 +48,7 @@ Use `/cron-list` and `/cron-delete` to manage. Default schedule:
 - **Biweekly**: Every other Monday at 8:00 AM — `0 8 * * 1 */2`
 - **Daily**: Every day at 8:00 AM — `0 8 * * *`
 
-Cron fires, wakes the Project Expansion Scout agent, and the agent runs its full scan → BOD consult → vote → execute cycle.
+Cron fires, wakes the scout (general-purpose + /project-expansion-scout), which runs its full scan → BOD consult → vote → execute cycle.
 
 ---
 
@@ -75,11 +56,11 @@ Cron fires, wakes the Project Expansion Scout agent, and the agent runs its full
 
 ### Manual Trigger (One-Shot)
 
-Spawn the agent directly and let it run its full cycle:
+Run the scout inline, or spawn `general-purpose` with `/project-expansion-scout` and let it run its full cycle:
 
 ```
-Use the Project Expansion Scout agent:
-~/.claude/agents/specialized/project-expansion-scout.md
+Skills: /project-expansion-scout
+Role: read {agency-root}/agents-archive/generalist-2026-10-06/specialized/project-expansion-scout.md first.
 
 Run one complete expansion scan cycle:
 1. Read medium-term.md for active projects

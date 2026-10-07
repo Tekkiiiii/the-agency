@@ -1,20 +1,6 @@
 ---
 name: xlsx-toolkit
-description: >
-  Full spreadsheet automation inside AI. Create, edit, analyze, and visualize Excel files, Google Sheets, and CSVs — formulas, formatting, recalculation, charts, pivots, and data insights. Trigger when working with any spreadsheet file (.xlsx, .xlsm, .csv, .tsv), doing spreadsheet automation, data analysis, formula creation, formatting, charting, pivots, or Google Sheets operations.
-  Purpose: Comprehensive in-chat spreadsheet work — no external tools or manual file
-  juggling, from raw CSV reads to formatted workbooks with formulas, pivot tables,
-  and charts. When to trigger: (1) Any spreadsheet operation: "read Excel", "parse CSV",
-  "edit spreadsheet", "workbook". (2) Formula work: "add SUM", "create VLOOKUP", "build
-  a formula". (3) Formatting: "style cells", "bold headers", "freeze panes". (4) Data
-  analysis: "analyze data", "pivot table", "filter", "sort". (5) Visualization: "add
-  chart", "create graph", "sparkline". (6) Google Sheets: "export to Sheets". (7) Data
-  ops: "merge files", "split data", "clean data". Key capabilities: Excel functions
-  (SUM, VLOOKUP, INDEX/MATCH, IF/IFS, SUMIF, COUNTIF). Array formulas, conditional
-  formatting, charts (bar, line, pie, scatter). Pivot tables, named ranges, cross-sheet
-  refs. Data profiling (nulls, duplicates, outliers). Also for: Data export pipelines,
-  recurring reports, CSV-to-XLSX converters. Ideal for: Analysts and developers who
-  need spreadsheet automation without leaving their AI workflow.
+description: "Use when working with any spreadsheet (.xlsx, .xlsm, .csv, .tsv) or Google Sheets: read/parse, edit, formulas (SUM, VLOOKUP, INDEX/MATCH), formatting, charts, pivot tables, data cleaning/analysis, merge or split files. Creates and edits workbooks with recalculation."
 ---
 
 # XLSX Toolkit Skill

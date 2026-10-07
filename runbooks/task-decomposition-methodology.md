@@ -252,6 +252,17 @@ src/auth/register.ts. Be file-specific, not directory-vague.
 "To be safe, I'll run everything in sequence." This defeats the purpose of the dev-plan.
 Trust the two-condition rule — if both conditions hold, parallel execution is safe.
 The two conditions are designed to catch all interference cases.
+**Parallel is the default for small batches — thresholds differ by level:**
+- PD delegation test (pd-coordinator.md §2.6, 2026-10-07): 2+ independent tasks → one
+  general-purpose agent per task (`model: "sonnet"`, 1-3 skills), all spawned in parallel,
+  PD QAs each result; coupled/sequential implementation or a track that needs its own
+  decomposition → a Coord. PD does only knowledge work directly, never implementation.
+- Coord/Dept-Coord parallel layer: ≤4 tasks. When a Coord has ≤4 independent Execs in a
+  layer, spawn them all in one parallel message (no wave-batching needed).
+If all tasks pass the two-condition rule, assign them to the same layer (Layer 1). Do NOT
+assign sequential layers "just to be safe." A sequential assignment is only correct when a
+genuine dependency edge or shared write-target exists. Parallel is always right when
+conditions allow it.
 
 ---
 

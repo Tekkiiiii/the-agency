@@ -1,6 +1,6 @@
 # Press Releases — Vietnamese Conventions (Thông Cáo Báo Chí)
 
-> For power words usable in headlines → content-creator/languages/vi.md.
+> For register and diacritics → content-creator/languages/vi.md.
 > For formal salutation/closing conventions → references/formal-documents.md.
 
 ## "THÔNG CÁO BÁO CHÍ" Structure
@@ -23,14 +23,11 @@
 ## Dateline Conventions
 
 - Format: [Thành phố], [ngày DD tháng MM năm YYYY] —
-- Example: "Hà Nội, ngày 03 tháng 5 năm 2026 —"
 - International targeting: add "(Việt Nam)" after city
 
 ## Quote Attribution with Titles
 
-- First reference: "Ông Nguyễn Văn A, Tổng Giám đốc [Công ty], cho biết:"
-- Subsequent: "Ông A cho biết thêm:"
-- Women: "Bà Nguyễn Thị B, Giám đốc Marketing:"
+- First reference: full name with honorific (Ông/Bà) + title + organization; subsequent references: honorific + given name
 - Government official: title mandatory in every reference, never omit
 - Quotes are blockquoted, not inline
 
@@ -41,14 +38,13 @@
 - S1: founding year, what the company does, scale/reach
 - S2: key differentiator or major achievement
 - S3: website + optional social handles
-- Never use superlatives ("hàng đầu", "số 1") without citation
+- Superlatives require citation
 
 ## Deference Language for Government and Officials
 
 - Government official requires title in every reference (not just first)
-- "Theo Bộ [tên Bộ]..." when attributing policy context
 - Never quote a government official without explicit on-record confirmation
-- Citing government data: "Theo số liệu của [cơ quan], năm [X]..."
+- Government data is attributed to the issuing agency and year
 - Government partnership: announce partner first, company second
 
 ## Media Contact Format
@@ -65,21 +61,21 @@ Liên hệ báo chí:
 
 ## Embargo Conventions
 
-- "THÔNG TIN ĐẶT TRƯỚC — KHÔNG ĐƯỢC PHÁT TRƯỚC [thời gian]"
+- Embargo line states the release time
 - Always specify: date, time, and timezone (ICT / GMT+7)
 - Placed immediately below the THÔNG CÁO BÁO CHÍ header
 
 ## Industry-Specific Press Language
 
+Voice comes from exemplars (brand/voice-exemplars-vi, pending). Do not copy phrasing from this file.
+
 ### Tech
-- Product launches: "ra mắt chính thức" not "launch"
 - Platform metrics: MAU, DAU stated explicitly with numbers
 - Funding: amounts in USD with VND equivalent in parentheses
 
 ### Finance
 - All figures require unit clarity (tỷ đồng, triệu USD)
-- Regulatory context: "Theo quy định của Ngân hàng Nhà nước Việt Nam"
-- Approval language: "được cấp phép bởi..."
+- Regulatory context cites the State Bank of Vietnam where applicable
 
 ### Health/Pharmaceutical
 - Ministry of Health approval number required if relevant
@@ -91,4 +87,4 @@ Liên hệ báo chí:
 - Enrollment statistics require academic year specification
 - University partnerships require MOU reference
 
-See also: references/formal-documents.md (address conventions, pronoun protocol), content-creator/languages/vi.md (headline power words)
+See also: references/formal-documents.md (address conventions, pronoun protocol), content-creator/languages/vi.md (register, diacritics)

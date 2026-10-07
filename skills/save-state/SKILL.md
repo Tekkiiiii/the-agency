@@ -1,17 +1,6 @@
 ---
 name: save-state
-description: >
-  Freezes the current session — writes all session-end files, resets the turn
-  counter, outputs a single confirmation. Fully autonomous, no user interaction.
-  Invoke as /save-state [slug], /save-state (auto-detects from cwd), or
-  /save-state all. When to trigger: at the end of every working session before
-  closing; before switching to a different project; when mid-flight work needs
-  to be preserved for the next session; after any significant milestone or
-  decision; and whenever the user says "save state." Key capabilities: INLINE
-  mode (default) — the caller synthesizes a small payload from what it already
-  knows and one script does every mechanical write, zero subagent spawn;
-  SUBAGENT mode (/save-state all, or abrupt-shutdown recovery) — spawns a
-  save-state-runner per project to full-scan state the caller never saw.
+description: "Use on /save-state [slug|all], \"save state\", at session end, before switching projects, or after a milestone. Freezes the session: writes session-end files and resets the turn counter. INLINE by default (one script, no subagent); /save-state all or crash recovery spawns save-state-runner per project."
 ---
 
 # save-state
@@ -68,7 +57,7 @@ The script does ALL mechanical work: session log, heartbeat, next-session.md
 (incl. pending-inbound sweep), decisions append + auto-prune, next-action stub
 materialization (Step 3c), inter-spawn index, STATE.md, save-state-state.json
 reset, overseer brief, metric emits, graphify update + unified-graph session
-node, Pinecone upsert. All fire-and-forget parts are backgrounded by the
+node, Pinecone upsert (skipped unless `PINECONE_API_KEY` and `PINECONE_INDEX` are set). All fire-and-forget parts are backgrounded by the
 script itself — no caller-side follow-up steps.
 
 3. Relay the script's `save-state done!` line. Stop. No further narration.

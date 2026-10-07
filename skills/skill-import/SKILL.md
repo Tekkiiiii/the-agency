@@ -1,23 +1,6 @@
 ---
 name: skill-import
-description: >
-  Import skills from the skills library at ~/.claude/skills/ into a project's
-  CLAUDE.md files, automatically matching skills to the correct nested folders
-  (backend/, frontend/, database/, infra/, root). Invoke with /skill-import. When
-  to trigger: when the user says "import skills" or "apply skills to this project";
-  when onboarding a new project and all relevant library skills should be wired in;
-  when adding a new domain folder and existing skills should be applied there; and
-  when a project adopts a new stack (e.g., adds a frontend) and matching skills
-  should be provisioned. Key capabilities: auto-match of skills to project folders
-  based on stack detection (package.json, requirements.txt, etc.), manual named
-  import when the user specifies a skill by name, three-tier conflict detection
-  (duplicate/skip, contradiction/flag, additive/write), lesson file propagation
-  from ~/.claude/memory/lessons/ into the project's memory/ dir, obsidian-vault
-  logging for long-term auditability, and external URL import via Skill Seekers
-  install-agent. Always appends rather than overwriting existing CLAUDE.md content.
-  Ideal for project setup, team onboarding, and keeping multiple projects aligned
-  with evolving skill library standards. Also useful for gap analysis (which
-  skills exist in the library but aren't applied here yet).
+description: "Use on /skill-import, \"import skills\", \"apply skills to this project\", or when onboarding a project or adding a stack. Wires skills from ~/.claude/skills/ into the project's nested CLAUDE.md files by stack detection or by name, with duplicate/contradiction/additive checks; appends only."
 ---
 
 # Skill Import — Import Library Skills into Project CLAUDE.md Files

@@ -1,19 +1,6 @@
 ---
 name: copywriting
-description: >
-  Write compelling, conversion-focused copy for any medium. Trigger when: writing marketing copy,
-  landing page text, email campaigns, ad copy, product descriptions, social media posts, headlines,
-  taglines, or sales pages; improving existing copy for clarity, persuasiveness, or brand voice;
-  increasing conversion rates; developing or auditing brand voice; or any persuasive writing task.
-  Before writing, clarify: audience (who, fears, wants), goal (click, purchase, sign up, share),
-  channel (email, landing page, ad, social), tone (formal, casual, urgent, inspirational), and
-  the one key message. Key capabilities: AIDA, PAS, and Before/After/Bridge frameworks; brand
-  voice capture system (3 words the brand IS, 3 words it is NOT, who speaks, what they never say);
-  headline writing rules (benefit-led, numbers, questions, urgency without fake scarcity); email
-  copy structure (subject → preview → opening → body → single CTA); copy audit checklist (5-second
-  benefit test, one-person test, single CTA check, "so what?" on every claim). Ideal for:
-  marketers, founders, and content creators who need persuasive text that actually converts.
-  Also for: brand voice development and documentation; editing existing copy for clarity and punch.
+description: "Use when writing or improving persuasive copy: marketing copy, landing pages, email campaigns, ad copy, headlines, taglines, product descriptions, sales pages, brand voice. AIDA/PAS/BAB frameworks, voice capture, copy audit checklist. Clarifies audience, goal, channel, tone and key message first."
 ---
 
 # Copywriting Skill
@@ -100,4 +87,4 @@ Before finalizing any piece of copy, verify:
 
 ## Vietnamese Copywriting
 
-When writing copy for Vietnamese audiences, load the relevant reference files from `skills/vietnamese-language/` via its SKILL.md routing table. Key resources: `advertising-copywriting.md` (cultural values framework, indirect communication norm, regulatory constraints), `gen-z-slang.md` (if targeting under-25), platform-specific files for channel-appropriate register. Also load `content-creator/languages/vi.md` for Vietnamese power words, hooks, and CTAs.
+When writing copy for Vietnamese audiences, `skills/vietnamese-language/` is an on-demand factual reference only (regulatory constraints, register, platform facts, dialect vocabulary), not a voice source. Voice comes from the brand's own exemplars. Do not copy phrasing from reference files; `content-creator/languages/vi.md` keeps only the "Tránh dùng" AI-tell list.

@@ -1,22 +1,6 @@
 ---
 name: self-healing
-description: >
-  Automatically diagnose and fix broken workflows, failing scripts, errors, and bugs
-  without giving up. Trigger when a script fails, a workflow breaks, there's an error
-  message, code isn't working as expected, or the user says "it's broken", "this isn't
-  working", "I'm getting an error", "fix this", or pastes a stack trace. Also trigger
-  proactively when Claude encounters an error mid-task. When to trigger: any time a
-  bash command exits non-zero; when a build step fails (npm install, pip, cargo, etc.);
-  when a runtime error appears in logs or the terminal; when the user reports unexpected
-  behavior ("the button doesn't work", "it returns empty"); and proactively whenever an
-  internal error occurs during task execution. Key capabilities: a structured diagnostic
-  loop (error → triage → attempt 1 → attempt 2 → escalate if unresolved), categorized
-  fix strategies for dep/import errors, permission/path errors, type/runtime errors,
-  network/API errors, and logic/output errors. Never applies patches without root-cause
-  investigation. Escalates to superpowers-systematic-debugging after two failed attempts.
-  Ideal for any developer who encounters errors mid-session and wants resolution without
-  manual debugging. Also useful for automated CI pipelines, pre-deploy smoke tests, and
-  as a first-response layer before filing a bug report.
+description: "Use when a script, build or command fails, a stack trace appears, or the user says \"it's broken\", \"this isn't working\", \"I'm getting an error\", \"fix this\". Runs a root-cause loop (triage, two attempts, then escalates to superpowers-systematic-debugging); never patches without investigation."
 ---
 
 # Self-Healing Workflow Skill

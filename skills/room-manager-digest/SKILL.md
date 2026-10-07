@@ -1,21 +1,6 @@
 ---
 name: room-manager-digest
-description: >
-  Generate 12-hour activity digests for all department heads. Reads rolling.md feeds
-  from each dept room, summarizes team activity from the last 12h, and sends a concise
-  digest via SendMessage to each dept head. Run standalone every 12h or alongside the
-  main RoomManager cycle. Idempotent — only sends when there are new entries. When to
-  trigger: on a 12h cron schedule as a standalone job; merged into the main RoomManager
-  cycle on its 12h digest check; manually via /room-manager-digest when a dept head
-  requests a fresh report; after a long gap where several RoomManager cycles may have
-  been missed; and when agency-wide visibility into cross-PD activity is needed for a
-  planning meeting. Key capabilities: per-dept one-paragraph-per-person summaries that
-  distill repeated rolling.md bullets into cohesive prose, team status counts (active/
-  blocked/idle), strict 12h window filtering (no stale entries), and idempotent sends
-  that skip depts with zero new activity. Ideal for VPs, department heads, and PM
-  leads who want a concise team activity snapshot without logging into each room.
-  Also useful for async standup replacements and for feeding into external dashboards
-  or AI summarization pipelines.
+description: "Use on /room-manager-digest, a 12h cron, or when a dept head wants a fresh report. Reads each dept room's rolling.md, summarizes the last 12h per person with status counts, and sends one digest per dept head via SendMessage. Idempotent: skips depts with no new entries."
 ---
 
 # RoomManager Digest — 12-Hour Dept Head Report

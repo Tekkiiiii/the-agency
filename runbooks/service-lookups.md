@@ -1,6 +1,6 @@
 # Service Lookups — Curator / Delegator / codebase-search (full protocol)
 
-Loaded on demand from CLAUDE.md §Agent Dispatch. Revised 2026-07-02: lookups
+Loaded on demand from the `/agent-dispatch` skill (moved out of CLAUDE.md 2026-10-07). Revised 2026-07-02: lookups
 replaced default agent spawns (a spawn re-pays ~30-40k tokens of fixed context
 to answer what a grep or MCP query returns for 1-3k; weekly-limit discipline).
 
@@ -37,20 +37,23 @@ metric doing its job (nobody emitted, including the parent AI, during multi
 verbatim-lookup sessions this same week). Do not auto-emit from a hook that
 fires regardless of whether a lookup happened — that fabricates compliance
 data. The fix is friction removal: the template is now inlined here and in
-CLAUDE.md itself so there is no lookup hop between deciding and emitting.
+the `/agent-dispatch` skill so there is no lookup hop between deciding and emitting.
 
 ## Routing (was: Delegator-first)
 
 **Default — file lookups, no spawn:**
 1. `~/.claude/memory/delegator-cache.md` — exact task-pattern match (exact
    string only). Hit → use route, emit `delegator_cache_hit`.
-2. `~/.claude/memory/agency-dispatch.md` — Step 0 protocol table, then Step 1
+2. `{agency-root}/core/memory/agency-dispatch.md` — Step 0 protocol table, then Step 1
    domain table. Unambiguous single-domain row → use it.
+3. No row fits → pick 1-3 skills from `{agency-root}/skills/INDEX.md` yourself
+   (role -> skills table: `{agency-root}/agents-archive/ROLE-MAP.md`) and spawn
+   `general-purpose` with a `Skills: /x, /y` line in the prompt.
 
 **Spawn the Delegator agent ONLY when** the task is ambiguous, cross-domain,
-or matches no dispatch row. On answer: append the route to delegator-cache.md,
-emit `delegator_spawn`. Delegator may return `GAP` → follow CLAUDE.md
-Create-on-gap.
+or matches no dispatch row and no skill fits. On answer: append the route to
+delegator-cache.md, emit `delegator_spawn`. Delegator may return `GAP` → follow
+CLAUDE.md Create-on-gap.
 
 **Pre-approved spawns that never need routing:** pd-coordinator (via
 /pd-resume, /pd-spawn), coord, mini-coord, task-executor, curator,
@@ -65,9 +68,9 @@ directory answers it.
 
 ## Violation metric
 
-`general-purpose`/`claude` outside allowed conditions → emit
-`generalist_ban_violation` BEFORE spawning, STOP, resolve a named agent
-(CLAUDE.md hard-ban + Create-on-gap). Template: metrics-emit-contracts.md.
+The generalist-ban metric was retired 2026-10-06 (no longer emitted). `general-purpose` +
+1-3 skills named in the prompt is the default spawn; ROLE-MAP.md
+(`{agency-root}/agents-archive/ROLE-MAP.md`) maps each archived specialist role to its skills.
 
 ## PD/Coord Spawn Templates (moved from pd-coordinator.md / coord.md, 2026-07-07)
 

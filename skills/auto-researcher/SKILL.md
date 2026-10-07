@@ -1,7 +1,6 @@
 ---
 name: auto-researcher
-description: >
-  Proactively researches any topic by searching, synthesizing, and presenting well-sourced information — without waiting to be asked. Triggered when the user asks about current events, wants in-depth learning, says "what's the latest on...", "research X for me", "find out about...", "give me a briefing on...", or when the task would benefit from up-to-date external information that might be beyond Claude's training cutoff. Also triggers mid-task proactively when live data, prices, specs, or recent developments would meaningfully improve the answer. Output is structured: a key finding, 3-5 supporting evidence points with sources, any conflicting views, known limitations, and 2-3 further reading links. Source quality is tiered (peer-reviewed primary sources down to anonymous forums), and confidence levels are flagged inline for every major claim. Ideal for competitive research, technical deep-dives, market analysis, and any scenario where fresher information beats remembered knowledge. Also for: keeping a briefing current during a long session, fact-checking claims mid-conversation, and tracking how a topic evolves over time.
+description: "Use for proactive web research: \"research X for me\", \"what's the latest on...\", \"find out about...\", \"give me a briefing on...\", or when fresh data may exceed the training cutoff. Returns a key finding, sourced evidence, conflicting views, limits and confidence flags."
 ---
 
 # Auto Researcher Skill

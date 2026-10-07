@@ -3,7 +3,8 @@
 
 Uses `jsonschema` when importable; otherwise falls back to an explicit checker
 covering the parts of the schema that actually constrain this catalog.
-Only dependency is PyYAML. Exits 0 on success, 1 on validation failure.
+Only dependency is PyYAML (required; exits 2 with an install hint if missing).
+Exits 0 on success, 1 on validation failure, 2 on missing PyYAML.
 """
 
 import json
@@ -11,7 +12,12 @@ import os
 import re
 import sys
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    # PyYAML is a hard requirement: the catalog is YAML and there is no fallback parser.
+    print("PyYAML required: pip install pyyaml", file=sys.stderr)
+    sys.exit(2)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 YML = os.path.join(ROOT, "patterns", "humanizer.yml")

@@ -8,6 +8,40 @@ All notable changes to The Agency are documented here, grouped by release wave (
 
 ### Tiếng Việt
 
+**Đợt đồng bộ 2026-10-07 — đưa hệ thống live về repo (wave 1).** Số liệu đo lại từ filesystem tại thời điểm đồng bộ, trước đợt dọn (prune): 294 thư mục skill, 133 file agent có frontmatter `name` + `description`, 16 phòng ban còn agent. Hiển thị công khai ghi dạng làm tròn xuống: 290+ skill, 130+ agent.
+
+#### Added (đồng bộ 2026-10-07)
+- **Chuyển sang generalist + `agents-archive/` được deploy.** Từ 2026-10-06 các agent chuyên môn cấp thành viên (engineering, design, content, video, PM, specialized, ...) không còn là agent type đăng ký. Spawn `general-purpose` kèm 1-3 skill; file vai trò nằm ở `agents-archive/generalist-2026-10-06/<dept>/`, bảng ánh xạ vai trò → skill ở `agents-archive/ROLE-MAP.md`. Cả bốn đường cài (`install.sh`, `install.ps1`, `agency init`, `agency upgrade`) copy `agents-archive/` thành thư mục **cạnh** `agents/`, không bao giờ nằm trong — Claude Code đăng ký mọi `.md` dưới `agents/`, nên file vai trò đặt sai chỗ sẽ sống lại thành agent type. CI có bước kiểm tra vị trí này. `core/agents/task-planner.md` cũng được archive (vai trò chạy bằng `general-purpose` + `/superpowers-writing-plans`).
+- **Kênh ACK cho hành động cần quyền, và ACK/NACK bất đồng bộ.** Sự đồng ý cho một hành động bị chặn quyền là một **file** do main session ghi tại `{project}/memory/tasks/revisions/acks/{YYYY-MM-DD}-{task-id}.md`, có đủ trường bắt buộc và hạn dùng; chat không bao giờ là sự đồng ý (`runbooks/escalation-protocol.md`). Báo cáo của agent đến lúc agent dừng; không bị spawn lại = ACK; NACK = spawn agent tiếp nối mới kèm danh sách cần sửa.
+- **PD không bao giờ tự implement.** PD làm việc tri thức (phân tích, nghiên cứu, lập kế hoạch) và QA các Exec mà nó spawn; mọi implementation đi qua Coord hoặc Exec.
+- **Giao thức messaging/checkpoint v1.1.0** (`runbooks/checkpoint-handshake-protocol.md`): bên spawn trực tiếp sở hữu hợp đồng checkpoint, kể cả PD khi bỏ qua tầng Coord; bên spawn không thể poll thì phải spawn Exec đó ở TIER_A. Thêm hồ sơ sự cố.
+- **Re-tier model + `effort`.** 37 def orchestrator mang thêm khóa `effort:` (35 `high`, 2 `medium`) và `model:` được xếp lại theo vai trò (31 def lên `opus[1m]`, 3 lên `sonnet[1m]`, 2 xuống `haiku`); `modelTier:` vẫn chỉ là tài liệu.
+- **Template `CLAUDE.md` gọn lại ("startup diet").** Từ ~250 dòng xuống ~40: giữ nguyên tắc luôn áp dụng, còn quy trình chuyển sang nạp theo yêu cầu qua 5 skill mới `agent-dispatch`, `pd-routing`, `inbox-tasks`, `context-pressure`, `memory-crosslink`.
+- **Skill `simple-english`** (tiếng Anh giản dị theo tinh thần ASD-STE100). **Skill `hw`** là thư mục stub thật, chỉ gọi `humanizer-writing` — **thay thế** ghi chú 2026-09-04 rằng `hw` "được ghi nhận nhưng không ship".
+- **`hooks/lib/claude_pricing.py`** (bảng giá một nguồn cho `cost-tracker.sh`: khử trùng theo `message.id`, tính giá theo từng model) và **`hooks/lib/reconcile-stale-spawns.sh`** (do `spawn-completion.sh` gọi; đóng các `spawn_start` mồ côi bằng `spawn_end` outcome `ABANDONED`, chỉ nối thêm, có throttle).
+- **`scripts/mem-dupe-scan.py`**; hai runbook mới **`runbooks/goal-wakeup-contract.md`** (hợp đồng PD ↔ parent về `GOAL_CHECK`; stub trong `pd-coordinator` giờ trỏ tới đây) và **`runbooks/qa-task-contract.md`**.
+
+#### Changed (đồng bộ 2026-10-07)
+- **`spawn-gate.sh` theo học thuyết generalist.** `general-purpose` + type cấu trúc đi qua; type lạ (gõ sai hoặc tên specialist đã archive) nhận một `ask` trỏ về `ROLE-MAP.md`. Không còn phát metric `generalist_ban_violation`.
+- `startup-sync.sh` chỉ fast-forward khi nhánh là `main` và cây sạch (không còn stash); `cost-tracker.sh` đọc bảng giá từ `claude_pricing.py`.
+- **Skill tiếng Việt thành tài liệu tham chiếu dữ kiện, nạp theo yêu cầu** (`vietnamese-language`): không còn là nguồn giọng văn, hook hay template.
+- `docs/HOOKS.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPER.md`, `docs/SETUP.md`, `docs/ROOMS.md`, `agents/specialized/specialized-coord.md`, `specialized-lead.md`, `core/ORG.md` sửa theo các thay đổi trên (Delegator trả `general-purpose` + skill cho vai trò đã archive; ACK/NACK bất đồng bộ). README: số liệu 290+ skill / 130+ agent, bỏ chữ "specialist" ở chỗ nay không còn đúng.
+
+#### Removed (đồng bộ 2026-10-07)
+- Các agent chuyên môn cấp thành viên khỏi `agents/` (xem mục archive ở trên) và `core/agents/task-planner.md`.
+- `skills/pinecone_upsert.py` lạc chỗ (xem Security).
+
+#### Fixed (đồng bộ 2026-10-07)
+- `core/ORG.md` trỏ tới `agents/specialized/infra/room-manager.md` đã archive: đổi sang `/room-manager` skill và đường dẫn trong `agents-archive/`.
+- Các tham chiếu `task-planner` trong `specialized-coord.md` / `specialized-lead.md` nay theo học thuyết generalist.
+
+#### Security (đồng bộ 2026-10-07)
+- **Đã xóa một credential API bên thứ ba bị hardcode** trong `skills/pinecone_upsert.py` (file lạc chỗ). Script upsert nay chỉ đọc `PINECONE_API_KEY` / `PINECONE_INDEX` từ biến môi trường và nằm ở `skills/save-state/pinecone_upsert.py`, đúng chỗ `scripts/save-state.py` đã trông đợi. Credential cũ vẫn nằm trong lịch sử git: cần **thu hồi (rotate)** ở phía nhà cung cấp, không chỉ xóa file.
+
+#### Cố ý KHÔNG publish ở đợt này
+- **Skill router / granularity gate (Jev).** Nó cần một API key bên thứ ba và dữ liệu routing riêng của operator; không có cách ship an toàn cho người dùng khác. Repo giữ cách routing cũ: bảng dispatch, Delegator, chọn 1-3 skill từ `skills/INDEX.md`.
+- **Chuyển hook sang `mods/`.** Mods cần một đường cài plugin mà bốn installer chưa có. Repo tiếp tục ship các hook shell (`artifact-verify.sh`, `loop-detector.sh`, `spawn-completion.sh`, `spawn-logger.sh`, `lib/context-pct-publish.sh`).
+
 #### Added
 - **`core/memory/README.md` — hợp đồng hai thư mục memory, viết ra lần đầu.** `core/memory/` chứa template và bảng hệ thống được ship sẵn; `{agency-root}/memory/` là thư mục runtime của operator, **được installer tạo ra rỗng và không bao giờ được đổ nội dung vào**. Chính khoảng trống chưa ai ghi lại này là gốc rễ của cả một lớp tham chiếu chết: tài liệu trỏ tới `{agency-root}/memory/<file>` cho những file chỉ tồn tại dưới `core/memory/`, nên chúng resolve vào hư vô trên mọi bản cài thật.
 - **`core/memory/medium-term.md`** — stub registry dự án được ship (bảng Active Projects rỗng kèm header đúng định dạng mà `project-scaffolder` mong đợi). 8 tham chiếu trong `wrap`, `codebase-search` và `project-scaffolder` phụ thuộc vào file này, nhưng nó chưa từng tồn tại ở bất cứ đâu trong repo.
@@ -82,6 +116,40 @@ All notable changes to The Agency are documented here, grouped by release wave (
 - **1M context (`[1m]`) áp dụng CHỌN LỌC, không áp dụng toàn fleet.** Hậu tố `[1m]` chỉ gắn cho các role điều phối — PD, Coord, Mini-Coord, Dept-Coord (21 file) — vì đây là những role duy nhất có context phình theo *khối lượng công việc* chứ không theo độ dài brief của chính nó. Toàn bộ agent còn lại giữ nguyên. Quyết định này đã chốt, không mở lại. Chính sách đầy đủ ở `core/ORG.md` § Model tiering. Kèm theo đó: `modelTier:` chỉ là tag tài liệu và hoàn toàn trơ khi spawn — `model:` mới là key Claude Code thực sự đọc, và là nơi `[1m]` được gắn vào.
 
 ### English
+
+**Sync wave 2026-10-07 — bring the live system into the repo (wave 1).** Counts were re-taken from the filesystem at sync time, before the prune wave: 294 skill directories, 133 agent files with `name` + `description` frontmatter, 16 departments that still hold agents. Public surfaces use rounded-down figures: 290+ skills, 130+ agents.
+
+#### Added (sync 2026-10-07)
+- **Generalist switch, with `agents-archive/` deployed.** Since 2026-10-06 the member-level specialist agents (engineering, design, content, video, PM, specialized, ...) are no longer registered agent types. Spawn `general-purpose` plus 1-3 skills. Role files live in `agents-archive/generalist-2026-10-06/<dept>/`, and `agents-archive/ROLE-MAP.md` maps each role to its skills. All four installers (`install.sh`, `install.ps1`, `agency init`, `agency upgrade`) copy `agents-archive/` **beside** `agents/`, never inside it: Claude Code registers every `.md` under `agents/`, so a misplaced role file would come back as an agent type. CI asserts the placement. `core/agents/task-planner.md` is archived too (the role runs as `general-purpose` + `/superpowers-writing-plans`).
+- **ACK-channel consent for permission-gated actions, and async ACK/NACK.** Consent for a permission-gated action is a **file** the main session writes at `{project}/memory/tasks/revisions/acks/{YYYY-MM-DD}-{task-id}.md`, with all mandatory fields and an expiry. Chat is never consent (`runbooks/escalation-protocol.md`). An agent's report lands when the agent stops. Not re-spawned means ACK. NACK means a fresh continuation agent with the fix list.
+- **PD never implements.** The PD does knowledge work (analysis, research, planning) and QA of the Execs it spawns. All implementation goes to a Coord or an Exec.
+- **Messaging/checkpoint protocol v1.1.0** (`runbooks/checkpoint-handshake-protocol.md`). The direct spawner owns the checkpoint contract, including a PD that skips the Coord layer. A spawner that cannot poll must spawn those Execs as TIER_A. Adds a failure record.
+- **Model re-tier and `effort`.** 37 orchestrator defs gain an `effort:` key (35 `high`, 2 `medium`), and `model:` is re-tiered by role (31 defs move to `opus[1m]`, 3 to `sonnet[1m]`, 2 to `haiku`). `modelTier:` stays documentation only.
+- **`CLAUDE.md` template startup diet.** From about 250 lines to about 40. Always-on principles stay. Procedures load on demand through 5 new skills: `agent-dispatch`, `pd-routing`, `inbox-tasks`, `context-pressure`, `memory-crosslink`.
+- **Skill `simple-english`** (plain English in the spirit of ASD-STE100). **Skill `hw`** is now a real stub directory that only calls `humanizer-writing`. This **supersedes** the 2026-09-04 note that `hw` was "documented, not shipped".
+- **`hooks/lib/claude_pricing.py`** (one rate table for `cost-tracker.sh`; de-duplicates by `message.id`; prices per model) and **`hooks/lib/reconcile-stale-spawns.sh`** (called by `spawn-completion.sh`; closes orphan `spawn_start` records with an `ABANDONED` `spawn_end`; append-only and throttled).
+- **`scripts/mem-dupe-scan.py`**, and two new runbooks: **`runbooks/goal-wakeup-contract.md`** (the PD-to-parent `GOAL_CHECK` contract; the stub in `pd-coordinator` now points to it) and **`runbooks/qa-task-contract.md`**.
+
+#### Changed (sync 2026-10-07)
+- **`spawn-gate.sh` follows the generalist doctrine.** `general-purpose` and structural types pass. An unknown type (a typo or an archived specialist name) gets an `ask` that points to `ROLE-MAP.md`. The `generalist_ban_violation` metric is no longer emitted.
+- `startup-sync.sh` fast-forwards only on a clean `main` and never stashes. `cost-tracker.sh` reads rates from `claude_pricing.py`.
+- **VN skills turned into an on-demand factual reference** (`vietnamese-language`). It is no longer a source of voice, hooks, or templates.
+- `docs/HOOKS.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPER.md`, `docs/SETUP.md`, `docs/ROOMS.md`, `agents/specialized/specialized-coord.md`, `specialized-lead.md`, and `core/ORG.md` are corrected to match (the Delegator returns `general-purpose` + skills for archived roles; ACK/NACK is async). README: counts are 290+ skills / 130+ agents, and "specialist" is dropped where it is no longer true.
+
+#### Removed (sync 2026-10-07)
+- The member-level specialist agents from `agents/` (see the archive entry above) and `core/agents/task-planner.md`.
+- The stray `skills/pinecone_upsert.py` (see Security).
+
+#### Fixed (sync 2026-10-07)
+- `core/ORG.md` pointed at the archived `agents/specialized/infra/room-manager.md`. It now names the `/room-manager` skill and the `agents-archive/` path.
+- `task-planner` routing in `specialized-coord.md` and `specialized-lead.md` now follows the generalist doctrine.
+
+#### Security (sync 2026-10-07)
+- **A hardcoded third-party API credential was removed** from the stray `skills/pinecone_upsert.py`. The upsert script now reads `PINECONE_API_KEY` and `PINECONE_INDEX` from the environment only. It lives at `skills/save-state/pinecone_upsert.py`, where `scripts/save-state.py` already expected it. The old credential remains in git history, so **rotate it at the provider**; deleting the file is not enough.
+
+#### Deliberately NOT published in this wave
+- **The skill router / granularity gate (Jev).** It needs a third-party API key and operator-specific routing data, so there is no safe way to ship it to other users. The repo keeps its current routing: the dispatch table, the Delegator, and picking 1-3 skills from `skills/INDEX.md`.
+- **The hooks-to-`mods/` migration.** Mods need a plugin install path that the installers do not have. The repo keeps shipping the shell hooks (`artifact-verify.sh`, `loop-detector.sh`, `spawn-completion.sh`, `spawn-logger.sh`, `lib/context-pct-publish.sh`).
 
 #### Added
 - **`core/memory/README.md` — the two-directory memory contract, written down for the first time.** `core/memory/` holds shipped templates and system tables; `{agency-root}/memory/` is the operator's runtime dir, **created empty by the installer and never populated**. That undocumented gap was the root cause of an entire class of dead references: docs pointed at `{agency-root}/memory/<file>` for files that only ever ship under `core/memory/`, so they resolved to nothing on every real install.

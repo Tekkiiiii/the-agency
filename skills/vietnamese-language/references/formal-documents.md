@@ -21,9 +21,8 @@
 
 ### Formal Email
 - Opening: "Kính gửi [Danh xưng + Họ tên đầy đủ hoặc Chức danh],"
-- Reference: "Tiếp theo cuộc trao đổi ngày [date]..." or "Về vấn đề [X]..."
 - Body: 3-paragraph max, direct, no small talk
-- Action request: "Kính mong [Anh/Chị] [hành động] trước [deadline]."
+Voice comes from exemplars (brand/voice-exemplars-vi, pending). Do not copy phrasing from this file.
 - Closing: "Trân trọng," or "Kính trân trọng,"
 - Signature: Full name, title, company, phone (Zalo included for senior contacts)
 

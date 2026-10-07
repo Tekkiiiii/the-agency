@@ -1,13 +1,6 @@
 ---
 name: humanizer-writing
-description: |
-  Rewrite AI-sounding text so it reads naturally without changing what it says.
-  Use when editing or reviewing prose for inflated claims,
-  sales language, vague sources, repetitive structure, stock AI words, passive
-  voice, filler, or chatbot artifacts. Based on Wikipedia's "Signs of AI writing."
-  Use at writing time (before and while drafting) as well as at edit time.
-  Triggers: "hw", "humanizer-writing", "write this so it doesn't sound like AI",
-  "spot AI writing", "AI tells", "de-AI this draft".
+description: "Use when writing or editing prose so it does not sound like AI: \"hw\", \"humanizer-writing\", \"de-AI this draft\", \"spot AI tells\", \"doesn't sound like AI\". Fixes inflated claims, vague sources, stock AI words, filler, passive voice, chatbot artifacts. Use before drafting and at edit time."
 license: MIT
 metadata:
   version: "1.0.0"

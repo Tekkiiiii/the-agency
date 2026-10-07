@@ -4,8 +4,9 @@ description: Security review critic. Finds injection vectors, auth failures, sec
 department: critiques
 role: specialist
 reports_to: critiques-lead
-modelTier: sonnet
-model: sonnet
+modelTier: opus
+model: opus[1m]
+effort: high
 skills:
   - security-critique
   - security

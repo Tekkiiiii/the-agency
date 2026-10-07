@@ -1,12 +1,6 @@
 ---
 name: frontend
-description: |
-  Build high-quality, production-grade frontend interfaces, components, and web UIs — from landing pages and dashboards to React components and full design systems. Implements a design-first workflow: visual hierarchy and typography before code, reusable component architecture, performance optimization, and WCAG 2.1 AA accessibility baseline.
-  Purpose: Delivers frontend work that looks polished, is maintainable, and scales — not just functional but production-ready.
-  When to trigger: (1) "Build a website," "create a landing page," "make a dashboard," or "build a UI," (2) "Write a React component" or "add a UI feature to our app," (3) "Improve the look and feel" or "design polish" on an existing interface, (4) "Set up a design system" or "add consistent styling," (5) "Make it responsive" or "mobile-friendly," (6) "Fix accessibility issues" — low contrast, missing ARIA labels, keyboard navigation, (7) "Add animations" or "make it feel smooth."
-  Key capabilities: Design system checklist (spacing, color, typography, interactive states), component patterns for layout, forms, and empty/loading states, React+TypeScript best practices, lazy loading, bundle size optimization, mobile-first responsive breakpoints, and semantic HTML with ARIA.
-  Ideal user/context: Frontend engineers, designers who code, or anyone who wants UI work done right — not just assembled.
-  Also for: Marketing sites needing conversion-focused layouts, design system audits, accessibility remediation, and animations for product onboarding flows.
+description: "Use when building frontend UIs: \"build a landing page\", \"make a dashboard\", \"write a React component\", \"make it responsive\", \"fix accessibility\", \"add animations\". Design-first, production-grade, WCAG 2.1 AA baseline. Not for restyling or critique passes (use /impeccable)."
 ---
 
 ## Relationship with `ui-ux-pro-max`

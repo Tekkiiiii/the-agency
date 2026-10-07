@@ -18,11 +18,11 @@ cp engineering/*.md ~/.github/agents/
 In any GitHub Copilot session, reference an agent by name:
 
 ```
-Activate Frontend Developer and help me build a React component.
+Activate Task Executor and help me build a React component.
 ```
 
 ```
-Use the Reality Checker agent to verify this feature is production-ready.
+Use the Testing Lead agent to verify this feature is production-ready.
 ```
 
 ## Agent Directory

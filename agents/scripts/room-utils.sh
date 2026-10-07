@@ -424,7 +424,7 @@ cmd_set_topic() {
 
 # ─── Escalation ─────────────────────────────────────────────────────────────
 
-# ESCALATE: tier body → written to messages.mdl, flagged for RoomManager → council-chair
+# ESCALATE: tier body → written to messages.mdl, flagged for the /room-manager skill → council-chair
 cmd_escalate() {
   local room="$1"; shift
   local sender="$1"; shift
@@ -453,14 +453,14 @@ ${escaped}
 EOF
   } 200>"$lock"
 
-  # Mark room as having a pending escalation (for RoomManager polling)
+  # Mark room as having a pending escalation (for /room-manager polling)
   local meta="${ROOMS_DIR}/${room}/.escalation"
   {
     flock -e -w 5 "$meta.lock" || { echo "WARN: Could not lock escalation file." >&2; exit 1; }
     echo "${tier}|${TIMESTAMP}|${sender}|${summary}" >> "$meta"
   } 200>"${meta}.lock"
 
-  echo "OK: Escalation posted to '$room' (tier-${tier}). RoomManager will notify council-chair."
+  echo "OK: Escalation posted to '$room' (tier-${tier}). /room-manager will notify council-chair."
 }
 
 # ─── NEXUS Handoffs ─────────────────────────────────────────────────────────

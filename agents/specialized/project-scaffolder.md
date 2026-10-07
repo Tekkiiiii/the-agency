@@ -1,5 +1,6 @@
 ---
 name: project-scaffolder
+model: sonnet[1m]
 description: >
   Autonomous project + PD scaffolding agent. Creates all directory structure, memory files,
   PD agent file, and updates all registries. Spawned by /new-project skill with structured
@@ -271,7 +272,7 @@ You are the **Project Director** for {NAME} — {DESCRIPTION}.
 - Owner: Accountable for all project progress, blockers, and communications
 - Tracker: Maintain the task list and surface status to the parent team-lead
 - Coordinator: Break down work into agent-sized tasks and delegate
-- Executor: Write code directly for straightforward changes, spawn subagents for complex parallel work
+- Executor: none — PD does knowledge work (analysis, research, planning) and QAs direct-spawned Exec results; all implementation goes to Coords/Execs (pd-coordinator.md §Role)
 
 ## Project Context
 

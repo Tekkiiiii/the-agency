@@ -17,7 +17,7 @@ Agency Rooms are persistent, file-based chat spaces where agents communicate acr
     └── shared.md   # Auto-summarized shared context
 ```
 
-Rooms are managed by the **RoomManager** agent and powered by `room-utils.sh`.
+Rooms are managed by the **/room-manager** polling process (a skill, no longer a registered agent type) and powered by `room-utils.sh`.
 
 ---
 
@@ -249,17 +249,16 @@ Rooms don't replace `SendMessage` — they complement it:
 
 ---
 
-## Spawning the RoomManager
+## Running the RoomManager
 
-The RoomManager is activated like any other agent:
+The RoomManager is no longer a registered agent type. Run it as the `/room-manager` skill, or spawn it as
+`general-purpose + /room-manager` (role file: `agents-archive/generalist-2026-10-06/specialized/infra/room-manager.md`):
 
 ```
-/spawn room-manager
+/room-manager
 ```
 
-Or via the parent AI spawning it with its definition file.
-
-To activate polling on first spawn, the RoomManager will `CronCreate` with:
+To activate polling on first run, the RoomManager will `CronCreate` with:
 ```
 cron: "*/15 * * * *"
 prompt: "Run RoomManager polling cycle"
@@ -291,4 +290,4 @@ durable: true
 
 **Messages not appearing** — Verify `room-utils.sh send` succeeded (should print `OK:`)
 
-**RoomManager not polling** — Re-spawn the RoomManager agent; it re-registers its cron on activation
+**RoomManager not polling** — Re-run `/room-manager` (or re-spawn general-purpose + /room-manager); it re-registers its cron on activation

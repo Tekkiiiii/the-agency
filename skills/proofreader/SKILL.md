@@ -1,7 +1,7 @@
 ---
 name: proofreader
 version: 2.0.0
-description: "Proofread any text in English or Vietnamese (or mixed) - check for typos, grammar errors, tone mark errors, clarity issues, and logical flow problems, while understanding the content's context, tone, and intended audience. Calibrates standards to document type so a CV bullet's deliberate parallelism is preserved while a blog post is checked for flow. Use whenever the user shares writing and asks to proofread, check, review writing, fix errors, or pastes a block of text expecting feedback. Even if the user only asks about one aspect, always run the full context-aware review."
+description: "Use when the user shares writing and asks to proofread, check, review writing or fix errors, in English, Vietnamese or mixed. Checks typos, grammar, tone marks, clarity and flow, calibrated to document type (a CV's parallelism is kept, a blog's flow is checked). Always runs the full review."
 ---
 
 # Proofreader Skill

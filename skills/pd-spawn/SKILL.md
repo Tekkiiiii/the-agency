@@ -203,10 +203,14 @@ prompt: |
 ```
 
 Spawn config:
-- `subagent_type`: general-purpose
-- `model`: opus
+- `subagent_type`: the target project's own PD definition, `{target-slug}-pd` (or the
+  medium-term "PD" column's value), when a definition with that `name:` exists under
+  `~/.claude/agents/`; `pd-coordinator` only as the fallback when none exists. Resolve it
+  with the same snippet as pd-resume Step 3.
+- `model`: omit. The binding value is the `model:` in the resolved definition's frontmatter
+  (each PD carries `opus[1m]` there).
 - `run_in_background`: `false` if `showcase_on`, else `true`
-- `team_name`: {target-slug}
+- No `team_name`: the agent-teams flag is removed.
 
 ## Step 5b — Filesystem Completion Protocol (MANDATORY)
 

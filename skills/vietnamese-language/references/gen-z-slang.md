@@ -19,8 +19,7 @@ Vietnamese numerals replace syllables with similar sounds:
 ### Pattern 2: English Loanword Integration
 - Single-syllable English words: used as-is ("vibe", "flex", "ship", "chill")
 - Multi-syllable: often abbreviated ("aesthetic" → sometimes just "aes")
-- Verb integration: English verb + rồi/nha/đi as particles ("flex rồi", "chill đi")
-- Adjective integration: English adj + lắm/quá ("cute lắm", "chill quá")
+- Verb integration: English verb + particles (rồi/nha/đi); adjective integration: English adj + lắm/quá
 - Fully integrated (use without marking): vibe, flex, chill, slay, trend, cute, okay, review, deal, sale
 - Still marked as foreign (use with awareness): aesthetic, glow up, era, main character
 
@@ -68,7 +67,7 @@ Vietnamese text-speak:
 | sít rịt | rare/exceptional | Semantic shift (2025) | From Táo Quân sketch |
 | xu cà na | unlucky | Semantic shift (2025) | |
 | tẻn tẻn | shy/bashful | Onomatopoeic | |
-| era | personal phase/period | English loan | "Mình đang trong era [X]" |
+| era | personal phase/period | English loan | |
 | đu trend | follow a trend | Mixed loan | |
 | main character | protagonist energy | English loan | |
 
@@ -77,17 +76,10 @@ Vietnamese text-speak:
 - **Evergreen**: 3+ years of use, embedded in general VN internet language. Safe for brands.
 - **Trending**: 6–18 months peak, ascending or plateauing. Use if brand targets youth.
 - **Expiring**: past peak. When a term appears in mainstream media headlines, government communications, or TV show titles — it has left Gen Z.
-- Rule: brands using Expiring-tier terms = "đã thua" (already lost)
 
 ## Platform-Specific Slang Distribution
 
-| Platform | Slang tier | Notes |
-|---|---|---|
-| TikTok | Most cutting-edge | Newest terms debut here |
-| Instagram VN | 2–4 weeks behind TikTok | More aesthetic-adjacent |
-| Facebook VN | 1–2 years behind TikTok | Evergreen tier only |
-| Zalo | Most conservative | Avoid trending tier |
-| LinkedIn VN | No Gen Z slang | N/A |
+- LinkedIn VN: professional register, slang not conventional
 
 ## Code-Switching Norms
 
@@ -95,6 +87,5 @@ Vietnamese text-speak:
 - English nouns: common; English verbs: less common but growing
 - Heavy code-switching = very informal register
 - All-Vietnamese = either formal or self-consciously "thuần Việt"
-- Brand voice: match code-switching level of audience segment
 
 See also: references/viral-content.md (slang lifecycle), references/regional-dialects.md (regional slang variation)

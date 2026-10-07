@@ -64,9 +64,9 @@ The LLM will use MCP memory tools automatically when given these instructions:
 
 No code changes to the agent files. No API calls to write. The MCP tools handle everything.
 
-## Example: Enhancing the Backend Architect
+## Example: Enhancing a backend agent
 
-See [backend-architect-with-memory.md](backend-architect-with-memory.md) for a complete example — the standard Backend Architect agent with a Memory Integration section added.
+The archived backend-with-memory example (a standard backend agent with a Memory Integration section added) lives at `agents-archive/generalist-2026-10-06/integrations/mcp-memory/`; to use it, spawn general-purpose + /backend, /postgresql-schema and tell it to read that role file first.
 
 ## Example: Memory-Powered Workflow
 
@@ -76,4 +76,4 @@ See [../../examples/workflow-with-memory.md](../../examples/workflow-with-memory
 
 - **Tag consistently**: Use the agent name and project name as tags on every memory. This makes recall reliable.
 - **Let the LLM decide what's important**: The memory instructions are guidance, not rigid rules. The LLM will figure out when to remember and what to recall.
-- **Rollback is the killer feature**: When a Reality Checker fails a deliverable, the original agent can roll back to its last checkpoint instead of trying to manually undo changes.
+- **Rollback is the killer feature**: When a QA reviewer fails a deliverable, the original agent can roll back to its last checkpoint instead of trying to manually undo changes.

@@ -1,15 +1,6 @@
 ---
 name: wrap
-description: >
-  Freezes and wraps up inbox task work — reads ongoing tasks, cross-checks each
-  against the project registry to catch misfiled project-owned tasks, updates
-  status, writes per-task session logs, archives completed/abandoned tasks, and
-  relocates any confirmed-misfiled task to its owning project's memory/tasks/.
-  Scoped to `{agency-root}/tasks/inbox/` plus read-only access to
-  `{agency-root}/core/memory/medium-term.md` and write access limited to
-  `{project}/memory/tasks/` for relocation only. Trigger when the session ends
-  with inbox tasks in progress, when switching focus away from inbox work, or
-  when the user says "wrap up" or "wrap" for non-project tasks.
+description: "Use on \"wrap up\" or \"wrap\" when a session ends with inbox tasks in progress or focus shifts away from non-project tasks. Updates status, writes session logs, archives finished tasks under {agency-root}/tasks/inbox/, and relocates misfiled project-owned tasks to {project}/memory/tasks/. Not for PD work (/save-state)."
 ---
 
 # Wrap — Inbox Task Session Freeze

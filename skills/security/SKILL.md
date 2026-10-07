@@ -1,22 +1,6 @@
 ---
 name: security
-description: >
-  Apply security best practices to code, architecture, and workflows. Trigger whenever
-  the user mentions authentication, authorization, API keys, secrets, encryption,
-  vulnerabilities, OWASP, SQL injection, XSS, CSRF, data exposure, penetration testing,
-  security review, or asks "is this secure?". Also trigger proactively when reviewing
-  code that handles user data, passwords, tokens, or network requests. When to trigger:
-  during any code review pass when the diff touches auth, payments, user input, or API
-  endpoints; proactively whenever secrets, tokens, or credentials appear in code; when
-  the user explicitly asks for a security review or names a security concern; and when
-  setting up new services, databases, or network-exposed components. Key capabilities:
-  OWASP Top 10 coverage, secrets-in-code detection, JWT/session validation checks, BOLA/
-  IDOR vulnerability screening, parameterized query enforcement, CORS and HTTPS audit,
-  dependency CVE scanning via npm audit/pip-audit/snyk, and PII handling review.
-  Findings are always reported by severity (Critical/High/Medium/Low) with concrete
-  recommended fixes. Ideal for any developer who handles auth, payments, user data, or
-  external APIs. Also useful for pre-commit hooks, CI security gates, and compliance-
-  adjacent reviews (SOC2, GDPR) where attack surface must be documented.
+description: "Use when code or design touches auth, API keys, secrets, encryption, user input, payments or network requests, or on \"is this secure?\", OWASP, SQL injection, XSS, CSRF, security review. Checks OWASP Top 10, secrets, JWT/session, IDOR, CORS, dependency CVEs, PII; reports by severity with fixes."
 ---
 
 # Security Skill

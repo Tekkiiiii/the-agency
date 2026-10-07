@@ -56,10 +56,18 @@ resolve.
 | `hooks/` | ✓ | ✓ | ✓ | ✓ | incl. `hooks/lib/` (carries `resolve-root.sh`) and `hooks/fable/`; `+x` on `.sh` |
 | `runbooks/` | ✓ | ✓ | ✓ | ✓ | docs only |
 | `scripts/` | ✓ | ✓ | ✓ | ✓ | `+x` on `.sh`/`.py`/`.js`; `__pycache__` excluded |
+| `agents-archive/` | ✓ | ✓ | ✓ | ✓ | role files + `ROLE-MAP.md` read by spawners at runtime; plain copy to `{agency-root}/agents-archive/`, **never under `agents/`** so nothing registers as an agent type |
 | `design-system/` | ✓ | ✓ | ✓ | ✓ | brand-token SSOT; `+x` on `.js`; skills resolve `{agency-root}/design-system/brands/{name}.json` at generation time |
 
 Not deployed by design: `docs/`, `evals/`, `plans/`, `openspec/`, `memory/`,
-`agents-archive/`, `cli/` (the CLI is symlinked, not copied).
+`cli/` (the CLI is symlinked, not copied).
+
+`agents-archive/` is worth calling out too, for the opposite reason: it is
+deployed, but its position is the whole point. Claude Code registers every `.md`
+under `agents/` recursively, so an archived role file placed there would come
+back as a spawnable agent type. It sits beside `agents/` instead, and the CI
+step "Assert agents-archive deployed beside agents/, not under it" fails if it
+ever leaks inside.
 
 `design-system/` is worth calling out separately because its failure mode is the
 quietest on this list. A missing `hooks/` tree makes a hook not run; a missing
@@ -101,7 +109,7 @@ write to means adding it to `core/.preserve` in the same commit; see
 Change all four in the same commit:
 
 - `install.sh` — one `*_SRC` / `*_DEST` block per tree
-- `install.ps1` — the `foreach ($tree in @("hooks", "runbooks", "scripts"))` loop
+- `install.ps1` — the `foreach ($tree in @("hooks", "runbooks", "scripts", "design-system", "agents-archive"))` loop
 - `cli/commands/init.js` — `sync*` calls in steps 3–5
 - `cli/commands/upgrade.js` — the matching `sync*` calls in the post-pull section
 
@@ -149,6 +157,7 @@ node .github/scripts/check-core-preserve.js
 
 `verify-agency-refs.sh` scans the deployed `agents/`, `core/`, `skills/` and
 `runbooks/` trees for `{agency-root}/<tree>/…` and `~/.claude/<tree>/…` references
+(`<tree>` is one of `runbooks hooks scripts core design-system agents-archive`)
 and asserts each one resolves to a real file. `verify-agency-refs.ps1` is its
 Windows twin.
 

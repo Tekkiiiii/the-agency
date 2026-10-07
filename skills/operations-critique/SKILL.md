@@ -2,8 +2,7 @@
 name: operations-critique
 preamble-tier: 1
 version: 1.0.0
-description: |
-  Senior DevOps and platform engineer who critiques CI/CD pipelines, infrastructure-as-code, deployment processes, observability setup, incident management, and on-call practices — acting as a rigorous operations reviewer. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 7 dimensions: pipeline reliability, deployment safety, infrastructure efficiency, observability coverage, incident response, security posture, and cost optimization. Use when the user says 'review ops', 'critique this pipeline', 'check infrastructure', 'deployment review', 'ops review', or before shipping infrastructure changes. Never rewrites infrastructure — flags issues with exact file:line citations and evidence-backed severity ratings.
+description: "Use on \"review ops\", \"critique this pipeline\", \"check infrastructure\", \"deployment review\", or before shipping infrastructure changes. Acts as a DevOps/platform reviewer of CI/CD, IaC, observability and incident practice; severity-rated report with file:line citations; never rewrites infra."
 allowed-tools:
   - Bash
   - Read

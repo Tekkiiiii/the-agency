@@ -1,7 +1,6 @@
 # Educational Content — Vietnamese Conventions
 
 > For academic connectors in formal writing → references/formal-documents.md.
-> For EduTok viral format patterns → references/viral-content.md.
 
 ## French Colonial Pedagogical Legacy
 
@@ -20,25 +19,14 @@
 
 ## EduTok Register Conventions
 
-### The EduTok Paradox
-Must be formal enough to be credible, casual enough to retain attention. Sweet spot:
-- Use bạn/mình (not formal anh/chị) even for expert content
-- Structure deductively (tell what you'll teach, then teach it)
-- Use numbered steps ("Bước 1... Bước 2...") — audience expects this
-- Name sources casually: "Theo nghiên cứu của ĐH Quốc gia..."
-
-### What kills EduTok credibility in VN
-- Too much English jargon without translation
-- Admitting uncertainty without then resolving it
-- Personal opinion presented as fact without signal words
-- Copying Western "hot take" format — VN educational audiences want structured authority
+Voice comes from exemplars (brand/voice-exemplars-vi, pending). Do not copy phrasing from this file.
 
 ## Step-by-Step Formatting Preferences
 
-- Numbered (Bước 1, Bước 2) outperforms bullet points for instruction
+- Numbered steps are the expected format for instruction (bullets less conventional)
 - Each step: max 2 sentences for EduTok; unlimited for long-form
 - Sub-steps: a/b/c or dash (—)
-- Visual cue words: "Đầu tiên", "Tiếp theo", "Sau đó", "Cuối cùng"
+- Sequence cue words: đầu tiên, tiếp theo, sau đó, cuối cùng
 
 ## Deductive Structure Conventions
 
@@ -53,21 +41,17 @@ NOT: example → reasoning → conclusion (inductive, common in Western pedagogy
 ## Expert Attribution Patterns
 
 - First reference: "Theo [Tên], [chức danh], [tổ chức]:"
-- Second: "Ông/Bà [họ] cho biết thêm:"
-- Research: "Theo nghiên cứu năm [X] của [cơ quan]..."
+- Second reference: honorific + surname
+- Research: cite year and institution
 - Do NOT use "studies show" without naming the study — VN audience demands specificity
 
 ## E-Learning Platform Language
 
-### Vietnamese platforms (Kyna, MOOC VN, CourseMera)
-- Course titles: verb-led ("Học [X]", "Nắm vững [X]", "Thành thạo [X]")
+### Vietnamese platforms (e.g. Kyna)
 - Module naming: "Phần [N]: [Tên chủ đề]"
-- Assignment instructions: clear imperative ("Hoàn thành bài tập sau:")
-- Certificate: "Chứng nhận hoàn thành khóa học [tên]"
 
-### Corporate e-learning (Udemy Vietnam, LinkedIn Learning VN)
-- B2B register in course descriptions: formal, ROI-focused
-- Manager recommendation: "Khóa học này giúp nhân viên [kỹ năng] trong [thời gian]"
+### Corporate e-learning (e.g. Udemy, LinkedIn Learning)
+- B2B register in course descriptions: formal
 
 ## Academic Connectors Reference
 
@@ -83,4 +67,4 @@ NOT: example → reasoning → conclusion (inductive, common in Western pedagogy
 - Colloquial connectors: mà, rồi, thì
 - Sentence-initial conjunctions in academic (acceptable in EduTok, not in papers)
 
-See also: references/viral-content.md (EduTok viral formats), references/formal-documents.md (academic writing register)
+See also: references/formal-documents.md (academic writing register)

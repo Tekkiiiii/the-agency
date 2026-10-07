@@ -65,7 +65,7 @@ One room per active project. The project's PD owns the room and manages membersh
 ```
 
 ### Department Rooms
-One room per department. Department heads coordinate specialists here.
+One room per department. Department heads coordinate their members here.
 
 ```
 {agency-root}/agency-rooms/engineering/
@@ -106,7 +106,7 @@ When an agent needs help from another department:
    ```
 2. RoomManager fans the request out to the department head.
 3. Department head replies in the same room thread.
-4. If the request requires spawning a specialist, the department head creates a handoff JSON in `handoffs/`.
+4. If the request requires spawning a worker (`general-purpose` + skills), the department head creates a handoff JSON in `handoffs/`.
 
 ## RoomManager Behavior
 

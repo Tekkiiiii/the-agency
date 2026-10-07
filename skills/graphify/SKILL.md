@@ -1,6 +1,6 @@
 ---
 name: graphify
-description: "any input (code, docs, papers, images) - knowledge graph - clustered communities - HTML + JSON + audit report"
+description: "Use via \"/graphify [path|github-url]\", \"build a knowledge graph\", \"graphify this repo\", or cross-repo structure analysis. Turns a folder, repo or document set into a clustered knowledge graph with interactive HTML, GraphRAG JSON and an audit report. Query existing graphs with the graphify MCP tools instead of rebuilding."
 trigger: /graphify
 ---
 

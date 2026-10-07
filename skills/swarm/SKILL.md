@@ -1,7 +1,6 @@
 ---
 name: swarm
-description: >
-  Parallel dispatch to all Project Directors in the agency — one-shot status, blocker, or priority check across the entire portfolio without loading PD context into the parent session. Spawns each PD in a fully isolated subagent that reads only their heartbeat file and responds in one line. Trigger when: the user says "/swarm", "/swarm-blocker", "/swarm-continue", or "/swarm-all"; you need a portfolio-wide status across all active projects at once; the user asks "what is everyone working on" or "any blockers across the portfolio?"; doing a weekly check-in sweep; before a planning session to surface conflicts. Key capabilities: reads the agency-council team config to discover all PDs dynamically; dispatches all agents in parallel (not sequentially); handles silent PDs with one automatic respawn; formats a clean digest table per PD with their project and one-line response. Also for: cross-project priority conflicts, surfacing work that can continue without a blocked PD, getting a fast portfolio health snapshot before a client call. Parent session holds zero PD context until responses arrive — fast and cheap.
+description: "Use on /swarm, /swarm-blocker, /swarm-continue, /swarm-all, or \"what is everyone working on\", \"any blockers across the portfolio?\". Dispatches every PD in parallel as an isolated subagent that reads only its heartbeat file and answers in one line; returns a digest table."
 ---
 
 # /swarm — Portfolio-Wide PD Dispatch

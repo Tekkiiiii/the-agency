@@ -1,3 +1,8 @@
+---
+name: notebooklm-memory
+description: "Use to query, curate or audit Google NotebookLM research notebooks: market data, tech best practices, industry patterns. Modes QUERY, CURATE (add sources, create/tag notebooks), AUDIT (stale notebooks). Uses mcp__notebooklm-mcp__* tools and reads the notebook registry (if one exists) first."
+---
+
 # notebooklm-research
 
 description: "Topic-based research library via Google NotebookLM MCP. Query curated domain notebooks for market data, tech best practices, and industry patterns. Three modes: QUERY (ask questions across notebooks), CURATE (add sources, create/tag notebooks), AUDIT (check source counts, surface stale notebooks). All operations use mcp__notebooklm-mcp__* MCP tools — no CLI. Registry-first: every operation starts by reading {agency-root}/memory/notebooklm-registry.md, if it exists."

@@ -3,10 +3,12 @@
 **Call this department when you need to produce, edit, format, or distribute any video content** — tutorials, product demos, social videos, explainers, AI-generated clips, or animated content. This is the default department for ALL video production tasks across the agency.
 
 **Leader**: Video Studio Director
-**Model tier**: Members = Sonnet, Leader = Opus
+**Model tier**: Members = general-purpose (Sonnet), Leader = Opus
+
+> Member roles below are archived (2026-10-06). Spawn each as `general-purpose` + the listed skills; the role file is read-first context. Full map: `{agency-root}/agents-archive/ROLE-MAP.md`.
 
 **Cross-dept relationships**:
-- **Content Creation** → script handoff (content-video-script-writer → Video Studio Director)
+- **Content Creation** → script handoff (video script writer role: general-purpose → Video Studio Director)
 - **Design** → brand guardrails and visual identity for all video assets
 - **Marketing** → distribution strategy and platform targeting input
 
@@ -23,52 +25,52 @@
 
 ## Pre-Production
 
-| Agent | File | What it produces |
+| Role | Spawn as | What it produces |
 |---|---|---|
-| Storyboard Artist | `vs-storyboard-artist.md` | Visual storyboards, scene cards (pose + VO + sticker), production complexity flags |
-| Shot Planner | `vs-shot-planner.md` | Shot list, B-roll list, production order, dependency map |
-| Voice & Cast Director | `vs-voice-director.md` | Voice direction notes, AI voice prompts, casting briefs, pronunciation guides |
+| storyboard artist | general-purpose (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-storyboard-artist.md`) | Visual storyboards, scene cards (pose + VO + sticker), production complexity flags |
+| shot planner | general-purpose (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-shot-planner.md`) | Shot list, B-roll list, production order, dependency map |
+| voice & cast director | general-purpose (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-voice-director.md`) | Voice direction notes, AI voice prompts, casting briefs, pronunciation guides |
 
 ---
 
 ## Production
 
-| Agent | File | What it produces |
+| Role | Spawn as | What it produces |
 |---|---|---|
-| Screen Recording Director | `vs-screen-recording-director.md` | Browser/app screen captures, UI state recordings |
-| AI Video Producer | `vs-ai-video-producer.md` | AI-generated clips via Higgsfield, Veo, Sora, Runway |
-| Animation Director | `vs-animation-director.md` | Motion graphics, title cards, lower thirds, data animations (Remotion, Hyperframes, Lottie, GSAP) |
+| screen recording director | general-purpose + /video-use (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-screen-recording-director.md`) | Browser/app screen captures, UI state recordings |
+| ai video producer | general-purpose (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-ai-video-producer.md`) | AI-generated clips via Higgsfield, Veo, Sora, Runway |
+| animation director | general-purpose + /remotion-best-practices, /hyperframes (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-animation-director.md`) | Motion graphics, title cards, lower thirds, data animations (Remotion, Hyperframes, Lottie, GSAP) |
 
 ---
 
 ## Post-Production
 
-| Agent | File | What it produces |
+| Role | Spawn as | What it produces |
 |---|---|---|
-| Video Editor | `vs-video-editor.md` | Assembled rough/fine cut, audio sync, pacing, timeline |
-| VFX & Motion Designer | `vs-vfx-motion-designer.md` | Kinetic typography, VFX polish, data visualizations, hook frame |
-| Colorist & Audio Engineer | `vs-colorist-audio-engineer.md` | Color grade, audio master, loudness normalization (-14 LUFS) |
-| Captioning Specialist | `vs-captioning-specialist.md` | .srt / .vtt captions (Whisper + correction), burned-in captions for short-form |
-| Thumbnail Designer | `vs-thumbnail-designer.md` | 3-variant thumbnails per platform, CTR-optimized |
+| video editor | general-purpose + /video-use, /ffmpeg (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-video-editor.md`) | Assembled rough/fine cut, audio sync, pacing, timeline |
+| vfx & motion designer | general-purpose + /hyperframes, /gsap (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-vfx-motion-designer.md`) | Kinetic typography, VFX polish, data visualizations, hook frame |
+| colorist & audio engineer | general-purpose + /ffmpeg (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-colorist-audio-engineer.md`) | Color grade, audio master, loudness normalization (-14 LUFS) |
+| captioning specialist | general-purpose + /subtitle-burner, /ffmpeg (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-captioning-specialist.md`) | .srt / .vtt captions (Whisper + correction), burned-in captions for short-form |
+| thumbnail designer | general-purpose + /image-prompt-engineer (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-thumbnail-designer.md`) | 3-variant thumbnails per platform, CTR-optimized |
 
 ---
 
 ## Distribution
 
-| Agent | File | What it produces |
+| Role | Spawn as | What it produces |
 |---|---|---|
-| Platform Formatter | `vs-platform-formatter.md` | Platform-specific video files (YouTube 16:9, TikTok 9:16, Reels, Shorts, LinkedIn) |
-| Video SEO Specialist | `vs-video-seo-specialist.md` | Title variants, description, tags, chapters, JSON-LD schema |
-| Upload Automator | `vs-upload-automator.md` | Automated upload + scheduling via n8n + YouTube/TikTok/Instagram APIs |
+| platform formatter | general-purpose + /ffmpeg (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-platform-formatter.md`) | Platform-specific video files (YouTube 16:9, TikTok 9:16, Reels, Shorts, LinkedIn) |
+| video seo specialist | general-purpose + /seo-aeo-best-practices (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-video-seo-specialist.md`) | Title variants, description, tags, chapters, JSON-LD schema |
+| upload automator | general-purpose + /n8n-automation (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-upload-automator.md`) | Automated upload + scheduling via n8n + YouTube/TikTok/Instagram APIs |
 
 ---
 
 ## QA
 
-| Agent | File | What it checks |
+| Role | Spawn as | What it checks |
 |---|---|---|
-| Video Quality Reviewer | `vs-video-quality-reviewer.md` | Technical, content, brand compliance gate (score 0-100, SHIP/FIX/REDO) |
-| Video Accessibility Auditor | `vs-accessibility-auditor.md` | WCAG 2.1 AA: captions, audio description, text contrast, player a11y |
+| video quality review | `critique-video` agent (kept; use /ffmpeg for technical probes; legacy role file: `agents-archive/generalist-2026-10-06/video-studio/vs-video-quality-reviewer.md`) | Technical, content, brand compliance gate (score 0-100, SHIP/FIX/REDO) |
+| video accessibility auditor | general-purpose + /subtitle-burner (role file: `agents-archive/generalist-2026-10-06/video-studio/vs-accessibility-auditor.md`) | WCAG 2.1 AA: captions, audio description, text contrast, player a11y |
 
 ---
 

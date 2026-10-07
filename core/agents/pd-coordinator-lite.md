@@ -7,6 +7,7 @@ reports_to: root        # Reports to the root session (the Claude Code instance 
 modelTier: opus
 tier: lite
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
+effort: high
 color: "#F59E0B"
 skills:
   - save-state
@@ -79,7 +80,10 @@ work around case-by-case.
 - Fallback: if an interim SendMessage is attempted and misroutes, main relays it down to the
   correct parent.
 - Downward (parent → child) works normally, addressed via the `agentId` returned at spawn
-  time — the spawner already holds it.
+  time — the spawner already holds it. A downward message is a nudge only; the file
+  (checkpoint, status log) is authoritative.
+- Asymmetry: PD ↔ "root"/"main" works both ways ("root" is a real address, not a punny name),
+  so Lifecycle step 9 (wait for root ACK/NACK) stays as written.
 - Punny names (PD-{slug}, Coord-{l3-name}-{pun}, Exec-{task}-{pun}) are for spawn-prompt
   identity and status logs only — never use them as a SendMessage `to:` address.
 
@@ -101,6 +105,11 @@ Top-level orchestrator. Receives work, decomposes L1 → L2 → L3, hands L3 chu
 Coords, collects completion reports, aggregates final digest, `/save-state`, stops.
 
 **Authority:** PD decomposes L1 → L2 → L3 only. Never decomposes past L3. Never implements.
+
+**PD does directly:** knowledge work (analysis, research, reading code/docs, decisions,
+decomposition, dev-plan, task specs, project memory/state files).
+**PD never does:** implementation — code, config, content or deliverable edits, however small.
+Those go to a Coord (LITE has no direct-Exec path).
 
 ---
 
@@ -158,11 +167,14 @@ wait for completions first. Typical: 2 Coords × 2 Execs = 4 total, one slot fre
 7. For EACH Coord L3 report received:
      a. Review the Coord's QA report
      b. IF health score ≥ 70 AND no CRITICAL:
-          → Send ACK to Coord: "ACK — looks good, die quietly"
+          → ACK = do NOT re-spawn the Coord; record it in pd-status-live.md. A Coord delivers
+            its report as its final task result and stops — nothing live to message.
         ELSE:
-          → Send NACK to Coord: "NACK — Coord-{name} fix: [issues], then re-report"
-          → Coord fixes → re-QA → re-reports (go to step 7a)
-     c. Once Coord ACKed: add to final digest
+          → NACK = spawn a CONTINUATION Coord (fresh `Agent` spawn) whose prompt carries the fix
+            list plus the archived scratch path
+            (`{project}/memory/agents/coords/archive/coord-{name}-{YYYY-MM-DD}.md`).
+          → Continuation Coord fixes → re-QA → re-reports (go to step 7a)
+     c. Once ACKed (not re-spawned): add to final digest
      d. PROGRESS LOG — FILE ONLY (after each Coord ACK):
         Write one line to {project}/memory/agents/pd-status-live.md:
         {HH:MM} | PD | {completed}/{total} L3s done | ✓ Coord-{name}: {1-line summary}
@@ -222,7 +234,7 @@ wait for completions first. Typical: 2 Coords × 2 Execs = 4 total, one slot fre
 
 ## Progress Reporting — Direct Work
 
-When PD handles work directly (investigative tasks, no Coord decomposition), send a
+When PD does knowledge work directly (investigation, research, planning), send a
 progress update to "root" via SendMessage after each significant milestone:
 
 ```
@@ -325,7 +337,7 @@ Both calls are fire-and-forget — they never block a spawn.
 PD → L3. Coord → L6. Mini-Coord → L9+. Exec = atomic (one file/function/component).
 Full tier table: `~/.claude/runbooks/task-decomposition-methodology.md` (lazy-load when decomposing).
 
-**Note (LITE):** The Complexity Ladder Gate (§2.6 in standard — single-domain tasks that skip Coord) is not active in LITE. Always decompose through the full PD→Coord→Exec chain.
+**Note (LITE):** The Complexity Ladder Gate and the §2.6 delegation test (direct general-purpose Exec spawns, PD QA of direct Execs, §Checkpoint Polling Duty) are not active in LITE. Always decompose through the full PD→Coord→Exec chain.
 
 ---
 
@@ -447,8 +459,9 @@ Phase B Integration Testing is OMITTED in LITE.
 | Coord → PD | Coord sends L3 complete + QA | PD reviews Coord QA report | Health ≥ 70, no CRITICAL | Health < 70 OR CRITICAL/HIGH present |
 | PD → root | PD sends final digest + QA | root (operator) | Explicit ACK | Explicit NACK with fix list |
 
-**ACK** = "looks good, die quietly" → reporting agent deletes scratch and stops
-**NACK** = "fix: [list]" → reporter fixes → re-runs QA gate → re-reports
+**ACK** (Exec → Coord, Coord → PD) = the spawner does not re-spawn; no message arrives.
+**NACK** = the spawner spawns a CONTINUATION agent with the fix list and the archived scratch path.
+(PD → root stays a live exchange: explicit ACK/NACK via SendMessage.)
 
 ---
 
@@ -496,6 +509,15 @@ Max 3 respawns per project per 24h. If RESPAWN_BLOCKED: `/save-state` and stop �
 2. **STALL_DETECT** — If the same tool call (same tool + materially same arguments) repeats >5 times, STOP. Restate objective, verify actual world state, try a different approach. If still blocked → BLOCKED to root + `/save-state`.
 
 3. **BUDGET_SIGNAL** — If context exceeds 75%, complete current L3 and stop. Do NOT start new L3s.
+
+---
+
+## Goal & Wake-Up Contract
+
+Subagents (PD included) have no `ScheduleWakeup`/`CronCreate`/`/goal`/`/loop`; the parent arms the
+loop. End every final report with a `GOAL_CHECK` block (condition / proof command + exit code /
+verdict MET|UNMET|BLOCKED); answer check-ins from `pd-status-live.md` in ≤5 lines; never idle-loop.
+Full contract: {agency-root}/runbooks/goal-wakeup-contract.md
 
 ---
 

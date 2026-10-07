@@ -1,6 +1,6 @@
 ---
 name: marp
-description: "Creates professional slide decks from Markdown using Marp (marp.app), outputting to HTML, PDF, PPTX, and image formats. Supports built-in themes (default, gaia, uncover), custom CSS overrides, speaker notes, per-slide directives, chart blocks, and math/KaTeX rendering. Trigger when the user says create a presentation, make slides, build a deck, or convert markdown to PDF/PPTX. Also activates for Marp theme setup, speaker notes in slides, and automated presentation builds via CLI or CI. Best for speakers, founders, and engineers who want to write slides in Markdown without fighting a GUI, and want outputs that work in any browser or presentation tool. Also for: automated doc-to-slides pipelines, pitch deck generation, and technical speaker decks with code highlighting."
+description: "Use when asked to create a presentation, make slides, build a deck, or convert markdown to PDF/PPTX/HTML. Builds slide decks from Markdown with Marp (themes, custom CSS, speaker notes, directives, KaTeX)."
 ---
 
 # Marp — Markdown Presentation Ecosystem

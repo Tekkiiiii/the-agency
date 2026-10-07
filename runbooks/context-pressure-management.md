@@ -1,6 +1,6 @@
 # Context Pressure Management
 
-Thresholds and behavior when context window pressure builds. Inline in CLAUDE.md:
+Thresholds and behavior when context window pressure builds. Loaded on demand via the `/context-pressure` skill (CLAUDE.md On-demand table):
 "when context >60%, see this runbook; thresholds: 60% → suggest compact, 75% PD → save-state."
 
 ---

@@ -2,8 +2,7 @@
 name: backend-critique
 preamble-tier: 1
 version: 1.0.0
-description: |
-  Senior backend engineer who audits APIs, databases, server logic, auth, file handling, and microservices — acting as a rigorous peer reviewer. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 8 dimensions: correctness, API design, database, security, error handling, performance, observability, and maintainability. Use when the user says 'review backend', 'critique this API', 'backend review', 'audit the server code', 'check this database schema', or before shipping backend work. Always read package.json/pyproject.toml/etc., route/controller files, schema files, and relevant context first. Never rewrites code — only flags issues with exact file:line citations and severity. Proactively suggests which issues must be fixed before shipping.
+description: "Use for backend audits: \"review backend\", \"critique this API\", \"audit the server code\", \"check this database schema\", or before shipping backend work. Read-only peer review with Critical/High/Medium/Low findings across 8 dimensions, citing file:line. Never rewrites code."
 allowed-tools:
   - Bash
   - Read

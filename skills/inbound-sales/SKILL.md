@@ -1,12 +1,6 @@
 ---
 name: inbound-sales
-description: |
-  Qualify inbound leads, score them by intent signals, route to reps, write outbound email and LinkedIn sequences, and maintain CRM hygiene standards. Provides a complete lead lifecycle framework: ICP definition, behavioral scoring, routing rules, sequence templates, disqualification criteria, and stage progression standards.
-  Purpose: Turns raw inbound traffic into a structured, efficient sales funnel with repeatable playbooks — not just gut feelings.
-  When to trigger: (1) "Review our inbound leads" or "audit the lead queue," (2) "Set up lead routing" or "define how leads get assigned to reps," (3) "Write an outbound sequence" or "build a cold email campaign," (4) "Define or refine our ICP" — who we should and should not pursue, (5) "Analyze funnel conversion" — MQL to SQL to Closed, (6) "Build a CRM hygiene report" or "audit our Salesforce/HubSpot data," (7) "Onboard a new SDR" and need to document the playbook.
-  Key capabilities: BANT + behavioral multiplier lead scoring (0–100, A/B/C/D tiers), a battle-tested 4-touch outbound sequence (email → LinkedIn → email → breakup), lead routing rules by territory, rep capacity, score tier, and product line, CRM stage progression criteria with evidence requirements, disqualification criteria to stop wasting time on bad-fit leads, and a per-scenario follow-up cadence table.
-  Ideal user/context: Sales development reps, account executives, founders doing their own sales, and sales ops managers who want a documented, repeatable process — not just activity tracking.
-  Also for: Outbound prospecting (applying the same sequence framework to cold outreach), churn and re-engagement campaigns, competitive win/loss analysis, and building a sales playbook for new hire onboarding.
+description: "Use for inbound lead handling and outbound sequences: review the lead queue, set up lead routing, score leads (BANT), define the ICP, write cold email/LinkedIn sequences, MQL>SQL funnel analysis, CRM hygiene, SDR onboarding. Includes scoring tiers, routing rules, disqualification criteria."
 ---
 
 # Inbound Sales Skill

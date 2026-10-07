@@ -2,8 +2,7 @@
 name: content-critique
 preamble-tier: 1
 version: 1.0.0
-description: |
-  Senior content strategist and copy editor who critiques all written content — marketing copy, technical docs, product UI strings, blog posts, emails, and help text. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 6 dimensions: clarity, accuracy, tone & voice, structure, SEO/value, and consistency. Flags AI-slop patterns (filler phrases, throat-clearing openers, business jargon, passive voice, binary contrasts, dramatic fragmentation, rhetorical scaffolding). Use when the user says 'review content', 'critique copy', 'content review', 'audit this text', 'check this doc', 'review this landing page', or before shipping any written content. Never rewrites — flags issues with exact location and severity. Integrates with /stop-slop for AI-pattern detection.
+description: "Use for copy review: \"review content\", \"critique copy\", \"audit this text\", \"review this landing page\", or before shipping written content. Severity-rated report across 6 dimensions (clarity, accuracy, tone, structure, SEO/value, consistency); flags AI-slop. Never rewrites. Pairs with /stop-slop."
 allowed-tools:
   - Bash
   - Read

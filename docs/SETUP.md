@@ -208,8 +208,8 @@ weird under a proxy.
 1. `agency new my-project "My first project"`
 2. In Claude Code: `/recall my-project`
 3. Tell the PD what to build
-4. PD creates tasks, spawns specialists
-5. Specialists report back, PD gates completed work
+4. PD creates tasks, spawns Coords and Execs (workers are `general-purpose` + skills)
+5. Their reports land as each agent stops, and the PD gates completed work
 6. `/save-state` at end of session
 
 ## Troubleshooting

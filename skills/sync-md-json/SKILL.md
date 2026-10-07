@@ -1,7 +1,6 @@
 ---
 name: sync-md-json
-description: >
-  Bidirectional sync between .json (authoritative source of truth) and .md (human-readable derivative) files — command-triggered, always writes fresh data from the source to the target. Trigger when: the user says "sync index", "sync md-json", "sync to md", or "sync to json"; a project status update needs to be committed to both formats; the user asks to "make sure index.json and index.md are in sync"; a new project was added or archived and both files need to reflect it. Key capabilities: JSON is always the authoritative source (never merge-and-keep-both); preserves version and updated timestamp on every JSON write; preserves non-data sections in the markdown (footnotes, section headers); supports both directions with clear, safe overwrite semantics; enforces ISO date format. Also for: recovering from a corrupted markdown view of the data, auditing what changed between sync cycles by diffing the JSON. Ideal for: project portfolio indexes, any machine-readable + human-readable dual-format records that need to stay in sync without manual maintenance.
+description: "Use on \"sync index\", \"sync md-json\", \"sync to md\", \"sync to json\", or when index.json and index.md must match. Syncs a .json source of truth to its .md view (or back) with safe overwrite, keeping non-data markdown sections and ISO dates; JSON always wins, never merged."
 ---
 
 # Sync MD-JSON

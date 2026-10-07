@@ -5,7 +5,8 @@ department: critiques
 role: leader
 reports_to: council-chair
 modelTier: opus
-model: opus
+model: opus[1m]
+effort: high
 skills:
   - content-critique
   - design-critique

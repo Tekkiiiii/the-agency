@@ -195,6 +195,16 @@ function syncRunbooks(repoDir, destDir, console) {
   return syncTree(repoDir, destDir, 'runbooks', console);
 }
 
+// agents-archive/ ships the role files + ROLE-MAP.md for the archived
+// specialist agents (generalist switch). Spawners read
+// `{agency-root}/agents-archive/ROLE-MAP.md` and the role files at runtime. It
+// is a plain copy to {agency-root}/agents-archive/ — NEVER under agents/, so
+// nothing in it registers as a spawnable agent type. Docs plus a few support
+// scripts; no +x (they are reference material, not invoked directly).
+function syncAgentsArchive(repoDir, destDir, console) {
+  return syncTree(repoDir, destDir, 'agents-archive', console);
+}
+
 // design-system/ ships the brand-token SSOT (brands/*.json + generated
 // brands/*.css, overlays/*.css, build.js). Shipped design skills resolve brand
 // values from `{agency-root}/design-system/brands/{name}.json` at generation
@@ -235,7 +245,7 @@ function syncCore(repoDir, destDir, console) {
 }
 
 module.exports = {
-  syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem,
+  syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncAgentsArchive, syncDesignSystem,
   syncCore, readCorePreserveList,
   syncTree, syncDirRecursive, shouldCopy, fileHash,
 };

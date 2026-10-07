@@ -55,33 +55,11 @@
 
 ## Register Differences in Digital Contexts
 
-### Northern digital register
-- Slightly more formal even in casual content
-- Full sentence structures more common in captions
-- Hà Nội influencer culture: more reserved than HCMC
-
-### Southern digital register
-- More casual, faster to use intimate register
-- Direct commerce language comfortable earlier in relationship
-- HCMC business culture: faster to offer deals, less formal ceremony
+Voice comes from exemplars (brand/voice-exemplars-vi, pending). Do not copy phrasing from this file.
 
 ## Brand Voice Selection by Region
 
-### Targeting Northern audience (Hà Nội, Bắc Ninh, Hải Phòng)
-- Default to slightly more formal register
-- Northern vocabulary in headlines
-- Cultural references: phở Hà Nội, Hồ Tây, mùa thu Hà Nội
-
-### Targeting Southern audience (HCMC, Bình Dương, Đồng Nai)
-- Casual register appropriate earlier
-- Southern vocabulary where applicable
-- Cultural references: hủ tiếu, Bến Thành, sầu riêng
-
-### National campaigns: neutral tone guidance
-- Use Hà Nội-standard vocabulary for written content (it's the standard)
-- Avoid hyper-regional vocabulary
-- Video/voice: neutral accent = Northern standard
-- Acknowledge regional audiences visually, not through dialect mimicry
+Voice comes from exemplars (brand/voice-exemplars-vi, pending). Do not copy phrasing from this file.
 
 ## Diaspora Vietnamese (Việt kiều)
 
@@ -96,9 +74,6 @@
 - France Việt kiều: some French loanwords remain
 - Australia Việt kiều: similar to US pattern
 
-### Digital campaign implications
-- Slightly more formal written Vietnamese than mainland
-- Fewer slang terms — internet slang may not be current for diaspora
-- Nostalgia content performs exceptionally well with Việt kiều audiences
+Voice comes from exemplars (brand/voice-exemplars-vi, pending). Do not copy phrasing from this file.
 
 See also: references/seo-content-marketing.md (SEO keyword splitting), references/gen-z-slang.md (regional slang distribution)

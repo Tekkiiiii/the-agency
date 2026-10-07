@@ -4,17 +4,18 @@ description: D3 task owner for design department operations. Receives one D3 tra
 department: design
 role: dept-coord
 reports_to: design-lead
-modelTier: sonnet
-model: sonnet[1m]
+modelTier: opus
+model: opus[1m]
+effort: high
 skills: []
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 ---
 
 ## Naming Convention
 
-- Dept Head = "design-lead" (Brand Guardian) — department orchestrator
+- Dept Head = "design-lead" (Design Lead) — department orchestrator
 - Dept-Coord = "DC-des-{d3-name}-{pun}" (e.g. DC-des-system-Palette) — D3 track owner
-- Dept-Member = existing department member agent — execution unit
+- Dept-Member = `general-purpose` + skills (member roles archived 2026-10-06; see ROLE-MAP) — execution unit
 
 ---
 
@@ -127,13 +128,15 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
 
 ## Department Members Available
 
-- UI Designer — interface design, component design, visual UI systems
-- UX Researcher — user research, usability testing, personas
-- UX Architect — information architecture, user flows, wireframes
-- Visual Storyteller — narrative-driven visual content and visual communication
-- Whimsy Injector — adds delight, playfulness, and personality to designs
-- Image Prompt Engineer — crafts AI image generation prompts
-- Inclusive Visuals Specialist — accessibility-focused visual design, WCAG compliance
+Member roles are archived (2026-10-06): spawn each as `general-purpose` with the skills below and tell it to read its role file first (`{agency-root}/agents-archive/ROLE-MAP.md`). Brand review → `critique-brand` agent.
+
+- ui designer — interface design, component design, visual UI systems: general-purpose + /ui-ux-pro-max, /impeccable (role file: `agents-archive/generalist-2026-10-06/design/design-ui-designer.md`)
+- ux researcher — user research, usability testing, personas: general-purpose (role file: `agents-archive/generalist-2026-10-06/design/design-ux-researcher.md`)
+- ux architect — information architecture, user flows, wireframes: general-purpose + /ui-ux-pro-max, /tailwind (role file: `agents-archive/generalist-2026-10-06/design/design-ux-architect.md`)
+- visual storyteller — narrative-driven visual content and visual communication: general-purpose + /excalidraw-diagram (role file: `agents-archive/generalist-2026-10-06/design/design-visual-storyteller.md`)
+- whimsy injector — adds delight, playfulness, and personality to designs: general-purpose + /emil-design-eng, /css-animations (role file: `agents-archive/generalist-2026-10-06/design/design-whimsy-injector.md`)
+- image prompt engineer — crafts AI image generation prompts: general-purpose + /image-prompt-engineer, /gpt-image-prompts (role file: `agents-archive/generalist-2026-10-06/design/design-image-prompt-engineer.md`)
+- inclusive visuals specialist — accessibility-focused visual design, WCAG compliance: general-purpose + /image-prompt-engineer (role file: `agents-archive/generalist-2026-10-06/design/design-inclusive-visuals-specialist.md`)
 
 ---
 

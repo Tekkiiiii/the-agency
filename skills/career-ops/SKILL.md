@@ -1,7 +1,6 @@
 ---
 name: career-ops
-description: >
-  AI job search command center — evaluates job offers with A-F scoring, generates ATS-optimized CV PDFs, scans multiple job portals in parallel, tracks application pipelines, and analyzes rejection patterns to surface actionable improvements. Routes to specialized sub-agents based on mode: `scan` (portal discovery), `oferta`/`ofertas` (offer scoring and comparison), `pdf` (CV generation), `pipeline` (URL inbox processing), `tracker` (funnel metrics), `batch` (parallel bulk evaluation), `patterns` (rejection pattern detection), `deep` (company research), `apply` (live form assistant), `contacto` (LinkedIn outreach), `training` (course/cert evaluation), `project` (portfolio project idea assessment), `interview-prep` (company-specific STAR+R story bank). Also triggers when pasting a job description or URL — auto-routes to Pipeline Strategist. Ethical gate: scores below 4.0/5 are discouraged; never submits applications on the user's behalf. Built on santifer/career-ops (28K GitHub stars). Ideal for job seekers who want systematic, evidence-backed career decisions. Also for: salary negotiation preparation, resume optimization, and competitive market analysis.
+description: "Use for job-search work: pasting a job description or URL, scoring offers A-F, ATS CV PDFs, portal scans, application tracking, interview prep, rejection patterns. Modes: scan, oferta, pdf, pipeline, tracker, batch, patterns, deep, apply, contacto. Never submits applications. Cover letters: /cover-letter-gen."
 user_invocable: true
 args: mode
 argument-hint: "[scan | oferta | pdf | tracker | pipeline | batch | patterns | deep | apply | contacto | ofertas | training | project | interview-prep]"
@@ -15,7 +14,7 @@ Skill for The Agency. Delegates to the most relevant specialized agent based on 
 
 | Mode | Agent | Description |
 |------|-------|-------------|
-| `scan` | **Job Portal Scanner** | Scrape portals + on-demand: `node scan-positions.mjs --position "AI Engineer" --location hanoi` |
+| `scan` | **Portal scan** (general-purpose + /career-ops) | Scrape portals + on-demand: `node scan-positions.mjs --position "AI Engineer" --location hanoi` |
 | `scan:pos` | **scan-positions.mjs** | On-demand scan for a specific position title + location. Usage: `npm run scan -- --position "Digital Marketing Manager" --location hanoi` |
 | `oferta` / `ofertas` | **Offer Evaluator** | A-F scoring, archetype detection, gap analysis, comparison/ranking |
 | `pipeline` | **Pipeline Strategist** | Process inbox URLs: evaluate → report → PDF → tracker (never touch applications.md directly) |

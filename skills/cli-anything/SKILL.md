@@ -1,6 +1,6 @@
 ---
 name: cli-anything
-description: Turns any GUI-only software into an agent-usable CLI/REPL harness backed by the software's real engine (Blender, GIMP, LibreOffice, etc.).
+description: "Use to turn GUI-only software (Blender, GIMP, LibreOffice, Inkscape, Audacity, Shotcut) into an agent-usable stateful CLI harness with JSON output, undo/redo and a REPL, using the app's native CLI backend. Triggers: add CLI to a desktop app, wrap a tool that has no API."
 ---
 
 ## Full Role Description

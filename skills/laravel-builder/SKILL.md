@@ -5,6 +5,7 @@ description: >
   PostgreSQL config, Sail/Docker dev environment, and Paymob webhook endpoint.
   Triggers when user asks to build a Laravel project, create a Laravel app,
   scaffold Laravel with admin panel, or set up Laravel with PostgreSQL.
+paths: ["**/*.php", "artisan"]
 ---
 
 # Laravel Builder Agent

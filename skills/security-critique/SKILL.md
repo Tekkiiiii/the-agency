@@ -2,8 +2,7 @@
 name: security-critique
 preamble-tier: 1
 version: 1.0.0
-description: |
-  Senior application security engineer who audits code for vulnerabilities, misconfigurations, and architectural security gaps — acting as a rigorous security reviewer. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) aligned to OWASP Top 10 and MITRE ATT&CK. Covers: authentication/authorization flaws, injection vectors, data exposure, secrets management, dependency vulnerabilities, CI/CD security, and compliance implications. Use when the user says 'security review', 'critique security', 'audit for vulnerabilities', 'check for OWASP', 'review auth', 'security critique', or before shipping anything that handles sensitive data. Never rewrites code — flags issues with exact file:line citations, CVSS-style reasoning, and severity ratings. Integrates with /cso for deeper infrastructure-level audits.
+description: "Use on \"security review\", \"critique security\", \"audit for vulnerabilities\", \"check for OWASP\", \"review auth\", or before shipping code that handles sensitive data. Acts as an AppSec reviewer; severity-rated report (OWASP, MITRE ATT&CK) with file:line citations; never rewrites code. Deeper infra audit: /cso."
 allowed-tools:
   - Bash
   - Read

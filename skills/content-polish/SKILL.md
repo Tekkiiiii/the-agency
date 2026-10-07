@@ -1,7 +1,7 @@
 ---
 name: content-polish
 version: 1.1.0
-description: "End-to-end content polishing workflow that runs the humanizer and proofreader in the correct sequence with proper handoff between them. Language-branched: English content uses humanizer + proofreader; Vietnamese content uses humanizer-vi + grammar-checker-vi (with optional translationese-cleaner-vi pre-pass). Use whenever the user wants to take generated content (CVs, posts, articles, emails, cover letters) from draft to ready-to-publish in one step. Triggers: polish this, make this ready, humanize and proofread, clean this up, do the full pass, run the polish workflow. Runs three passes: (1) format-aware humanizer, (2) anti-fragmentation check, (3) format-aware proofreader/grammar check."
+description: "Use to take drafted content to publish-ready in one pass: \"polish this\", \"make this ready\", \"humanize and proofread\", \"do the full pass\". English runs humanizer + proofreader; Vietnamese runs humanizer-vi + grammar-checker-vi (optional translationese-cleaner-vi first)."
 ---
 
 # Content Polish: End-to-End Workflow

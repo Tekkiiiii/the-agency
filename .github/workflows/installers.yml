@@ -65,6 +65,23 @@ jobs:
           grep -q '"ts"' "$log" || { echo "FAIL: emitted line carries no ts"; cat "$log"; exit 1; }
           cat "$log"
 
+      # agents-archive/ is runtime reading (ROLE-MAP.md + role files), deployed as
+      # a plain copy beside agents/. It must NEVER land under agents/: anything
+      # there registers as a spawnable agent type, which is exactly what the
+      # archive exists to prevent.
+      - name: Assert agents-archive deployed beside agents/, not under it
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: |
+          [ -f "$AGENCY_HOME/agents-archive/ROLE-MAP.md" ] || { echo "FAIL: agents-archive/ROLE-MAP.md not deployed"; exit 1; }
+          [ -f "$AGENCY_HOME/agents-archive/MANIFEST.md" ] || { echo "FAIL: agents-archive/MANIFEST.md not deployed"; exit 1; }
+          [ ! -e "$AGENCY_HOME/agents/agents-archive" ] || { echo "FAIL: agents-archive leaked under agents/"; exit 1; }
+          repo=$(find agents-archive -type f ! -name '*.pyc' ! -name .DS_Store ! -path '*/__pycache__/*' | wc -l | tr -d ' ')
+          got=$(find "$AGENCY_HOME/agents-archive" -type f | wc -l | tr -d ' ')
+          echo "repo=$repo installed=$got"
+          [ "$repo" -gt 0 ] || { echo "FAIL: repo agents-archive/ is empty"; exit 1; }
+          [ "$got" = "$repo" ] || { echo "FAIL: installed $got of $repo agents-archive files"; exit 1; }
+
       # design-system/ is the quietest tree on the deploy list: a skill that
       # cannot find its brand file does not error, it falls back to a hardcoded
       # hex and ships an off-brand deliverable. So assert the DEPLOYED copy is
@@ -585,7 +602,7 @@ jobs:
           AGENCY_HOME: ${{ runner.temp }}\agency-custom
         run: |
           .\.github\scripts\verify-agency-refs.ps1 -AgencyRoot $env:AGENCY_HOME
-          foreach ($tree in @('skills','agents','core','hooks','runbooks','scripts','design-system')) {
+          foreach ($tree in @('skills','agents','core','hooks','runbooks','scripts','design-system','agents-archive')) {
             $p = Join-Path $env:AGENCY_HOME $tree
             if (-not (Test-Path $p)) { throw "missing tree under custom root: $tree" }
           }

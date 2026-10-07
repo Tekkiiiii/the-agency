@@ -1,16 +1,6 @@
 ---
 name: pipeline-onboard
-description: >
-  New project onboarding pipeline: tech-stack (profile) → CLAUDE.md setup → memory init →
-  skill-routing.md check. Brings a new or inherited project into the agency in one
-  command. Trigger when: starting work on a project that has no ~/.claude/projects/{slug}/
-  memory structure yet; taking over an existing codebase; setting up a new repo for
-  PD-managed development; when /new-project alone is insufficient (it creates scaffolding
-  but doesn't profile the stack, verify CLAUDE.md completeness, or link skill-routing).
-  Key capabilities: scans actual project structure, generates tech-profile.md, ensures
-  CLAUDE.md has required fields, initializes memory directory, seeds task-store, and
-  cross-checks skill-routing.md for stack-relevant anti-redundancy rules.
-  Do NOT chain tech-stack profiler separately after this pipeline — it runs inside Stage 1.
+description: "Use when starting on a project with no ~/.claude/projects/{slug}/ memory, taking over an existing codebase, or when /new-project alone is not enough. Profiles the stack, checks CLAUDE.md fields, inits memory and task-store, and checks skill-routing.md. Runs tech-stack inside; do not chain it separately."
 ---
 
 # Pipeline: Onboard

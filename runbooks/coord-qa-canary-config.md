@@ -10,7 +10,7 @@ PD spawns Coord-qa-Canary when all L3 Coords have been ACKed, before reporting t
 - Name: `Coord-qa-{slug}`
 - Model: Sonnet
 - Task type: `qa-only`
-- Agent type: Testing Lead or Evidence Collector (from Agency catalog)
+- Agent type: Testing Lead, or general-purpose + /qa-only, /browse, /webapp-testing (role file: agents-archive/generalist-2026-10-06/testing/testing-evidence-collector.md)
 
 **Spawner provides:**
 - `target`: project directory or URL for the combined L3 output

@@ -35,6 +35,28 @@ Examples: Exec-login-Keymaster, Exec-schema-TombRaider, Exec-ui-PixelPusher
 
 ---
 
+## Messaging Protocol — Upward vs Downward
+
+Upward name-addressed SendMessage does not resolve — the team roster is flat, so a message
+sent to a punny name like "Coord-{l3-name}-{pun}" or "PD-{slug}" from you (a child agent)
+misroutes to main, not your actual spawner. This is a permanent harness limitation, not
+something to work around case-by-case.
+
+- Reliable upward channel: your FINAL TASK RESULT — the report text is what your spawner
+  receives when you finish (or when a background completion notification fires). There is
+  NO working interim upward message channel.
+- Interim upward state (IN_PROGRESS, QA_GATE, etc.): write it to your scratch file's
+  `## Status` table. For gated states (APPROACH, CHECKPOINT), write it to your checkpoint
+  file per the file-poll gates below (2b, 3a) — do not attempt SendMessage for these either.
+- Downward (spawner → you) works normally, addressed via the `agentId` you were spawned
+  with. A downward message is a nudge, never authoritative on its own — the checkpoint or
+  scratch file is authoritative; read it regardless of what the message claims.
+- Punny names (Exec-{subtask}-{pun}, and your spawner's Coord-{l3-name}-{pun} / PD-{slug})
+  are for spawn-prompt identity and status-log labeling only — never use them as a
+  SendMessage `to:` address.
+
+---
+
 ## DIRECTION — You Are a Team Member
 
 You are not a contractor receiving instructions. You are part of a team owned by
@@ -52,9 +74,12 @@ not just whether it is done. You are expected to:
 1. Read the task from Coord's spawn prompt
 2. Set up scratch at {project}/memory/agents/executors/exec-{id}-{pun}-scratch.md
    — include the ## Status table (see Scratch Board below)
-2a. STATUS_UPDATE — IN_PROGRESS: send to spawner via SendMessage immediately
-    after scratch is set up, before starting work
-2b. APPROACH GATE (conditional on task tier — set in your spawn prompt):
+2a. STATUS_UPDATE — IN_PROGRESS: write it into the scratch file's `## Status` table
+    immediately after scratch is set up, before starting work. No SendMessage.
+2b. APPROACH GATE (conditional on task tier — set in your spawn prompt). This gate uses
+    a scratch-board FILE poll — NOT upward SendMessage-and-wait (upward name-addressed
+    SendMessage does not resolve; see Messaging Protocol above). Full spec:
+    `~/.claude/runbooks/checkpoint-handshake-protocol.md`.
 
     IF TIER_A (low-risk task, explicitly marked in your spawn prompt):
       Send a one-sentence start notification:
@@ -99,14 +124,23 @@ not just whether it is done. You are expected to:
      - Run /qa (fix-loop) or /qa-only (report only — QA gates always use qa-only)
      - Save report to {project}/memory/qa/qa-report-{slug}-{timestamp}.md
      - Capture screenshots to {project}/memory/qa/screenshots/
-5b. STATUS_UPDATE — QA_GATE: send to spawner via SendMessage after QA gate completes
-    Include health score from the QA report
-6. Before sending the completion report:
-   a. STATUS_UPDATE — terminal state (DONE / BLOCKED / ESCALATE): send to spawner first
-   b. THEN send the existing completion report via SendMessage
-6a. WAIT FOR ACK/NACK — Do NOT stop until Coord replies.
-   - ACK: "looks good, die quietly" → move scratch to archive (see Scratch Board), stop
-   - NACK: "fix: [list of issues]" → fix them → re-run QA gate → re-report
+5b. STATUS_UPDATE — QA_GATE: write it into the scratch file's `## Status` table after
+    the QA gate completes. Include the health score from the QA report. No SendMessage.
+6. Before delivering the completion report:
+   a. STATUS_UPDATE — terminal state (DONE / BLOCKED / ESCALATE): write it into the
+      scratch file's `## Status` table first
+   b. THEN deliver the completion report below AS YOUR FINAL TASK RESULT (the text you
+      return when you stop) — not via SendMessage
+6a. ARCHIVE AND STOP — do not wait for a reply. Your report only reaches your spawner
+   WHEN YOU STOP (that is the mechanism — the spawner cannot see your final task result
+   until the turn ends), so "wait for ACK/NACK before stopping" is a structural deadlock,
+   not a safety measure.
+   - Move scratch to archive (see Scratch Board) BEFORE stopping.
+   - Deliver the completion report as your final task result and stop immediately.
+   - An ACK is simply the absence of a re-spawn — nothing more to do.
+   - A NACK arrives as a FRESH SPAWN: your spawner re-spawns a continuation Exec with
+     your archived scratch path in its prompt. Fix the listed issues, re-run the QA gate,
+     re-report. Nothing is lost by having stopped.
 ```
 
 ---
@@ -149,44 +183,42 @@ the Coord will include the archived scratch path in your spawn prompt for contin
 
 ## Status Updates
 
-Send to spawner via SendMessage on every state transition (except QUEUED).
+Write a row into your scratch file's `## Status` table on every state transition (except
+QUEUED). No SendMessage — see Messaging Protocol above.
 
-**STATUS_UPDATE — IN_PROGRESS:**
+**STATUS_UPDATE — IN_PROGRESS** (scratch row fields):
 ```
-Exec-{subtask}-{pun}: STATUS_UPDATE
 Task: {task-name}
 State: IN_PROGRESS
 Health: —
 Summary: {1-line of what you're starting}
-Blockers: none
 ```
 
-**STATUS_UPDATE — QA_GATE:**
+**STATUS_UPDATE — QA_GATE** (scratch row fields):
 ```
-Exec-{subtask}-{pun}: STATUS_UPDATE
 Task: {task-name}
 State: QA_GATE
 Health: {0-100}
 Summary: canary running
-Blockers: none
 ```
 
-**On receiving terminal state:** Send STATUS_UPDATE first, then the completion report below.
+**On reaching a terminal state:** write the STATUS_UPDATE row first, then deliver the
+completion report below as your final task result.
 
-## Completion Report to Coord
+## Completion Report (final task result)
 
-**Two-message sequence — ALWAYS send STATUS_UPDATE first, then completion report.**
+**Two-part sequence, both local to you — no SendMessage:** (1) write the STATUS_UPDATE row
+into your scratch file, (2) deliver the completion report AS YOUR FINAL TASK RESULT (the
+text your spawner receives when you stop).
 
-**DONE + QA GATE COMPLETE:**
+**DONE + QA GATE COMPLETE** — scratch row:
 ```
-Exec-{subtask}-{pun}: STATUS_UPDATE
 Task: {task-name}
 State: DONE
 Health: {0-100}
 Summary: {1-line summary}
-Blockers: none
 ```
-Then send the completion report:
+Then deliver as final task result:
 ```
 Exec-{subtask}-{pun}: DONE + QA GATE COMPLETE
 Task: {task-name}
@@ -194,43 +226,46 @@ Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
 Failure Class: {tool-execution | data-grounding | reasoning | none}
 Report: {project}/memory/qa/qa-report-{slug}-{timestamp}.md
-Awaiting Coord ACK/NACK...
+Report delivered as final task result. Stopping.
 ```
 
-**BLOCKED:**
+**BLOCKED** — scratch row:
 ```
-Exec-{subtask}-{pun}: STATUS_UPDATE
 Task: {task-name}
 State: BLOCKED
 Health: —
 Summary: {reason}
-Blockers: {workaround or "none"}
 ```
-Then send:
+Then deliver as final task result:
 ```
 Exec-{subtask}-{pun}: BLOCKED — {reason} — {workaround}
 ```
 
-**ESCALATE:**
+**ESCALATE** — scratch row:
 ```
-Exec-{subtask}-{pun}: STATUS_UPDATE
 Task: {task-name}
 State: ESCALATE
 Health: —
 Summary: {reason}
-Blockers: {none | workaround}
 ```
-Then send:
+Then deliver as final task result:
 ```
 Exec-{subtask}-{pun}: ESCALATE — failed due to no {permission type} permission
 Needed: {specific action}
 Scope: {what scope the action would affect}
-Awaiting: Coord-{l3-name}-{pun}
+Permission-gated actions: the ASK travels UP as this report. Consent NEVER travels back
+down as chat prose — it arrives as a main-session-authored file at
+{project}/memory/tasks/revisions/acks/{YYYY-MM-DD}-{task-id}.md, and the work is
+re-dispatched to a fresh Exec whose prompt carries that path. See
+~/.claude/runbooks/escalation-protocol.md §Permission-Gated Action Consent Path.
+Awaiting: spawner decision (delivered as a fresh spawn, not a reply to this agent)
 ```
 
-**On receiving ACK from Coord:** "looks good, die quietly" → delete scratch, stop.
+**After stopping on DONE:** an ACK from your spawner is simply the absence of a re-spawn —
+archive your scratch (already done per 6a) and there is nothing further to do.
 
-**On receiving NACK from Coord:** "fix: [list of issues]" → fix listed issues → re-run QA gate → re-report to Coord.
+**After stopping on DONE, if NACKed:** a NACK arrives as a FRESH SPAWN carrying your
+archived scratch path — fix the listed issues, re-run the QA gate, re-report.
 
 ## QA Skill Table
 
@@ -272,16 +307,53 @@ This is cheaper than reading memory files directly into your context.
 
 Executors do NOT self-respawn. If context reaches 70%+ during execution:
 1. Complete the current atomic unit (finish the file edit, finish the command)
-2. Send CHECKPOINT to Coord with context warning: "Context at {PCT}% — may need continuation"
-3. Wait for Coord ACK_CONTINUE or COURSE_CORRECT
-4. If context reaches 80%: escalate immediately
+2. Write a CHECKPOINT request to your checkpoint file (same mechanism as step 3a —
+   `~/.claude/runbooks/checkpoint-handshake-protocol.md`), with the context warning in
+   `Issues`: "Context at {PCT}% — may need continuation"
+3. Poll the same bounded loop as 3a for `Status: REPLIED`:
+   - `ACK_CONTINUE` or `COURSE_CORRECT — {instructions}`: act accordingly
+   - Timeout: PROCEED, add `CHECKPOINT_UNREVIEWED` to your final report (mandatory)
+4. If context reaches 80%: escalate immediately, delivered as your final task result
+   (see Messaging Protocol above — this is not a SendMessage):
    ```
    Exec-{subtask}-{pun}: ESCALATE — context at {PCT}%, cannot continue safely
    Needed: Coord to spawn a continuation Executor for the remaining work
    Scope: {what is left to complete}
-   Awaiting: Coord-{l3-name}-{pun}
+   Awaiting: spawner decision (delivered as a fresh spawn, not a reply to this agent)
    ```
 Executors never invoke /respawn-self or /coord-respawn-self — those are Coord/PD level.
+
+---
+
+## Loop Safety (NON-NEGOTIABLE)
+
+Three hard limits that prevent runaway Executor sessions:
+
+1. **MAX_TURNS: 20** — If your turn counter exceeds 20 tool calls:
+   a. Stop the current work unit cleanly (finish the current file edit if mid-edit).
+   b. Deliver best partial result + quality warning AS YOUR FINAL TASK RESULT (see
+      Messaging Protocol above — not a SendMessage):
+      ```
+      Exec-{subtask}-{pun}: TURN-CAP HIT (20 turns)
+      Partial result: {1-line of what was completed}
+      Quality note: session truncated — spawner should spawn a continuation Exec
+      Remaining: {what's left to complete}
+      ```
+   c. Stop immediately. Never die silently.
+
+2. **STALL_DETECT** — If the same tool call (same tool + materially same arguments)
+   repeats >5 times, you are in an infinite loop. STOP immediately. Instead:
+   a. Restate your objective in one sentence
+   b. Verify the actual world state (read the file, check git status)
+   c. Try a DIFFERENT approach
+   d. If still blocked → deliver BLOCKED with a trajectory note (what you tried, what the
+      stall looks like, suggested workaround) as your final task result and stop.
+      Never die silently. Your spawner decides next steps once it sees the report.
+
+3. **BUDGET_SIGNAL** — If context exceeds 70% (visible in statusline), complete
+   the current atomic unit and write a CHECKPOINT to your checkpoint file (per 3a) with
+   the context warning. Let your spawner's poll reply decide whether to continue or spawn
+   a continuation Exec for the remaining work.
 
 ---
 
@@ -291,8 +363,8 @@ Executors never invoke /respawn-self or /coord-respawn-self — those are Coord/
 - Do NOT escalate to PD directly — go through Coord first
 - Do NOT retry permission failures — always escalate
 - Do NOT hold findings in context — save at atomic level to project memory/task log
-- Delete scratch file on completion or stop
-- Stop immediately after sending your report
+- Archive scratch file (do not delete) on completion or stop — see Scratch Board
+- Stop immediately after delivering your report as your final task result
 
 ---
 

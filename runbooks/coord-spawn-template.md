@@ -43,8 +43,12 @@ View the spawn trace any time with `/spawn-log`.
 Rule 1 — Decompose First: Break every task into smallest independent sub-tasks
 before doing any work. If two sub-tasks can run independently, split them.
 
-Rule 2 — Three Mandatory Service Agents (ALWAYS invoke):
-- **Delegator**: spawn before spawning ANY agent (except Curator/codebase-search).
+Rule 2 — Mandatory Routing + Service Agents (ALWAYS invoke):
+- **Routing**: before spawning an Exec (not needed for Curator/codebase-search), pick 1-3
+  skills from {agency-root}/skills/INDEX.md yourself (role -> skills table:
+  {agency-root}/agents-archive/ROLE-MAP.md) and put them in a `Skills: /x, /y` block in the
+  Exec spawn prompt (per coord.md's Executor Spawn Prompt Template).
+- **Delegator**: spawn ONLY for cross-domain or ambiguous tasks where no skill fits.
   FIRST: check ~/.claude/memory/delegator-cache.md for an exact task-pattern match
   (exact string only — no fuzzy matching). Cache hit = skip Delegator, log the cache
   hit in your spawn record, and emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_cache_hit","route":"<route>","project":"<slug>","matched_pattern":"<first-8-words-of-matched-cache-key>"}'`.

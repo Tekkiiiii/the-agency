@@ -1,3 +1,9 @@
+---
+name: next-cache-components
+description: "Next.js 16+ Cache Components / Partial Prerendering (PPR) — mix static, cached, and dynamic content in a single route. Use when enabling cacheComponents, applying the 'use cache' directive, choosing cache profiles, or migrating from experimental.ppr. Explains the three content types: static (auto-prerendered), cached, and dynamic (Suspense)."
+paths: ["next.config.*", "app/**"]
+---
+
 # Cache Components (Next.js 16+)
 
 Cache Components enable Partial Prerendering (PPR) — mix static, cached, and dynamic content in a single route.

@@ -1,5 +1,7 @@
 # The Agency — Organizational Structure
 
+> **GENERALIST SWITCH (2026-10-06):** all member-level specialist agents are ARCHIVED to `agents-archive/generalist-2026-10-06/`; spawn `general-purpose` + skills per `agents-archive/ROLE-MAP.md`. Dept heads, coords, PDs, critiques, and service agents stay registered.
+
 <!-- load only when managing or onboarding agents -->
 
 > **Canonical reference document.** This file defines the complete org chart, leadership, communication protocols, and team structure for The Agency. All other documentation (runbooks, READMEs, agent files) references this as the source of truth.
@@ -40,7 +42,13 @@ Dept Head (Opus) ◄──────────────► Project Direct
 
 **Status reporting:** On-demand only. Dept heads request status from members/projects as needed. No automated loops. This keeps parent AI context at O(departments + exceptions) rather than O(agents).
 
-**Model tiering:** Agents are tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
+**Model tiering:** All agents tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
+
+Standing exceptions to Members = Sonnet:
+- **All Project Directors → Opus** (2026-07-25).
+- **All content-creation agents → Opus** (2026-07-27), including the dept-coord (the social-media writers are archived 2026-10-06). Plus `critique-content`. Rationale: output quality *is* the deliverable in these roles.
+
+NOTE: `modelTier` is documentation only — nothing in the harness reads it (the sole consumer is `scripts/agent-tools-audit.py`, as an audit flag). The key the harness acts on is `model:`. Keep both present and in sync; setting `modelTier` alone changes nothing.
 
 **Status loop policy:** Automated recurring loops are DISABLED. Use on-demand status checks only. Dept heads request status when needed — do not automate periodic pings. This avoids the token explosion risk of naive 15-30 min loop implementations (10k-21k reports/week without aggregation). See § on status reporting.
 
@@ -53,19 +61,12 @@ THE AGENCY
 │
 ├── COUNCIL CHAIR (parent AI)
 │
-├── ENGINEERING ────────────────── 16 agents ── Backend Architect ★
-│   ├── Sub-groups: security | blockchain
-│   └── Members: Frontend Developer, Mobile App Builder, AI Engineer,
-│       DevOps Automator, Rapid Prototyper, Senior Developer,
-│       Security Engineer, Autonomous Optimization Architect,
-│       Embedded Firmware Engineer, Incident Response Commander,
-│       Solidity Smart Contract Engineer, Technical Writer,
-│       Threat Detection Engineer, WeChat Mini Program Developer
+├── ENGINEERING ────────────────── Engineering Lead ★ (+ coord, PDs)
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
+│   Registered specialist: Solidity Smart Contract Engineer (`engineering/engineering-solidity-smart-contract-engineer.md`)
 │
-├── DESIGN ─────────────────────── 8 agents ── Brand Guardian ★
-│   └── Members: UI Designer, UX Researcher, UX Architect,
-│       Visual Storyteller, Whimsy Injector, Image Prompt Engineer,
-│       Inclusive Visuals Specialist
+├── DESIGN ─────────────────────── Design Lead ★ (+ coord)
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
 ├── GAME DEVELOPMENT ────────────── 18 agents ── Game Designer ★
 │   ├── Sub-groups: unity | unreal-engine | godot | roblox-studio
@@ -87,17 +88,8 @@ THE AGENCY
 │       Instagram Curator, Reddit Community Builder, App Store Optimizer,
 │       Social Media Strategist, SEO Specialist
 │
-├── CONTENT CREATION ────────────── 25 agents ── Chief Content Officer ★
-│   ├── Sub-lead: Content Director (Opus)
-│   ├── Sub-groups: social-media (12 agents)
-│   ├── Social Media: LinkedIn Writer, Twitter/X Writer, Instagram Writer,
-│   │   TikTok Writer, Reddit Writer, Threads Writer, Facebook Writer,
-│   │   Discord Writer, YouTube Writer, Pinterest Writer, Quora Writer,
-│   │   Telegram Writer
-│   └── Members: Blog & Article Writer, Case Study & Whitepaper Writer,
-│       Newsletter & Editorial Writer, Ad Copywriter, Landing Page Copywriter,
-│       Email Campaign Writer, Video Script Writer, Technical Writer (Content),
-│       Presentation Creator, Press & PR Writer, Content Editor
+├── CONTENT CREATION ────────────── Chief Content Officer ★ (+ coord)
+│   └── Members (incl. social-media writers): Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
 ├── SALES ───────────────────────── 8 agents ── Sales Coach ★
 │   └── Members: Outbound Strategist, Discovery Coach, Deal Strategist,
@@ -113,37 +105,25 @@ THE AGENCY
 │   └── Members: Trend Researcher, Feedback Synthesizer,
 │       Behavioral Nudge Engine
 │
-├── PROJECT MANAGEMENT ─────────── 6 agents ── Studio Producer ★
-│   └── Members: Project Shepherd, Jira Workflow Steward,
-│       Senior Project Manager, Studio Operations, Experiment Tracker
+├── PROJECT MANAGEMENT ─────────── Project Management Lead ★ (+ coord, mini-coord, PDs)
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
-├── TESTING ─────────────────────── 8 agents ── Reality Checker ★
-│   ├── Sub-groups: validation | analysis | performance
-│   └── Members: Evidence Collector, Test Results Analyzer,
-│       Performance Benchmarker, API Tester, Tool Evaluator,
-│       Workflow Optimizer, Accessibility Auditor
+├── TESTING ─────────────────────── Testing Lead ★
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
 ├── OPERATIONS ──────────────────── 6 agents ── Infrastructure Maintainer ★
 │   └── Members: Support Responder, Analytics Reporter, Finance Tracker,
 │       Legal Compliance Checker, Executive Summary Generator
 │
 ├── CAREER ───────────────────────── 7 agents ── career-ops PD ★
-│   └── Members: Offer Evaluator, Job Portal Scanner, CV Specialist,
+│   └── Members: Offer Evaluator, CV Specialist,
 │       Pipeline Strategist, Batch Processing Lead,
 │       Pattern Analysis Specialist, Application Form Assistant
 │
-├── SPECIALIZED ───────────────── 17 agents ── Agents Orchestrator ★
-│   ├── Sub-groups: infra | audit | advisory
-│   ├── Infra team (5): Agents Orchestrator, Identity Graph Operator,
-│       Agentic Identity & Trust Architect, LSP/Index Engineer,
-│       RoomManager
-│   ├── Audit team (3): Compliance Auditor, Blockchain Security Auditor,
-│       Model QA Specialist
-│   ├── Advisory team (1): Efficiency Advisor Loop
-│   └── Members: Sales Data Extraction Agent, Data Consolidation Agent,
-│       Report Distribution Agent, ZK Steward, Cultural Intelligence
-│       Strategist, Developer Advocate, Vietnamese Text Agent,
-│       Paperclip Control Plane ★
+├── SPECIALIZED ───────────────── Specialized Agents Lead ★ (+ coord)
+│   ├── Kept by name: PDs (*-pd), Delegator, curator, codebase-search,
+│   │   save-state-runner, project-scaffolder, task-executor
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
 ├── CRITIQUES ───────────────────── 12 agents ── Curmudgeon-in-Chief ★
 │   └── Members: critique-design (Playwright, visual/contrast/layout),
@@ -162,14 +142,8 @@ THE AGENCY
 │       XR Cockpit Interaction Specialist, visionOS Spatial Engineer,
 │       Terminal Integration Specialist
 │
-└── VIDEO STUDIO ────────────────── 17 agents ── Video Studio Director ★
-    ├── Sub-groups: pre-production (3) | production (3) | post-production (5) | distribution (3) | qa (2)
-    ├── Pre-production: Storyboard Artist, Shot Planner, Voice & Cast Director
-    ├── Production: Screen Recording Director, AI Video Producer, Animation Director
-    ├── Post-production: Video Editor, VFX & Motion Designer, Colorist & Audio Engineer,
-    │   Captioning Specialist, Thumbnail Designer
-    ├── Distribution: Platform Formatter, Video SEO Specialist, Upload Automator
-    └── QA: Video Quality Reviewer, Video Accessibility Auditor
+└── VIDEO STUDIO ────────────────── Video Studio Director ★
+    └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 ```
 
 ---
@@ -178,22 +152,21 @@ THE AGENCY
 
 | # | Leader | Department | Sub-groups | Key Responsibilities |
 |---|--------|-----------|------------|---------------------|
-| 1 | Backend Architect | Engineering | security, blockchain | API design, database architecture, scalability, technical standards |
-| 2 | Brand Guardian | Design | — | Brand consistency, visual identity, creative direction |
+| 1 | Engineering Lead | Engineering | — | API design, database architecture, scalability, technical standards |
+| 2 | Design Lead | Design | — | Brand consistency, visual identity, creative direction |
 | 3 | Game Designer | Game Development | unity, unreal-engine, godot, roblox-studio | Game mechanics, narrative, cross-engine creative vision |
 | 4 | Growth Hacker | Marketing | china (8 agents) | Growth strategy, user acquisition, China market expansion |
 | 5 | Chief Content Officer | Content Creation | social-media (12 agents) | Editorial standards, content pipeline, quality gates, all content formats |
 | 6 | Sales Coach | Sales | — | Deal strategy, pipeline health, team enablement |
 | 7 | PPC Campaign Strategist | Paid Media | — | Paid acquisition, campaign optimization, ROI |
 | 8 | Sprint Prioritizer | Product | — | Roadmap prioritization, sprint planning, feature scoping |
-| 9 | Studio Producer | Project Management | — | Production pipeline, milestone tracking, cross-team coordination |
-| 10 | Reality Checker | Testing | validation, analysis, performance | Test strategy, quality gates, performance benchmarks |
+| 9 | Project Management Lead | Project Management | — | Production pipeline, milestone tracking, cross-team coordination |
+| 10 | Testing Lead | Testing | — | Test strategy, quality gates, performance benchmarks |
 | 11 | Infrastructure Maintainer | Operations | — | Systems reliability, analytics, finance/legal/compliance |
-| 12 | Agents Orchestrator | Specialized | infra, audit | Agent lifecycle, identity/trust, code intelligence, auditing |
+| 12 | Specialized Agents Lead | Specialized | — | Agent lifecycle, identity/trust, code intelligence, auditing |
 | 13 | career-ops PD | Career | — | Job search pipeline: scanning, evaluation, CV generation, tracking, rejection analysis |
 | 14 | XR Interface Architect | Spatial Computing | — | XR/AR/VR strategy, visionOS, Apple platform spatial experiences |
-| 15 | Paperclip Control Plane | Specialized | — | Zero-human company orchestration, agent workforce management, cost governance |
-| 16 | RoomManager | Specialized | infra | Multi-agent chat rooms, active polling, member notifications, shared context management |
+| 15-16 | (Specialized members, archived 2026-10-06) | Specialized | see `agents-archive/ROLE-MAP.md` | — |
 | 17 | Video Studio Director | Video Studio | pre-production, production, post-production, distribution, qa | Video quality standards, production workflows, platform distribution, script-to-screen pipeline |
 | 17 | Curmudgeon-in-Chief | Critiques | — | Scored multi-axis critique of any deliverable; routes to specialist critics |
 
@@ -207,18 +180,18 @@ The **Agency Council** is the governing body for all cross-department decisions.
 
 | Member | Role | Department | Communication |
 |--------|------|-----------|---------------|
-| Backend Architect | engineering-lead | Engineering | SendMessage to `engineering-lead` |
-| Brand Guardian | design-lead | Design | SendMessage to `design-lead` |
+| Engineering Lead | engineering-lead | Engineering | SendMessage to `engineering-lead` |
+| Design Lead | design-lead | Design | SendMessage to `design-lead` |
 | Game Designer | game-development-lead | Game Development | SendMessage to `game-development-lead` |
 | Growth Hacker | marketing-lead | Marketing | SendMessage to `marketing-lead` |
 | Chief Content Officer | content-creation-lead | Content Creation | SendMessage to `content-creation-lead` |
 | Sales Coach | sales-lead | Sales | SendMessage to `sales-lead` |
 | PPC Campaign Strategist | paid-media-lead | Paid Media | SendMessage to `paid-media-lead` |
 | Sprint Prioritizer | product-lead | Product | SendMessage to `product-lead` |
-| Studio Producer | pm-lead | Project Management | SendMessage to `pm-lead` |
-| Reality Checker | testing-lead | Testing | SendMessage to `testing-lead` |
+| Project Management Lead | pm-lead | Project Management | SendMessage to `pm-lead` |
+| Testing Lead | testing-lead | Testing | SendMessage to `testing-lead` |
 | Infrastructure Maintainer | operations-lead | Operations | SendMessage to `operations-lead` |
-| Agents Orchestrator | specialized-lead | Specialized | SendMessage to `specialized-lead` |
+| Specialized Agents Lead | specialized-lead | Specialized | SendMessage to `specialized-lead` |
 | XR Interface Architect | spatial-lead | Spatial Computing | SendMessage to `spatial-lead` |
 | Curmudgeon-in-Chief | critiques-lead | Critiques | SendMessage to `critiques-lead` |
 
@@ -261,7 +234,7 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 | Specialized | `specialized/` |
 | Specialized (Infra sub-team) | `specialized/infra/` |
 | **Rooms Infrastructure** | `~/.claude/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
-| **RoomManager** | `specialized/infra/room-manager.md` — always-on via 15-min cron polling |
+| **Room polling** | ARCHIVED agent 2026-10-06 — use the `/room-manager` skill (see `agents-archive/ROLE-MAP.md`) |
 | Specialized (Audit sub-team) | `specialized/audit/` |
 | Spatial Computing | `spatial-computing/` |
 

@@ -31,7 +31,7 @@ Born from a Reddit thread and months of iteration, **The Agency** is a growing c
 cp -r agency-agents/* ~/.claude/agents/
 
 # Now activate any agent in your Claude Code sessions:
-# "Hey Claude, activate Frontend Developer mode and help me build a React component"
+# "Hey Claude, use general-purpose + /frontend, /tailwind and help me build a React component"
 ```
 
 ### Option 2: Use as Reference
@@ -78,38 +78,17 @@ Leaders operate on a 3-tier approval model: **Tier 1** (dept leader approves imm
 
 Building the future, one commit at a time.
 
+> Specialist roles are archived; spawn general-purpose + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`.
+
 | Agent | Specialty | When to Use |
 |-------|-----------|-------------|
-| 🎨 [Frontend Developer](engineering/engineering-frontend-developer.md) | React/Vue/Angular, UI implementation, performance | Modern web apps, pixel-perfect UIs, Core Web Vitals optimization |
-| 🏗️ [Backend Architect](engineering/engineering-backend-architect.md) | API design, database architecture, scalability | Server-side systems, microservices, cloud infrastructure |
-| 📱 [Mobile App Builder](engineering/engineering-mobile-app-builder.md) | iOS/Android, React Native, Flutter | Native and cross-platform mobile applications |
-| 🤖 [AI Engineer](engineering/engineering-ai-engineer.md) | ML models, deployment, AI integration | Machine learning features, data pipelines, AI-powered apps |
-| 🚀 [DevOps Automator](engineering/engineering-devops-automator.md) | CI/CD, infrastructure automation, cloud ops | Pipeline development, deployment automation, monitoring |
-| ⚡ [Rapid Prototyper](engineering/engineering-rapid-prototyper.md) | Fast POC development, MVPs | Quick proof-of-concepts, hackathon projects, fast iteration |
-| 💎 [Senior Developer](engineering/engineering-senior-developer.md) | Laravel/Livewire, advanced patterns | Complex implementations, architecture decisions |
-| 🔒 [Security Engineer](engineering/engineering-security-engineer.md) | Threat modeling, secure code review, security architecture | Application security, vulnerability assessment, security CI/CD |
-| ⚡ [Autonomous Optimization Architect](engineering/engineering-autonomous-optimization-architect.md) | LLM routing, cost optimization, shadow testing | Autonomous systems needing intelligent API selection and cost guardrails |
-| 🔩 [Embedded Firmware Engineer](engineering/engineering-embedded-firmware-engineer.md) | Bare-metal, RTOS, ESP32/STM32/Nordic firmware | Production-grade embedded systems and IoT devices |
-| 🚨 [Incident Response Commander](engineering/engineering-incident-response-commander.md) | Incident management, post-mortems, on-call | Managing production incidents and building incident readiness |
 | ⛓️ [Solidity Smart Contract Engineer](engineering/engineering-solidity-smart-contract-engineer.md) | EVM contracts, gas optimization, DeFi | Secure, gas-optimized smart contracts and DeFi protocols |
-| 📚 [Technical Writer](engineering/engineering-technical-writer.md) | Developer docs, API reference, tutorials | Clear, accurate technical documentation |
-| 🎯 [Threat Detection Engineer](engineering/engineering-threat-detection-engineer.md) | SIEM rules, threat hunting, ATT&CK mapping | Building detection layers and threat hunting |
-| 💬 [WeChat Mini Program Developer](engineering/engineering-wechat-mini-program-developer.md) | WeChat ecosystem, Mini Programs, payment integration | Building performant apps for the WeChat ecosystem |
 
 ### 🎨 Design Division
 
 Making it beautiful, usable, and delightful.
 
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🎯 [UI Designer](design/design-ui-designer.md) | Visual design, component libraries, design systems | Interface creation, brand consistency, component design |
-| 🔍 [UX Researcher](design/design-ux-researcher.md) | User testing, behavior analysis, research | Understanding users, usability testing, design insights |
-| 🏛️ [UX Architect](design/design-ux-architect.md) | Technical architecture, CSS systems, implementation | Developer-friendly foundations, implementation guidance |
-| 🎭 [Brand Guardian](design/design-brand-guardian.md) | Brand identity, consistency, positioning | Brand strategy, identity development, guidelines |
-| 📖 [Visual Storyteller](design/design-visual-storyteller.md) | Visual narratives, multimedia content | Compelling visual stories, brand storytelling |
-| ✨ [Whimsy Injector](design/design-whimsy-injector.md) | Personality, delight, playful interactions | Adding joy, micro-interactions, Easter eggs, brand personality |
-| 📷 [Image Prompt Engineer](design/design-image-prompt-engineer.md) | AI image generation prompts, photography | Photography prompts for Midjourney, DALL-E, Stable Diffusion |
-| 🌈 [Inclusive Visuals Specialist](design/design-inclusive-visuals-specialist.md) | Representation, bias mitigation, authentic imagery | Generating culturally accurate AI images and video |
+> Specialist roles are archived; spawn general-purpose + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`.
 
 ### 💰 Paid Media Division
 
@@ -179,29 +158,13 @@ Building the right thing at the right time.
 
 Keeping the trains running on time (and under budget).
 
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🎬 [Studio Producer](project-management/project-management-studio-producer.md) | High-level orchestration, portfolio management | Multi-project oversight, strategic alignment, resource allocation |
-| 🐑 [Project Shepherd](project-management/project-management-project-shepherd.md) | Cross-functional coordination, timeline management | End-to-end project coordination, stakeholder management |
-| ⚙️ [Studio Operations](project-management/project-management-studio-operations.md) | Day-to-day efficiency, process optimization | Operational excellence, team support, productivity |
-| 🧪 [Experiment Tracker](project-management/project-management-experiment-tracker.md) | A/B tests, hypothesis validation | Experiment management, data-driven decisions, testing |
-| 👔 [Senior Project Manager](project-management/project-manager-senior.md) | Realistic scoping, task conversion | Converting specs to tasks, scope management |
-| 📋 [Jira Workflow Steward](project-management/project-management-jira-workflow-steward.md) | Git workflow, branch strategy, traceability | Enforcing Jira-linked Git discipline and delivery |
+> Specialist roles are archived; spawn general-purpose + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`.
 
 ### 🧪 Testing Division
 
 Breaking things so users don't have to.
 
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 📸 [Evidence Collector](testing/testing-evidence-collector.md) | Screenshot-based QA, visual proof | UI testing, visual verification, bug documentation |
-| 🔍 [Reality Checker](testing/testing-reality-checker.md) | Evidence-based certification, quality gates | Production readiness, quality approval, release certification |
-| 📊 [Test Results Analyzer](testing/testing-test-results-analyzer.md) | Test evaluation, metrics analysis | Test output analysis, quality insights, coverage reporting |
-| ⚡ [Performance Benchmarker](testing/testing-performance-benchmarker.md) | Performance testing, optimization | Speed testing, load testing, performance tuning |
-| 🔌 [API Tester](testing/testing-api-tester.md) | API validation, integration testing | API testing, endpoint verification, integration QA |
-| 🛠️ [Tool Evaluator](testing/testing-tool-evaluator.md) | Technology assessment, tool selection | Evaluating tools, software recommendations, tech decisions |
-| 🔄 [Workflow Optimizer](testing/testing-workflow-optimizer.md) | Process analysis, workflow improvement | Process optimization, efficiency gains, automation opportunities |
-| ♿ [Accessibility Auditor](testing/testing-accessibility-auditor.md) | WCAG auditing, assistive technology testing | Accessibility compliance, screen reader testing, inclusive design verification |
+> Specialist roles are archived; spawn general-purpose + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`.
 
 ### 🏗️ Operations Division
 
@@ -233,22 +196,11 @@ Building the immersive future.
 
 The unique specialists who don't fit in a box.
 
+> Specialist roles are archived; spawn general-purpose + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`.
+
 | Agent | Specialty | When to Use |
 |-------|-----------|-------------|
-| 🎭 [Agents Orchestrator](specialized/agents-orchestrator.md) | Multi-agent coordination, workflow management | Complex projects requiring multiple agent coordination |
-| 🔍 [LSP/Index Engineer](specialized/lsp-index-engineer.md) | Language Server Protocol, code intelligence | Code intelligence systems, LSP implementation, semantic indexing |
-| 📥 [Sales Data Extraction Agent](specialized/sales-data-extraction-agent.md) | Excel monitoring, sales metric extraction | Sales data ingestion, MTD/YTD/Year End metrics |
-| 📈 [Data Consolidation Agent](specialized/data-consolidation-agent.md) | Sales data aggregation, dashboard reports | Territory summaries, rep performance, pipeline snapshots |
-| 📬 [Report Distribution Agent](specialized/report-distribution-agent.md) | Automated report delivery | Territory-based report distribution, scheduled sends |
-| 🔐 [Agentic Identity & Trust Architect](specialized/agentic-identity-trust.md) | Agent identity, authentication, trust verification | Multi-agent identity systems, agent authorization, audit trails |
-| 🔗 [Identity Graph Operator](specialized/identity-graph-operator.md) | Shared identity resolution for multi-agent systems | Entity deduplication, merge proposals, cross-agent identity consistency |
-| 💸 [Accounts Payable Agent](specialized/accounts-payable-agent.md) | Payment processing, vendor management, audit | Autonomous payment execution across crypto, fiat, stablecoins |
-| 🛡️ [Blockchain Security Auditor](specialized/blockchain-security-auditor.md) | Smart contract audits, exploit analysis | Finding vulnerabilities in contracts before deployment |
-| 📋 [Compliance Auditor](specialized/compliance-auditor.md) | SOC 2, ISO 27001, HIPAA, PCI-DSS | Guiding organizations through compliance certification |
-| 🌍 [Cultural Intelligence Strategist](specialized/specialized-cultural-intelligence-strategist.md) | Global UX, representation, cultural exclusion | Ensuring software resonates across cultures |
-| 🗣️ [Developer Advocate](specialized/specialized-developer-advocate.md) | Community building, DX, developer content | Bridging product and developer community |
-| 🔬 [Model QA Specialist](specialized/specialized-model-qa.md) | ML audits, feature analysis, interpretability | End-to-end QA for machine learning models |
-| 🗃️ [ZK Steward](specialized/zk-steward.md) | Knowledge management, Zettelkasten, notes | Building connected, validated knowledge bases |
+| 🛡️ [Blockchain Security Auditor](specialized/audit/blockchain-security-auditor.md) | Smart contract audits, exploit analysis | Finding vulnerabilities in contracts before deployment |
 
 ### 🎮 Game Development Division
 
@@ -305,11 +257,11 @@ Building worlds, systems, and experiences across every major engine.
 ### Scenario 1: Building a Startup MVP
 
 **Your Team**:
-1. 🎨 **Frontend Developer** - Build the React app
-2. 🏗️ **Backend Architect** - Design the API and database
+1. 🎨 **general-purpose + /frontend, /tailwind** - Build the React app
+2. 🏗️ **general-purpose + /backend, /postgresql-schema** - Design the API and database
 3. 🚀 **Growth Hacker** - Plan user acquisition
-4. ⚡ **Rapid Prototyper** - Fast iteration cycles
-5. 🔍 **Reality Checker** - Ensure quality before launch
+4. ⚡ **general-purpose + /mattpocock-skills:prototype** - Fast iteration cycles
+5. 🔍 **Testing Lead** - Ensure quality before launch
 
 **Result**: Ship faster with specialized expertise at every stage.
 
@@ -331,12 +283,12 @@ Building worlds, systems, and experiences across every major engine.
 ### Scenario 3: Enterprise Feature Development
 
 **Your Team**:
-1. 👔 **Senior Project Manager** - Scope and task planning
-2. 💎 **Senior Developer** - Complex implementation
-3. 🎨 **UI Designer** - Design system and components
-4. 🧪 **Experiment Tracker** - A/B test planning
-5. 📸 **Evidence Collector** - Quality verification
-6. 🔍 **Reality Checker** - Production readiness
+1. 👔 **general-purpose + /superpowers-writing-plans** - Scope and task planning
+2. 💎 **general-purpose + /laravel-builder, /review** - Complex implementation
+3. 🎨 **general-purpose + /ui-ux-pro-max** - Design system and components
+4. 🧪 **general-purpose + /content-experimentation-best-practices** - A/B test planning
+5. 📸 **general-purpose + /qa-only, /browse** - Quality verification
+6. 🔍 **Testing Lead** - Production readiness
 
 **Result**: Enterprise-grade delivery with quality gates and documentation.
 
@@ -361,7 +313,7 @@ Building worlds, systems, and experiences across every major engine.
 
 **Your Team**: All 14 departments working in parallel on a single mission.
 
-See the **[Nexus Spatial Discovery Exercise](examples/nexus-spatial-discovery.md)** -- a complete example where 8 agents (Product Trend Researcher, Backend Architect, Brand Guardian, Growth Hacker, Support Responder, UX Researcher, Project Shepherd, and XR Interface Architect) were deployed simultaneously to evaluate a software opportunity and produce a unified product plan covering market validation, technical architecture, brand strategy, go-to-market, support systems, UX research, project execution, and spatial UI design.
+See the **[Nexus Spatial Discovery Exercise](examples/nexus-spatial-discovery.md)** -- a complete example where 8 agents (Product Trend Researcher, backend, brand, growth, support, UX research, project management, and XR roles; the archived specialist roles now run as general-purpose + skills) were deployed simultaneously to evaluate a software opportunity and produce a unified product plan covering market validation, technical architecture, brand strategy, go-to-market, support systems, UX research, project execution, and spatial UI design.
 
 **Result**: Comprehensive, cross-functional product blueprint produced in a single session. [More examples](examples/).
 
@@ -430,7 +382,7 @@ Each agent is designed with:
 
 > "I don't just test your code - I default to finding 3-5 issues and require visual proof for everything."
 >
-> -- **Evidence Collector** (Testing Division)
+> -- an archived Testing role (now /qa-only + /browse)
 
 > "You're not marketing on Reddit - you're becoming a valued community member who happens to represent a brand."
 >
@@ -438,17 +390,17 @@ Each agent is designed with:
 
 > "Every playful element must serve a functional or emotional purpose. Design delight that enhances rather than distracts."
 >
-> -- **Whimsy Injector** (Design Division)
+> -- an archived Design role (now /emil-design-eng)
 
 > "Let me add a celebration animation that reduces task completion anxiety by 40%"
 >
-> -- **Whimsy Injector** (during a UX review)
+> -- the same archived Design role, during a UX review
 
 ---
 
 ## 📊 Stats
 
-- 🎭 **175 Specialized Agents** across 14 departments
+- 🎭 Specialist roles archived 2026-10-06 (see ROLE-MAP); registered agents are dept heads, coords, PDs, critiques, and service agents
 - 📝 **46,000+ lines** of personality, process, and code examples
 - ⏱️ **Months of iteration** from real-world usage
 - 🌟 **Battle-tested** in production environments
@@ -537,7 +489,7 @@ Agents are copied directly from the repo into `~/.claude/agents/` -- no conversi
 
 Then activate in Claude Code:
 ```
-Use the Frontend Developer agent to review this component.
+Use the general-purpose agent with /frontend to review this component.
 ```
 
 See [integrations/claude-code/README.md](integrations/claude-code/README.md) for details.
@@ -554,7 +506,7 @@ Agents are copied directly from the repo into `~/.github/agents/` -- no conversi
 
 Then activate in GitHub Copilot:
 ```
-Use the Frontend Developer agent to review this component.
+Use the general-purpose agent with /frontend to review this component.
 ```
 
 See [integrations/github-copilot/README.md](integrations/github-copilot/README.md) for details.
@@ -643,7 +595,7 @@ cd /your/project
 
 Then reference agents in your Aider session:
 ```
-Use the Frontend Developer agent to refactor this component.
+Use the general-purpose agent with /frontend to refactor this component.
 ```
 
 See [integrations/aider/README.md](integrations/aider/README.md) for details.
@@ -661,7 +613,7 @@ cd /your/project
 
 Reference agents in Windsurf's Cascade:
 ```
-Use the Reality Checker agent to verify this is production ready.
+Use the general-purpose agent with /qa-only to verify this is production ready.
 ```
 
 See [integrations/windsurf/README.md](integrations/windsurf/README.md) for details.

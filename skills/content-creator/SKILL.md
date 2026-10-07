@@ -1,6 +1,6 @@
 ---
 name: content-creator
-description: "Complete content creation framework — 14 copywriting formulas, 18 psychology effects, 10 NLP techniques, 7 pricing strategies, 6 voice tones, and a 4-step Brief→Brainstorm→Angle→Writing process. Trigger when the user wants to draft ads, social posts, captions, scripts, hooks, landing-page copy, or any conversion-focused content. Niche-agnostic: caller supplies brand/topic, demographic, and target platforms at invocation. Optional language packs (en, vi) and niche presets (cosmetics-beauty, saas, banking-finance, crypto) load on demand."
+description: "Use when drafting conversion-focused content: ads, social posts, captions, scripts, hooks, landing-page copy. 14 copy formulas, psychology effects, NLP techniques, 4-step Brief>Brainstorm>Angle>Writing. Niche-agnostic; optional en/vi packs and niche presets. Not for long-form blog or SEO (use /pipeline-content)."
 ---
 
 # Content Creator Skill

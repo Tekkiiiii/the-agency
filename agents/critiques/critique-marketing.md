@@ -4,8 +4,9 @@ description: Positioning, funnel, and retention critic. Finds weak value proposi
 department: critiques
 role: specialist
 reports_to: critiques-lead
-modelTier: sonnet
-model: sonnet
+modelTier: opus
+model: opus[1m]
+effort: high
 skills:
   - marketing-critique
   - content-critique

@@ -1,12 +1,6 @@
 ---
 name: coord-respawn-self
-description: >
-  Coord context-aware self-respawn. Invoked by a Coord agent when context window
-  reaches 80% threshold mid-L3. Saves mid-L3 state, writes a continuation manifest,
-  notifies the spawner (PD or Dept Head depending on caller role), and stops. The
-  spawner then resumes the L3 with a fresh Coord. Enforces max 3 respawns per Coord
-  per 24h. Use at clean task boundaries only — never mid-Executor-spawn or
-  mid-ACK/NACK cycle.
+description: "Used by a Coord agent when context reaches 80% mid-L3. Saves mid-L3 state, writes a continuation manifest, notifies the spawner (PD or Dept Head) and stops so a fresh Coord resumes. Max 3 respawns per Coord per 24h. Only at clean task boundaries, never mid-Executor-spawn or mid-ACK/NACK."
 ---
 
 # /coord-respawn-self — Coord Context-Aware Self-Respawn

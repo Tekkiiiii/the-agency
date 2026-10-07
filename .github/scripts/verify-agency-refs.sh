@@ -14,7 +14,7 @@ ROOT="${1:?usage: verify-agency-refs.sh <agency-root>}"
 [ -d "$ROOT" ] || { echo "FAIL: $ROOT is not a directory"; exit 1; }
 
 # Trees that shipped content is allowed to point into.
-TREES="runbooks hooks scripts core design-system"
+TREES="runbooks hooks scripts core design-system agents-archive"
 # Trees that are scanned for references.
 SOURCES="agents core skills runbooks"
 

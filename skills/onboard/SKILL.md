@@ -1,11 +1,6 @@
 ---
 name: onboard
-description: >
-  Interactive onboarding for The Agency inside Claude Code. Walks a new user through
-  the full system: what it is, how it works, verifying installation, enabling slash
-  commands, connecting MCP servers, creating a first project, and a guided first-run
-  demo. Triggers on: "onboard", "set up the agency", "get started", "walk me through",
-  "how does this work", "first time setup". Run after `agency init` or `./install.sh`.
+description: "Use on \"onboard\", \"set up the agency\", \"get started\", \"walk me through\", \"how does this work\", \"first time setup\", after `agency init` or ./install.sh. Interactive tour of The Agency in Claude Code: install check, slash commands, MCP servers, first project, demo run."
 aliases:
   - setup-agency
   - get-started
@@ -34,7 +29,7 @@ This is Claude Code, fixed: memory that survives sessions, agents that
 finish what they start, QA gates before "done", and token-lean routing.
 Here's what it gives you:
 
-  Agents    235+ specialists across 16 departments (Engineering, Design,
+  Agents    130+ agents across 16 departments (Engineering, Design,
             Marketing, Content, Sales, Testing, Game Dev, and more).
             Each agent has a role, a model assignment, and a protocol.
 

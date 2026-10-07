@@ -1,16 +1,6 @@
 ---
 name: pipeline-research
-description: >
-  Full research pipeline: auto-researcher → firecrawl-agent → graphify → notebooklm-memory.
-  Turns a research question or topic into a structured knowledge asset — multi-source synthesis,
-  crawled source content, knowledge graph, and NotebookLM notebook. Trigger when: the user asks
-  to research a topic in depth; before starting a project that requires external context
-  (competitor analysis, market research, technical investigation); when auto-researcher alone
-  is insufficient and deep web crawling + long-term memory storage is also needed.
-  Key capabilities: confidence-tiered synthesis (CONFIRMED / SUPPORTED / INFERRED / SPECULATIVE),
-  selective crawling of high-value source pages, graph-based relationship mapping, and
-  persistent NotebookLM storage for future retrieval. Do NOT chain auto-researcher, firecrawl-agent,
-  graphify, or notebooklm-memory separately after running this pipeline — they all run inside.
+description: "Use when asked to research a topic in depth, or before a project needing external context (competitors, market, technical investigation). Chains auto-researcher, firecrawl-agent, graphify and notebooklm-memory into confidence-tiered synthesis, a knowledge graph and a NotebookLM notebook. Do not chain those separately."
 ---
 
 # Pipeline: Research

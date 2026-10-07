@@ -83,7 +83,7 @@ ROLE_MAP = {
     "coord": "coord", "mini-coord": "coord", "leader": "coord",
     "task-executor": "executor", "executor": "executor",
     "specialist": "specialist", "member": "specialist", "contract": "specialist",
-    "integration-tester": "specialist", "delegator": "specialist", "protocol": "specialist",
+    "delegator": "specialist", "protocol": "specialist",
 }
 
 

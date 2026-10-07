@@ -1,7 +1,6 @@
 ---
 name: cc-loop
-description: >
-  Iterative quality loop for any content deliverable. Runs fixer → polish → N parallel critiques → score → loop until pass criteria are met. Default pass criteria: avg score ≥ 80 AND min score ≥ 70 across all critics. Max 3 rounds (configurable). Critic set is domain-configurable: design+content+marketing+pedagogy for decks/presentations; content+marketing+SEO for blog posts; content+marketing for emails; custom list accepted. Each round writes an audit log entry so you can track how the deliverable evolved. Trigger when: user says "run X through the loop", "polish and critique", "iterate to quality bar", "/cc-loop", or any time a deliverable needs systematic multi-axis review with pass criteria. Also trigger when a single critique came back with issues and the user wants a structured fix-and-verify cycle rather than ad-hoc edits. Key capabilities: snapshot-grounded design critique via Playwright at 1920×1080, format-aware humanizer + proofreader polish pass, configurable scoring threshold and max rounds, reframe override for mid-loop goal changes, and full round-by-round audit log at {deliverable-dir}/cc-loop-log.md.
+description: "Use to iterate a deliverable to a quality bar: \"/cc-loop\", \"run X through the loop\", \"polish and critique\", \"iterate to quality bar\". Fixer, polish, parallel critics, score, repeat (pass: avg >= 80, min >= 70; max 3 rounds). Domain-configurable critics; logs each round to cc-loop-log.md."
 ---
 
 # cc-loop — Content Critique Loop
@@ -11,8 +10,8 @@ polish → critics (in parallel) → score → loop until the deliverable passes
 or rounds are exhausted.
 
 Agent types used (from Agency catalog):
-- **Fixer**: Content Director (`agents/content-creation/content-director.md`)
-- **Polish**: Content Editor (`agents/content-creation/content-editor.md`)
+- **Fixer**: `general-purpose` + `/content-critique`, `/quality-loop-router` (role file: see `{agency-root}/agents-archive/ROLE-MAP.md`; the old fixer agent is archived)
+- **Polish**: `general-purpose` + `/content-polish`, `/humanizer-writing`, `/proofreader` (the old editor agent is archived)
 - **Design critic**: `agents/critiques/critique-design.md` (Playwright at 1920×1080, screenshot-grounded)
 - **Content critic**: `agents/critiques/critique-content.md` (copy/voice/AI-slop)
 - **Marketing critic**: `agents/critiques/critique-marketing.md` (positioning/funnel/ICP/CTA)
@@ -130,9 +129,9 @@ If `--critiques-dir` is not provided, proceed to Step 1 with no prior critiques.
 
 ## Step 1: Fixer Pass
 
-**Agent type:** Content Director
+**Agent type:** `general-purpose` + `/content-critique`, `/quality-loop-router`
 
-Spawn a Content Director agent with the following instructions:
+Spawn a general-purpose agent (skills named in its prompt) with the following instructions:
 
 ```
 You are running the FIXER PASS of a cc-loop quality cycle.
@@ -173,9 +172,9 @@ Wait for Fixer to complete before proceeding.
 
 Skip this step entirely if `--no-polish` flag is set.
 
-**Agent type:** Content Editor
+**Agent type:** `general-purpose` + `/content-polish`, `/humanizer-writing`, `/proofreader`
 
-Spawn a Content Editor agent with the following instructions:
+Spawn a general-purpose agent (skills named in its prompt) with the following instructions:
 
 ```
 You are running the POLISH PASS of a cc-loop quality cycle.
@@ -587,8 +586,8 @@ This log is append-only. Do not overwrite prior entries.
 
 This skill was built from a real loop run on 2026-05-22 (AI for CEO Day 4 deck):
 
-- **Fixer pass** → Content Director agent applied fixes from 4 critique reports
-- **Polish pass** → Content Editor ran humanizer + proofreader in sequence
+- **Fixer pass** → general-purpose fixer applied fixes from 4 critique reports
+- **Polish pass** → general-purpose polisher ran humanizer + proofreader in sequence
 - **Critics (parallel)** → critique-design (Playwright at 1920×1080), critique-marketing, critique-content, critique-pedagogy
 - **Score check** → avg/min thresholds evaluated; loop continued until pass or max rounds
 

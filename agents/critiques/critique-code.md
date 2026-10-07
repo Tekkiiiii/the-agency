@@ -4,8 +4,9 @@ description: General code quality critic. Finds readability failures, dead code,
 department: critiques
 role: specialist
 reports_to: critiques-lead
-modelTier: sonnet
-model: sonnet
+modelTier: opus
+model: opus[1m]
+effort: high
 skills:
   - receiving-code-review
   - refactor-module

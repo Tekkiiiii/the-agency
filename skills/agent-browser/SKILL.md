@@ -1,7 +1,6 @@
 ---
 name: agent-browser
-description: >
-  Native Rust headless browser CLI for AI agents. Automates web UIs, scrapes pages, runs QA tests, and performs structured regression testing with health scores and fix loops. Triggers on: "automate browser", "scrape webpage", "QA test this site", "run browser tests", "find bugs on this page", "automate login", "take screenshot", "click this button". Also triggers on: "open this URL", "navigate to", "browser automation", "headless test", "web scraping", "test the web UI". Key capabilities: ~100ms per command, QA workflows with 8-category health scores, diff-aware regression on changed files/routes, multi-session isolation with named profiles, authenticated session persistence, tabs and iframe support, cloud provider integration (Browserless, Browserbase, Browser Use), content boundaries to prevent prompt injection, and command chaining with `&&`. Ideal for QA engineers, developers running regression suites, and agents needing reliable browser automation. Also for: visual bug reports, form filling, cookie session management, endpoint smoke testing, and comparing staging vs production environments.
+description: "Use for headless browser automation and QA: \"automate browser\", \"QA test this site\", \"scrape webpage\", \"take screenshot\", \"automate login\", \"find bugs on this page\". Rust CLI with QA health scores, diff-aware regression, named session profiles and cloud providers. Not for the user's real Chrome (use /browser-harness)."
 ---
 
 # agent-browser

@@ -545,7 +545,7 @@ patterns:
     - trong kỷ nguyên số
     - trong thế giới nhịp sống nhanh ngày nay
   why_it_matters: Đây là khuôn mở bài bị nhiều nguồn xếp vào nhóm cấm; danh sách dấu hiệu tiếng Việt có
-    sẵn trong skill content-creator (languages/vi.md, dòng 23) cũng liệt kê "trong thời đại ngày nay"
+    sẵn trong skill content-creator (languages/vi.md, mục "Tránh dùng") cũng liệt kê "trong thời đại ngày nay"
     là dấu hiệu copy máy dịch.
   rewrite_strategy:
   - Bỏ lời dẫn và mở thẳng bằng vấn đề, kết luận hoặc mốc thời gian cụ thể.

@@ -177,7 +177,7 @@ tool-specific formats.
 1. **🎭 Strong Personality**
    - Give the agent a distinct voice and character
    - Not "I am a helpful assistant" - be specific and memorable
-   - Example: "I default to finding 3-5 issues and require visual proof" (Evidence Collector)
+   - Example: "I default to finding 3-5 issues and require visual proof" (an evidence-QA role)
 
 2. **📋 Clear Deliverables**
    - Provide concrete code examples
@@ -401,9 +401,9 @@ Contributors who make significant contributions will be:
 ### For New Contributors
 
 - [README.md](README.md) - Overview and agent catalog
-- [Example: Frontend Developer](engineering/engineering-frontend-developer.md) - Well-structured agent example
+- [Example: Coord](specialized/specialized-coord.md) - Well-structured agent example (specialist roles are archived; see `{agency-root}/agents-archive/ROLE-MAP.md`)
 - [Example: Reddit Community Builder](marketing/marketing-reddit-community-builder.md) - Great personality example
-- [Example: Whimsy Injector](design/design-whimsy-injector.md) - Creative specialist example
+- [Example: Design Lead](design/design-lead.md) - Dept head example
 
 ### For Agent Design
 

@@ -1,3 +1,9 @@
+---
+name: next-best-practices
+description: "Next.js best-practice rules for writing or reviewing Next.js code. Use when working on a Next.js app: file conventions and route segments, RSC boundaries (invalid async client components, non-serializable props), async API patterns (Next 15+), runtime selection, directives, error handling, and the v16 middleware→proxy rename. Topic detail files load on demand."
+paths: ["next.config.*", "app/**"]
+---
+
 # Next.js Best Practices
 
 Apply these rules when writing or reviewing Next.js code.

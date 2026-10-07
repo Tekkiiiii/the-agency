@@ -1,14 +1,6 @@
 ---
 name: delegate
-description: |
-  Snapshots the full current context — open file, conversation history, project memory files,
-  decisions made, and what's left — then hands the task off to a specialized subagent (preferred)
-  or general-purpose subagent (fallback) that drives to completion autonomously. Use when you need
-  to offload work without losing context, when a task spans files or domains that don't fit a
-  focused specialist, or when you want a subagent to own a task end-to-end while you stay free to
-  work on other things. Also useful for keeping the main context window clean during long multi-step
-  sessions. The subagent receives a structured briefing and works independently — no further
-  prompting required. Check Agency catalog for named specialists first.
+description: "Use to hand a task off with full context to a subagent that owns it end-to-end: \"delegate this\", offloading multi-step work, or keeping the main context clean. Snapshots open files, conversation, memory and decisions into a briefing; prefers a named specialist, falls back to general-purpose."
 triggers:
   - /delegate
   - delegate this task

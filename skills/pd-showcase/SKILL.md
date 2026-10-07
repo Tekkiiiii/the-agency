@@ -1,12 +1,6 @@
 ---
 name: pd-showcase
-description: >
-  Toggle PD showcase mode on/off for live demos. When ON, /pd-spawn and /pd-resume
-  spawn PDs in the foreground with verbose narration so the audience sees every
-  tool call, reasoning step, and decision in real-time. When OFF (default), PDs
-  run silently in the background as usual. Invoke as /pd-showcase on, off, or
-  status. State is a single marker file at ~/.claude/state/pd-showcase.flag —
-  read by pd-spawn and pd-resume at spawn-time.
+description: "Use on /pd-showcase on|off|status to toggle live-demo mode. ON makes /pd-spawn and /pd-resume run PDs in the foreground with verbose narration; OFF (default) runs them silently in the background. State lives in ~/.claude/state/pd-showcase.flag."
 ---
 
 # /pd-showcase — Demo Visibility Toggle

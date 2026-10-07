@@ -207,4 +207,4 @@ Final content: {delivered inline or file path}
 
 ## Vietnamese Content Pipeline
 
-When target is Vietnamese (`language=vi`), load matching files from `skills/vietnamese-language/` at each stage: STRATEGY loads `seo-content-marketing.md` or `viral-content.md`; CREATE loads the relevant platform file and `gen-z-slang.md` if targeting under-25; CRITIQUE checks register consistency and AI-tells; HUMANIZE applies Vietnamese AI-tell patterns.
+When target is Vietnamese (`language=vi`): STRATEGY may load factual files from `skills/vietnamese-language/` (`seo-content-marketing.md`, `viral-content.md`, platform files). CREATE does NOT load `vietnamese-language` — voice comes from exemplars (`brand/voice-exemplars-vi/`, pending), and the brief and outline stay in Vietnamese; load `gen-z-slang.md` only to check a term's meaning, never as a phrase source. CRITIQUE checks register consistency and AI-tells; HUMANIZE applies `humanizer-vi` patterns.

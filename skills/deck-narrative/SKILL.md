@@ -1,35 +1,41 @@
 ---
 name: deck-narrative
-description: >
-  The ARCHITECTURE layer beneath every deck skill — decides WHAT goes on slides
-  and in WHAT ORDER, before any visual skill decides what it looks like. Covers
-  action titles vs topic titles (the verb test), one-message-per-slide, Minto
-  top-down sequencing (conclusion on slide 2, never a surprise ending), pacing
-  by meeting length, horizontal logic (titles alone read as a persuasive essay)
-  and vertical logic (body proves title), table-vs-chart selection, and
-  decision/approval-slide construction (Challenge>Options>Decision,
-  Goal>Obstacle>Strategy>Action, Insight>Action>Outcome). Every rule is written
-  as an auditable pass/fail check, not a style opinion. Ships
-  `scripts/audit_deck.py` — a runnable Python auditor that reads a .pptx and
-  mechanically reports per-slide font size, title word/line counts, a
-  verb-test heuristic, table vs chart counts, reader-only-content (process-
-  meta marker) review candidates, a deck-wide font-family inventory with a
-  hard system-font (Calibri/Arial/etc.) fail flag, and a title-sequence dump
-  for human/agent read-through. Co-load with `strategic-deck` or
-  `marp` (or whichever deck/visual skill your setup uses) — this skill is
-  silent on color, aesthetic font choice, and layout; it only decides content,
-  order, and one narrow file-level exception (Rule 9: does the .pptx leak an
-  Office default font that no visual review can see because the renderer
-  substitutes a lookalike). Trigger on "review this deck's narrative", "does
-  this deck make sense", "audit deck structure", "is this an action title",
-  "check my slide titles", "Minto pyramid", "top-down deck", "one message per
-  slide", "deck says nothing" / "deck doesn't land" / "deck feels like a wall
-  of text", "should this be a table or a chart", "decision slide", "approval
-  slide", "check deck fonts", "system font check", or any request to
-  build/fix/review a deck's argument rather than its look. Numeric thresholds
-  (slide counts, pt sizes, word limits) are MEDIUM-confidence conventions from
-  McKinsey/BCG/Bain practice — present as defaults with stated reasoning,
-  never as hard gates that block work.
+description: "Use to review or fix a deck's argument, not its look: \"does this deck make sense\", \"is this an action title\", \"Minto pyramid\", \"one message per slide\", \"decision slide\", \"check deck fonts\". Rules as pass/fail checks; ships scripts/audit_deck.py for .pptx. Co-load with a visual deck skill."
+scope: global
+dept:
+  - design
+team: "-"
+priority: foundation
+triggers:
+  - deck narrative
+  - review deck narrative
+  - audit deck structure
+  - action title
+  - topic title vs action title
+  - is this an action title
+  - one message per slide
+  - minto pyramid
+  - minto principle
+  - top-down deck
+  - deck doesn't land
+  - deck feels like a wall of text
+  - horizontal logic
+  - vertical logic
+  - table vs chart
+  - decision slide
+  - approval slide
+  - does this deck make sense
+  - check my slide titles
+  - check deck fonts
+  - system font check
+  - font audit deck
+  - deck-narrative
+aliases:
+  - deck-architecture
+  - deck-logic
+  - audit-deck
+last_updated: "2026-07-30"
+trust_level: human-authored
 ---
 
 # deck-narrative
@@ -58,13 +64,13 @@ the content to lay out. Running a visual deck skill without this one is how
 decks get built by instinct: correct fonts, no argument.
 
 **The one narrow exception (Rule 9):** which brand font to use, its weight,
-its pairing — those stay the visual skill's job (whichever brand/visual skill
-you co-loaded). But whether the shipped `.pptx` FILE actually contains that
-font, versus an Office default that survived because a rendering pipeline
-substituted a lookalike glyph, is not an aesthetic judgment — it's a
-file-integrity check a visual review structurally cannot make (see Rule 9
-below). That single check lives here because it needs to read the `.pptx`
-XML, not because deck-narrative has an opinion on typography.
+its pairing — those stay the visual/brand skill's job (whichever brand skill is co-loaded).
+But whether the shipped `.pptx` FILE actually contains that font, versus an
+Office default that survived because a rendering pipeline substituted a
+lookalike glyph, is not an aesthetic judgment — it's a file-integrity check a
+visual review structurally cannot make (see Rule 9 below). That single check
+lives here because it needs to read the `.pptx` XML, not because deck-narrative
+has an opinion on typography.
 
 ## Provenance and confidence
 
@@ -404,11 +410,10 @@ process meta, and the spoken-not-shown supporting rationale all live.
 **The rule:** every text run and every reachable chart-text element in the
 `.pptx` must declare a real font — never an Office/OS default (Calibri,
 Arial, Times New Roman, Helvetica, Cambria, Verdana, Tahoma). This is not a
-brand preference call; whichever brand/visual skill you co-loaded should
-already state it outright: "Never use system fonts (Arial, Calibri) — they
-immediately signal non-institutional origin." Whichever fonts your project's
-brand skill declares canonical, that skill owns which fonts are correct —
-this rule only owns whether the file leaked a default.
+brand preference call: system fonts (Arial, Calibri) immediately signal
+non-institutional origin, whatever the brand. The co-loaded brand skill owns
+which fonts are correct, this rule only owns whether the file leaked a
+default.
 
 **Why this rule exists — a live incident, not a hypothetical:** a manual XML
 dump of an anonymized real deck (v3 of a three-build revision cycle) found
@@ -652,11 +657,12 @@ brand input the script doesn't assume.
 - `html-plan-style` — destination for stripped process-meta content (Rule 8):
   "decision needed", reviewer comments, TBD/placeholder notes all live in the
   `.html` plan this skill produces, never in the shipped `.pptx`.
-- Your project's brand/visual skill — owns which fonts are correct for your
-  decks and the "never use system fonts" convention Rule 9 mechanically
-  enforces at the file level; pass its font names to `audit_deck.py --expect`.
+- The co-loaded brand skill — owns which fonts are correct
+  for that brand's decks; pass its font names to `audit_deck.py --expect`.
+  Rule 9 mechanically enforces the "never use system fonts" convention at the
+  file level.
 - Pick whichever visual deck skill fits your build — `strategic-deck`,
-  `marp`, `gws-slides`, or another visual/deck skill your setup provides —
-  `deck-narrative` is silent on that choice.
+  `marp`, `gws-slides`, or another visual/deck skill your setup
+  provides — `deck-narrative` is silent on that choice.
 - `quality-loop-router` — every deck deliverable still ends here
   (`task_type: deck`) after the narrative and visual passes are both done.

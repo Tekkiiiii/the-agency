@@ -139,6 +139,8 @@ skills:
 ---
 ```
 
+> **Generalist switch (2026-10-06).** Member-level roles are no longer registered as agent types. A new member role goes into `agents-archive/` as a role file with a row in `agents-archive/ROLE-MAP.md` (role to 1-3 skills), and callers spawn it as `general-purpose` + those skills. Register an agent under `agents/` only for a dept head, coord, PD, critic, or service agent. `agents-archive/` is deployed beside `agents/`, never under it (see `docs/INSTALL-LAYOUT.md`).
+
 ### Agent model tiers
 
 | Tier | Model | Use for |

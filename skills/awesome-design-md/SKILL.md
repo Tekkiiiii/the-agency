@@ -1,12 +1,6 @@
 ---
 name: awesome-design-md
-description: |
-  Primary design skill — the default for ALL design tasks across every project.
-  Loaded automatically whenever a design, UI, UX, or visual task is requested.
-  After any design deliverable is produced, this skill runs a mandatory review pass
-  before marking the work complete.
-  Sources 59 curated design system references from the design-refs/ subdirectory,
-  covering the world's best product design (Stripe, Linear, Figma, Airbnb, Notion, etc.).
+description: "Use when a design task names a product to emulate (\"make it look like Stripe\", \"inspired by Linear\", \"apply the Notion aesthetic\") or needs concrete tokens. Reference library of real design systems with palette, type, spacing, motion. Not a router (use /design-router) or review gate."
 triggers:
   - design
   - ui design

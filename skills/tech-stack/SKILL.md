@@ -1,7 +1,6 @@
 ---
 name: tech-stack
-description: >
-  Advise on technology stack selection, architecture decisions, and tooling trade-offs — grounded in team context, scale requirements, and operational reality. Trigger when: the user asks "what tech should I use", "which framework", "should I use X or Y", "help me pick a database", "recommend a stack", or "what's best for building X?"; discussing starting a new project; comparing technologies or evaluating trade-offs; planning system architecture; reviewing an existing stack for improvements; onboarding to a new project and needing to understand the tech choices made. Key capabilities: structured recommendation format (recommended stack, alternatives considered, honest trade-offs, migration path); always clarifies requirements before recommending (team size, scale, budget, deployment environment, timeline); knows common stack patterns for web apps, mobile, data/AI, and microservices; applies boring/proven technology principle for core infrastructure. Also for: debugging architecture problems (wrong tool for the job), evaluating whether to replace an existing component, and stress-testing a proposed stack against failure modes. Ideal for: founders, solo devs, and small teams making high-leverage decisions early in a project's life. Never recommends the newest thing without weighing operational cost.
+description: "Use on \"what tech should I use\", \"which framework\", \"should I use X or Y\", \"help me pick a database\", \"recommend a stack\", or when starting a project or reviewing an existing stack. Clarifies team, scale, budget first; returns recommendation, alternatives, trade-offs and migration path."
 ---
 
 # Tech Stack Advisor Skill

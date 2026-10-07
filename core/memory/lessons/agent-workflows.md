@@ -154,3 +154,29 @@ numbered work queue, (c) save-state phrased as "ONLY after the queue is done
 or blocked". If recurring, move the save-state instruction out of the
 spawn-prompt tail into the pd-coordinator agent definition's lifecycle
 section, where it can't be misread as the first instruction to execute.
+
+## 2026-08-14 — Poll the checkpoint GLOB, never a predicted filename
+
+Fixing the Wave 20 checkpoint fault, a PD reproduced it live. I spawned 4
+Execs, then polled with an explicit file list built from the punny names I had assigned
+(`exec-pdduty-Sentry-2-checkpoint.md`). The Exec wrote `exec-pdduty-sentry2-checkpoint.md`
+— its own normalization of its name. My poll never matched, its 50% gate timed out, and it
+reported `CHECKPOINT_UNREVIEWED`. I caused, in the same session, the exact miss I was
+codifying a fix for.
+
+**Why:** the spawner does not control the checkpoint filename. The Exec derives it from its
+own name string, and case/hyphen normalization varies. Any poll that predicts the filename
+is a poll that silently matches nothing — and a silent no-match is indistinguishable from
+"no request pending", so it never surfaces as an error.
+
+**How to apply:** always poll the wildcard, exactly as the runbook writes it:
+`grep -l '^Status: AWAITING' {project}/memory/agents/execs/*-checkpoint.md 2>/dev/null`
+Never narrow it to named files, not even to "save a little output". If a wave finishes and
+you never answered a gate, treat that as evidence your glob was wrong, not that the Exec
+skipped its gate.
+
+**Corollary:** `*_UNREVIEWED` markers did their job here — they made a silently-deleted gate
+visible and forced a real diff review, which then caught a structural defect (a new section
+inserted inside a fenced code block). Do not treat those markers as noise.
+
+See also: `~/.claude/runbooks/checkpoint-handshake-protocol.md` §Spawner side

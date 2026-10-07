@@ -1,21 +1,6 @@
 ---
 name: cover-letter-gen
-description: |
-  Generate ATS-optimized, company-specific cover letters for career-ops job applications. Paste a
-  job description or provide a company name/URL → tailored cover letter in markdown, ready to attach
-  or submit. Trigger when: the user asks to "generate cover letter", "write cover letter", "cover
-  letter for this job", "/cover-letter", "tailor cover letter", or "company-specific cover letter";
-  the user pastes a job description; the user names a company and wants a targeted application letter;
-  or the user wants to apply to a role with a customized, ATS-safe cover letter. Key capabilities:
-  extracts company intel from JD (pain points, tech stack, culture signals, repeated keywords);
-  scores achievements from cv.md against JD keywords (3pt direct match, 2pt relevant, 1pt loose,
-  0pt irrelevant); archetype-based narrative framing (LLMOps, Agentic, Technical AI PM, Solutions
-  Architect, FDE, Transformation); 4-paragraph structure (hook with role+company, proof with top
-  scored achievements, company-specific reasoning, close with next step). Style: confident,
-  specific, peer-to-peer, no clichés, no "thank you for your consideration", 350-word max, plain
-  text for ATS safety. Ideal for: job seekers applying to targeted roles who need personalized,
-  high-quality cover letters at scale. Also for: drafting cover letter variations per archetype;
-  auditing existing cover letters against JD keyword density.
+description: "Use when asked to \"generate cover letter\", \"write cover letter\", \"cover letter for this job\", \"/cover-letter\", or when a job description is pasted for an application. Produces an ATS-safe, company-specific letter (max 350 words) built from cv.md achievements scored against the JD. Part of the career-ops flow."
 user_invocable: true
 args: company-name-or-url
 argument-hint: "[company name or job description URL — optional; paste JD text directly for fastest results]"

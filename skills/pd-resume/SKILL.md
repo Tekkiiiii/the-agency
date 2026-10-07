@@ -133,14 +133,23 @@ even if the headline is operator-blocked).
 
 ## Step 3 — Spawn PD Coordinators
 
-Spawn one pd-coordinator per target that was NOT marked `BLOCKED_NO_SPAWN` in Step 2.6.
+Spawn one PD per target that was NOT marked `BLOCKED_NO_SPAWN` in Step 2.6.
 **All in a single message** (parallel) WHEN showcase is OFF. When showcase is ON, spawn one at a time.
 
 If ALL targets were marked `BLOCKED_NO_SPAWN`, skip Step 3 entirely and go to Step 4.
 
+**Resolve the PD type first** (the project's own definition carries its identity,
+tools and model; the generic pd-coordinator does not):
+
+```bash
+PD_NAME=$(awk -F'|' -v s="{slug}" '$2 ~ "^ *"s" *$" {gsub(/ /,"",$4); print $4}' ~/.claude/memory/medium-term.md)  # Active Projects "PD" column
+[ -n "$PD_NAME" ] || PD_NAME="{slug}-pd"
+grep -rlqE "^name: *\"?${PD_NAME}\"? *$" ~/.claude/agents && echo "$PD_NAME" || echo pd-coordinator
+```
+
 **Spawn config:**
-- `subagent_type`: pd-coordinator
-- `model`: opus
+- `subagent_type`: the resolved name, i.e. `{slug}-pd` (or the medium-term PD column's value) when a definition with that `name:` exists under `~/.claude/agents/`; `pd-coordinator` only as the fallback when none exists (then name the gap in the summary).
+- `model`: omit. The binding value is the `model:` in the resolved agent definition's frontmatter (see warning below). Every PD definition must carry the `[1m]` suffix there: a bare alias runs a small window.
 - `run_in_background`: `false` if `showcase_on`, else `true`
 
 **⚠️ Advisory only:** the `model` value above is not a reliable override in all harness/session configurations — some setups ignore the Agent-tool spawn-time `model` param and resolve to the agent definition's own frontmatter `model:` key (or a session default) regardless. Treat `core/agents/pd-coordinator.md`'s frontmatter `model:` line as the actual binding value; keep this spawn-config line in sync with it, but do not rely on it alone.
@@ -200,7 +209,7 @@ your tool calls; you just connect the dots.
 ```
 Note: Architecture Decisions, Active L3 Boundaries, and Cross-L3 Dependencies are in pd-structure.md — PD reads on-demand when needed, not at cold-start.
 
-**What is NOT in the spawn prompt (already in pd-coordinator agent definition):**
+**What is NOT in the spawn prompt (already in the PD agent definition — `{slug}-pd.md`, or pd-coordinator.md for the fallback):**
 - PD Standard Protocol (decompose → parallelize → report)
 - Agent Selection Hierarchy
 - Decomposition guide (L1→L3)
@@ -238,4 +247,21 @@ PD RESUME — {n} projects ({s} spawned, {b} blocked)
 {ELSE:} No PDs spawned. All targets blocked on operator — review the blocked-on items above.
 ```
 
-Then stop. Do not poll or wait.
+Then arm the parent-side loop (background spawns only — skip if showcase_on, nothing spawned,
+or the operator has a `/goal` active: wakeup OR `/goal`, never both). Subagents cannot
+ScheduleWakeup/CronCreate (verified 2026-09-03); this is the unattended floor that picks up a
+stranded PD or unread RESPAWN_REQUEST. Cost rules + eval criteria:
+`~/.claude/runbooks/goal-wakeup-contract.md`.
+
+```
+ScheduleWakeup(delaySeconds: 1800, noop: false,
+  reason: "PD fallback: drain respawn-queue + collect GOAL_CHECK for {slugs}",
+  prompt: "PD loop tick for {slugs}: (1) ls ~/.claude/state/respawn-queue/ → /pd-resume each slug, rm its flag;
+           (2) for each PD whose task-notification arrived: bg-agent completion gate once, then
+           grep -h '^verdict:' its report — never re-read full reports on later ticks;
+           (3) emit pd_wakeup_tick (template in goal-wakeup-contract.md);
+           (4) PD still running or verdict UNMET → re-arm: 1800s if something changed this tick,
+           3600s + noop:true if nothing did; all MET/BLOCKED → ScheduleWakeup(stop:true), report verdicts.")
+```
+
+Task-notifications remain the primary wake signal; do not poll manually between ticks.

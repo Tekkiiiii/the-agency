@@ -115,7 +115,7 @@ ts-report() {
 
 ## Gate Protocol
 
-1. After any implementation task, invoke Reality Checker agent to assess
+1. After any implementation task, invoke a reality-check agent (general-purpose + /qa-only, /doubt-driven-development) to assess
 2. Parse verdict: `PASS` → set `gate_status=passed`, `NEEDS_WORK` or `FAIL` → set `gate_status=failed`
 3. If `gate_status=failed`, the task stays blocked regardless of status
 4. Gate can only be cleared by explicit agent intervention (not automatic retry)
@@ -134,7 +134,7 @@ ts-status "$upstream_id" "done"
 ts-blocked "$downstream_id" || echo "blocked"
 
 # 4. Run gatekeeper
-# -> Reality Checker verdict: PASS
+# -> reality-check verdict: PASS
 ts-gate "$downstream_id" "passed" "reality-checker"
 
 # 5. Advance downstream

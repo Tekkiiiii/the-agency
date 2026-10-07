@@ -1,6 +1,6 @@
 ---
 name: resume-bod
-description: "Resume the BOD/Agency Council kickoff workflow in a new chat session — restores context from memory, summarizes prior state, and reassembles the full 12-person council in two waves. Trigger when the user invokes /resume-bod, /bod-resume, 'resume the board', 'continue council workflow', or 'pick up where BOD left off'. Also for: checking whether a prior team still exists before creating a new one (reuses existing if intact), assembling a focused sub-council (engineering, GTM, or marketing only) when a full board isn't needed, and confirming project identity from ~/.claude/memory/medium-term.md before proceeding. The two-wave spawn policy (6 leaders max per wave) prevents team config corruption. After context is restored, offers explicit next actions: assemble full council, assemble focused team, or skip and continue solo."
+description: "Use on /resume-bod, /bod-resume, \"resume the board\", \"continue council workflow\", \"pick up where BOD left off\". Restores BOD/Agency Council context from memory and reassembles the 12-person council in two waves (max 6 per wave), or a focused sub-council, reusing an intact team."
 ---
 
 # Resume BOD — Continue Council Workflow in New Session

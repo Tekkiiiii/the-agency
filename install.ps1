@@ -164,14 +164,16 @@ if (Test-Path $CoreSrc) {
     Write-Host "  ✓ Core docs installed ($CoreSynced synced, $CorePreserved preserved)"
 }
 
-# --- Hooks, runbooks, scripts, design-system ---
-# These four trees carry paths that shipped agent defs, runbooks and skills
+# --- Hooks, runbooks, scripts, design-system, agents-archive ---
+# These five trees carry paths that shipped agent defs, runbooks and skills
 # reference as `{agency-root}/hooks/...`, `{agency-root}/runbooks/...`,
-# `{agency-root}/scripts/...` and `{agency-root}/design-system/...`.
+# `{agency-root}/scripts/...`, `{agency-root}/design-system/...` and
+# `{agency-root}/agents-archive/...` (role files + ROLE-MAP.md, plain copy,
+# never under agents/ so nothing registers).
 # install.ps1 previously shipped none of them, so every such reference dangled
 # on a Windows install. Keep this list in sync with install.sh and
 # cli/commands/init.js — see docs/INSTALL-LAYOUT.md.
-foreach ($tree in @("hooks", "runbooks", "scripts", "design-system")) {
+foreach ($tree in @("hooks", "runbooks", "scripts", "design-system", "agents-archive")) {
     $TreeSrc = Join-Path $ScriptDir $tree
     $TreeDest = Join-Path $ClaudeHome $tree
     if (Test-Path $TreeSrc) {

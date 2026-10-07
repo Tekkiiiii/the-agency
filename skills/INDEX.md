@@ -1,6 +1,6 @@
 # Skills Index
 
-287 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+294 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 > **What discovery actually depends on — read before "fixing" missing frontmatter.**
 > A skill is discovered by its **location on disk**, not by its metadata: every code
@@ -69,10 +69,15 @@
 | `task-store` | SQLite-backed task store for multi-agent pipeline state |
 | `room-manager` | Poll agency rooms, route escalations, fan out PD statuses |
 | `room-manager-digest` | 12-hour dept head digests from rolling.md feeds |
-| `nexus-gatekeeper` | Reality Checker blocking gate — tasks can't advance until cleared |
+| `nexus-gatekeeper` | reality-check blocking gate — tasks can't advance until cleared |
 | `sync-md-json` | Bidirectional sync between .json and .md files |
 | `respawn-self` | PD context-aware self-respawn at 80% context — saves state, writes continuation manifest |
 | `coord-respawn-self` | Coord context-aware self-respawn at 80% context mid-L3 — saves state, notifies spawner |
+| `agent-dispatch` | Decide act-directly vs delegate, pick the spawn type and skills, lookups before spawns, post-spawn ownership |
+| `pd-routing` | Forward to a running PD or spawn one PD per project, parallel project work, RESPAWN_REQUEST handling |
+| `context-pressure` | Context thresholds: PD above 75% finish and /save-state, at 80% respawn |
+| `inbox-tasks` | Where an ownerless task's tracking file lives: the owning project first, else the inbox |
+| `memory-crosslink` | Add `See also: [[stem]]` wikilinks to related memory files so the memory graph builds edges |
 | `pd-showcase` | Toggle PD showcase mode for live demos — foreground spawn with verbose narration |
 | `onboard` | Interactive first-run onboarding for the agency — install check, slash commands, MCP, first project |
 
@@ -146,7 +151,9 @@
 | Skill | Description |
 |-------|-------------|
 | `humanizer` | Remove signs of AI-generated writing from text |
-| `humanizer-writing` | Spot and avoid AI writing — 43 tells from 2026-09 research, for writing time as well as edit time. Invoke as `humanizer-writing`; `hw` is a local symlink alias, not shipped. |
+| `humanizer-writing` | Spot and avoid AI writing — 43 tells from 2026-09 research, for writing time as well as edit time. `hw` is a thin alias skill that runs this one. |
+| `hw` | Alias: `/hw` runs `/humanizer-writing` |
+| `simple-english` | Plain, layman-readable English in the spirit of ASD-STE100: short sentences, active voice, one word one meaning, defined terms, no AI slop. Plain mode by default, Strict mode on request |
 | `proofreader` | Proofread English or Vietnamese text — typos, grammar, clarity |
 | `content-polish` | End-to-end polishing: humanizer -> anti-fragmentation -> proofreader (EN) / humanizer-vi -> grammar-checker-vi (VN) |
 | `humanizer-vi` | Vietnamese humanizer — fix templated/flat/cliché VN prose, preserve author voice. 27-pattern catalog (lexical/discourse/structural/pragmatic) from 2026-09 research. |
@@ -165,9 +172,9 @@
 | `promt-engineering` | Write, optimize, and debug LLM prompts |
 | `full-output-enforcement` | Override default LLM truncation behavior |
 | `xlsx-toolkit` | Full spreadsheet automation |
-| `vietnamese-language` | Vietnamese language reference layer — 17-file modular KB |
 | `html-plan-style` | Locked palette, typography, and component system for HTML plans, reports, and review-ready deliverables |
 | `strategic-deck` | Builds a 25-30 slide strategic pitch/audit deck — gradient hero slides, cream content slides, five-act narrative arc (pptxgenjs); brand colors resolve from the design-system SSOT |
+| `vietnamese-language` | Vietnamese factual reference (formal docs, press releases, dialects, regulation, platform facts) — not a voice source |
 
 ## Engineering — Backend
 

@@ -5,6 +5,7 @@ description: >
   CRM, e-commerce. Outputs Prisma migrations for Neon/Supabase, raw SQL for Laravel,
   and schema diagrams. Triggers when user asks to design a database, PostgreSQL schema,
   design database tables, or create database migrations.
+paths: ["supabase/**", "**/*.sql"]
 ---
 
 # PostgreSQL Schema Designer

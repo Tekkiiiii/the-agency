@@ -6,6 +6,12 @@
 . "$(dirname "${BASH_SOURCE[0]:-$0}")/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
 resolve_project_path() {
+  # Testability override: if the caller already exported SPAWN_LOG_FILE, honor it
+  # and skip resolution entirely (used to point scripts at a /tmp copy in tests).
+  if [ -n "${SPAWN_LOG_FILE:-}" ]; then
+    return 0
+  fi
+
   local MEDIUM_TERM="$AGENCY_ROOT/memory/medium-term.md"
   local FALLBACK="$AGENCY_ROOT/logs/spawns.jsonl"
   local CWD="${CLAUDE_PROJECT_DIR:-$PWD}"

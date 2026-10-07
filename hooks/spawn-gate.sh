@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # spawn-gate.sh — PreToolUse hook for Agent tool
-# Enforces Delegator-first dispatch. Allowlisted spawns pass through.
-# Non-allowlisted spawns require DELEGATOR ROUTING block in prompt.
+# Since 2026-10-06 (generalist switch ACTIVE): `general-purpose` + 1-3 named
+# skills is the DEFAULT spawn and passes without an ask. The specialist agents are
+# archived; their role -> skills table is {agency-root}/agents-archive/ROLE-MAP.md.
+# Kept structural types pass too. Only an unknown type with no routing marker is
+# interrupted (an ask, never a block), so a typo or a stale archived name is caught.
 # Returns {} (pass) or {"permissionDecision":"ask","message":"..."} (interrupt)
 set -euo pipefail
 
@@ -27,70 +30,38 @@ SUBAGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c \
 PROMPT=$(printf '%s' "$INPUT" | python3 -c \
   'import sys,json; print(json.loads(sys.stdin.read()).get("tool_input",{}).get("prompt",""))' 2>/dev/null || true)
 
-# --- Allowlist by subagent_type (exact match, no conditions) ---
-# NOTE: general-purpose is NOT in this list — it must pass prompt checks below.
-# Putting general-purpose here would nullify all enforcement for the most common spawn type.
+# --- Default + structural types (exact or pattern match) ---
 case "$SUBAGENT_TYPE" in
-  pd-coordinator|coord|mini-coord|task-executor|curator|codebase-search|Delegator|Explore|Plan|statusline-setup)
+  general-purpose|claude|"" \
+  | pd-coordinator|coord|mini-coord|task-executor|curator|codebase-search|Delegator|save-state-runner|project-scaffolder \
+  | *-pd|*" Dept-Coord"|critique-*|*-critique|"Critiques Lead" \
+  | "Chief Content Officer"|"Design Lead"|"Engineering Lead"|"Project Management Lead"|"Specialized Agents Lead"|"Testing Lead"|"Video Studio Director" \
+  | architecture-analyzer|article-analyzer|assemble-reviewer|domain-analyzer|file-analyzer|graph-reviewer|knowledge-graph-guide|project-scanner|tour-builder \
+  | Explore|Plan|statusline-setup|claude-code-guide|fork|caveman:*)
     echo '{}'
     exit 0
     ;;
 esac
 
-# --- Allowlist by prompt prefix: PD spawns ---
+# --- PD spawns by prompt prefix ---
 if printf '%s' "$PROMPT" | grep -q '^You are PD-'; then
   echo '{}'
   exit 0
 fi
 
-# --- Marker check: Delegator was consulted OR hardcoded routing was applied ---
-if printf '%s' "$PROMPT" | grep -qE 'DELEGATOR ROUTING|HARDCODED ROUTING:'; then
+# --- Explicit routing marker or a skill-owned spawn pattern ---
+if printf '%s' "$PROMPT" | grep -qE 'DELEGATOR ROUTING|HARDCODED ROUTING:|SKILL SPAWN:|^You own the (save-state ritual|cc-loop ritual)|^You are [A-Za-z-]+-[A-Za-z-]+, resuming work|^You are resuming work on inbox task'; then
   echo '{}'
   exit 0
 fi
 
-# --- Skill-spawn allowlist: structured skill subagents (save-state, pd-spawn, unwrap, etc.) ---
-# These have well-known ownership patterns from skill definitions. They are mechanical
-# subagents spawned by skills — not generic agent dispatches by the parent AI.
-if printf '%s' "$PROMPT" | grep -qE '^You own the (save-state ritual|cc-loop ritual)|^You are [A-Za-z-]+-[A-Za-z-]+, resuming work|^You are resuming work on inbox task|SKILL SPAWN:'; then
-  echo '{}'
-  exit 0
-fi
+# --- Unknown type: ask (catches typos and archived specialist names) ---
+MSG="[spawn-gate] Unknown subagent_type=\"${SUBAGENT_TYPE}\".
 
-# --- Metric emission: generalist-ban violation (eval-048 fix) ---
-# Mechanically log when a banned generalist type reaches this gate, BEFORE
-# the ask-interrupt fires below. Non-blocking — never delays or fails the gate.
-if [ "$SUBAGENT_TYPE" = "general-purpose" ] || [ "$SUBAGENT_TYPE" = "claude" ]; then
-  HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  if [ -x "$HOOK_DIR/emit-metric.sh" ]; then
-    "$HOOK_DIR/emit-metric.sh" '{"event":"generalist_ban_violation","subagent_type":"'"$SUBAGENT_TYPE"'"}' >/dev/null 2>&1 || true
-  fi
-fi
-
-# --- Not allowlisted and no marker: interrupt ---
-MSG="[spawn-gate] Agent spawn blocked. No routing marker found for subagent_type=\"${SUBAGENT_TYPE}\".
-
-Two valid paths for non-allowlisted spawns:
-
-Option A — Hardcoded routing (single-domain, obvious named agent):
-  Include in your spawn prompt: HARDCODED ROUTING: {task-type} → {agent-name}
-  Use only when the agent choice is unambiguous from the task type alone.
-
-Option B — Delegator routing (cross-domain, protocol tasks, ambiguous):
-1. Spawn: Agent({ subagent_type: \"Delegator\", prompt: \"Route this task: {description}\" })
-2. Include the result block in your agent prompt:
-   DELEGATOR ROUTING:
-   Task: {task}
-   Route: {agent or skill}
-   Recommendation.Primary: {primary}
-   Reason: {reason}
-
-Pre-approved spawns (no marker needed):
-  pd-coordinator, coord, mini-coord, task-executor, curator, codebase-search,
-  Delegator, Explore, Plan, statusline-setup
-  Any prompt starting with 'You are PD-' or a known skill-ownership pattern.
-
-See {agency-root}/core/memory/agency-dispatch.md Step 1.5 for the routing protocol."
+The default since 2026-10-06 is general-purpose + 1-3 skills named in the prompt.
+If this was a specialist name, it is archived: see ${AGENCY_ROOT}/agents-archive/ROLE-MAP.md
+for its skills and role file, and spawn general-purpose instead.
+To keep this type anyway, add 'HARDCODED ROUTING: {task-type} -> {agent}' to the prompt."
 
 MSG_ESCAPED=$(printf '%s' "$MSG" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '%s' "$MSG" | sed 's/"/\\"/g; s/$/\\n/' | tr -d '\n')
 

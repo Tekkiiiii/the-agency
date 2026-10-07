@@ -22,7 +22,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
 | `gate-guard.sh` | PreToolUse | Edit, Write | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
-| `spawn-gate.sh` | PreToolUse | Agent | Enforce Delegator-first dispatch — block non-allowlisted subagent_type spawns that lack Delegator/hardcoded-routing marker; also emits a `generalist_ban_violation` metric for banned `general-purpose`/`claude` spawns |
+| `spawn-gate.sh` | PreToolUse | Agent | Generalist-switch gate — `general-purpose` + structural agent types pass; an unknown `subagent_type` (typo or archived specialist name) gets an `ask` pointing to `agents-archive/ROLE-MAP.md` |
 | `spawn-logger.sh` | PreToolUse | Agent | Log a `spawn_start` event for every agent spawn; injects a `[[CLAUDE_SPAWN_META]]` lineage marker into the child prompt |
 | `secret-scanner.sh` | PreToolUse | Bash | Scan shell commands for credential-looking patterns |
 | `config-protection.sh` | PreToolUse | Edit, Write | Block modification of existing linter/formatter configs |
@@ -34,7 +34,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 | `bg-job-warn.sh` | PostToolUse | Bash (`run_in_background`) | Track fire-and-forget background jobs; warn immediately when a render/build command is backgrounded |
 | `session-end.sh` | Stop | always | Mark session as cleanly ended (idempotent) |
 | `batch-check.sh` | Stop | always | Run typecheck + shellcheck on files edited this session |
-| `cost-tracker.sh` | Stop | always | Compute token usage and estimated cost; append to `~/.claude/metrics/costs.jsonl` |
+| `cost-tracker.sh` | Stop | always | Compute token usage and estimated cost (per-model rates from `hooks/lib/claude_pricing.py`); append to `costs.jsonl` in the `metrics/` folder of the agency root |
 | `caveman-statusline.sh` | StatusLine | always | Render the `[CAVEMAN]` mode badge (+ optional token-savings suffix) in the terminal status line — wired via the `statusLine` settings key, not `hooks` |
 | `emit-metric.sh` | — (utility) | called by other hooks / agents | Append one JSON event line (with a `ts` timestamp) to the shared metrics log; not itself registered under a lifecycle event |
 
@@ -261,9 +261,17 @@ Each module is self-contained; `core.md` is the only one injected unconditionall
 
 ### startup-sync.sh (SessionStart)
 
-Runs `git fetch` on `~/.claude`, then fast-forward pulls if the remote is ahead. On divergence (local commits ahead of remote), stashes local changes, pulls, and pops the stash. Non-destructive. 5-second timeout.
+Fast-forwards `{agency-root}` from `origin/main`. It never stashes and never merges. Steps:
 
-**Effect:** Every new Claude Code session automatically picks up the latest agents, skills, and hooks from your remote.
+1. `git fetch` runs under a background watchdog, 5 seconds by default (`SYNC_FETCH_TIMEOUT`). On a timeout or fetch failure it prints a warning and skips.
+2. If local equals remote, it prints "Config up to date". If you only have unpushed local commits, it prints "Config ahead of remote" and does nothing.
+3. It pulls (`git pull --ff-only`) only when the branch is `main` and the tracked tree is clean. On any other branch it skips with a warning.
+4. If tracked files have uncommitted changes, it prints one warning (with how many commits the remote is ahead) and leaves your work untouched. Commit, then pull by hand.
+5. If local and remote have diverged, it prints "manual merge needed" and changes nothing.
+
+It always exits 0, so it can never block a session from starting. It uses no coreutils `timeout`, so it works on macOS bash 3.2.
+
+**Effect:** Every new Claude Code session picks up the latest agents, skills, and hooks from your remote when it is safe to do so.
 
 ### check-settings-secrets.sh (SessionStart)
 
@@ -285,37 +293,28 @@ Also scans write content for JWT/API key patterns. Returns `permissionDecision: 
 
 ### spawn-gate.sh (PreToolUse: Agent)
 
-**Status: wired into `settings.json` by `install.sh` as of this release** — see [Settings Wiring](#settings-wiring) above.
+**Status: wired into `settings.json` by `install.sh`** — see [Settings Wiring](#settings-wiring) above.
 
-Enforces the Delegator-first dispatch rule. Every Agent tool call is intercepted; the hook decides whether the spawn is pre-approved or must demonstrate Delegator consultation (or a hardcoded-routing marker).
+Since the generalist switch (2026-10-06), `general-purpose` plus 1-3 named skills is the default spawn, and it passes without a question. The specialist agents are archived; their role-to-skills table is `{agency-root}/agents-archive/ROLE-MAP.md`. The gate only catches a `subagent_type` that is not recognized, such as a typo or a stale archived name. It never blocks: its strongest answer is an `ask`.
 
-**Allowlisted subagent_type values (exact match — pass through immediately):**
+**Passes immediately (no marker needed):**
 
-- `pd-coordinator`
-- `coord`
-- `mini-coord`
-- `task-executor`
-- `curator`
-- `codebase-search`
-- `Delegator`
-- `Explore`
-- `Plan`
-- `statusline-setup`
+- `general-purpose`, `claude`, and an empty `subagent_type`
+- Structural types: `pd-coordinator`, `coord`, `mini-coord`, `task-executor`, `curator`, `codebase-search`, `Delegator`, `save-state-runner`, `project-scaffolder`
+- Any `*-pd` project director, any `* Dept-Coord`, `critique-*`, `*-critique`, and `Critiques Lead`
+- The department heads: `Chief Content Officer`, `Design Lead`, `Engineering Lead`, `Project Management Lead`, `Specialized Agents Lead`, `Testing Lead`, `Video Studio Director`
+- The knowledge-graph analyzers (`architecture-analyzer`, `article-analyzer`, `assemble-reviewer`, `domain-analyzer`, `file-analyzer`, `graph-reviewer`, `knowledge-graph-guide`, `project-scanner`, `tour-builder`)
+- Built-in Claude Code types: `Explore`, `Plan`, `statusline-setup`, `claude-code-guide`, `fork`, and `caveman:*`
 
-Note: `general-purpose` is **deliberately NOT** on this exact-match allowlist (the script comments this explicitly) — it is the most commonly misused spawn type, so it must still pass one of the marker checks below instead of being unconditionally waved through.
+**Also passes (checked on the prompt, for any other type):**
 
-**PD spawn prefix detection:** If the agent `prompt` starts with `You are PD-`, the spawn is unconditionally allowed. This covers PD boot sequences triggered by `/pd-spawn` and `/pd-resume`.
+- A prompt that starts with `You are PD-` (PD boot sequences from `/pd-spawn` and `/pd-resume`).
+- A prompt with an explicit routing marker: `DELEGATOR ROUTING`, `HARDCODED ROUTING:`, or `SKILL SPAWN:`.
+- A prompt that matches a skill-owned spawn pattern: `You own the save-state ritual`, `You own the cc-loop ritual`, `You are {name}, resuming work`, or `You are resuming work on inbox task`.
 
-**Routing markers (either satisfies the gate):**
+**Unknown type:** anything else receives `permissionDecision: ask`. The message names the unknown type, says the default is `general-purpose` + 1-3 skills, points to `{agency-root}/agents-archive/ROLE-MAP.md` for archived names, and says how to keep the type anyway (`HARDCODED ROUTING: {task-type} -> {agent}` in the prompt).
 
-- **`DELEGATOR ROUTING`** — the Delegator writes this block into the calling agent's context; well-behaved agents copy it into the downstream prompt.
-- **`HARDCODED ROUTING:`** — a single-domain, unambiguous routing decision made without spawning the Delegator (e.g. `HARDCODED ROUTING: docs-sync-task → task-executor`). Intended for cases where the agent choice is obvious from the task type alone.
-
-**Skill-spawn allowlist:** Prompts matching known mechanical skill-ownership patterns also pass through without a marker — e.g. prompts starting with `You own the save-state ritual`, `You own the cc-loop ritual`, `You are {name}, resuming work`, `You are resuming work on inbox task`, or containing the literal string `SKILL SPAWN:`. These cover structured skill subagents (save-state, pd-spawn, unwrap, etc.) that are spawned by skills rather than dispatched ad hoc by the parent AI.
-
-**generalist_ban_violation metric emission (added post-eval-048):** Before the block/ask branch below runs, if `subagent_type` is exactly `general-purpose` or `claude`, the hook mechanically calls `hooks/emit-metric.sh` with `{"event":"generalist_ban_violation","subagent_type":"<type>"}` — resolving the script path relative to its own directory and guarding the call with `|| true` so it is non-blocking and best-effort (a missing/failing `emit-metric.sh` never delays or fails the gate). This fires regardless of whether the spawn is ultimately allowed by a marker further down — it is a mechanical tripwire on the banned-type check itself, not on the final deny decision.
-
-**Block behavior:** Any spawn that does not match the allowlist, lacks the PD prefix, and contains no routing/skill marker receives `permissionDecision: ask` with a message explaining the two valid paths (hardcoded routing vs. Delegator routing) and listing all pre-approved subagent_type values. The message also references `{agency-root}/core/memory/agency-dispatch.md` Step 1.5 for the full routing protocol.
+The hook emits no metric.
 
 Respects the `.hook-profile` system: in `minimal` profile, the hook exits immediately with `{}` (all spawns allowed). It reads `{agency-root}/.hook-profile`, the same file as every other profile-aware hook. (Before Wave 16 this one hook read `~/.agency/.hook-profile` — a path nothing has ever written, so the documented way to turn this gate off silently did nothing.)
 
@@ -389,6 +388,8 @@ Appends a `spawn_end` JSONL entry for every completed agent spawn. Resolves the 
 
 Parses the agent's output for an outcome (`DONE`, `BLOCKED`, `ESCALATE`, `KILLED`, or `UNKNOWN` — matched against markers like `STATUS: BLOCKED` or `— ESCALATE`) and for usage figures (tokens, tool uses, duration) from an `<usage>...</usage>` block in the response, with JSON-based fallbacks if that block is absent.
 
+On every completion it first calls `hooks/lib/reconcile-stale-spawns.sh` on the same log file (see [reconcile-stale-spawns.sh](#reconcile-stale-spawnssh)), so spawns that never got a `spawn_end` are closed as `ABANDONED`.
+
 Respects the `.hook-profile` system: in `minimal` profile, exits immediately without logging. Any internal error is silent.
 
 ### bg-job-warn.sh (PostToolUse: Bash, `run_in_background`)
@@ -401,15 +402,13 @@ Any internal error is silent; the hook never blocks the Bash call.
 
 ### cost-tracker.sh (Stop)
 
-Reads the session transcript JSONL, sums token usage by type (input, output, cache_write, cache_read), maps to the correct model tier (haiku/sonnet/opus), computes estimated USD cost, and appends one JSONL row to `~/.claude/metrics/costs.jsonl`. Prints a summary line to stderr.
+Reads the session transcript JSONL (from `transcript_path` in the hook input, or `$CLAUDE_TRANSCRIPT_PATH`) and appends one JSONL row to `costs.jsonl` in the `metrics/` folder of the agency root. It prints one summary line to stderr, for example `Session cost: $1.2345 (...)`. All rate tables and transcript parsing live in `hooks/lib/claude_pricing.py`, the single source for rates (see [claude_pricing.py](#claude_pricingpy)).
 
-Cost rates used (per 1M tokens):
-
-| Tier | Input | Output | Cache Write | Cache Read |
-|------|-------|--------|-------------|------------|
-| Haiku | $0.80 | $4.00 | $1.00 | $0.08 |
-| Sonnet | $3.00 | $15.00 | $3.75 | $0.30 |
-| Opus | $15.00 | $75.00 | $18.75 | $1.50 |
+- **No double counting.** Usage is de-duplicated by `message.id`. Claude Code writes one API message as several transcript lines, each repeating the same usage.
+- **Priced per model.** A session that switches models is priced message by message, not by the last model seen.
+- **Row fields:** `timestamp`, `session_id`, `model` (the model with the most output tokens), `rate_label`, `rate_source` (`exact`, `family_fallback`, or `unknown_default`), token counts (input, output, cache write 5m and 1h, cache read), `by_model` (cost per model), `estimated_cost_usd`, and `pricing_version`.
+- **Subagent transcripts are not included.**
+- Nothing in it blocks. A parse failure writes nothing; the traceback goes to `.cost-tracker.err` in that same folder, which is overwritten on each run.
 
 ### caveman-statusline.sh (StatusLine)
 
@@ -421,7 +420,7 @@ Optionally appends a pre-rendered token-savings suffix (from `~/.claude/.caveman
 
 ### emit-metric.sh (utility — not a registered lifecycle hook)
 
-A shared one-line utility, not itself wired into `settings.json`. Other hooks (`spawn-gate.sh`, `write-evidence.sh`) and agents call it directly: `emit-metric.sh '{"event":"...", ...}'`. It appends the given JSON payload — with a `ts` (UTC ISO-8601) field added automatically — as one line to `~/.claude/memory/metrics/events.jsonl`.
+A shared one-line utility, not itself wired into `settings.json`. Other hooks (`write-evidence.sh`) and agents call it directly: `emit-metric.sh '{"event":"...", ...}'`. It appends the given JSON payload — with a `ts` (UTC ISO-8601) field added automatically — as one line to `~/.claude/memory/metrics/events.jsonl`.
 
 Always exits 0 and never raises; if the input is missing or unparseable, it's a silent no-op.
 
@@ -431,7 +430,7 @@ Always exits 0 and never raises; if the input is missing or unparseable, it's a 
 
 ## Helper Scripts (`hooks/lib/`)
 
-`hooks/lib/` is **not** a set of directly-registered Claude Code hooks — none of these scripts appear in `settings.json`. They are shared bash/python helper scripts that other hooks and agents `source` or invoke directly to avoid duplicating logic (log-file resolution, spawn lineage IDs, context-percentage publishing). Think of this directory as the hook system's internal library, analogous to a `lib/` or `utils/` folder in an application codebase.
+`hooks/lib/` is **not** a set of directly-registered Claude Code hooks — none of these scripts appear in `settings.json`. They are shared bash/python helper scripts that other hooks and agents `source` or invoke directly to avoid duplicating logic (log-file resolution, spawn lineage IDs, context-percentage publishing, token pricing, stale-spawn cleanup). Think of this directory as the hook system's internal library, analogous to a `lib/` or `utils/` folder in an application codebase.
 
 ### resolve-root.sh
 
@@ -452,6 +451,24 @@ Called by a PD/Coord/Mini-Coord **before** each `Agent({...})` call it makes dir
 ### log-spawn-end-from-agent.sh
 
 The completion-side counterpart to `log-spawn-from-agent.sh`. Called by a PD/Coord/Mini-Coord **after** an `Agent({...})` call returns, with `--spawn-id`, `--outcome`, and `--summary` flags. Writes a `spawn_end` JSONL entry (tagged `"source": "agent-instrumented"`) for the given `spawn_id`. Silent no-op if `--spawn-id` is empty; any internal error is silently swallowed.
+
+### claude_pricing.py
+
+A Python module, not a hook. `cost-tracker.sh` imports it. It holds the per-model Claude rates (USD per million tokens: input, 5-minute and 1-hour cache write, cache read, output) as the single source of truth, plus three functions:
+
+- `rate_for(model)` returns the rate and a `rate_source`: `exact` (a known model id), `family_fallback` (an unknown version of a known family gets that family's newest rate, so a stale table shows up instead of silently mispricing), or `unknown_default`.
+- `cost_usd(model, ...)` prices a set of token counts.
+- `usage_from_transcript(path)` sums usage over a Claude Code transcript, de-duplicated by `message.id`, with a per-model breakdown.
+
+The table carries a verification date in its header. Before you edit any rate, check it against the live Anthropic pricing page. Do not copy prices from memory.
+
+### reconcile-stale-spawns.sh
+
+Called by `spawn-completion.sh` on every completion, with the spawn log path as its only argument (`bash reconcile-stale-spawns.sh /path/to/spawns.jsonl`). A completion record can be lost: the session may crash or hit a usage limit before the Agent call returns, or an agent may skip the manual `log-spawn-end-from-agent.sh` step. This script turns that silent gap into a known state. Any `spawn_start` with no `spawn_end` after `SPAWN_STALE_THRESHOLD_SEC` (default 21600, 6 hours) gets a synthetic `spawn_end` with `outcome: "ABANDONED"` and `source: "reconciliation-sweep"`.
+
+- **Append-only and idempotent.** It never rewrites or deletes a line, and a `spawn_id` that already has any `spawn_end` is never touched again.
+- **Throttled.** A `.reconcile-marker` file beside the log limits real work to once per `SPAWN_RECONCILE_INTERVAL_SEC` (default 900 seconds), so it is safe on a hot path.
+- **Fire-and-forget.** It always exits 0 and never writes to stderr in a way that shows in hook output.
 
 ### context-pct-publish.sh
 

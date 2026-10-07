@@ -1,6 +1,6 @@
 ---
 name: lessons-sync
-description: "Copies new entries from root lesson files (at ~/.claude/memory/lessons/{stack}.md) to the current project's nested copy (at {project}/memory/lessons/{stack}.md), appending only — never overwrites project-specific entries. Syncs all stacks or a named stack on command. Run at session start to ensure the project always has the latest root lessons, at session end to capture lessons learned during the session, or on-demand after adding a new entry to a root file. Best for engineers working across multiple projects who want centralized, consistent lessons without losing project-specific additions. Also for: onboarding new projects with existing lesson libraries, and cross-project lesson audits."
+description: "Use at session start/end or after adding a root lesson, to copy new entries from ~/.claude/memory/lessons/{stack}.md into the current project's memory/lessons/{stack}.md. Append-only, never overwrites project-specific entries; syncs all stacks or one named stack."
 ---
 
 # Lesson Sync — Root to Nested

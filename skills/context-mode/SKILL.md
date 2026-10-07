@@ -1,19 +1,6 @@
 ---
 name: context-mode
-description: |
-  Context-mode is an MCP server plugin that reduces context window usage by ~98% through
-  sandboxed tool routing. MUST be applied whenever Claude is running inside a context-mode-enabled
-  session — it is not optional. Trigger when: context-mode MCP server is present in the session;
-  running Bash commands that produce more than 20 lines of output; reading files for analysis; fetching
-  web pages and searching them; batch execution of multiple queries; or when you need to prevent raw
-  tool outputs from flooding the context window. Key capabilities: routes Bash to ctx_execute /
-  ctx_batch_execute (captures output, prevents bloat); routes Read to ctx_execute_file (raw content
-  never enters context); routes WebFetch to ctx_fetch_and_index then ctx_search (fetch once, query
-  indexed content on demand); enforces strict output rules (under 500 words, write artifacts to files,
-  return only path + 1-line description). Ideal for: working in long-running sessions with large
-  codebases; running multi-step debugging workflows that produce verbose output; any task where
-  context window preservation is critical. Also for: batch operations over large project directories;
-  running analysis across many files without consuming context space.
+description: "Use whenever the context-mode MCP server is present, or when Bash output exceeds ~20 lines, files are read for analysis, or web pages are fetched. Routes output through ctx_execute / ctx_batch_execute / ctx_fetch_and_index so raw output never floods context. Mandatory in context-mode sessions."
 ---
 
 # context-mode

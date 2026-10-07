@@ -23,9 +23,9 @@ Takes a .pptx path, reports what a machine can actually check:
          Cambria, Verdana, Tahoma anywhere in the deck is a hard fail. These
          are Office/OS defaults; their presence in a shipped institutional
          deliverable is unconditionally wrong, independent of which brand's
-         deck this is — see deck-narrative/SKILL.md's font section and your
-         project's brand skill's "never use system fonts" rule (if it states
-         one). On by default, no flag needed.
+         deck this is — see deck-narrative/SKILL.md's font section (Rule 9,
+         "never use system fonts"). On by default, no flag
+         needed.
       2. UNSET/THEME-INHERITED FONT COUNT — runs/elements with no explicit
          font name resolve from the presentation theme, which is invisible
          in the file and can render differently machine to machine. Reported
@@ -36,9 +36,9 @@ Takes a .pptx path, reports what a machine can actually check:
     caught above) nor in the --expect list is flagged as OUTSIDE THE
     EXPECTED SET. This script does NOT hardcode brand font names — it stays
     brand-agnostic per its architecture-layer role; the expected family list
-    comes from whichever brand/visual skill is co-loaded, passed in by the
-    caller. Without --expect, the inventory is reported with no
-    family-membership judgment beyond the system-font check.
+    comes from whichever brand/visual skill is co-loaded,
+    passed in by the caller. Without --expect, the inventory is reported with
+    no family-membership judgment beyond the system-font check.
     Does NOT check whether a font is actually installed on the machine doing
     the audit — installation is a property of the rendering environment, not
     the deck, and a deck can legitimately target a machine other than the
@@ -430,11 +430,11 @@ def audit_slide(slide, idx, slide_height_emu, is_title_slide):
 
 def audit_deck(path, expect_families=None):
     """expect_families: optional list of brand font family names (caller-
-    supplied, from whichever brand skill is co-loaded). When given, any
-    non-system font not in this set is flagged as outside the expected
-    family list. When omitted, the font inventory is reported without
-    family-membership judgment beyond the always-on system-font check —
-    this script stays brand-agnostic by default (see module docstring)."""
+    supplied, e.g. from the co-loaded brand skill). When given, any non-system font not in
+    this set is flagged as outside the expected family list. When omitted,
+    the font inventory is reported without family-membership judgment beyond
+    the always-on system-font check — this script stays brand-agnostic by
+    default (see module docstring)."""
     prs = Presentation(path)
     slide_height = prs.slide_height
     results = []

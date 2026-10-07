@@ -62,8 +62,8 @@ Each project has a dedicated PD agent that:
 ## Data Flow
 
 1. **User** spawns a project or assigns work
-2. **PD** creates tasks in task store, assigns to specialists
-3. **Specialists** execute, write session logs, gate tasks
+2. **PD** creates tasks in task store, hands them to Coords or Execs (workers run as `general-purpose` + 1-3 skills)
+3. **Execs** execute, write session logs, gate tasks
 4. **PD** monitors pipeline, escalates blockers
 5. **On session end**: `/save-state` writes session log
 6. **Next session**: agent reads memory, resumes
@@ -112,6 +112,8 @@ Dept Head  (D1→D3 decomposition, spawns Dept-Coords)
 | D1–D3 | Dept Head | D1 → D2 → D3 | Dept-Coord | Opus |
 | D3–D6 | Dept-Coord | D3 → D4 → D5 → D6 | Dept Member | Sonnet |
 | D6 | Dept Member | No | — | Sonnet |
+
+A Dept Member is `general-purpose` + 1-3 skills, with the archived role file in `{agency-root}/agents-archive/` read first (see `agents-archive/ROLE-MAP.md`).
 
 **Hard boundary:** Dept-Coord handles department-operational work only (pipelines, protocols, member development). PD-Coord handles project delivery only. These chains never cross.
 
@@ -162,6 +164,8 @@ redundant once tool search exists — the two mechanisms fail independently.
 
 The Delegator is a stateless Sonnet agent that routes work to the correct agent, skill, pipeline, or protocol. Any agent (PD, Coord, Dept Head) can spawn the Delegator when the right route is not obvious.
 
+Since the generalist switch (2026-10-06) the member-level specialist roles are archived. The Delegator does not pick a specialist agent for them. It returns `general-purpose` plus 1-3 skills, and names the role file to read first. Role files live in `{agency-root}/agents-archive/` (deployed by all four installers), and `agents-archive/ROLE-MAP.md` maps each archived role to its skills. Dept heads, Coords, PDs, critics, and service agents (curator, codebase-search) stay registered and are still returned by name.
+
 ```
 Agent({
   subagent_type: "general-purpose",
@@ -177,7 +181,7 @@ The Delegator:
 - Dies immediately after returning the recommendation — it holds no state
 
 **Routing exceptions** — spawn Delegator is NOT required when:
-- The correct agent or skill is already known (e.g. Frontend Developer for a UI task)
+- The correct agent or skill is already known (e.g. `general-purpose` + `/frontend` for a UI task)
 - The task is a curator spawn (memory retrieval — always fire-and-forget)
 
 Definition: `agents/specialized/delegator.md`
@@ -194,8 +198,12 @@ Every agent-to-agent handoff has a mandatory QA gate before approval:
 | Coord → PD | Coord sends L3 complete + QA | PD reviews Coord QA report | Health ≥ 70, no CRITICAL | Health < 70 OR CRITICAL/HIGH present |
 | PD → root | PD sends final digest + QA | root (operator) | Explicit ACK | Explicit NACK with fix list |
 
-**ACK** = "looks good, die quietly" → reporting agent deletes scratch and stops
-**NACK** = "fix: [list]" → reporter fixes → re-runs QA gate → re-reports
+Reports are asynchronous: an agent's report lands when the agent stops, and the agent is gone by then.
+
+**ACK** = the reviewer accepts the report and does not re-spawn the agent. Nothing more is needed.
+**NACK** = the reviewer spawns a fresh continuation agent with the fix list → it fixes → re-runs the QA gate → re-reports
+
+**Consent for a permission-gated action** is not an ACK in chat. It is a file the main session writes under `{project}/memory/tasks/revisions/acks/`, which the re-dispatched agent must verify before it acts. See `runbooks/escalation-protocol.md` (Permission-Gated Action Consent Path).
 
 ### PD-Level Pre-Aggregate QA Gate
 

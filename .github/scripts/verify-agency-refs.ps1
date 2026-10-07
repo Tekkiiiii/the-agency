@@ -15,7 +15,7 @@ $ErrorActionPreference = "Stop"
 
 if (-not (Test-Path $AgencyRoot)) { throw "$AgencyRoot is not a directory" }
 
-$trees   = @("runbooks", "hooks", "scripts", "core", "design-system")
+$trees   = @("runbooks", "hooks", "scripts", "core", "design-system", "agents-archive")
 $sources = @("agents", "core", "skills", "runbooks")
 
 $missingTotal = 0

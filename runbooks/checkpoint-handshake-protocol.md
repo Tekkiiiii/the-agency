@@ -3,8 +3,8 @@ name: Checkpoint Handshake Protocol
 description: Scratch-board poll handshake for the Exec/Member-facing APPROACH and CHECKPOINT gates. Replaces the old upward-SendMessage-and-wait pattern, which can deadlock because upward name-addressed SendMessage does not resolve.
 type: runbook
 owner: agency-council
-lastUpdated: 2026-07-29
-version: 1.0.0
+lastUpdated: 2026-08-14
+version: 1.1.0
 ---
 
 # Checkpoint Handshake Protocol
@@ -37,6 +37,13 @@ children work. If a Coord/DC spawns an Exec/Member with `run_in_background: fals
 Coord/DC blocks until that child finishes — it cannot poll, and this handshake becomes
 structurally impossible again (back to the original deadlock risk). Never
 foreground-spawn a child that will use this protocol.
+
+**The spawner must be able to poll.** Opening an APPROACH gate you will not answer is
+worse than having no gate — the Exec burns a 5-minute wait and then proceeds unreviewed
+anyway. If the spawner cannot commit to polling for a given wave (about to save-state,
+respawn, block on a long operation, or hand off), it MUST spawn those Execs as TIER_A
+(explicitly marked in the spawn prompt) so no APPROACH gate is opened. Never leave a
+checkpoint contract unattended.
 
 ## The file — one rolling file per Exec/Member
 
@@ -111,12 +118,17 @@ than needing to detect whether content exists under a heading.
    The unreviewed marker is mandatory paperwork, not optional — a silent proceed with no
    marker deletes the gate while keeping none of its value. Do NOT re-poll indefinitely —
    one bounded wait, then move on.
-5. The Coord/DC MAY also send a downward SendMessage (via your `agentId`) as a wake-up
-   nudge — that direction works. Correctness never depends on the message; the file is
-   authoritative. If the message arrives before you finish polling, still read the
-   `## Reply` block before acting (the message is a nudge, not the reply content).
+5. The spawner (Coord / Mini-Coord / Dept-Coord / PD) MAY also send a downward
+   SendMessage (via your `agentId`) as a wake-up nudge — that direction works.
+   Correctness never depends on the message; the file is authoritative. If the message
+   arrives before you finish polling, still read the `## Reply` block before acting (the
+   message is a nudge, not the reply content).
 
-## Coord/Dept-Coord side
+## Spawner side (Coord / Mini-Coord / Dept-Coord / PD spawning direct Execs)
+
+**Governing rule:** the checkpoint contract is owned by the DIRECT SPAWNER, whoever that
+is. A PD that bypasses the Coord layer and spawns Execs directly (pd-coordinator.md §2.6
+delegation test) inherits this entire section — it is not Coord-only.
 
 1. Between spawn waves and while awaiting Exec/Member completions, poll for outstanding
    requests:
@@ -168,9 +180,27 @@ If an Exec/Member's completion report includes `APPROACH_UNREVIEWED` or
   ever re-enabled in lite, it must adopt this handshake — never the old
   SendMessage-and-wait pattern.
 
+## Failure record
+
+the-agency Wave 20 (2026-08-14): two Execs were spawned DIRECTLY BY THE PD (Coord layer
+bypassed via the pd-coordinator.md §2.6 PARALLEL DIRECT-EXEC fast path). Both opened
+APPROACH gates, wrote checkpoint files, and polled the full 5-minute ceiling — nobody
+upstream was polling, because this runbook's reply-side section was titled "Coord/
+Dept-Coord side," and a PD acting as a direct spawner was not covered by its own text.
+Both Execs correctly proceeded per the timeout branch and marked `APPROACH_UNREVIEWED` in
+their completion reports, but the unattended gates also generated escalation spam to
+main. This is not a one-off: as of this writing, 13 checkpoint files under
+`{project}/memory/agents/execs/*-checkpoint.md` for this project alone still sit at
+`Status: AWAITING`, spanning the Jul 30, Aug 6, and Aug 13 waves — unanswered gates are
+the norm under the direct-spawn path, not an isolated incident. The retitle, the added
+Precondition bullet, and pd-coordinator.md §Checkpoint Polling Duty (see References) are
+the fix: the spawner-side polling duty now explicitly follows the direct-spawn path
+rather than assuming a Coord is always present.
+
 ## References
 
 - Coord: `{agency-root}/agents/project-management/coord.md` §6b/6c
 - Mini-Coord: `{agency-root}/agents/project-management/mini-coord.md` §6b/6c
 - Task-Executor: `{agency-root}/agents/specialized/task-executor.md` §2b/3a
 - Dept-Coord Protocol: `{agency-root}/runbooks/dept-coord-protocol.md` §4/§4c
+- PD direct-spawn polling duty: `{agency-root}/agents/project-management/pd-coordinator.md` §Checkpoint Polling Duty

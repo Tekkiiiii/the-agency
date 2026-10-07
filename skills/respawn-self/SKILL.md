@@ -1,12 +1,6 @@
 ---
 name: respawn-self
-description: >
-  PD context-aware self-respawn. Invoked by a PD agent when context window reaches
-  80% threshold. Saves current state, writes a continuation manifest with all
-  in-flight work and next actions, then stops. The parent session (or user) spawns
-  a fresh PD with the manifest. Enforces max 3 respawns per project per 24h.
-  Invoke when context ≥ 80% during a PD session. Also used proactively at phase
-  transitions when context > 70% and a major task boundary is clean.
+description: "Use when a PD session hits context >= 80% (or >70% at a clean phase boundary) to save state, write a continuation manifest and emit RESPAWN_REQUEST so the parent respawns a fresh PD. Max 3 context-pressure respawns per project per 24h. Not for finishing decomposition alone."
 ---
 
 # /respawn-self — PD Context-Aware Self-Respawn

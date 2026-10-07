@@ -1,7 +1,6 @@
 ---
 name: stop-slop
-description: >
-  Detect and remove AI-originated patterns from prose — filler phrases, throat-clearing openers, business jargon, passive voice, binary contrasts, dramatic fragmentation, rhetorical scaffolding, and false agency. Apply this before any text reaches a user or gets committed to a document. Trigger when: the user asks to "make this sound more natural", "fix AI-sounding prose", "rewrite this without filler", "clean up this writing", or "remove the AI tells"; any time you generate prose output (emails, docs, responses, code comments, release notes); you are editing or reviewing existing text; building system prompts or instructions. Key capabilities: a 50-point rubric scoring directness, rhythm, trust, authenticity, and density; exhaustive phrase and structure anti-pattern lists; before/after transformation examples. Also for: polishing commit messages, README tone, Slack messages, proposal language, and any writing that needs to sound like a human and not a model. Ideal for anyone who publishes text that others will read.
+description: "Use on \"make this sound more natural\", \"remove the AI tells\", \"clean up this writing\", or before prose reaches a user or document. Strips filler, throat-clearing, jargon, passive voice, binary contrasts and rhetorical scaffolding; scores a 50-point rubric. Not for full proofreading (use /proofreader)."
 ---
 
 # Stop Slop

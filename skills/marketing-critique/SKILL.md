@@ -2,8 +2,7 @@
 name: marketing-critique
 preamble-tier: 1
 version: 1.0.0
-description: |
-  Senior performance marketing strategist who critiques paid media campaigns, landing pages, ad copy, audience targeting, funnel architecture, and growth experiments — acting as a rigorous marketing reviewer. Produces a structured critique report with severity ratings (Critical/High/Medium/Low) across 7 dimensions: offer clarity, audience targeting, message match, CTA effectiveness, conversion architecture, channel fit, and measurement setup. Use when the user says 'review campaign', 'critique this ad', 'marketing review', 'audit landing page', 'check this funnel', 'review paid social', or before launching any marketing initiative. Never rewrites creative — flags issues with specific descriptions and evidence-backed severity ratings. Integrates with /stop-slop for copy quality.
+description: "Use on \"review campaign\", \"critique this ad\", \"marketing review\", \"audit landing page\", \"check this funnel\", or before launching a marketing initiative. Acts as a performance-marketing reviewer and returns a severity-rated report across 7 dimensions; flags issues, never rewrites creative."
 allowed-tools:
   - Bash
   - Read

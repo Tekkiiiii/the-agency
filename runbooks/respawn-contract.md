@@ -9,9 +9,11 @@ notification. After respawning: `rm ~/.claude/state/respawn-queue/{slug}`.
 The chat message is the fast path but NOT the guarantee — no hook fires on
 background-agent completion, so the parent can miss it. The guarantee is the
 **durable flag**: the PD writes `~/.claude/state/respawn-queue/{slug}` when it
-crosses the boundary, and the queue is drained deterministically at three
+crosses the boundary, and the queue is drained deterministically at four
 points: (1) `respawn-drain.sh` on every SessionStart, (2) the hourly in-session
-heartbeat cron, (3) a headless `pd-heartbeat` launchd agent every hour. A
+heartbeat cron, (3) a headless `pd-heartbeat` launchd agent every hour, (4) the
+parent's `ScheduleWakeup` fallback armed by pd-resume Step 4 after every background
+spawn wave (30-min tick; subagents cannot arm their own wake-ups). A
 stranded PD is always picked up within an hour even if no session sees the
 message.
 

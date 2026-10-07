@@ -1,12 +1,6 @@
 ---
 name: finops
-description: |
-  Optimize cloud spend across AWS, GCP, and Azure using a structured FinOps framework covering waste detection, instance rightsizing, Reserved Instance and Savings Plan analysis, cost allocation tagging, budget thresholds, and vendor negotiation playbooks.
-  Purpose: Reduces cloud bills by 20–40% with systematic, repeatable actions — not one-off fixes.
-  When to trigger: (1) "Why is our cloud bill so high this month?" or "review our cloud costs," (2) "audit for waste or idle resources" — monthly or quarterly reviews, (3) "should we buy Reserved Instances or Savings Plans?" — annual planning or contract renewals, (4) "build a cost showback report by team" — finance or engineering leadership asks, (5) "unexpected spike in the billing console" — anomalies on invoices, (6) "plan costs before scaling infrastructure," (7) "prepare for a vendor contract negotiation."
-  Key capabilities: A 30-day utilization rightsizing framework (highest ROI FinOps action), Savings Plan coverage ratio targets by environment, a monthly showback report template, budget alert thresholds at 50/80/90/100%, per-user cost modeling for pricing decisions, and a vendor negotiation playbook based on actual usage data.
-  Ideal user/context: Cloud engineers, finance teams, DevOps leads, or founders managing AWS/GCP/Azure spend who want a repeatable process — not just a cost dashboard.
-  Also for: Startup CTOs benchmarking infrastructure costs, SaaS companies building unit economics models, and teams migrating between cloud providers who need a cost comparison framework.
+description: "Use for cloud cost work on AWS/GCP/Azure: \"why is our cloud bill so high\", idle-resource audits, Reserved Instance vs Savings Plan decisions, cost showback by team, billing spikes, vendor negotiation. Rightsizing framework, budget alerts at 50/80/90/100%, showback template."
 ---
 
 # FinOps Skill

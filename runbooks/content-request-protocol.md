@@ -14,11 +14,12 @@ Marketing Lead (builds strategic brief)
 Chief Content Officer (receives brief, routes to writer)
        │
        ▼
-Content Director (assigns, reviews, quality gates)
+Content Creation Dept-Coord (assigns writers, runs quality gates)
        │
-       ├──► Format-specific Writer (drafts content)
+       ├──► Format-specific writer (general-purpose + skills; drafts content)
        │         │
-       │         └──► Content Editor (polish pass)
+       │         └──► Polish pass (general-purpose + /content-polish, /humanizer-writing)
+       │               └──► critique-content review
        │
        ▼
 CCO approves → delivers back to Marketing Lead
@@ -105,32 +106,32 @@ Strategic brief attached for [project] [content type].
 
 ### Step 4 — CCO Routes to the Right Writer
 
-The CCO (or Content Director, if delegated) reads the brief and assigns to the correct format specialist:
+The CCO (or the Content Creation Dept-Coord, if delegated) reads the brief and spawns the right writer as `general-purpose` with the skills below. Spawn prompt: "Role: read the role file for this writer listed in `{agency-root}/agents-archive/ROLE-MAP.md` first. Skills: ... Task: ..." (full map: `{agency-root}/agents-archive/ROLE-MAP.md`):
 
-| Content type | Assign to |
+| Content type | Spawn as `general-purpose` + skills (role file: see ROLE-MAP) |
 |---|---|
-| Blog post, article, thought leadership | Blog & Article Writer |
-| Case study, whitepaper, report | Case Study & Whitepaper Writer |
-| Newsletter, editorial | Newsletter & Editorial Writer |
-| LinkedIn post | LinkedIn Writer |
-| Twitter/X thread | Twitter/X Writer |
-| Instagram caption | Instagram Writer |
-| TikTok caption/copy | TikTok Writer |
-| Reddit post | Reddit Writer |
-| Threads post | Threads Writer |
-| Facebook post | Facebook Writer |
-| Discord announcement | Discord Writer |
-| YouTube title/description | YouTube Writer |
-| Pinterest pin copy | Pinterest Writer |
-| Quora answer | Quora Writer |
-| Telegram channel post | Telegram Writer |
-| Ad copy (Meta/Google/TikTok) | Ad Copywriter |
-| Landing page / sales page | Landing Page Copywriter |
-| Email campaign / sequence | Email Campaign Writer |
-| Video script | Video Script Writer |
-| Developer docs, API refs, tutorials | Technical Writer (Content) |
-| Slide deck / pitch deck | Presentation Creator |
-| Press release, media kit | Press & PR Writer |
+| Blog post, article, thought leadership | /blog-pipeline, /content-creator, /seo-aeo-best-practices |
+| Case study, whitepaper, report | /content-creator, /content-polish |
+| Newsletter, editorial | /content-creator, /content-polish |
+| LinkedIn post | /content-creator, /copywriting, /content-polish |
+| Twitter/X thread | /content-creator, /copywriting, /content-polish |
+| Instagram caption | /content-creator, /copywriting, /content-polish |
+| TikTok caption/copy | /content-creator, /copywriting, /content-polish |
+| Reddit post | /content-creator, /copywriting, /content-polish |
+| Threads post | /content-creator, /copywriting, /content-polish |
+| Facebook post | /content-creator, /copywriting, /content-polish |
+| Discord announcement | /content-creator, /copywriting, /content-polish |
+| YouTube title/description | /content-creator, /seo-aeo-best-practices |
+| Pinterest pin copy | /content-creator, /copywriting, /content-polish |
+| Quora answer | /content-creator, /copywriting, /content-polish |
+| Telegram channel post | /content-creator, /copywriting, /content-polish |
+| Ad copy (Meta/Google/TikTok) | /copywriting, /content-polish |
+| Landing page / sales page | /copywriting, /seo-aeo-best-practices |
+| Email campaign / sequence | /copywriting, /content-polish |
+| Video script | /youtube-narration, /video-prompt-director |
+| Developer docs, API refs, tutorials | /tech-writer, /document-release |
+| Slide deck / pitch deck | /deck-narrative, /marp |
+| Press release, media kit | /content-creator, /content-polish |
 
 The CCO attaches:
 - The strategic brief from Marketing
@@ -145,11 +146,11 @@ The assigned writer:
 3. Creates an outline (for long-form) or drafts directly (for short-form)
 4. Writes the full piece in the brand's voice
 5. Runs a self-check (stop-slop scan + proofreader pass)
-6. Submits to the Content Director
+6. Submits to the Content Creation Dept-Coord
 
-### Step 6 — Content Director Reviews (Quality Gate)
+### Step 6 — Quality Gate (Dept-Coord runs it, `critique-content` reviews)
 
-The Content Director runs mandatory quality gates:
+The Content Creation Dept-Coord runs mandatory quality gates (editing passes via general-purpose + `/content-polish`, `/humanizer-writing`; review by the kept `critique-content` agent):
 
 | Gate | Tool | Requirement |
 |---|---|---|
@@ -159,13 +160,13 @@ The Content Director runs mandatory quality gates:
 | Proofreading | `proofreader` | No errors |
 | Brand voice | Manual check vs `brand-guidelines.md` | Consistent |
 
-**If the post fails any gate:** Content Director returns it to the writer with specific, actionable editorial notes. The writer revises and resubmits.
+**If the post fails any gate:** the Dept-Coord returns it to the writer with specific, actionable editorial notes. The writer revises and resubmits.
 
-**If the post passes all gates:** Content Director approves (Tier 1 authority) and forwards to CCO for final sign-off.
+**If the post passes all gates:** `critique-content` signs off and the Dept-Coord forwards to the CCO for final approval (the CCO holds approval authority).
 
 ### Step 7 — CCO Approves
 
-- **Standard content** (blog posts, social, email): Content Director's approval is sufficient. CCO reviews only if flagged.
+- **Standard content** (blog posts, social, email): a passing `critique-content` verdict plus Dept-Coord sign-off is sufficient. CCO reviews only if flagged.
 - **High-stakes content** (press releases, content with legal/financial/medical claims, crisis communications): CCO reviews personally before release.
 
 ### Step 8 — CCO Delivers Back to Marketing Lead
@@ -232,18 +233,18 @@ These are production times after the strategic brief is received. Marketing's br
 When Marketing wants the same content adapted for multiple platforms, they send separate requests for each platform — not one request for "all platforms." Each platform writer needs their own brief because format, voice, and constraints differ.
 
 Example: A blog post gets published. Marketing then sends:
-- Brief to LinkedIn Writer: "Adapt the blog's key insight into a thought leadership post"
-- Brief to Twitter/X Writer: "Create a thread summarizing the 3 points"
-- Brief to TikTok Writer: "Write hook + caption for a short video on point #1"
+- Brief to the LinkedIn writer (general-purpose + skills): "Adapt the blog's key insight into a thought leadership post"
+- Brief to the Twitter/X writer: "Create a thread summarizing the 3 points"
+- Brief to the TikTok writer: "Write hook + caption for a short video on point #1"
 
-Each is a separate production cycle through the Content Director's quality gate.
+Each is a separate production cycle through the Dept-Coord's quality gate.
 
 ## Escalation
 
 | Situation | Escalation path |
 |---|---|
-| Writer disagrees with strategic brief | Writer → Content Director → CCO → Marketing Lead |
-| Quality gate fails 3+ times on same piece | Content Director → CCO (may reassign to different writer) |
+| Writer disagrees with strategic brief | Writer → Dept-Coord → CCO → Marketing Lead |
+| Quality gate fails 3+ times on same piece | Dept-Coord → CCO (may reassign to different writer) |
 | Marketing and Content Creation disagree on voice/approach | CCO → parent AI (council chair arbitrates) |
 | Content involves legal/financial/medical claims | CCO → parent AI → human (Tier 3) |
 | Urgent request (same-day turnaround) | Requester marks PRIORITY: critical; CCO may assign directly, skip full gate |

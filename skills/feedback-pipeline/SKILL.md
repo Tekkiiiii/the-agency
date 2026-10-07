@@ -1,13 +1,6 @@
 ---
 name: feedback-pipeline
-description: |
-  Autonomous customer feedback intake pipeline: reads new submissions from a Google Sheet,
-  routes each to the correct project owner via a routing table, sends a Slack/chat handoff,
-  tracks response status, monitors SLA, escalates breaches, and emails the customer when
-  resolved. Runs on a 4-hour cron cycle with a 2-hour escalation check. Use when feedback
-  submissions need to reach the right person without manual triage, when SLA compliance is
-  important, or when customer response loops are slow. Also for onboarding new projects into
-  the feedback routing system, auditing open feedback, or rebuilding the pipeline state.
+description: "Use when customer feedback must reach the right owner without manual triage, SLA compliance matters, or onboarding a project into feedback routing. Reads Google Sheet submissions, routes via table, hands off on Slack/chat, tracks SLA, escalates breaches, emails customers on resolution. 4-hour cron."
 triggers:
   - /feedback-pipeline
   - feedback pipeline

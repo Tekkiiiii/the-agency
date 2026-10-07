@@ -1,24 +1,6 @@
 ---
 name: project-status
-description: >
-  Maintain machine-readable project status snapshots for instant context at the
-  start of any session, eliminating the need to re-derive project state from
-  package.json, Cargo.toml, or git history. A lightweight PROJECT.md convention
-  in every project root: YAML frontmatter for machine parsing (status, phase,
-  version, last_session, tech_stack, blockers, focus) plus a brief prose section
-  for human context. Triggered: automatically at session start (read PROJECT.md
-  first, then work), when starting work on a project after time away (check if
-  last_session is stale), during handoffs (what's the current state?), when
-  planning new work (what are the blockers?), and when onboarding to a codebase.
-  Key capabilities: a single file that replaces reading package.json + git log +
-  several docs, a focus list that tells you what to work on immediately, a blockers
-  field that surfaces what genuinely stopped progress, and a derived-vs-human-
-  maintained field table so contributors know when to update. Ideal for anyone
-  working across multiple projects, anyone inheriting a codebase, and teams that
-  want a shared understanding of project state without a project management tool.
-  Also for writing better commit messages (know the phase/status), assessing build
-  health at a glance before running tests, and quickly comparing tech stacks across
-  a portfolio.
+description: "Use at session start, after time away, on handoffs, or when planning, to read or update PROJECT.md: a root file with YAML frontmatter (status, phase, version, last_session, tech_stack, blockers, focus) plus short prose. Gives instant project state without re-deriving it from package.json or git history."
 ---
 
 # Project Status — Instant Context

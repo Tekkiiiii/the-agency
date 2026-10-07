@@ -1,11 +1,6 @@
 ---
 name: content-strategy
-description: >
-  Build editorial calendars, define content pillars, plan campaigns across TOFU/MOFU/BOFU funnel stages,
-  audit and repurpose content across channels, and track performance by channel and pillar. Trigger when:
-  building or maintaining an editorial calendar; defining content pillars or themes for a niche or ICP;
-  planning a content campaign (blog, video, podcast, social); auditing or repurposing existing long-form
-  content; developing a content distribution or SEO strategy; or analyzing content performance.
+description: "Use for content planning: editorial calendars, content pillars, TOFU/MOFU/BOFU campaign plans, auditing or repurposing long-form content, distribution and SEO strategy, performance analysis by channel and pillar. Not for writing the copy itself (use /copywriting)."
 ---
 
 ## Content Strategy Framework

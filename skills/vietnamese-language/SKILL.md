@@ -2,32 +2,24 @@
 name: vietnamese-language
 version: 1.0.0
 description: >
-  Vietnamese language reference layer — loaded on demand by other skills, pipelines,
-  and agents. 17 reference files covering: platform-specific cultural dynamics
-  (Facebook/TikTok/Instagram/LinkedIn/Zalo/YouTube/Twitter-X/Threads), formal document
-  conventions, press release structure, viral content patterns, educational content norms,
-  SEO/diacritic strategy, regional dialects, Gen Z slang taxonomy, advertising cultural
-  frameworks, and email/messaging conventions. Does NOT duplicate content-creator/languages/vi.md
-  (power words, hooks, CTAs, tone registers), marketing suite (funnel strategy, KPIs, ad
-  templates), or proofreader/SKILL.md (grammar rules, tone mark errors). Load this when the
-  task requires deep Vietnamese cultural/linguistic context beyond surface-level platform specs.
+  Vietnamese on-demand factual reference (formal documents, press releases, regional dialects, regulation, platform facts, SEO/diacritics). NOT a voice, hook, or template source; voice comes from exemplars (brand/voice-exemplars-vi, pending). Load only when a task needs factual Vietnamese context.
 ---
 
 # Vietnamese Language Knowledge Base
 
-Pure reference layer. No workflows, no agents, no presets — just knowledge files that other skills consume on demand.
+On-demand factual reference (formal documents, press releases, dialects, regulation, platform facts). NOT a voice, hook, or template source. Voice comes from exemplars (brand/voice-exemplars-vi, pending). Do not copy phrasing from these files.
 
 ## Boundaries
 
 **Already covered — do NOT load these reference files if what you need is:**
-- Power words, hook templates, CTAs, 4 tone registers, diacritic/Unicode rules, platform surface conventions → `content-creator/languages/vi.md`
-- Ad copy structure (6 variants), TOFU/MOFU/BOFU templates, compliance checklist → `marketing/05-copy-quang-cao/`
+- Tone registers, diacritic/Unicode rules, regulatory constraints → `content-creator/languages/vi.md`
+- Ad copy structure, funnel-stage specs, compliance checklist → `marketing/05-copy-quang-cao/`
 - Email sequence strategy, automation, KPIs → `marketing/14-email-marketing/`
 - Grammar rules, tone mark errors, code-switching → `proofreader/SKILL.md`
 - Active VN editing (de-template prose, translationese cleanup, deep grammar check, style consistency) → `humanizer-vi`, `translationese-cleaner-vi`, `grammar-checker-vi`, `style-guide-vi`
 - Platform format specs (character limits, aspect ratios, hashtag counts) → `content-creator/references/platforms.md`
 
-**This skill fills the gap for:** deep platform cultural dynamics, formal/legal/press Vietnamese, viral pattern mechanics, SEO diacritic strategy, regional dialects, Gen Z slang formation patterns, advertising cultural values framework, and email/messaging register conventions.
+**This skill fills the gap for:** platform facts, formal/legal/press Vietnamese, viral format background, SEO diacritic strategy, regional dialects, Gen Z slang formation patterns, advertising cultural values and regulatory facts, and email/messaging register conventions.
 
 ---
 
@@ -39,14 +31,14 @@ Read this table to decide which reference file to load. Load only the file(s) ne
 
 | Task signal | Load |
 |---|---|
-| Facebook Groups, livestream sellers, Marketplace, age-segment register | `references/platforms/facebook.md` |
-| TikTok challenge vocabulary, duet/stitch language, FYP hooks, trending audio | `references/platforms/tiktok.md` |
-| Instagram VN aesthetic captions, carousel education, Story interaction, collabs | `references/platforms/instagram.md` |
-| LinkedIn VN B2B register, hierarchy/deference, job posting language | `references/platforms/linkedin.md` |
-| Zalo OA broadcast copy, mini app flows, customer service, boss/parent norms | `references/platforms/zalo.md` |
-| YouTube VN title optimization, description, comment engagement, Shorts | `references/platforms/youtube.md` |
-| Twitter/X VN short-form, real-time commentary, thread structure | `references/platforms/twitter-x.md` |
-| Threads VN creator register, conversation threading | `references/platforms/threads.md` |
+| Facebook age-segment register, Marketplace conventions | `references/platforms/facebook.md` |
+| TikTok ad-disclosure hashtags (#quangcao, #hoptac) | `references/platforms/tiktok.md` |
+| Instagram formats (Feed, Carousel, Reels, Stories, Collab) | `references/platforms/instagram.md` |
+| LinkedIn VN register and honorifics, job posting structure | `references/platforms/linkedin.md` |
+| Zalo OA/ZNS mechanics (unverified limit), CS register | `references/platforms/zalo.md` |
+| YouTube description mechanics (visible lines, chapters, hashtags) | `references/platforms/youtube.md` |
+| Twitter/X post limit, informal abbreviations | `references/platforms/twitter-x.md` |
+| Threads VN (stub, no content yet) | `references/platforms/threads.md` |
 
 ### Topic Files (`references/`)
 
@@ -56,25 +48,22 @@ Read this table to decide which reference file to load. Load only the file(s) ne
 | Business correspondence, memo, proposal | `references/formal-documents.md` |
 | Academic or legal writing in Vietnamese | `references/formal-documents.md` |
 | Press release / thông cáo báo chí | `references/press-releases.md` |
-| Viral content mechanics, 2024–2026 formats | `references/viral-content.md` |
-| Challenge participation, meme culture | `references/viral-content.md` |
-| Seasonal content (Tết, Mid-Autumn, national holidays) | `references/viral-content.md` |
-| Educational content, EduTok, e-learning | `references/educational-content.md` |
+| Viral format list, meme conventions, slang lifecycle, seasonal calendar | `references/viral-content.md` |
+| Educational content structure, e-learning platform language | `references/educational-content.md` |
 | Ministry of Education language standards | `references/educational-content.md` |
 | SEO Vietnamese keywords, diacritic strategy, CocCoc | `references/seo-content-marketing.md` |
 | Content marketing structure, long-form blog | `references/seo-content-marketing.md` |
 | Northern vs Southern vocabulary differences | `references/regional-dialects.md` |
-| Brand targeting Hà Nội vs Hồ Chí Minh | `references/regional-dialects.md` |
 | Diaspora Vietnamese (Việt kiều) | `references/regional-dialects.md` |
 | Gen Z slang formation, internet language, teen code | `references/gen-z-slang.md` |
 | Number substitution, English loanword integration | `references/gen-z-slang.md` |
-| Advertising values framework, Confucian/Buddhist persuasion | `references/advertising-copywriting.md` |
-| KOL/KOC integration patterns, celebrity endorsement language | `references/advertising-copywriting.md` |
-| Seasonal campaign language (Tết copy, 8/3, 20/10) | `references/advertising-copywriting.md` |
-| Regulatory language (Bộ Y Tế, health claims) | `references/advertising-copywriting.md` |
-| Business email register, customer service scripts | `references/email-messaging.md` |
+| Advertising values framework (Confucian/Buddhist/Taoist) | `references/advertising-copywriting.md` |
+| KOL/KOC tier conventions | `references/advertising-copywriting.md` |
+| Seasonal campaign context (Tết, 8/3, 20/10) | `references/advertising-copywriting.md` |
+| Regulatory language (Bộ Y Tế, health claims, Luật Quảng cáo) | `references/advertising-copywriting.md` |
+| Business email register, customer service conventions | `references/email-messaging.md` |
 | Newsletter conventions, SMS marketing | `references/email-messaging.md` |
-| Automated message templates, chatbot copy | `references/email-messaging.md` |
+| Zalo OA broadcast vs email | `references/email-messaging.md` |
 
 ---
 
@@ -82,10 +71,10 @@ Read this table to decide which reference file to load. Load only the file(s) ne
 
 These existing skills should cross-reference this skill:
 
-- **`content-creator`** with `language=vi`: supplements `vi.md` with platform deep-dives when the brief specifies Zalo OA, LinkedIn VN, YouTube VN, or Twitter/X VN (platforms not covered in vi.md)
-- **`marketing/05-copy-quang-cao`**: load `advertising-copywriting.md` for Tết campaign copy or health/beauty copy requiring Bộ Y Tế compliance language
-- **`marketing/14-email-marketing`**: load `email-messaging.md` for Zalo OA broadcast conventions and Vietnamese newsletter register
-- **`marketing/04-script-video`**: load `gen-z-slang.md` when target audience is under 25 and brief requires authentic slang
+- **`content-creator`** with `language=vi`: supplements `vi.md` with platform facts (mechanics only) when the brief specifies Zalo OA, LinkedIn VN, YouTube VN, or Twitter/X VN (platforms not covered in vi.md)
+- **`marketing/05-copy-quang-cao`**: load `advertising-copywriting.md` for Tết campaign context or health/beauty work requiring Bộ Y Tế compliance facts
+- **`marketing/14-email-marketing`**: load `email-messaging.md` for Zalo OA vs email register and Vietnamese newsletter register
+- **`marketing/04-script-video`**: load `gen-z-slang.md` when a brief requires slang meaning lookup
 - **`proofreader`**: load `formal-documents.md` when proofreading government/legal documents; load `press-releases.md` when proofreading thông cáo báo chí
 
 ---

@@ -29,6 +29,11 @@ SPAWN_LOG_DIR=$(dirname "$SPAWN_LOG_FILE")
 SPAWN_LOG_BASE=$(basename "$SPAWN_LOG_FILE")
 mkdir -p "$SPAWN_LOG_DIR" 2>/dev/null || true
 
+# Reconciliation sweep — closes stale spawn_start records that never got a
+# spawn_end (killed/crashed agents, or the agent-instrumented manual convention
+# skipping its after-call). Self-throttled internally; safe on every completion.
+bash "$HOOK_DIR/lib/reconcile-stale-spawns.sh" "$SPAWN_LOG_FILE" 2>/dev/null || true
+
 # Parse completion data and write spawn_end entry — pass INPUT as argv to avoid
 # stdin conflict. Same idiom as hooks/emit-metric.sh (Wave 13, 3383ea9): cd into
 # SPAWN_LOG_FILE's directory and hand python only its bare filename — SPAWN_LOG_FILE

@@ -235,6 +235,22 @@ if [ -d "$RUNBOOKS_SRC" ]; then
     echo "  ✓ Runbooks installed"
 fi
 
+# --- Agents archive ---
+# Role files + ROLE-MAP.md for the archived specialist agents (generalist switch).
+# Spawners read `{agency-root}/agents-archive/ROLE-MAP.md` and the role files at
+# runtime. Copied as plain files to {agency-root}/agents-archive/, NEVER under
+# agents/, so nothing here registers as a spawnable agent type. Keep in sync with
+# install.ps1, cli/commands/init.js and cli/commands/upgrade.js — see the deploy
+# matrix in docs/INSTALL-LAYOUT.md.
+ARCHIVE_SRC="$SCRIPT_DIR/agents-archive"
+ARCHIVE_DEST="$CLAUDE_HOME/agents-archive"
+if [ -d "$ARCHIVE_SRC" ]; then
+    mkdir -p "$ARCHIVE_DEST"
+    cp -r "$ARCHIVE_SRC"/* "$ARCHIVE_DEST/"
+    find "$ARCHIVE_DEST" -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true
+    echo "  ✓ Agents archive installed"
+fi
+
 # --- Scripts ---
 # Support tooling invoked by shipped skills as `{agency-root}/scripts/...`
 # (save-state.py, mem-gardener.sh, ...). The CLI installer already synced these;

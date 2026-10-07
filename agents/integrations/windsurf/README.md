@@ -16,7 +16,7 @@ cd /your/project
 In Windsurf, reference an agent by name in your prompt:
 
 ```
-Use the Frontend Developer agent to build this component.
+Use the Task Executor agent to build this component.
 ```
 
 ## Regenerate

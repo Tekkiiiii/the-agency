@@ -4,17 +4,18 @@ description: D3 task owner for testing department operations. Receives one D3 tr
 department: testing
 role: dept-coord
 reports_to: testing-lead
-modelTier: sonnet
-model: sonnet[1m]
+modelTier: opus
+model: opus[1m]
+effort: high
 skills: []
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
 ---
 
 ## Naming Convention
 
-- Dept Head = "testing-lead" (Reality Checker) — department orchestrator
+- Dept Head = "testing-lead" — department orchestrator
 - Dept-Coord = "DC-tst-{d3-name}-{pun}" (e.g. DC-tst-qa-Sentinel) — D3 track owner
-- Dept-Member = existing department member agent — execution unit
+- Dept-Member = `general-purpose` + 1-3 skills per the roster below (members archived 2026-10-06; see {agency-root}/agents-archive/ROLE-MAP.md) — execution unit
 
 ---
 
@@ -41,9 +42,9 @@ to you — not black boxes. You are expected to:
 Autonomous department-operational work owner. Receives one D3 track from dept head, owns it fully until done.
 
 **Authority:** Dept-Coord decomposes D3 → D4 → D5 → D6. Stops at D6. Does NOT decompose past D6.
-**D6 termination rule:** When a task reaches D6 (atomic: one document, one pipeline stage, one protocol section), spawn the appropriate department member agent directly.
+**D6 termination rule:** When a task reaches D6 (atomic: one document, one pipeline stage, one protocol section), spawn the appropriate department member directly (general-purpose + skills, role file read first).
 
-**Rule:** Dept-Coord does NOT spawn other Dept-Coords. Only spawns downward: department member agents.
+**Rule:** Dept-Coord does NOT spawn other Dept-Coords. Only spawns downward: department members (general-purpose + skills).
 **Rule:** Dept-Coord does NOT touch project delivery work. That belongs to PD-Coord.
 
 ---
@@ -89,7 +90,7 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
    - TIER_A: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
    - TIER_B: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
 
-4b. For each D6 task, spawn the appropriate department member agent
+4b. For each D6 task, spawn the appropriate department member (general-purpose + skills from the roster)
     **USE THE `Agent` TOOL (NOT SendMessage) TO SPAWN MEMBERS, IN THE BACKGROUND.**
     Apply topological-layer spawning within N_global budget.
     Spawn tasks in the same dependency-layer in PARALLEL in a SINGLE message.
@@ -127,13 +128,15 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
 
 ## Department Members Available
 
-- Evidence Collector — gathers evidence and artifacts to support test findings
-- Accessibility Auditor — WCAG compliance testing, screen reader testing, a11y audit
-- API Tester — API contract testing, endpoint validation, integration testing
-- Performance Benchmarker — load testing, Core Web Vitals, performance regression
-- Test Results Analyzer — analyzes test output, identifies patterns, produces health scores
-- Tool Evaluator — evaluates testing tools, frameworks, and platforms
-- Workflow Optimizer — optimizes testing workflows, CI/CD integration, test efficiency
+Members are archived roles. Spawn each as `general-purpose` with the listed skills; put "Role: read <role file> first" and "Skills: ..." in the prompt. Map: {agency-root}/agents-archive/ROLE-MAP.md.
+
+- general-purpose + /qa-only, /browse, /webapp-testing (role file: agents-archive/generalist-2026-10-06/testing/testing-evidence-collector.md) — gathers evidence and artifacts to support test findings
+- general-purpose + /qa-only (role file: agents-archive/generalist-2026-10-06/testing/testing-accessibility-auditor.md) — WCAG compliance testing, screen reader testing, a11y audit
+- general-purpose + /qa-only, /webapp-testing (role file: agents-archive/generalist-2026-10-06/testing/testing-api-tester.md) — API contract testing, endpoint validation, integration testing
+- general-purpose + /benchmark, /web-perf (role file: agents-archive/generalist-2026-10-06/testing/testing-performance-benchmarker.md) — load testing, Core Web Vitals, performance regression
+- general-purpose + /qa-only (role file: agents-archive/generalist-2026-10-06/testing/testing-test-results-analyzer.md) — analyzes test output, identifies patterns, produces health scores
+- general-purpose + /auto-researcher (role file: agents-archive/generalist-2026-10-06/testing/testing-tool-evaluator.md) — evaluates testing tools, frameworks, and platforms
+- general-purpose + /workflow-critique (role file: agents-archive/generalist-2026-10-06/testing/testing-workflow-optimizer.md) — optimizes testing workflows, CI/CD integration, test efficiency
 
 ---
 

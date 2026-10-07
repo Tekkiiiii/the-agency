@@ -1,7 +1,7 @@
 # Metrics Emit Contracts
 
 Full bash templates for all emit-metric events. The parent AI fires these at decision points — NOT subagents.
-Event **names** and **triggers** stay inline in CLAUDE.md. This file provides the verbatim JSON templates for copy-paste.
+Event **names** and **triggers** live in the skills and runbooks that emit them. This file provides the verbatim JSON templates for copy-paste.
 
 SSOT: `{agency-root}/hooks/emit-metric.sh` — fire-and-forget, non-blocking.
 
@@ -59,15 +59,7 @@ After emitting: append `(task-pattern → route)` entry to `~/.claude/memory/del
 
 ---
 
-## Event 5 — generalist_ban_violation
-
-**Trigger:** BEFORE spawning `general-purpose` or `claude` as `subagent_type` outside the 3 allowed conditions.
-Emit, then STOP and spawn Delegator instead. Do NOT proceed with the generalist spawn.
-
-```bash
-bash {agency-root}/hooks/emit-metric.sh \
-  '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"generalist_ban_violation","subagent_type":"general-purpose","context":"<one-word reason>"}'
-```
+## Event 5 — retired 2026-10-06 (generalist-ban metric; no longer emitted, removed from this contract 2026-10-07 — see git history)
 
 ---
 
@@ -141,7 +133,6 @@ dead one. Add a row here whenever a new event is introduced.
 | `curator_spawn` | Lookup-first compliance (spawn side) | Curator was spawned for multi-source synthesis | No project-knowledge investigations happened |
 | `delegator_cache_hit` | Routing lookup-first (cache side) | `delegator-cache.md` exact match used | No ambiguous routing decisions happened |
 | `delegator_spawn` | Routing lookup-first (spawn side) | Delegator spawned for ambiguous/cross-domain routing | No ambiguous routing decisions happened |
-| `generalist_ban_violation` | Generalist-spawn ban compliance | Caught self about to use `general-purpose`/`claude` outside the 3 allowed conditions | No such near-miss occurred (ideally always the case) |
 | `bg_agent_verified` | Background-agent completion-gate compliance | Verified all deliverables of a `run_in_background:true` spawn | No background agents returned |
 | `save_state` / `save_state_complete` | save-state script execution | `save-state.py` ran (either mode — script cannot distinguish INLINE vs SUBAGENT) | No save-state ran (unlikely — fires constantly in normal use) |
 | `save_state_spawn` | SUBAGENT-mode save-state usage specifically | Caller is about to spawn a `save-state-runner` (`/save-state all` or crash recovery) | Only INLINE saves happened this window — genuinely healthy if no `all` runs or recoveries occurred |
@@ -163,7 +154,6 @@ dead one. Add a row here whenever a new event is introduced.
 | `curator_spawn` | spawned Curator for investigation |
 | `delegator_cache_hit` | skipped Delegator — cache hit |
 | `delegator_spawn` | spawned Delegator — cache miss |
-| `generalist_ban_violation` | caught self about to use general-purpose/claude illegally |
 | `bg_agent_verified` | verified background agent deliverables |
 | `tier_checked` | Autonomy Tier Gate ran before a write/deploy/send/mutate action |
 

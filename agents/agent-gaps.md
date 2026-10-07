@@ -1,6 +1,8 @@
 # Agent Gaps Log
 
-When a caller needs to spawn for a task and NO named agent covers it
+> **Gap log status (2026-10-06): generalist switch ACTIVE.** Specialist agents are archived; `general-purpose` + 1-3 skills named in the prompt is the default spawn, so "no named agent covers it" is no longer a gap. All gap rows below are RESOLVED by the 2026-10-06 generalist switch (history kept). Role to skills map: `{agency-root}/agents-archive/ROLE-MAP.md`. Only log a row here if a KEPT agent (PD, coord, critique-*, dept head, etc.) is missing or fails to resolve.
+
+When a caller needs a KEPT-type agent (e.g. a new `*-pd`) and none is registered
 (after checking delegator-cache → agency-dispatch → `agents-archive/MANIFEST.md`),
 the caller MUST:
 
@@ -9,10 +11,10 @@ the caller MUST:
    (frontmatter: name, description, restricted `tools:` list, model; body:
    short role prompt). Registration takes effect next session.
 3. Spawn: if the new type resolves, use it. If it does not resolve yet
-   (same-session registration lag), spawn the fallback ONCE with the new
+   (same-session registration lag), spawn `general-purpose` ONCE with the new
    agent's role prompt inlined, and note "bridged" below.
 
-Generalist spawns without a row here are a `generalist_ban_violation`.
+The generalist-ban metric is RETIRED 2026-10-06 (no longer emitted); spawning `general-purpose` needs no gap row.
 
 | Date | Task pattern | Agent created | Bridged? |
 |---|---|---|---|

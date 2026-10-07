@@ -60,7 +60,7 @@ Design, video, and data critiques ALWAYS require visual evidence. The quality-lo
 ## Auto-Clone Protocol
 
 If a task type has no matching critic in agents/critiques/:
-1. quality-loop-router spawns Delegator to confirm the gap
+1. quality-loop-router greps `{agency-root}/agents/critiques/INDEX.md` for a critic matching the task type to confirm the gap (no Delegator spawn)
 2. If gap confirmed: creates new critic by cloning closest existing one
 3. Registers new critic in INDEX.md, quality-loop-router skill, and this protocol
 4. Logs creation in pipeline report
@@ -89,4 +89,4 @@ The following trigger phrases cause the parent AI to invoke quality-loop-router:
 - Skill: `{agency-root}/skills/quality-loop-router/SKILL.md`
 - Critics: `{agency-root}/agents/critiques/`
 - cc-loop: `{agency-root}/skills/cc-loop/SKILL.md` (Mode A reuses cc-loop primitives)
-- Skill routing: trigger phrases live inline in `CLAUDE.md` (Memory — Skill Triggers), and the agent/skill dispatch table is `{agency-root}/core/memory/agency-dispatch.md` — no separate skill-routing.md ships
+- Skill routing: trigger phrases live in each skill's `description` (`{agency-root}/skills/INDEX.md`), and the agent/skill dispatch table is `{agency-root}/core/memory/agency-dispatch.md` — no separate skill-routing.md ships
