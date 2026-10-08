@@ -59,7 +59,7 @@ The PD loads and asks what to build. You supervise; it executes.
 curl -fsSL https://raw.githubusercontent.com/Tekkiiiii/the-agency/main/rescue.sh | bash
 ```
 
-It finds your existing clone (checks `~/.claude/`, `~/the-agency/`), pulls the latest, and recovers from broken states. If you don't have the repo yet, it clones it to `~/.claude/` for you.
+It finds your existing clone (checks your agency root, then `~/.claude/` and `~/the-agency/`), pulls the latest, and recovers from broken states. If you don't have the repo yet, it clones it to `~/the-agency/` (never into `~/.claude/`, which already exists if you use Claude Code) and tells you to run the installer. If `~/the-agency/` already holds something else, it leaves it alone and prints the `git clone` command for a different folder.
 
 ---
 

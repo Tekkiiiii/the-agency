@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # check-upgrade-rewrite.sh — regression guard for `agency upgrade` and rescue.sh
 # on a clone whose origin/main was force-push-rewritten, while the clone also
-# carries a stale .git/index.lock and a leftover unmerged (UU) file.
+# carries a stale .git/index.lock and a leftover unmerged (UU) file. It also
+# covers rescue.sh's first-install (repo-not-found) path: the clone goes to
+# ~/the-agency, never into an existing agency root (cases 8-9).
 #
 # That is the exact state of a real Windows clone after the 2026-10-08
 # Pinecone-key history purge: `pull --rebase` replayed the pre-rewrite commits
@@ -224,6 +226,58 @@ if [ -f "$RF/rescue.sh" ]; then
   check "HEAD == rewritten origin/main" [ "$(git -C "$RF" rev-parse HEAD)" = "$NEW_MAIN" ]
 else
   echo "case 5: skipped (no rescue.sh in $CLI_SRC)"
+fi
+
+# ── cases 8-9: rescue.sh first install (repo not found anywhere) ─────────────
+# The agency root already exists for every Claude Code user (~/.claude holds
+# settings.json etc.), so rescue.sh must clone to ~/the-agency (same as
+# rescue.ps1 and the README) and leave the root to the installer — it used to
+# merge the repo and its .git INTO the root. The hardcoded GitHub URL is
+# redirected to the sandbox origin with a git url rewrite, so rescue.sh itself
+# needs no test hook; HOME is the sandbox, so this writes $W/home/.gitconfig.
+hasf() { printf '%s\n' "$OUT" | grep -qF -- "$1"; }
+root_listing() { ls -A "$1" 2>/dev/null | tr '\n' ' '; }
+fresh_first_install() { # root-dir — only settings.json in the root, nothing else anywhere
+  rm -rf "$HOME/the-agency" "$HOME/.claude" "$HOME/.agency/the-agency" "$1"
+  mkdir -p "$1"
+  printf '{}\n' > "$1/settings.json"
+}
+if [ -f "$CLI_SRC/rescue.sh" ]; then
+  git config --global url."$ORIGIN".insteadOf https://github.com/Tekkiiiii/the-agency.git
+
+  echo "case 8: rescue.sh first install — root already exists (a Claude Code user)"
+  CC="$W/cc-root"
+  fresh_first_install "$CC"
+  OUT="$(cd "$HOME" && AGENCY_HOME="$CC" bash "$CLI_SRC/rescue.sh" 2>&1)"; CODE=$?
+  show
+  check "exit 0 (got $CODE)" [ "$CODE" -eq 0 ]
+  check "cloned to ~/the-agency" [ -d "$HOME/the-agency/.git" ]
+  check "clone HEAD == origin/main" [ "$(git -C "$HOME/the-agency" rev-parse HEAD 2>/dev/null)" = "$NEW_MAIN" ]
+  check "no .git merged into the root" [ ! -e "$CC/.git" ]
+  check "root holds only its pre-existing file" [ "$(root_listing "$CC")" = "settings.json " ]
+  check "root's pre-existing file untouched" [ "$(cat "$CC/settings.json")" = "{}" ]
+  check "clone path printed" hasf "$HOME/the-agency"
+  check "next step ./install.sh printed" hasf "install.sh"
+  check "says the installer syncs into the root" hasf "syncs into $CC"
+
+  echo "case 9: rescue.sh first install — ~/the-agency exists, non-empty, not the repo"
+  fresh_first_install "$CC"
+  mkdir -p "$HOME/the-agency"
+  printf 'mine\n' > "$HOME/the-agency/mine.txt"
+  OUT="$(cd "$HOME" && AGENCY_HOME="$CC" bash "$CLI_SRC/rescue.sh" 2>&1)"; CODE=$?
+  show
+  check "non-zero exit (got $CODE)" [ "$CODE" -ne 0 ]
+  check "user file untouched" [ "$(cat "$HOME/the-agency/mine.txt" 2>/dev/null)" = "mine" ]
+  check "~/the-agency left as it was (no .git, only mine.txt)" \
+    sh -c '[ ! -e "$1/.git" ] && [ "$(ls -A "$1" | tr "\n" " ")" = "mine.txt " ]' _ "$HOME/the-agency"
+  check "nothing written to the root" [ "$(root_listing "$CC")" = "settings.json " ]
+  check "names the blocking directory" hasf "$HOME/the-agency"
+  check "prints the manual git clone command" hasf "git clone"
+
+  rm -rf "$HOME/the-agency" "$CC"
+  git config --global --unset-all url."$ORIGIN".insteadOf
+else
+  echo "cases 8-9: skipped (no rescue.sh in $CLI_SRC)"
 fi
 
 # ── cases 6-7: the ordinary paths must be unchanged ──────────────────────────

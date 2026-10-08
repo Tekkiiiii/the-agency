@@ -4,7 +4,8 @@ set -euo pipefail
 # The Agency — Rescue Script
 # Safely pulls the latest code when `agency upgrade` is broken.
 # Pure bash + git. Zero Node dependency.
-# Works from inside the repo, from anywhere via curl | bash, or as a first-time clone.
+# Works from inside the repo, from anywhere via curl | bash, or as a first-time clone
+# (to ~/the-agency, never into the agency root; the installer syncs into the root).
 
 AGENCY_REPO="https://github.com/Tekkiiiii/the-agency.git"
 
@@ -142,7 +143,9 @@ fi
 #    The remaining three are legacy/alternate layouts kept as a courtesy: this
 #    is a rescue tool, and finding an existing verified repo is always better
 #    than cloning a duplicate. They are only ever ADOPTED, never written to as
-#    a root — every write below goes to $AGENCY_ROOT.
+#    a root. Everything after this point writes only inside the repo found
+#    here; a first-time clone (block c) goes to ~/the-agency, never into
+#    $AGENCY_ROOT.
 if [ -z "$REPO_DIR" ]; then
     for loc in "$AGENCY_ROOT" "$HOME/.claude" "$HOME/the-agency" "$HOME/.agency/the-agency"; do
         if [ -d "$loc" ] && is_agency_repo "$loc"; then
@@ -152,26 +155,28 @@ if [ -z "$REPO_DIR" ]; then
     done
 fi
 
-# c) Not found — clone it
+# c) Not found — clone it to ~/the-agency, NEVER into $AGENCY_ROOT.
+#    The root (~/.claude by default) already exists for every Claude Code user,
+#    so cloning "into" it meant merging the repo and its .git over a live config
+#    folder. The documented install is: clone somewhere else, then run the
+#    installer, which syncs into the root (rescue.ps1 and the README say the
+#    same: ~/the-agency). Nothing below writes to $AGENCY_ROOT.
 if [ -z "$REPO_DIR" ]; then
-    CLONE_TARGET="$AGENCY_ROOT"
-    echo "  The Agency repo not found locally. Cloning to $CLONE_TARGET/ ..."
+    CLONE_TARGET="$HOME/the-agency"
 
-    if [ -d "$CLONE_TARGET" ] && [ "$(ls -A "$CLONE_TARGET" 2>/dev/null)" ]; then
-        # the root exists with files — clone into it without overwriting
-        TEMP_DIR="$(mktemp -d)"
-        if git clone "$AGENCY_REPO" "$TEMP_DIR/the-agency" 2>&1; then
-            cp -rn "$TEMP_DIR/the-agency/"* "$CLONE_TARGET/" 2>/dev/null || true
-            cp -rn "$TEMP_DIR/the-agency/".git "$CLONE_TARGET/" 2>/dev/null || true
-            rm -rf "$TEMP_DIR"
-            REPO_DIR="$CLONE_TARGET"
-            echo "  Merged into existing $REPO_DIR"
-        else
-            rm -rf "$TEMP_DIR"
-            echo "  Error: git clone failed. Check your network connection."
-            exit 1
-        fi
-    elif git clone "$AGENCY_REPO" "$CLONE_TARGET" 2>&1; then
+    # git clone accepts a missing or EMPTY directory. Anything else here is not
+    # ours (discovery above already adopted it if it were the repo): leave it be.
+    if [ -e "$CLONE_TARGET" ] && { [ ! -d "$CLONE_TARGET" ] || [ -n "$(ls -A "$CLONE_TARGET" 2>/dev/null)" ]; }; then
+        echo "  The Agency repo not found locally."
+        echo "  Error: $CLONE_TARGET already exists and is not the-agency repo. Not touching it."
+        echo "  Clone the repo into a different folder, then run the installer from there:"
+        echo "    git clone $AGENCY_REPO <other-dir>"
+        echo "    cd <other-dir> && ./install.sh"
+        exit 1
+    fi
+
+    echo "  The Agency repo not found locally. Cloning to $CLONE_TARGET/ ..."
+    if git clone "$AGENCY_REPO" "$CLONE_TARGET" 2>&1; then
         REPO_DIR="$CLONE_TARGET"
         echo "  Cloned to $REPO_DIR"
     else
@@ -180,8 +185,8 @@ if [ -z "$REPO_DIR" ]; then
     fi
 
     echo ""
-    echo "  First-time install — run the installer next:"
-    echo "    cd $REPO_DIR && ./install.sh"
+    echo "  First-time install — run the installer next. It syncs into $AGENCY_ROOT:"
+    echo "    cd \"$REPO_DIR\" && ./install.sh"
     echo ""
     exit 0
 fi
