@@ -10,9 +10,28 @@ $ClaudeHome = if ($env:AGENCY_HOME) { $env:AGENCY_HOME }
               else { Join-Path $env:USERPROFILE ".claude" }
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+# Which rung of the ladder above resolved the root, and whether settings.json
+# existed BEFORE this script runs. Real case: a Windows user with config on D:
+# synced into $env:USERPROFILE\.claude, which Claude Code never read, unwarned.
+$RootSource = if ($env:AGENCY_HOME) { "AGENCY_HOME" }
+              elseif ($env:CLAUDE_CONFIG_DIR) { "CLAUDE_CONFIG_DIR" }
+              else { "default" }
+$RootWarn = ($RootSource -eq "default") -and -not (Test-Path -LiteralPath (Join-Path $ClaudeHome "settings.json"))
+function Write-RootWarning {
+    Write-Host "  ⚠ No settings.json at $ClaudeHome, and neither AGENCY_HOME nor CLAUDE_CONFIG_DIR is set."
+    Write-Host "    If your Claude Code config lives elsewhere (e.g. D:\claude or a custom folder),"
+    Write-Host "    set CLAUDE_CONFIG_DIR or AGENCY_HOME to that folder and re-run."
+}
+
 Write-Host ""
 Write-Host "The Agency - Installing to $ClaudeHome"
 Write-Host "========================================="
+if ($RootSource -eq "default") {
+    Write-Host "  Sync root: $ClaudeHome (from default - neither AGENCY_HOME nor CLAUDE_CONFIG_DIR is set)"
+} else {
+    Write-Host "  Sync root: $ClaudeHome (from $RootSource)"
+}
+if ($RootWarn) { Write-RootWarning }
 Write-Host ""
 
 # Create directories
@@ -214,6 +233,7 @@ if (Test-Path $CliSrc) {
 
 Write-Host ""
 Write-Host "✓ The Agency installed to $ClaudeHome"
+if ($RootWarn) { Write-RootWarning }
 Write-Host ""
 Write-Host "Next steps:"
 Write-Host "  agency onboard                      Interactive setup wizard"

@@ -3,6 +3,11 @@ const { existsSync, chmodSync, readFileSync, realpathSync, readdirSync } = requi
 const { resolve, join } = require('path');
 const os = require('os');
 const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncAgentsArchive, syncDesignSystem, syncCore } = require('./sync-assets.js');
+const { printSyncRoot, printNoSettingsWarning } = require('../lib/root.js');
+const {
+  createBackup, checkIndexLock, rescueUnmerged, changedPaths,
+  classify, findCounterparts, createBackupBranch,
+} = require('../lib/git-recover.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -26,6 +31,22 @@ const REEXEC_ENV = 'AGENCY_UPGRADE_REEXEC';
 // the reexec'd child can still print "what changed since your last upgrade" —
 // the child has no other way to know what HEAD was before the pull happened.
 const HEAD_BEFORE_ENV = 'AGENCY_UPGRADE_HEAD_BEFORE';
+
+// Carries the history-rewrite recovery summary (backup branch, cherry-pick
+// lines) across the reexec boundary, so it is repeated at the very END of the
+// run instead of scrolling away above the sync output.
+const RECOVERY_NOTES_ENV = 'AGENCY_UPGRADE_RECOVERY_NOTES';
+
+function errText(err) {
+  return err && err.stderr && err.stderr.toString().trim() ? err.stderr.toString().trim() : (err && err.message) || String(err);
+}
+
+function printRecoveryNotes(text, console) {
+  if (!text) return;
+  console.log('');
+  console.log('Recovery summary (origin/main history was rewritten):');
+  for (const line of text.split('\n')) console.log('  ' + line);
+}
 
 // Compare two paths by real (symlink-resolved) location, not just string form.
 // `resolve()` alone is not enough: Node's require()/__dirname resolves symlinks
@@ -161,8 +182,13 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   // to select which CHANGELOG.md entries to print. See HEAD_BEFORE_ENV above
   // for why the reexec'd child can't compute this itself.
   let resolvedHeadBefore = null;
+  // History-rewrite recovery summary, printed again at the very end.
+  let recoveryText = '';
+  // Set when the sync root looks accidental (see cli/lib/root.js); repeated at the end.
+  let syncRootWarned = false;
 
   if (isReexec) {
+    recoveryText = process.env[RECOVERY_NOTES_ENV] || '';
     resolvedHeadBefore = process.env[HEAD_BEFORE_ENV] || null;
     if (!resolvedHeadBefore) {
       // Transitional fallback: this only fires the very first time a user
@@ -185,6 +211,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     console.log('\nAgency Upgrade (continuing with fresh code)');
     console.log('===========================================');
     console.log('Repo: ' + repoDir);
+    syncRootWarned = printSyncRoot(AGENCY_ROOT, process.env, console);
     console.log('');
     // Skip directly to post-pull steps below.
   } else {
@@ -192,7 +219,31 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     console.log('\nAgency Upgrade');
     console.log('==============');
     console.log('Repo: ' + repoDir);
+    syncRootWarned = printSyncRoot(AGENCY_ROOT, process.env, console);
     console.log('');
+
+    // One backup session per run: ~/.agency/backups/<stamp>/ (created only if
+    // something is copied) and, on a history rewrite, agency-backup/<stamp>.
+    const backup = createBackup(repoDir);
+    const recoveryNotes = [];
+
+    // (i) A stale .git/index.lock blocks every index write that follows (stash,
+    // reset, pull). Checked before ANY git write.
+    let lock;
+    try {
+      lock = checkIndexLock(repoDir);
+    } catch (err) {
+      console.error('Could not inspect .git/index.lock: ' + errText(err));
+      process.exit(1);
+    }
+    if (lock.state === 'removed') {
+      console.log(`Removed stale lock ${lock.lock} (${Math.round(lock.ageMs / 60000)} min old, left behind by a crashed git process).`);
+    } else if (lock.state === 'fresh') {
+      console.error(`${lock.lock} exists and is under 10 minutes old.`);
+      console.error('Another git process (or an editor) may still be using this repo. If none is, remove it and re-run agency upgrade:');
+      console.error('  ' + lock.removeCmd);
+      process.exit(1);
+    }
 
     // Detect in-progress git operations before doing anything
     const inProgress = hasInProgressOp(repoDir);
@@ -201,6 +252,24 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
       console.error(`Run:  git -C "${repoDir}" ${inProgress === 'cherry-pick' ? 'cherry-pick' : inProgress} --abort`);
       console.error('Then re-run: agency upgrade');
       console.error('Or run: bash rescue.sh (handles this automatically)');
+      process.exit(1);
+    }
+
+    // (ii) Unmerged (UU) paths left by an earlier conflicted stash pop make
+    // `git stash` refuse to run. Back each one up, clear its unmerged index
+    // state but KEEP its working-tree content, and let it ride along in the stash.
+    try {
+      const um = rescueUnmerged(repoDir, backup);
+      if (um.paths.length) {
+        console.log(`Found ${um.paths.length} file(s) left unmerged by an earlier conflict. Kept their content and cleared the conflict state:`);
+        for (const p of um.paths) console.log('  ' + p);
+        console.log('  Backup copy: ' + um.dir);
+        recoveryNotes.push(`Files that were left unmerged are backed up in: ${um.dir}`);
+      }
+    } catch (err) {
+      console.error('Could not back up / clear unmerged files: ' + errText(err));
+      console.error(`Check: git -C "${repoDir}" status`);
+      console.error('Or run: bash rescue.sh');
       process.exit(1);
     }
 
@@ -224,25 +293,81 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
       process.exit(1);
     }
 
+    // Classify HEAD against the freshly fetched origin/main. Fast-forward and
+    // local-ahead keep the `pull --rebase` path below. DIVERGED with local
+    // commits whose rewritten twins (same author date + subject) are upstream
+    // means origin/main was force-pushed with rewritten history: rebasing would
+    // replay the pre-rewrite commits (including whatever the rewrite purged) and
+    // conflict. Diverged with NO twins is genuine local work: keep pull --rebase.
+    let rewrite = null;
+    if (headBefore) {
+      try {
+        if (classify(repoDir, headBefore) === 'diverged') {
+          const cp = findCounterparts(repoDir);
+          if (cp.matched.length > 0) rewrite = cp;
+        }
+      } catch (_) {
+        rewrite = null; // best-effort: an unclassifiable state falls back to pull --rebase
+      }
+    }
+
+    let backupBranch = null;
+    if (rewrite) {
+      console.log(`origin/main history was rewritten (force-pushed): ${rewrite.matched.length} of your ${rewrite.local.length} local commit(s) have a rewritten twin upstream.`);
+      try {
+        backupBranch = createBackupBranch(repoDir, backup.stamp, headBefore);
+      } catch (err) {
+        console.error('Could not create a backup branch: ' + errText(err));
+        console.error('Nothing was changed. Or run: bash rescue.sh');
+        process.exit(1);
+      }
+      console.log(`Backup branch: ${backupBranch} (your old HEAD ${headBefore.slice(0, 12)})`);
+      recoveryNotes.push(`Your old history is kept on branch: ${backupBranch}`);
+    }
+
     // Stash local changes
     let stashed = false;
     try {
       const status = execFileSync('git', ['-C', repoDir, 'status', '--porcelain'], { stdio: 'pipe' }).toString().trim();
       if (status) {
         console.log('Stashing local changes...');
+        const stashMsg = rewrite
+          ? `agency upgrade: local changes before reset to origin/main (old HEAD kept on ${backupBranch})`
+          : 'agency upgrade: local changes before pull';
         try {
-          execFileSync('git', ['-C', repoDir, 'stash', '--include-untracked'], { stdio: 'pipe' });
+          execFileSync('git', ['-C', repoDir, 'stash', 'push', '--include-untracked', '-m', stashMsg], { stdio: 'pipe' });
           stashed = true;
+          let stashSha = '';
+          try {
+            stashSha = execFileSync('git', ['-C', repoDir, 'rev-parse', 'stash@{0}'], { stdio: 'pipe' }).toString().trim();
+          } catch (_) {}
+          console.log(`  Stash: stash@{0}${stashSha ? ' (' + stashSha + ')' : ''} "${stashMsg}"`);
         } catch (stashErr) {
-          console.error('git stash failed: ' + (stashErr.stderr ? stashErr.stderr.toString().trim() : stashErr.message));
+          console.error('git stash failed: ' + errText(stashErr));
           // Check if tree is still dirty
           const stillDirty = execFileSync('git', ['-C', repoDir, 'status', '--porcelain'], { stdio: 'pipe' }).toString().trim();
-          if (stillDirty) {
+          if (stillDirty && !rewrite) {
             console.error('Cannot proceed with unstaged changes. Either:');
             console.error(`  git -C "${repoDir}" stash --include-untracked`);
             console.error(`  git -C "${repoDir}" checkout -- .`);
             console.error('Or run: bash rescue.sh');
             process.exit(1);
+          }
+          if (stillDirty) {
+            // Rewrite path: a reset --hard follows. Never run it over changes
+            // that are not backed up somewhere.
+            try {
+              backup.copyPaths(changedPaths(repoDir));
+            } catch (copyErr) {
+              console.error('Could not back up your uncommitted changes either: ' + errText(copyErr));
+              console.error(`Nothing was reset. Your old history is safe on branch ${backupBranch}.`);
+              console.error('Commit or copy your changes somewhere safe, then re-run: agency upgrade');
+              process.exit(1);
+            }
+            const where = backup.dir || '(nothing to copy: only deletions)';
+            console.log(`  Copied your uncommitted changes to: ${where}`);
+            console.log('  They will NOT be restored automatically; copy back what you need.');
+            recoveryNotes.push(`Uncommitted changes that could not be stashed were copied to: ${where}`);
           }
         }
       }
@@ -251,29 +376,54 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
       process.exit(1);
     }
 
-    // Pull with rebase
-    try {
-      const pullOutput = execFileSync('git', ['-C', repoDir, 'pull', '--rebase', 'origin', 'main'], { stdio: 'pipe' }).toString().trim();
-      console.log(pullOutput || 'Already up to date.');
-    } catch (err) {
-      const stderr = err.stderr ? err.stderr.toString().trim() : err.message;
-      console.error('git pull --rebase failed: ' + stderr);
-
-      // Check if rebase is now in progress (started but hit conflicts)
-      if (hasInProgressOp(repoDir) === 'rebase') {
-        console.error('Aborting failed rebase...');
-        try { execFileSync('git', ['-C', repoDir, 'rebase', '--abort'], { stdio: 'pipe' }); } catch (_) {}
+    if (rewrite) {
+      // Move to the rewritten history. Everything local is already safe: old
+      // commits on the backup branch, uncommitted work in the stash (or the
+      // backup folder if the stash failed).
+      try {
+        execFileSync('git', ['-C', repoDir, 'reset', '--hard', 'origin/main'], { stdio: 'pipe' });
+      } catch (err) {
+        console.error('git reset --hard origin/main failed: ' + errText(err));
+        console.error(`Your old history is safe on branch ${backupBranch}.`);
+        if (stashed) console.error(`Your local changes are in the stash. To restore: git -C "${repoDir}" stash pop`);
+        console.error('Or run: bash rescue.sh');
+        process.exit(1);
       }
-
-      if (stashed) {
-        console.error('Your stashed changes are preserved. To restore:');
-        console.error(`  git -C "${repoDir}" stash pop`);
+      console.log('Reset to the rewritten origin/main.');
+      if (rewrite.unmatched.length > 0) {
+        recoveryNotes.push('Local commits with NO rewritten twin upstream (your own work). Re-apply them from inside the repo:');
+        for (const c of rewrite.unmatched) recoveryNotes.push(`  git cherry-pick ${c.sha}   # ${c.subject}`);
+      } else {
+        recoveryNotes.push('All of your local commits have rewritten twins upstream; nothing to re-apply.');
       }
+      recoveryText = recoveryNotes.join('\n');
+      printRecoveryNotes(recoveryText, console);
+    } else {
+      // Pull with rebase
+      try {
+        const pullOutput = execFileSync('git', ['-C', repoDir, 'pull', '--rebase', 'origin', 'main'], { stdio: 'pipe' }).toString().trim();
+        console.log(pullOutput || 'Already up to date.');
+      } catch (err) {
+        const stderr = err.stderr ? err.stderr.toString().trim() : err.message;
+        console.error('git pull --rebase failed: ' + stderr);
 
-      console.error('Or run: bash rescue.sh');
-      // Pull FAILED — do NOT re-exec. Exit so the user sees the error.
-      process.exit(1);
+        // Check if rebase is now in progress (started but hit conflicts)
+        if (hasInProgressOp(repoDir) === 'rebase') {
+          console.error('Aborting failed rebase...');
+          try { execFileSync('git', ['-C', repoDir, 'rebase', '--abort'], { stdio: 'pipe' }); } catch (_) {}
+        }
+
+        if (stashed) {
+          console.error('Your stashed changes are preserved. To restore:');
+          console.error(`  git -C "${repoDir}" stash pop`);
+        }
+
+        console.error('Or run: bash rescue.sh');
+        // Pull FAILED — do NOT re-exec. Exit so the user sees the error.
+        process.exit(1);
+      }
     }
+    if (!rewrite && recoveryNotes.length) recoveryText = recoveryNotes.join('\n');
 
     // Restore stashed changes
     if (stashed) {
@@ -300,6 +450,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
       console.error(`Resolve the conflict, then re-run: agency upgrade`);
       console.error(`  git -C "${repoDir}" status`);
       console.error(`  git -C "${repoDir}" stash show -p`);
+      printRecoveryNotes(recoveryText, console);
       process.exit(1);
     }
 
@@ -319,7 +470,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
       if (existsSync(freshBin)) {
         console.log('');
         console.log('New code pulled — re-launching with fresh upgrade.js...');
-        const childEnv = { ...process.env, [REEXEC_ENV]: '1', [HEAD_BEFORE_ENV]: headBefore || '' };
+        const childEnv = { ...process.env, [REEXEC_ENV]: '1', [HEAD_BEFORE_ENV]: headBefore || '', [RECOVERY_NOTES_ENV]: recoveryText };
         const result = spawnSync(process.execPath, [freshBin, 'upgrade', ...args], {
           stdio: 'inherit',
           env: childEnv,
@@ -436,6 +587,12 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   }
   if (!shownChangelog) {
     console.log('See what changed: CHANGELOG.md');
+  }
+
+  printRecoveryNotes(recoveryText, console);
+  if (syncRootWarned) {
+    console.log('');
+    printNoSettingsWarning(agencyRoot, console);
   }
 
   console.log('');

@@ -43,6 +43,92 @@ is_agency_repo() {
     [[ "$url" == *"Tekkiiiii/the-agency"* ]] || [[ "$url" == *"the-agency/the-agency"* ]]
 }
 
+# ─── Backups before anything destructive ─────────────────────────────────────
+# Every `git reset --hard` below used to run unguarded: when the stash failed it
+# silently deleted local changes, and on a force-pushed (rewritten) origin it
+# silently dropped local COMMITS. Now nothing is reset until (a) every changed
+# or untracked file is copied to ~/.agency/backups/<ts>/ (outside the repo,
+# relative paths kept) and (b) a HEAD that origin/main does not contain is kept
+# on a branch agency-backup/<ts>. If the copy fails, nothing is reset.
+BACKUP_TS="$(date +%Y%m%d-%H%M%S)"
+BACKUP_DIR=""       # created lazily, only when there is something to copy
+BACKUP_BRANCH=""
+
+ensure_backup_dir() {
+    [ -n "$BACKUP_DIR" ] && return 0
+    local base="$HOME/.agency/backups" d n=2
+    d="$base/$BACKUP_TS"
+    while [ -e "$d" ]; do d="$base/$BACKUP_TS-$n"; n=$((n + 1)); done
+    mkdir -p "$d" || return 1
+    BACKUP_DIR="$d"
+}
+
+# copy_to_backup <repo-relative path> — a path that no longer exists (a
+# deletion) has nothing to copy and is skipped.
+copy_to_backup() {
+    local rel="$1"
+    [ -e "$rel" ] || [ -L "$rel" ] || return 0
+    ensure_backup_dir || return 1
+    mkdir -p "$BACKUP_DIR/$(dirname "$rel")" || return 1
+    cp -pR "$rel" "$BACKUP_DIR/$rel"
+}
+
+# Copies every changed/staged/untracked file. -z output is unquoted, and a
+# rename/copy entry is "XY new<NUL>old<NUL>": keep the new path, skip the old.
+backup_worktree() {
+    local list entry skip=0 rc=0
+    list="$(mktemp)" || return 1
+    if ! git status --porcelain=v1 -z --untracked-files=all > "$list" 2>/dev/null; then
+        rm -f "$list"; return 1
+    fi
+    while IFS= read -r -d '' entry; do
+        if [ "$skip" = 1 ]; then skip=0; continue; fi
+        case "$entry" in R*|C*) skip=1 ;; esac
+        copy_to_backup "${entry:3}" || rc=1
+    done < "$list"
+    rm -f "$list"
+    return $rc
+}
+
+make_backup_branch() {
+    local sha="$1" name n=2
+    [ -n "$BACKUP_BRANCH" ] && return 0
+    name="agency-backup/$BACKUP_TS"
+    while git show-ref --verify --quiet "refs/heads/$name"; do
+        name="agency-backup/$BACKUP_TS-$n"; n=$((n + 1))
+    done
+    git branch "$name" "$sha" || return 1
+    BACKUP_BRANCH="$name"
+    echo "  Backup branch: $name (your old HEAD $sha)"
+    echo "  To recover a commit from it: git log $name, then git cherry-pick <sha>"
+}
+
+# Call immediately before EVERY `git reset --hard`. Exits instead of returning
+# when anything could not be backed up.
+backup_before_reset() {
+    local head
+    if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+        if ! backup_worktree; then
+            echo "  Error: could not back up your local changes. NOT resetting."
+            [ -n "$BACKUP_DIR" ] && echo "  Partial copy: $BACKUP_DIR"
+            exit 1
+        fi
+        [ -n "$BACKUP_DIR" ] && echo "  Backed up your local changes to: $BACKUP_DIR"
+    fi
+    head="$(git rev-parse -q --verify HEAD 2>/dev/null || true)"
+    if [ -n "$head" ] && ! git merge-base --is-ancestor "$head" origin/main 2>/dev/null; then
+        if ! make_backup_branch "$head"; then
+            echo "  Error: could not create a backup branch for your local commits. NOT resetting."
+            exit 1
+        fi
+    fi
+}
+
+# Unmerged (UU) paths, NUL-separated, into the file named by $1.
+list_unmerged() {
+    git diff --name-only -z --diff-filter=U > "$1" 2>/dev/null
+}
+
 # 1. Find the-agency repo (verify by remote URL, not just any git repo)
 REPO_DIR=""
 
@@ -103,7 +189,39 @@ fi
 echo "  Repo: $REPO_DIR"
 cd "$REPO_DIR"
 
-# 2. Detect and clean up in-progress rebase/merge
+# 2a. A stale .git/index.lock (crashed git process) blocks every index write.
+#     Older than 10 minutes: remove it. Younger: it may belong to a live git
+#     process or an editor — stop and say exactly how to remove it.
+if [ -e ".git/index.lock" ]; then
+    if [ -n "$(find .git/index.lock -mmin +10 2>/dev/null)" ]; then
+        rm -f .git/index.lock
+        echo "  Removed stale $REPO_DIR/.git/index.lock (older than 10 minutes, left by a crashed git process)."
+    else
+        echo "  Error: $REPO_DIR/.git/index.lock exists and is less than 10 minutes old."
+        echo "  Another git process (or an editor) may still be running. If none is, remove it and re-run:"
+        echo "    rm \"$REPO_DIR/.git/index.lock\""
+        exit 1
+    fi
+fi
+
+# 2b. Files left unmerged by an earlier conflict: copy them out first (an
+#     in-progress merge abort below would otherwise discard their content).
+UNMERGED_LIST="$(mktemp)"
+list_unmerged "$UNMERGED_LIST" || true
+if [ -s "$UNMERGED_LIST" ]; then
+    echo "  Found files left unmerged by an earlier conflict:"
+    while IFS= read -r -d '' p; do
+        echo "    $p"
+        if ! copy_to_backup "$p"; then
+            echo "  Error: could not back up $p. Stopping without changes."
+            rm -f "$UNMERGED_LIST"
+            exit 1
+        fi
+    done < "$UNMERGED_LIST"
+    echo "  Backup copy: $BACKUP_DIR"
+fi
+
+# 2c. Detect and clean up in-progress rebase/merge
 if [ -f ".git/REBASE_HEAD" ] || [ -d ".git/rebase-merge" ] || [ -d ".git/rebase-apply" ]; then
     echo "  Detected rebase in progress — aborting it..."
     git rebase --abort 2>/dev/null || true
@@ -121,6 +239,24 @@ if [ -f ".git/CHERRY_PICK_HEAD" ]; then
     git cherry-pick --abort 2>/dev/null || true
     echo "  Done."
 fi
+
+# 2d. Unmerged paths still left (no operation in progress, e.g. a conflicted
+#     stash pop): clear the conflict state but KEEP the working-tree content,
+#     so `git stash` can run and the content rides along in it.
+list_unmerged "$UNMERGED_LIST" || true
+if [ -s "$UNMERGED_LIST" ]; then
+    while IFS= read -r -d '' p; do
+        GIT_LITERAL_PATHSPECS=1 git reset -q -- "$p" 2>/dev/null || true
+    done < "$UNMERGED_LIST"
+    list_unmerged "$UNMERGED_LIST" || true
+    if [ -s "$UNMERGED_LIST" ]; then
+        rm -f "$UNMERGED_LIST"
+        echo "  Error: could not clear the unmerged state. Check: git status"
+        exit 1
+    fi
+    echo "  Cleared the conflict state (content kept in your working tree)."
+fi
+rm -f "$UNMERGED_LIST"
 
 # 3. Fetch latest
 echo ""
@@ -142,7 +278,9 @@ if [ -n "$DIRTY" ]; then
     else
         echo ""
         echo "  Warning: git stash failed. Trying hard reset to origin/main instead."
-        echo "  Your local changes will be lost. Press Ctrl+C within 5 seconds to cancel."
+        backup_before_reset
+        echo "  Your local changes will be removed from the working tree (the copies above stay)."
+        echo "  Press Ctrl+C within 5 seconds to cancel."
         sleep 5
         git reset --hard origin/main
         echo "  Reset complete."
@@ -159,6 +297,7 @@ else
     echo ""
     echo "  Pull failed. Forcing reset to origin/main..."
     git rebase --abort 2>/dev/null || true
+    backup_before_reset
     git reset --hard origin/main
     echo "  Reset to origin/main."
 fi

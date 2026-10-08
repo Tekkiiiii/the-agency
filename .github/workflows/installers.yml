@@ -218,6 +218,14 @@ jobs:
       - name: Assert agency upgrade's design-system sync works end to end
         run: node .github/scripts/check-design-system-sync.js
 
+      # The 2026-10-08 history purge left a real clone with a force-pushed
+      # origin, a stale .git/index.lock and a leftover UU file: `agency upgrade`
+      # could not stash, `pull --rebase` replayed the purged commits, and
+      # rescue.sh fell back to an unguarded `git reset --hard`. This runs both
+      # tools on that exact state, in a sandboxed HOME/AGENCY_HOME.
+      - name: Assert agency upgrade + rescue.sh recover a rewritten origin safely
+        run: bash .github/scripts/check-upgrade-rewrite.sh
+
   install-ps1:
     name: install.ps1 (windows)
     runs-on: windows-latest
@@ -615,3 +623,12 @@ jobs:
           if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'design-system\brands\neutral.json'))) {
             throw "design-system brand SSOT not deployed"
           }
+
+      # Same script under Git Bash + Windows node (os.homedir() -> USERPROFILE,
+      # MSYS paths). Advisory until its first green run: it has never executed
+      # on windows-latest, so a path-translation quirk must not turn the job red
+      # before anyone has seen it pass. Drop continue-on-error once it has.
+      - name: Assert agency upgrade + rescue.sh recover a rewritten origin (advisory until first green run)
+        continue-on-error: true
+        shell: bash
+        run: bash .github/scripts/check-upgrade-rewrite.sh

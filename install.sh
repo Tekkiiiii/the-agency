@@ -9,9 +9,37 @@ set -euo pipefail
 CLAUDE_HOME="${AGENCY_HOME:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Which rung of the ladder above resolved the root (same `:-` emptiness test),
+# and whether settings.json existed BEFORE this script runs — it may create one
+# below, which would hide the "config lives elsewhere" case on the next run.
+# Real case: a Windows user with config on D: synced into the default root,
+# which Claude Code never read, and nothing said so.
+if [ -n "${AGENCY_HOME:-}" ]; then
+    ROOT_SOURCE="AGENCY_HOME"
+elif [ -n "${CLAUDE_CONFIG_DIR:-}" ]; then
+    ROOT_SOURCE="CLAUDE_CONFIG_DIR"
+else
+    ROOT_SOURCE="default"
+fi
+ROOT_WARN=false
+if [ "$ROOT_SOURCE" = default ] && [ ! -f "$CLAUDE_HOME/settings.json" ]; then
+    ROOT_WARN=true
+fi
+root_warning() {
+    echo "  ⚠ No settings.json at $CLAUDE_HOME, and neither AGENCY_HOME nor CLAUDE_CONFIG_DIR is set."
+    echo "    If your Claude Code config lives elsewhere (e.g. D:\\claude or a custom folder),"
+    echo "    set CLAUDE_CONFIG_DIR or AGENCY_HOME to that folder and re-run."
+}
+
 echo ""
 echo "The Agency — Installing to $CLAUDE_HOME"
 echo "========================================="
+if [ "$ROOT_SOURCE" = default ]; then
+    echo "  Sync root: $CLAUDE_HOME (from default — neither AGENCY_HOME nor CLAUDE_CONFIG_DIR is set)"
+else
+    echo "  Sync root: $CLAUDE_HOME (from $ROOT_SOURCE)"
+fi
+[ "$ROOT_WARN" = true ] && root_warning
 echo ""
 
 # Create directories
@@ -320,6 +348,7 @@ fi
 
 echo ""
 echo "✓ The Agency installed to $CLAUDE_HOME"
+[ "$ROOT_WARN" = true ] && root_warning
 echo ""
 if [ "$LINKED" = true ]; then
     echo "Next steps:"
