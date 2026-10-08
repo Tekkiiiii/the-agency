@@ -13,7 +13,7 @@
 //   node cli/lib/hooks-merge.js sync|remove [--root <root>] [--manifest <file>]
 //                                           [--auto] [--force] [--json]
 //   --auto   called by an installer/upgrade: honour AGENCY_NO_HOOKS=1
-//   --force  wire even on Windows when `bash` (Git Bash) is not on PATH
+//   --force  wire even on Windows when Git Bash (bash.exe) cannot be found
 //
 // Ownership (what counts as OURS — everything else is the user's and is never
 // edited, moved or reordered):
@@ -47,6 +47,7 @@ const REPO_DIR = path.resolve(__dirname, '..', '..');
 const DEFAULT_MANIFEST = path.join(REPO_DIR, 'hooks', 'hooks.json');
 const STATE_NAME = '.agency-hooks-state.json';
 const RESTART_LINE = 'Restart Claude Code to activate the hooks.';
+const GIT_FOR_WINDOWS_URL = 'https://git-scm.com/downloads/win';
 
 // ---------------------------------------------------------------------------
 // paths and command forms
@@ -366,13 +367,122 @@ function planRemove(data, manifest, state, ctx) {
 // ---------------------------------------------------------------------------
 // commit
 
+// ---------------------------------------------------------------------------
+// Git Bash resolver (Windows)
+//
+// Claude Code runs a command hook inside Git Bash when Git for Windows is
+// installed (docs: hooks `shell` defaults to "bash", or to "powershell" on
+// Windows when Git Bash is not installed), so the hook commands stay
+// `bash {root}/hooks/x.sh`. Whether wiring them makes sense depends on Git
+// Bash existing, and the PowerShell PATH that install.ps1 runs with often does
+// not contain it. So look for bash.exe the way Claude Code does instead of
+// asking the current shell.
+//
+// Order (first hit wins):
+//   1. env CLAUDE_CODE_GIT_BASH_PATH, if that file exists
+//   2. `git --exec-path`: C:/Program Files/Git/mingw64/libexec/git-core, so
+//      Git\bin\bash.exe is THREE levels up. Levels 2, 3 and 4 are checked
+//      (mingw64\bin, Git\bin, <parent>\bin). MSYS-style output
+//      (/mingw64/...) cannot be resolved from node and is skipped.
+//   3. %ProgramFiles%\Git\bin\bash.exe
+//   4. %LOCALAPPDATA%\Programs\Git\bin\bash.exe
+//   5. a bash.exe on PATH, EXCEPT %WINDIR%\System32\bash.exe and anything
+//      under \WindowsApps\: those are the WSL launcher and would run the
+//      hooks inside WSL, not Git Bash.
+// Dependency-injected (env, exists, gitExecPath, pathLookup) so it is testable
+// on any OS. Paths are always handled with path.win32.
+
+const W = path.win32;
+
+function envGet(env, name) {
+  if (env[name] !== undefined) return env[name];
+  const k = Object.keys(env).find(x => x.toLowerCase() === name.toLowerCase());
+  return k === undefined ? undefined : env[k];
+}
+
 // Fixed argv, no shell string: nothing user-controlled reaches the process.
-function defaultBashAvailable() {
+function defaultGitExecPath() {
   try {
-    return spawnSync('bash', ['-c', 'exit 0'], { stdio: 'ignore' }).status === 0;
+    const r = spawnSync('git', ['--exec-path'], { encoding: 'utf8' });
+    return r.status === 0 ? String(r.stdout).trim() : null;
   } catch (_) {
-    return false;
+    return null;
   }
+}
+
+function defaultPathLookup({ env, exists }) {
+  const raw = envGet(env, 'PATH') || '';
+  const out = [];
+  for (const dir of raw.split(';')) {
+    const d = dir.trim().replace(/^"|"$/g, '');
+    if (!d) continue;
+    const cand = W.join(d, 'bash.exe');
+    if (exists(cand)) out.push(cand);
+  }
+  return out;
+}
+
+function isWslLauncher(p, env) {
+  const n = W.normalize(p).toLowerCase();
+  if (n.includes('\\windowsapps\\')) return true;
+  const winDir = envGet(env, 'WINDIR') || envGet(env, 'SystemRoot') || 'C:\\Windows';
+  const win = W.normalize(winDir).toLowerCase().replace(/\\+$/, '');
+  return n === `${win}\\system32\\bash.exe` || n === `${win}\\sysnative\\bash.exe` ||
+    /\\system32\\bash\.exe$/.test(n) || /\\sysnative\\bash\.exe$/.test(n);
+}
+
+// -> { found: {path, source, standard} | null, notes: [string] }
+function locateGitBash(deps = {}) {
+  const env = deps.env || process.env;
+  const exists = deps.exists || (p => { try { return fs.existsSync(p); } catch (_) { return false; } });
+  const gitExecPath = deps.gitExecPath || defaultGitExecPath;
+  const pathLookup = deps.pathLookup || defaultPathLookup;
+  const notes = [];
+  const hit = (p, source, standard) => ({ found: { path: p, source, standard: !!standard }, notes });
+
+  // 1. explicit override
+  const forced = envGet(env, 'CLAUDE_CODE_GIT_BASH_PATH');
+  if (forced) {
+    if (exists(forced)) return hit(forced, 'env', true);
+    notes.push(`CLAUDE_CODE_GIT_BASH_PATH is set to ${forced}, but that file does not exist; looking elsewhere`);
+  }
+  // 2. git --exec-path
+  let ep = null;
+  try { ep = gitExecPath(); } catch (_) {}
+  if (ep && /^[A-Za-z]:[\\/]/.test(ep)) {
+    let dir = W.normalize(ep).replace(/[\\]+$/, '');
+    for (let up = 1; up <= 4; up++) {
+      dir = W.dirname(dir);
+      if (up < 2) continue;
+      const cand = W.join(dir, 'bin', 'bash.exe');
+      if (exists(cand)) return hit(cand, 'git-exec-path', false);
+    }
+  }
+  // 3. %ProgramFiles%\Git\bin\bash.exe
+  const pf = envGet(env, 'ProgramFiles');
+  if (pf) {
+    const cand = W.join(pf, 'Git', 'bin', 'bash.exe');
+    if (exists(cand)) return hit(cand, 'program-files', true);
+  }
+  // 4. %LOCALAPPDATA%\Programs\Git\bin\bash.exe
+  const la = envGet(env, 'LOCALAPPDATA');
+  if (la) {
+    const cand = W.join(la, 'Programs', 'Git', 'bin', 'bash.exe');
+    if (exists(cand)) return hit(cand, 'local-appdata', true);
+  }
+  // 5. PATH, never the WSL launcher
+  let onPath = [];
+  try { onPath = pathLookup({ env, exists }) || []; } catch (_) {}
+  for (const cand of onPath) {
+    if (!isWslLauncher(cand, env)) return hit(cand, 'path', false);
+  }
+  return { found: null, notes };
+}
+
+// -> { path, source } | null
+function resolveGitBash(deps = {}) {
+  const { found } = locateGitBash(deps);
+  return found ? { path: found.path, source: found.source } : null;
 }
 
 function baseResult(action, ctx, opts) {
@@ -390,6 +500,9 @@ function baseResult(action, ctx, opts) {
     updated: [],
     removed: [],
     wired: 0,
+    notes: [],
+    bash: null,
+    bashHint: false,
   };
 }
 
@@ -414,8 +527,20 @@ function syncHooks(opts = {}) {
   } catch (e) {
     return Object.assign(res, { status: fs.existsSync(manifestPath) ? 'error' : 'skipped', reason: 'no-manifest', error: e.message });
   }
-  if (ctx.platform === 'win32' && !opts.force && !(opts.bashAvailable || defaultBashAvailable)()) {
-    return Object.assign(res, { status: 'skipped', reason: 'no-bash' });
+  if (ctx.platform === 'win32' && !opts.force) {
+    let bash = null;
+    if (opts.bashAvailable) {
+      // Caller-supplied check: a boolean, or a {path, source} like the resolver's.
+      const v = opts.bashAvailable();
+      bash = v && typeof v === 'object' ? { path: v.path, source: v.source, standard: true } : (v ? { path: null, source: 'override', standard: true } : null);
+    } else {
+      const loc = locateGitBash(Object.assign({ env: ctx.env }, opts.bashDeps || {}));
+      res.notes = loc.notes;
+      bash = loc.found;
+    }
+    if (!bash) return Object.assign(res, { status: 'skipped', reason: 'no-bash' });
+    res.bash = { path: bash.path, source: bash.source };
+    res.bashHint = !bash.standard && !!bash.path;
   }
   const settings = readSettings(res.settingsPath);
   if (settings.error) return Object.assign(res, { status: 'error', reason: 'malformed', error: `${res.settingsPath} is ${settings.error}` });
@@ -475,7 +600,7 @@ function manualCommands(repoDir, root) {
 
 const REASONS = {
   'opt-out': 'AGENCY_NO_HOOKS=1 is set',
-  'no-bash': '`bash` (Git Bash) was not found on PATH, and Claude Code runs these hooks with bash',
+  'no-bash': 'Git Bash (bash.exe) was not found, and Claude Code runs these hooks with bash',
   'no-manifest': 'hooks/hooks.json is missing from the repo',
 };
 
@@ -499,11 +624,20 @@ function formatResult(res) {
     }
     out.push(`Hooks: NOT wired: ${why}.${res.status === 'error' ? ' Nothing was changed.' : ''}`);
     const [a, b] = manualCommands(res.repoDir, res.root);
+    if (res.reason === 'no-bash') {
+      for (const n of res.notes || []) out.push(`  Note: ${n}.`);
+      out.push(`  Install Git for Windows: ${GIT_FOR_WINDOWS_URL}`);
+      out.push(`  then run: ${a}`);
+      out.push('  or, without the agency command:');
+      out.push(`    ${b}`);
+      out.push('  (or add --force to wire them anyway)');
+      out.push(`  Then: ${RESTART_LINE}`);
+      return out;
+    }
     out.push(res.reason === 'malformed' ? '  Fix the file, then set the hooks up with:' : '  To set them up, run:');
     out.push(`    ${a}`);
     out.push('  or, without the agency command:');
     out.push(`    ${b}`);
-    if (res.reason === 'no-bash') out.push('  (install Git for Windows first, or add --force to wire them anyway)');
     out.push(`  Then: ${RESTART_LINE}`);
     return out;
   }
@@ -531,6 +665,10 @@ function formatResult(res) {
   for (const r of res.removed) out.push(`  - ${pad(r.id, 24)}${pad(r.event, 26)}removed: no longer shipped`);
   if (res.backup) out.push(`  Backup of the previous file: ${res.backup}`);
   if (!res.created) out.push('  Your own hooks and settings were left as they were.');
+  for (const n of res.notes || []) out.push(`  Note: ${n}.`);
+  if (res.bashHint) {
+    out.push(`  Git Bash found at ${res.bash.path} (via ${res.bash.source}). If Claude Code cannot find Git Bash, set "env": {"CLAUDE_CODE_GIT_BASH_PATH": ${JSON.stringify(res.bash.path)}} in settings.json.`);
+  }
   out.push(`  ${RESTART_LINE}`);
   return out;
 }
@@ -597,6 +735,9 @@ module.exports = {
   RESTART_LINE,
   USAGE,
   resolveRoot,
+  resolveGitBash,
+  locateGitBash,
+  GIT_FOR_WINDOWS_URL,
   renderCommand,
   normaliseCommand,
   loadManifest,

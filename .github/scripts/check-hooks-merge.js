@@ -33,7 +33,10 @@
 //      change, one quiet line when up to date
 //   9. pure-function checks: Windows root forms, quoting of a root with spaces,
 //      win32 without bash -> skipped
-//  10. install.sh end to end: fresh root -> settings.json created with hooks;
+//  10. Windows bash resolver: env > git --exec-path > %ProgramFiles% >
+//      %LOCALAPPDATA% > PATH, WSL launcher skipped, none -> skipped with the
+//      Git for Windows instruction + `agency hooks sync`, non-standard -> hint
+//  11. install.sh end to end: fresh root -> settings.json created with hooks;
 //      second install -> no change, no backup (skipped on win32: install.sh
 //      there is Git Bash, covered by the install.ps1 job instead)
 'use strict';
@@ -302,7 +305,80 @@ ok(res9.status === 'skipped' && res9.reason === 'no-bash', `win32 without bash -
 ok(!fs.existsSync(path.join(T9, 'root', 'settings.json')), 'nothing written when bash is missing');
 
 // ---------------------------------------------------------------------------
-section('10. install.sh end to end');
+section('10. Windows bash resolver (order, WSL skipped, no-bash message, hint)');
+{
+  const have = (...paths) => { const set = new Set(paths.map(x => x.toLowerCase())); return p => set.has(String(p).toLowerCase()); };
+  const ENVP = 'D:\\custom\\bash.exe';
+  const EXEC = 'D:\\tools\\Git\\bin\\bash.exe';
+  const PF = 'C:\\Program Files\\Git\\bin\\bash.exe';
+  const LA = 'C:\\Users\\u\\AppData\\Local\\Programs\\Git\\bin\\bash.exe';
+  const PATHB = 'E:\\portable\\bin\\bash.exe';
+  const SYS32 = 'C:\\Windows\\System32\\bash.exe';
+  const WAPPS = 'C:\\Users\\u\\AppData\\Local\\Microsoft\\WindowsApps\\bash.exe';
+  const baseEnv = { CLAUDE_CODE_GIT_BASH_PATH: ENVP, ProgramFiles: 'C:\\Program Files', LOCALAPPDATA: 'C:\\Users\\u\\AppData\\Local', WINDIR: 'C:\\Windows' };
+  const deps = (over) => Object.assign({
+    env: baseEnv,
+    exists: have(ENVP, EXEC, PF, LA, PATHB, SYS32, WAPPS),
+    gitExecPath: () => 'D:/tools/Git/mingw64/libexec/git-core',
+    pathLookup: () => [SYS32, WAPPS, PATHB],
+  }, over || {});
+  ok(typeof hm.resolveGitBash === 'function' && typeof hm.locateGitBash === 'function', 'resolveGitBash and locateGitBash are exported');
+  if (typeof hm.resolveGitBash === 'function') {
+    let r = hm.resolveGitBash(deps());
+    ok(r && r.source === 'env' && r.path === ENVP, `1. CLAUDE_CODE_GIT_BASH_PATH wins when the file exists (got ${JSON.stringify(r)})`);
+    const noEnv = Object.assign({}, baseEnv); delete noEnv.CLAUDE_CODE_GIT_BASH_PATH;
+    r = hm.resolveGitBash(deps({ env: noEnv, exists: have(EXEC, PF, LA, PATHB, SYS32, WAPPS) }));
+    ok(r && r.source === 'git-exec-path' && r.path === EXEC, `2. git --exec-path (3 levels up, Git\\bin\\bash.exe) is next (got ${JSON.stringify(r)})`);
+    r = hm.resolveGitBash(deps({ env: noEnv, exists: have('D:\\tools\\Git\\mingw64\\bin\\bash.exe', PF), gitExecPath: () => 'D:/tools/Git/mingw64/libexec/git-core' }));
+    ok(r && r.source === 'git-exec-path' && r.path === 'D:\\tools\\Git\\mingw64\\bin\\bash.exe', `2b. exec-path 2 levels up is also checked (got ${JSON.stringify(r)})`);
+    r = hm.resolveGitBash(deps({ env: noEnv, exists: have('D:\\tools\\bin\\bash.exe'), gitExecPath: () => 'D:/tools/Git/mingw64/libexec/git-core', pathLookup: () => [] }));
+    ok(r && r.source === 'git-exec-path' && r.path === 'D:\\tools\\bin\\bash.exe', `2c. exec-path 4 levels up is also checked (got ${JSON.stringify(r)})`);
+    r = hm.resolveGitBash(deps({ env: noEnv, exists: have(PF, LA, PATHB), gitExecPath: () => '/mingw64/libexec/git-core' }));
+    ok(r && r.source === 'program-files' && r.path === PF, `3. MSYS-style exec-path is skipped, %ProgramFiles%\\Git\\bin\\bash.exe next (got ${JSON.stringify(r)})`);
+    r = hm.resolveGitBash(deps({ env: noEnv, exists: have(LA, PATHB), gitExecPath: () => null }));
+    ok(r && r.source === 'local-appdata' && r.path === LA, `4. %LOCALAPPDATA%\\Programs\\Git\\bin\\bash.exe next (got ${JSON.stringify(r)})`);
+    r = hm.resolveGitBash(deps({ env: noEnv, exists: have(PATHB, SYS32, WAPPS), gitExecPath: () => null }));
+    ok(r && r.source === 'path' && r.path === PATHB, `5. PATH lookup is last, skipping System32 and WindowsApps bash (got ${JSON.stringify(r)})`);
+    r = hm.resolveGitBash(deps({ env: noEnv, exists: have(SYS32, WAPPS), gitExecPath: () => null, pathLookup: () => [SYS32, WAPPS] }));
+    ok(r === null, `6. only the WSL launcher on PATH (System32 + WindowsApps) -> null (got ${JSON.stringify(r)})`);
+    r = hm.resolveGitBash(deps({ env: noEnv, exists: have(), gitExecPath: () => null, pathLookup: () => [] }));
+    ok(r === null, '7. nothing anywhere -> null');
+    const loc = hm.locateGitBash(deps({ env: Object.assign({}, noEnv, { CLAUDE_CODE_GIT_BASH_PATH: 'Z:\\gone\\bash.exe' }), exists: have(PF), gitExecPath: () => null }));
+    ok(loc.found && loc.found.source === 'program-files', '8. CLAUDE_CODE_GIT_BASH_PATH pointing at a missing file falls through to the next step');
+    ok(loc.notes.some(n => /CLAUDE_CODE_GIT_BASH_PATH/.test(n) && /Z:\\gone/.test(n)), '8b. ... and says so in notes');
+    // sync wiring: none found -> skipped with reason + message
+    const T11 = sandbox();
+    const none = { env: {}, exists: have(), gitExecPath: () => null, pathLookup: () => [] };
+    const sk = hm.syncHooks({ root: path.join(T11, 'root'), platform: 'win32', bashDeps: none });
+    ok(sk.status === 'skipped' && sk.reason === 'no-bash', `9. none found -> skipped/no-bash (got ${sk.status}/${sk.reason})`);
+    ok(!fs.existsSync(path.join(T11, 'root', 'settings.json')), '9b. nothing written when no bash');
+    const msg = hm.formatResult(sk).join('\n');
+    ok(/https:\/\/git-scm\.com\/downloads\/win/.test(msg) && /then run: agency hooks sync/.test(msg), '9c. message names the Git for Windows download and "then run: agency hooks sync"');
+    ok(/Restart Claude Code/.test(msg), '9d. message ends with the restart line');
+    // sync wiring: found via PATH (non-standard) -> wired, hint printed
+    const T12 = sandbox();
+    const viaPath = Object.assign({}, none, { exists: have(PATHB), pathLookup: () => [SYS32, PATHB] });
+    const wired = hm.syncHooks({ root: path.join(T12, 'root'), platform: 'win32', bashDeps: viaPath });
+    ok(wired.status === 'changed' && wired.bash && wired.bash.source === 'path', `10. found via PATH -> wired (got ${wired.status}, ${JSON.stringify(wired.bash)})`);
+    const wmsg = hm.formatResult(wired).join('\n');
+    ok(wmsg.includes('CLAUDE_CODE_GIT_BASH_PATH') && wmsg.includes(JSON.stringify(PATHB)), '10b. non-standard location -> one-line CLAUDE_CODE_GIT_BASH_PATH hint with the path');
+    ok(!fs.readFileSync(path.join(T12, 'root', 'settings.json'), 'utf8').includes('CLAUDE_CODE_GIT_BASH_PATH'), '10c. the hint is printed, settings.json env is never written');
+    const T13 = sandbox();
+    const viaPf = Object.assign({}, none, { env: baseEnv, exists: have(PF) });
+    const w2 = hm.syncHooks({ root: path.join(T13, 'root'), platform: 'win32', bashDeps: Object.assign({}, viaPf, { env: Object.assign({}, baseEnv, { CLAUDE_CODE_GIT_BASH_PATH: '' }) }) });
+    ok(w2.status === 'changed' && w2.bash && w2.bash.source === 'program-files' && !hm.formatResult(w2).join('\n').includes('CLAUDE_CODE_GIT_BASH_PATH'), '10d. standard location -> wired, no hint');
+    // overrides still work
+    const T14 = sandbox();
+    const forced = hm.syncHooks({ root: path.join(T14, 'root'), platform: 'win32', force: true, bashDeps: none });
+    ok(forced.status === 'changed', `11. --force wires without bash (got ${forced.status})`);
+    const T15 = sandbox();
+    const inj = hm.syncHooks({ root: path.join(T15, 'root'), platform: 'win32', bashAvailable: () => true, bashDeps: none });
+    ok(inj.status === 'changed', `11b. opts.bashAvailable override still wins (got ${inj.status})`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+section('11. install.sh end to end');
 if (process.platform === 'win32') {
   console.log('  skip install.sh e2e on win32 (covered by the install.ps1 job)');
 } else {

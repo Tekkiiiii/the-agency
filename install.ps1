@@ -215,9 +215,13 @@ foreach ($tree in @("hooks", "runbooks", "scripts", "design-system", "agents-arc
 # settings.json on EVERY install. It adds missing hooks, updates or prunes only
 # entries it owns, never touches the user's own hooks or other keys, copies the
 # file to settings.json.bak-<timestamp> next to itself before any change, and
-# writes nothing when nothing changed. It also checks for bash (Git Bash):
-# Claude Code runs these hooks with bash, so without it wiring is skipped and
-# the command to finish later is printed. This step never fails the install.
+# writes nothing when nothing changed. It also looks for Git Bash itself
+# (CLAUDE_CODE_GIT_BASH_PATH, git --exec-path, Program Files, LocalAppData, then
+# PATH; never the WSL launcher), because bash is often NOT on the PowerShell
+# PATH. Claude Code runs these hooks inside Git Bash, so without it wiring is
+# skipped and the Git for Windows link plus `agency hooks sync` are printed.
+# The check lives only in hooks-merge.js (no PowerShell copy of it). This step
+# never fails the install.
 # Opt out with AGENCY_NO_HOOKS=1. Hook paths are written with forward slashes.
 $HooksMerge = Join-Path $ScriptDir "cli\lib\hooks-merge.js"
 function Write-HooksManual {
