@@ -122,7 +122,7 @@ Mục tiêu: catalog ship ra khớp đúng hệ thống live, không giữ thêm
 - **`quality-prefs.md` được ship như nội dung framework trong khi nó là dữ liệu của operator.** File nay bị gỡ khỏi `core/memory/`; vị trí chuẩn duy nhất là `{agency-root}/memory/quality-prefs.md`, tạo ra khi ghi lần đầu. **Cạm bẫy bắt được đúng lúc:** chỉ `git rm` mà để nguyên dòng `memory/quality-prefs.md` trong `core/.preserve` sẽ **làm đỏ CI** — `.github/scripts/check-core-preserve.js` fail build khi một path được liệt kê không tồn tại dưới `core/`. Dòng đó đã được gỡ cùng lúc, kèm comment giải thích. `skills/quality-loop-router/SKILL.md` được truy vết toàn bộ đường đọc/ghi để chắc chắn "file không tồn tại" là trạng thái bình thường của bản cài mới chứ không phải lỗi.
 - **Tên một khách hàng cụ thể nằm trong danh sách escalate của `core/agents/pd-coordinator.md`.** "Any action involving HTI Group internal data" → "Any action involving client-internal data". Giữ nguyên hiệu lực của luật, chỉ bỏ tên. Hai agent `HTI Digital Writer` / `HTI Sales Writer` trong `agents/marketing/INDEX.md` **cố ý không đụng tới**: tên khách hàng ở đó là định danh của chính agent, đổi nó là quyết định sản phẩm chứ không phải vá rò rỉ.
 - **Frontmatter hỏng ở bản publish khiến `agency upgrade` ghi đè bản live đang đúng (5/10 đã sửa).** 4 file YAML không parse được (`content-creator`, `humanizer`, `musicgen`, `unwrap`) do dấu nháy bao quanh description bị bỏ, làm một dấu `:` giữa câu biến thành mapping key; `task-handoff` bị scalar dạng folded (`>`) nuốt luôn dấu `---` đóng. Cả 5 đã sửa cú pháp, **giữ nguyên phần thân đã được de-personalize ở wave 19** — không chép đè từ bản live, vì bản live vẫn còn tên riêng. Toàn bộ 286 skill nay có `YAML ERROR: 0`.
-- **LỖI ĐÃ BIẾT, chưa sửa — năm skill `superpowers-*` được ship dưới dạng stub rỗng, và `agency upgrade` sẽ ghi đè bản local đang chạy được bằng chúng.** Trong lúc sửa frontmatter ở trên, phát hiện một bug khác và lớn hơn ở `superpowers-subagent-driven-development`, `superpowers-systematic-debugging`, `superpowers-test-driven-development`, `superpowers-using-git-worktrees` và `superpowers-using-superpowers`: chúng không phải hỏng định dạng mà bị **cắt cụt** — chỉ 550-702 byte chứa `name:` và `description:`, không có phần thân, so với 3.4KB-22KB ở bản cài chạy được. Tình trạng này tồn tại từ commit tái cấu trúc thư mục (`9e8707b`), và 23 trong 28 skill `superpowers-*` đều ship đủ phần thân — nên đây là sự thiếu nhất quán chứ không phải chính sách cố ý. Vì `syncTree()` dùng `copyFileSync` vô điều kiện khi hash lệch, mỗi lần `agency upgrade` sẽ thay skill 10KB đang dùng được của user bằng stub. **Cố ý KHÔNG thêm dấu `---` đóng:** làm vậy sẽ khiến bản quét toàn cây báo sạch trong khi vẫn thiếu ~54KB nội dung skill, biến một bug nhìn thấy được thành một bug vô hình. Việc khôi phục phần thân cần một quyết định về nguồn gốc nội dung nên được giữ lại chờ chủ sở hữu repo.
+- **LỖI ĐÃ BIẾT, chưa sửa — năm skill `superpowers-*` được ship dưới dạng stub rỗng, và `agency upgrade` sẽ ghi đè bản local đang chạy được bằng chúng.** Trong lúc sửa frontmatter ở trên, phát hiện một bug khác và lớn hơn ở `superpowers-subagent-driven-development`, `superpowers-systematic-debugging`, `superpowers-test-driven-development`, `superpowers-using-git-worktrees` và `superpowers-using-superpowers`: chúng không phải hỏng định dạng mà bị **cắt cụt** — chỉ 550-702 byte chứa `name:` và `description:`, không có phần thân, so với 3.4KB-22KB ở bản cài chạy được. Tình trạng này tồn tại từ commit tái cấu trúc thư mục (`65c1b0b`), và 23 trong 28 skill `superpowers-*` đều ship đủ phần thân — nên đây là sự thiếu nhất quán chứ không phải chính sách cố ý. Vì `syncTree()` dùng `copyFileSync` vô điều kiện khi hash lệch, mỗi lần `agency upgrade` sẽ thay skill 10KB đang dùng được của user bằng stub. **Cố ý KHÔNG thêm dấu `---` đóng:** làm vậy sẽ khiến bản quét toàn cây báo sạch trong khi vẫn thiếu ~54KB nội dung skill, biến một bug nhìn thấy được thành một bug vô hình. Việc khôi phục phần thân cần một quyết định về nguồn gốc nội dung nên được giữ lại chờ chủ sở hữu repo.
 - **`tekki_gated` là một key ma — agent def bảo agent khớp một tier mà config không bao giờ phát ra.** Ba agent def được ship (`core/agents/pd-coordinator.md`, `core/agents/coord.md`, `agents/project-management/pd-coordinator.md`) hướng dẫn agent tra cứu và mặc định về tier `tekki_gated`. Nhưng `core/memory/autonomy-tiers.json` **không hề chứa** giá trị đó — schema thật của nó là `auto_ack` / `agent_gated` / `operator_gated` / `operator_ack`, và `runbooks/autonomy-tier-gate.md` vốn đã dùng `operator_gated` từ trước. Nghĩa là dòng "nếu action type không có trong config → mặc định `tekki_gated`" trỏ tới một tier không tồn tại trong chính file nó vừa đọc. Đã đổi hết sang `operator_gated`. **Không thêm lớp tương thích ngược và cũng không nên thêm**: key cũ chưa bao giờ tồn tại trong bất kỳ config nào được ship, nên không có bản cài nào đang giữ nó. Đây là sửa lỗi đúng nghĩa, không phải đổi tên cho đẹp.
 - **Đường dẫn của một máy cụ thể được ship như thể phổ quát.** `skills/subtitle-burner/SKILL.md` khẳng định Whisper nằm ở `/opt/homebrew/bin/whisper` — chỉ đúng với Homebrew trên Apple Silicon, sai trên macOS Intel (`/usr/local/bin`), sai trên Linux, sai trên Windows. Thay bằng phát hiện qua `command -v whisper` kèm hướng dẫn cài. Bản ghim phiên bản ffmpeg 8.1.1 cũng bị bỏ — không có gì trong tài liệu phụ thuộc vào đúng phiên bản đó. `scripts/bootstrap-machine.sh`, `mem-gardener.sh`, `mem-scorecard.py`, `memory_scope.py`: tên riêng trong comment và trong **một chuỗi output người dùng thật sự đọc** (`mem-scorecard.py` `check_r10()`) đã được tổng quát hoá. Các comment giải thích **vì sao** một package bị cố tình loại trừ được **giữ nguyên phần lý do và ngày tháng** — chỉ bỏ phần quy cho cá nhân; một dòng loại trừ không kèm lý do sẽ mời người sau "sửa giúp" bằng cách cài lại đúng thứ đã hỏng.
 - **Cặp CI guard `verify-agency-refs` chưa bao giờ thực sự tương đương nhau.** Cả hai script dùng chung một danh sách phần mở rộng `(md|sh|py|js|json)`, nhưng hai engine regex xử lý khác nhau: POSIX ERE (`grep -E`, bản `.sh`) là **leftmost-longest** nên khớp đúng `.json`; .NET (bản `.ps1`) là **leftmost-first** nên `js` đứng trước `json` làm nó cắt `neutral.json` thành `neutral.js` — một file không tồn tại — rồi báo dangling reference cho một tham chiếu hoàn toàn hợp lệ. Nghĩa là **mọi tham chiếu `.json` đều pass job Linux và fail job Windows**. Cặp script này trông giống hệt nhau và chỉ thoát được vì trong cây chưa từng có tham chiếu `{agency-root}/<tree>/….json` nào — cho tới wave 18 thì có. Đã sắp xếp lại alternation theo thứ tự dài-trước ở **cả hai** file kèm comment giải thích, để hai engine không thể lệch nhau lần nữa. Bắt được nhờ CI thật đỏ trên commit của chính wave 18, không phải nhờ đọc code.
@@ -284,7 +284,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 - **`quality-prefs.md` shipped as framework content when it is operator data.** Removed from `core/memory/`; the single canonical location is `{agency-root}/memory/quality-prefs.md`, created on first write. **Trap caught in time:** doing the `git rm` while leaving `memory/quality-prefs.md` listed in `core/.preserve` **turns CI red** — `.github/scripts/check-core-preserve.js` fails the build when a listed path does not exist under `core/`. The entry was removed in the same change with a comment explaining why. Every read/write path in `skills/quality-loop-router/SKILL.md` was traced to confirm that "file absent" is the normal state of a fresh install, not an error.
 - **A specific client's name sat in `core/agents/pd-coordinator.md`'s escalation list.** "Any action involving HTI Group internal data" → "Any action involving client-internal data". The rule keeps its full force; only the name is gone. The `HTI Digital Writer` / `HTI Sales Writer` entries in `agents/marketing/INDEX.md` are **deliberately untouched**: there the client name is the agent's own identity, and renaming those is a product decision, not a leak fix.
 - **Malformed published frontmatter let `agency upgrade` overwrite correct live copies (5 of 10 repaired).** Four files failed YAML parsing (`content-creator`, `humanizer`, `musicgen`, `unwrap`) because the quotes around `description` had been stripped, turning a mid-sentence `:` into a mapping key; `task-handoff` had a folded scalar (`>`) that swallowed the closing `---`. All five repaired at the syntax level, **keeping the wave-19 de-personalized body** — no copying over from the live copies, which still contain personal names. All 286 skills now report `YAML ERROR: 0`.
-- **KNOWN DEFECT, not yet fixed — five `superpowers-*` skills ship as bodyless stubs and `agency upgrade` will overwrite a working local copy with them.** Investigating the frontmatter repair above turned up a larger, different bug in `superpowers-subagent-driven-development`, `superpowers-systematic-debugging`, `superpowers-test-driven-development`, `superpowers-using-git-worktrees` and `superpowers-using-superpowers`: these are not malformed, they are **truncated** — 550-702 bytes holding `name:` and `description:` and no body at all, versus 3.4KB-22KB in a working install. They have been this way since the directory restructure (`9e8707b`), and 23 of the 28 `superpowers-*` skills do ship full bodies, so this is an inconsistency rather than a deliberate policy. Because `syncTree()` uses an unconditional `copyFileSync` on hash mismatch, every `agency upgrade` replaces a user's working 10KB skill with the stub. **A closing `---` was deliberately NOT added:** that would make the tree scan clean while leaving ~54KB of skill content missing, converting a visible bug into an invisible one. Restoring the bodies needs a decision about content provenance and is held for the repo owner.
+- **KNOWN DEFECT, not yet fixed — five `superpowers-*` skills ship as bodyless stubs and `agency upgrade` will overwrite a working local copy with them.** Investigating the frontmatter repair above turned up a larger, different bug in `superpowers-subagent-driven-development`, `superpowers-systematic-debugging`, `superpowers-test-driven-development`, `superpowers-using-git-worktrees` and `superpowers-using-superpowers`: these are not malformed, they are **truncated** — 550-702 bytes holding `name:` and `description:` and no body at all, versus 3.4KB-22KB in a working install. They have been this way since the directory restructure (`65c1b0b`), and 23 of the 28 `superpowers-*` skills do ship full bodies, so this is an inconsistency rather than a deliberate policy. Because `syncTree()` uses an unconditional `copyFileSync` on hash mismatch, every `agency upgrade` replaces a user's working 10KB skill with the stub. **A closing `---` was deliberately NOT added:** that would make the tree scan clean while leaving ~54KB of skill content missing, converting a visible bug into an invisible one. Restoring the bodies needs a decision about content provenance and is held for the repo owner.
 - **`tekki_gated` was a phantom key — shipped agent defs told agents to match a tier the config never emits.** Three shipped agent definitions (`core/agents/pd-coordinator.md`, `core/agents/coord.md`, `agents/project-management/pd-coordinator.md`) instructed agents to look up and default to a `tekki_gated` tier. But `core/memory/autonomy-tiers.json` contains **no such value** — its actual schema is `auto_ack` / `agent_gated` / `operator_gated` / `operator_ack`, and `runbooks/autonomy-tier-gate.md` already used `operator_gated`. So the line "if the action type isn't in the config, default to `tekki_gated`" named a tier that does not exist in the very file it had just read. All sites renamed to `operator_gated`. **No backward-compatibility shim was added and none should be**: the old key never existed in any shipped config, so no install can be holding it. This is a correctness fix, not a cosmetic rename.
 - **One machine's paths shipped as if universal.** `skills/subtitle-burner/SKILL.md` asserted Whisper lives at `/opt/homebrew/bin/whisper` — true only for Homebrew on Apple Silicon; wrong on Intel macOS (`/usr/local/bin`), wrong on Linux, wrong on Windows. Replaced with `command -v whisper` detection plus an install pointer. The incidental ffmpeg 8.1.1 version pin was dropped too — nothing in the document depended on that specific version. `scripts/bootstrap-machine.sh`, `mem-gardener.sh`, `mem-scorecard.py` and `memory_scope.py` carried the operator's name in comments and in **one user-visible output string** (`mem-scorecard.py`'s `check_r10()` return value). Genericized. The comments explaining **why** particular packages are deliberately excluded kept their reasoning and dates — only the attribution changed; a bare exclusion with no reason invites the next person to "helpfully" re-add a package that is broken on purpose.
 - **The `verify-agency-refs` CI guard pair was never actually equivalent.** Both scripts share the extension list `(md|sh|py|js|json)`, but the two regex engines treat it differently: POSIX ERE (`grep -E`, the `.sh`) is **leftmost-longest** and matches `.json` correctly; .NET (the `.ps1`) is **leftmost-first**, so with `js` ahead of `json` it truncated `neutral.json` to `neutral.js` — a file that does not exist — and reported a dangling reference for a perfectly valid one. In practice **every `.json` reference passed the Linux job and failed the Windows one**. The pair only looked like twins because no `{agency-root}/<tree>/….json` reference existed in the tree until wave 18 added one. Alternation reordered longest-first in **both** files with a comment explaining why, so the two engines cannot diverge again. Caught by a genuinely red CI run on wave 18's own commit, not by reading the code.
@@ -330,7 +330,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 - **`install.sh` no longer wires `fable-on-opus.sh` on fresh installs** (repo-owner decision, after the change was proposed and held for approval in the preceding documentation sync). Recent Opus-line models carry the discipline this hook injects natively, so registering it by default duplicated guidance. The script and its `hooks/fable/` playbooks still ship — it is now an opt-in hook for older model lines, with a manual wiring snippet in `docs/HOOKS.md`. Existing installs are untouched: the installer only writes `settings.json` when creating it fresh, so an entry you already have stays until you remove it. `docs/HOOKS.md` (Hook Map, Settings Wiring block, the Not-Wired table now listing 8 hooks, Hook Details) and `README.md` are synced to the new state: 10 hooks wired across 4 events.
 - **1M context (`[1m]`) is SELECTIVE, not fleet-wide.** The `[1m]` suffix is applied only to orchestrator roles — PD, Coord, Mini-Coord, Dept-Coord (21 files) — because they are the only roles whose context grows with the *size of the work* rather than the size of their own brief. Every other agent stays plain. This decision is closed and should not be re-opened as a fleet-wide proposal. Full policy in `core/ORG.md` § Model tiering. Recorded alongside it: `modelTier:` is a documentation tag and is inert at spawn time — `model:` is the key Claude Code actually reads, and the one `[1m]` attaches to.
 
-## [2026-07-24] — Skill sync self-heal (`00cd410`)
+## [2026-07-24] — Skill sync self-heal (`1417421`)
 
 ### Tiếng Việt
 
@@ -344,7 +344,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 - Skills sync rewritten to content-hash comparison — mtime/size were unreliable after a `git checkout` resets file timestamps, which meant installs could silently skip updated skill files.
 - Directory-only `skills/<name>/SKILL.md` is now the sole canonical layout. This self-heals any install previously poisoned by a flat `skills/<name>.md` file, which was invisible to the sync and never reached installs.
 
-## [2026-07-22] (`dd9d64f`)
+## [2026-07-22] (`0712949`)
 
 ### Tiếng Việt
 
@@ -362,7 +362,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 #### Added
 - MCP-schema-overload trio and dept-coord sync (wave 8+9).
 
-## [2026-07-16] (`fab3727`, `9958328`)
+## [2026-07-16] (`667ff3d`, `3087153`)
 
 ### Tiếng Việt
 
@@ -380,7 +380,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 #### Security
 - Scrubbed PII (personal email address, GTM container ID) from public docs.
 
-## [2026-07-13 to 2026-07-14] (`7162f84`, `e0b0e5c`)
+## [2026-07-13 to 2026-07-14] (`6329cf2`, `f887f6e`)
 
 ### Tiếng Việt
 
@@ -396,7 +396,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 - Orchestrator tools: floor and context-budget documentation.
 - Lesson sync (wave 6).
 
-## [2026-07-03 to 2026-07-07] (`cf2bf3e`, `46daa28`, `801c548`, `eb6f60a`, `7ef9710`)
+## [2026-07-03 to 2026-07-07] (`0b9574b`, `fe75caa`, `deb2e72`, `fd6434d`, `508b341`)
 
 ### Tiếng Việt
 
@@ -424,7 +424,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 #### Changed
 - PD/Coord token-efficiency slimming (`N_global=5`).
 
-## [2026-07-02] (`1bc1244`, `f837d84`)
+## [2026-07-02] (`5e7804d`, `226c1cf`)
 
 ### Tiếng Việt
 
@@ -444,7 +444,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 - `/save-state` INLINE and SUBAGENT modes.
 - Moved `runbooks/` to the repo top level.
 
-## [2026-06-22] (`2ab2ca6`, `9ec9cad`)
+## [2026-06-22] (`ac3b93d`, `00a169b`)
 
 ### Tiếng Việt
 
@@ -456,7 +456,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 #### Fixed
 - `agency upgrade` now preserves the user's tier setting and re-execs with freshly-pulled code — a zero-lag self-updater that prevents running stale upgrade logic against new repo state.
 
-## [2026-06-08 to 2026-06-18] (`597da37`, `632ae1a`, `1eb2345`, `f0aaac3`, `1873c01`, `187a6a3`, `1cff59f`, `0e146a7`, `4c2c5ba`, `3d9fc95`, `cba6781`, `058369b`, `a767808`, `f300f9e`)
+## [2026-06-08 to 2026-06-18] (`fdcb2a4`, `f9a08ef`, `fde36b0`, `754a1de`, `2ebb712`, `ba67ec2`, `1388eec`, `a25b7ee`, `50ed897`, `68b3e1b`, `680f14e`, `c3fad00`, `7ca111c`, `6e933f6`)
 
 ### Tiếng Việt
 
@@ -484,7 +484,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 #### Removed
 - omnivoice-studio and other unportable tools from bootstrap.
 
-## [2026-06-01 to 2026-06-05] (`0979b1c`, `5007c52`, `39db1aa`, `3ae4f3a`, `911d930`, `a3aa2e1`)
+## [2026-06-01 to 2026-06-05] (`b663096`, `fae75e0`, `eba8a6a`, `76a57df`, `f63b71d`, `2cd67dc`)
 
 ### Tiếng Việt
 
@@ -512,7 +512,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 #### Security
 - Removed private skill entries that had leaked into the public INDEX.
 
-## [2026-05-21 to 2026-06-01] (`6f07124`, `dfb5fcc`, `03c554a`)
+## [2026-05-21 to 2026-06-01] (`0df5e59`, `ef3aa70`, `525fca8`)
 
 ### Tiếng Việt
 
@@ -534,7 +534,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 #### Security
 - Removed `general-purpose` from the spawn-gate allowlist.
 
-## [2026-05-13 to 2026-05-18] (`b471e31`, `0fc1a3e`, `e506a39`, `3ee3bbb`, `5d183cb`, `5135f5a`)
+## [2026-05-13 to 2026-05-18] (`7ab1961`, `612cbde`, `3338b0c`, `075a1d0`, `dd800e9`, `eeff476`)
 
 ### Tiếng Việt
 
@@ -562,7 +562,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 #### Fixed
 - Clone target corrected to `~/.claude/` (was briefly `~/the-agency/`).
 
-## [2026-05-08 to 2026-05-12] (`ae18064`, `e03a10b`, `9e8707b`, `d314243`)
+## [2026-05-08 to 2026-05-12] (`b1c3171`, `045fdd3`, `65c1b0b`, `04c2112`)
 
 ### Tiếng Việt
 
@@ -584,7 +584,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 #### Fixed
 - Genericized hardcoded paths in the NEXUS protocol for portability.
 
-## [2026-04-16 to 2026-04-18] (`a396fe6`, `538049b`, `9607f2d`)
+## [2026-04-16 to 2026-04-18] (`a396fe6`, `6c2f7c1`, `937df67`)
 
 ### Tiếng Việt
 

@@ -599,7 +599,7 @@ Everything above describes what the system does. This section describes how it w
 
 **NEXUS Protocol** — file-based 6-phase handoff doctrine for inter-agent coordination. Handoff artifacts are JSON files, processed by RoomManager.
 
-**Hook System** — shell scripts wired into Claude Code's 5 lifecycle events. Installed at `~/.claude/hooks/` by `install.sh`. Profile-aware (`standard` / `strict` / `minimal`).
+**Hook System** — shell scripts wired into Claude Code's 5 lifecycle events. Live at `{root}/hooks` (root = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`); install and `agency upgrade` copy them and wire them into `settings.json` from `hooks/hooks.json` (`agency hooks sync|remove` does the wiring on demand). Profile-aware (`standard` / `strict` / `minimal`).
 
 **Skills** — markdown-based reusable workflows loaded from `~/.claude/skills/`, registered in `INDEX.md`.
 
@@ -778,7 +778,7 @@ Use `/pd-spawn` for the full protocol.
 
 ### Hook System
 
-Bash scripts across 5 lifecycle events, installed at `~/.claude/hooks/` by `install.sh` (`agency init`/`agency upgrade` sync skills, agents, and core docs, but not `hooks/` — re-run `install.sh` to pick up new or updated hooks).
+Bash scripts across 5 lifecycle events, copied to `{root}/hooks` (root = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`) by `install.sh`, `agency init` and `agency upgrade`, which also wire the hooks listed in `hooks/hooks.json` into `settings.json`; `agency hooks sync|remove` does the wiring on demand.
 
 | Script | Event | What it does |
 |--------|-------|-------------|
