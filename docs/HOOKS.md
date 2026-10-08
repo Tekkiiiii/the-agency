@@ -341,7 +341,7 @@ Any internal error is silent; the hook never blocks a write.
 
 ### loop-detector.sh (PostToolUse: all tools)
 
-**Status: wired into `settings.json` by every install path (`hooks/hooks.json`)** — see [Settings Wiring](#settings-wiring) above.
+**Status: wired into `settings.json` by every install path (`hooks/hooks.json`)** — see [Settings Wiring](#settings-wiring) above. It stays shipped as a shell hook: a mod-based loop guard needs `~/.claude/mods/`, and this repo has no mod install path yet, so repo users get no loop protection without this script. It leaves `hooks/hooks.json` only after a mod install path exists.
 
 Tracks the last 10 tool calls in `~/.claude/.tool-call-tracker.jsonl`. If 5 identical tool+input signatures appear consecutively, prints a stall warning to stderr visible to the running agent and writes a `stall_detected` marker to `session-state.json`.
 
@@ -356,6 +356,8 @@ Skipped in `minimal` profile. Clears the tracker file after detecting a stall to
 **Effect:** Prevents runaway infinite loops from exhausting context or budget without any useful progress.
 
 ### artifact-verify.sh (PostToolUse: Agent)
+
+**Status: wired into `settings.json` by every install path (`hooks/hooks.json`), not retired.** The author's own live system replaced this script with the `spawn-ledger` mod (its `verify` command); that was a replacement, not a removal of the check. This repo ships no mods and has no mod install path yet, so the shell hook stays shipped and wired, exactly like `loop-detector.sh`. It moves to `retired` in `hooks/hooks.json` only after a mod install path exists.
 
 Harness-level backstop against fabricated "build complete" claims. After every Agent tool call returns, scans the completed agent's output text for a completion signal (`DONE`, `COMPLETE`, `BUILD COMPLETE`, `SUCCESS`, `FINISHED`, `SHIPPED`, etc.). If found, it extracts candidate deliverable file paths from the text (absolute paths, `~/`-relative paths, or paths near `out/`/`output/`/`dist/`/`build/`, matching extensions like `.mp4`, `.pdf`, `.html`, `.png`, `.zip`, `.json`, `.csv`, and similar) and runs `os.path.isfile()` on each resolvable one.
 
