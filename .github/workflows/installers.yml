@@ -282,6 +282,13 @@ jobs:
       - name: Assert every agent definition has valid frontmatter (all departments)
         run: bash agents/scripts/lint-agents.sh
 
+      # Hand-typed counts rot ("280+ skills" shipped while 243 existed; "130+
+      # agents" while 47 did). This derives skills/agents/departments from the
+      # tree and fails on any N skills / N+ agents / N departments claim in the
+      # README, INDEX files, docs/ or CLI strings that no longer matches.
+      - name: Assert skill/agent/department counts in docs and CLI match the tree
+        run: python3 .github/scripts/check-counts.py
+
       # core/ holds copies of canonical docs (six agent defs, ORG.md, every runbook).
       # Nothing re-synced them, so they drifted and stale wording shipped from the
       # copy. Byte-compares each copy to its source; the one documented exemption

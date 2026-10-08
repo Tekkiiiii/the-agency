@@ -489,7 +489,7 @@ Community-maintained translations and regional adaptations. These are independen
 
 | Language | Maintainer | Link | Notes |
 |----------|-----------|------|-------|
-| 🇨🇳 简体中文 (zh-CN) | [@jnMetaCode](https://github.com/jnMetaCode) | [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) | 100 translated agents + 9 China-market originals |
+| 🇨🇳 简体中文 (zh-CN) | [@jnMetaCode](https://github.com/jnMetaCode) | [agency-agents-zh](https://github.com/jnMetaCode/agency-agents-zh) | 100 translated agents + 9 China-market originals | <!-- check-counts:ignore: third-party repo -->
 
 Want to add a translation? Open an issue and we'll link it here.
 

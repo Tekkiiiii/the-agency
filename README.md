@@ -5,8 +5,6 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Platform: Claude Code](https://img.shields.io/badge/Platform-Claude%20Code-yellow)
 ![Cloud: Zero dependencies](https://img.shields.io/badge/Cloud-Zero%20Dependencies-green)
-![Skills: 240+](https://img.shields.io/badge/Skills-240%2B-orange)
-![Agents: 45+](https://img.shields.io/badge/Agents-45%2B-purple)
 ![QA: Gates on every handoff](https://img.shields.io/badge/QA-Gates%20%2B%20Health%20Scores-red)
 
 Out of the box, Claude Code forgets everything when a session ends. Long tasks stall halfway, or come back marked "done" with nothing to prove it. And every new session burns tokens rebuilding context it already had. The Agency fixes those pains with plain files installed to `~/.claude/`:
@@ -16,7 +14,7 @@ Out of the box, Claude Code forgets everything when a session ends. Long tasks s
 - **QA gates before "done".** No handoff is accepted without a health-score pass and evidence.
 - **Token-lean routing.** Cheap lookups before expensive agent spawns, and the right model for each job: Opus plans, Sonnet executes, Haiku does bulk work.
 
-240+ skills and 45+ agents. No cloud, no extra API keys.
+Skills and agents as plain files. No cloud, no extra API keys.
 
 ```bash
 agency init                   # full quality gates
@@ -36,7 +34,7 @@ cd ~/.claude && ./install.sh
 cd $HOME\.claude; .\install.ps1
 ```
 
-That's it. 240+ skills and 45+ agents are live in `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
+That's it. The skills and agents are live in `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
 
 ```bash
 agency onboard                        # Interactive setup wizard (start here)
@@ -69,7 +67,7 @@ Four things make it different from a conversation with an AI:
 
 **1. Memory that persists.** You run `/save-state` before you close Claude Code. Tomorrow you run `/recall`. The agent picks up exactly where it left off — open tasks, decisions made, what was blocked, what shipped. No re-explaining. No context collapse.
 
-**2. A real team structure.** 45+ agents are organized across 8 departments: Engineering, Design, Content Creation, Testing, Project Management, Specialized, Critiques, and Video Studio. The right agent gets the right task automatically.
+**2. A real team structure.** The agents are organized across 8 departments: Engineering, Design, Content Creation, Testing, Project Management, Specialized, Critiques, and Video Studio. The right agent gets the right task automatically.
 
 **3. Autonomous coordination.** You give direction to a Project Director. The PD decomposes the work, assigns it to specialists, runs the tasks in parallel, checks the output at every handoff, and reports back. You don't coordinate. You supervise.
 
@@ -104,7 +102,7 @@ You didn't explain anything the second day. The agent remembered.
 - **QA gates on every handoff**: No work gets ACK'd without a health-score pass. Gate: score ≥ 70 + zero CRITICALs. Example: 70 = tests pass but docs missing; 90+ = ship-ready.
 - **Explicit ACK/NACK protocol**: An agent's report lands when it stops. If it is not re-spawned, that is the ACK. A NACK spawns a fresh continuation agent with the fix list, and the rework loops back through QA. Consent for a permission-gated action is a file the main session writes under `{project}/memory/tasks/revisions/acks/`, never chat prose.
 - **Hook lifecycle system**: shell scripts across 5 lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop, UserPromptSubmit) — security gating, secret scanning, config protection, crash detection, cost tracking, plus an opt-in Fable-on-Opus hook (ships unwired) that injects Fable-style reasoning discipline (`hooks/fable/`) whenever the active model is Opus-line. Profile-aware (`standard` / `strict` / `minimal`). See `docs/HOOKS.md`.
-- **240+ production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, and more — all invoked via `/skill-name`.
+- **Production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, and more — all invoked via `/skill-name`.
 - **SQLite task store — nothing leaves your machine**: Task pipeline, gates, retries, blocking in `~/.claude/`. No servers. No API keys.
 - **Session persistence**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where it left off.
 - **Agency Rooms** — file-based inter-agent chat with persistent rooms, RoomManager polling, NEXUS JSON handoffs, and 12-hour department digests.
@@ -489,7 +487,7 @@ Spawned via `/recall {project}`. Owns the project end-to-end:
 4. Escalate blockers
 5. Persist state via `/save-state`
 
-## Skills Library — 240+ Skills
+## Skills Library
 
 **Memory & Session**: `save-state`, `recall`, `pd-resume`, `wrap`, `unwrap`, `project-status`, `context-save`, `context-restore`, `freeze`, `unfreeze`
 

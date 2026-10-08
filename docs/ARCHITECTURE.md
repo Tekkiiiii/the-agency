@@ -219,7 +219,7 @@ Deliverables:
 
 ## Skills Library
 
-The repo ships with ~45 agency-core skills (domain skills install separately) covering the full project lifecycle:
+The repo ships its full skill library (the catalog is `skills/INDEX.md`). The core lifecycle skills:
 
 | Category | Skills |
 |----------|--------|
