@@ -178,15 +178,15 @@ If an Exec/Member's completion report includes `APPROACH_UNREVIEWED` or
 
 ## Failure record
 
-Observed failure (2026-08-14): two Execs were spawned DIRECTLY BY THE PD (Coord layer
-bypassed via the pd-coordinator.md §2.6 direct-spawn fast path). Both opened
+the-agency Wave 20 (2026-08-14): two Execs were spawned DIRECTLY BY THE PD (Coord layer
+bypassed via the pd-coordinator.md §2.6 PARALLEL DIRECT-EXEC fast path). Both opened
 APPROACH gates, wrote checkpoint files, and polled the full 5-minute ceiling — nobody
 upstream was polling, because this runbook's reply-side section was titled "Coord/
 Dept-Coord side," and a PD acting as a direct spawner was not covered by its own text.
 Both Execs correctly proceeded per the timeout branch and marked `APPROACH_UNREVIEWED` in
 their completion reports, but the unattended gates also generated escalation spam to
 main. This is not a one-off: as of this writing, 13 checkpoint files under
-`{project}/memory/agents/execs/*-checkpoint.md` in a single project still sit at
+`{project}/memory/agents/execs/*-checkpoint.md` for this project alone still sit at
 `Status: AWAITING`, spanning the Jul 30, Aug 6, and Aug 13 waves — unanswered gates are
 the norm under the direct-spawn path, not an isolated incident. The retitle, the added
 Precondition bullet, and pd-coordinator.md §Checkpoint Polling Duty (see References) are

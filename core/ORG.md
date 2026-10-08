@@ -32,7 +32,7 @@ Dept Head (Opus) ◄──────────────► Project Direct
 
 **Resource allocation:** PDs request agents from Dept Heads → Dept Heads dispatch members → Members work on projects under PD direction → Dept Heads retain skill quality ownership.
 
-**Dept-Coord system:** Dept Heads decompose department-operational work (D1→D3) and spawn Dept-Coords to own D3 tracks. Dept-Coords decompose D3→D6 and dispatch dept members. Used for pipeline management, protocol improvement, member development — not project delivery. See `core/runbooks/dept-coord-protocol.md`.
+**Dept-Coord system:** Dept Heads decompose department-operational work (D1→D3) and spawn Dept-Coords to own D3 tracks. Dept-Coords decompose D3→D6 and dispatch dept members. Used for pipeline management, protocol improvement, member development — not project delivery. See `runbooks/dept-coord-protocol.md`.
 
 **Inter-spawn protocol:** PDs and Dept Heads can spawn work into each other's domains via `state/incoming/` directories. PD→DeptHead tasks go to `agents/{dept}/state/incoming/`. DeptHead→PD tasks go to `{project}/memory/inter-spawn-tasks/incoming/`.
 
@@ -50,6 +50,7 @@ Standing exceptions to Members = Sonnet:
 
 NOTE: `modelTier` is documentation only — nothing in the harness reads it (the sole consumer is `scripts/agent-tools-audit.py`, as an audit flag). The key the harness acts on is `model:`. Keep both present and in sync; setting `modelTier` alone changes nothing.
 
+<!-- core-mirror:exempt begin 1m-policy (core-only doctrine; not in the agents/ORG.md source) -->
 ### 1M context window (`[1m]`) — SELECTIVE, closed decision
 
 **Policy:** the `[1m]` model suffix (`opus[1m]`, `sonnet[1m]`, `claude-opus-4-7[1m]`) is
@@ -76,6 +77,7 @@ on ~300 defs to solve a problem ~21 of them have.
    spawning session's model and is intentionally left untouched — pinning a model on it is a
    separate decision from adopting `[1m]`. If a `model:` key is ever added to it, this
    policy applies and it gets the suffix.
+<!-- core-mirror:exempt end 1m-policy -->
 
 **Status loop policy:** Automated recurring loops are DISABLED. Use on-demand status checks only. Dept heads request status when needed — do not automate periodic pings. This avoids the token explosion risk of naive 15-30 min loop implementations (10k-21k reports/week without aggregation). See § on status reporting.
 
@@ -301,9 +303,9 @@ Each department has a persistent operational state at `{dept}/state/`, `{dept}/p
 
 | Runbook | Purpose |
 |---------|---------|
-| `core/runbooks/dept-coord-protocol.md` | Full operational manual for the dept-coord system |
-| `core/runbooks/dept-boot-sequence.md` | Two-mode dept head startup (spawn + route) |
-| `core/runbooks/protocol-registry.md` | Cross-department protocol index |
+| `dept-coord-protocol.md` | Full operational manual for the dept-coord system |
+| `dept-boot-sequence.md` | Two-mode dept head startup (spawn + route) |
+| `protocol-registry.md` | Cross-department protocol index |
 
 ---
 

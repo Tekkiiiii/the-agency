@@ -273,6 +273,13 @@ jobs:
       - name: Assert every agent definition has valid frontmatter (all departments)
         run: bash agents/scripts/lint-agents.sh
 
+      # core/ holds copies of canonical docs (six agent defs, ORG.md, every runbook).
+      # Nothing re-synced them, so they drifted and stale wording shipped from the
+      # copy. Byte-compares each copy to its source; the one documented exemption
+      # (core-only [1m] policy in core/ORG.md) is wrapped in explicit markers.
+      - name: Assert core/ mirrors agents/ and runbooks/
+        run: python3 scripts/core-mirror-check.py --root .
+
   install-ps1:
     name: install.ps1 (windows)
     runs-on: windows-latest

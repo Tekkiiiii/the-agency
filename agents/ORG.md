@@ -157,17 +157,17 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 
 | Department | Directory |
 |-----------|-----------|
-| Engineering | `engineering/` |
-| Design | `design/` |
-| Content Creation | `content-creation/` |
-| Content Creation (Social Media sub-team) | `content-creation/social-media/` |
-| Project Management | `project-management/` |
-| Testing | `testing/` |
-| Specialized | `specialized/` |
-| Specialized (Infra sub-team) | `specialized/infra/` |
-| **Rooms Infrastructure** | `~/.claude/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
+| Engineering | `agents/engineering/` |
+| Design | `agents/design/` |
+| Content Creation | `agents/content-creation/` |
+| Content Creation (Social Media sub-team) | `agents/content-creation/social-media/` |
+| Project Management | `agents/project-management/` |
+| Testing | `agents/testing/` |
+| Specialized | `agents/specialized/` |
+| Specialized (Infra sub-team) | `agents/specialized/infra/` |
+| **Rooms Infrastructure** | `{agency-root}/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
 | **Room polling** | ARCHIVED agent 2026-10-06 — use the `/room-manager` skill (see `agents-archive/ROLE-MAP.md`) |
-| Specialized (Audit sub-team) | `specialized/audit/` |
+| Specialized (Audit sub-team) | `agents/specialized/audit/` |
 
 ---
 
