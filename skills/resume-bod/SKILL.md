@@ -67,7 +67,7 @@ Wave 1:
 - engineering-lead
 - design-lead
 - content-creation-lead
-- pm-lead
+- project-management-lead
 
 Wave 2:
 - testing-lead

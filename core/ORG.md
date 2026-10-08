@@ -135,7 +135,7 @@ THE AGENCY
 |---|--------|-----------|------------|---------------------|
 | 1 | Engineering Lead | Engineering | — | API design, database architecture, scalability, technical standards |
 | 2 | Design Lead | Design | — | Brand consistency, visual identity, creative direction |
-| 3 | Chief Content Officer | Content Creation | social-media (12 agents) | Editorial standards, content pipeline, quality gates, all content formats |
+| 3 | Chief Content Officer | Content Creation | social-media (12 platform roles, archived; spawn general-purpose + skills) | Editorial standards, content pipeline, quality gates, all content formats |
 | 4 | Project Management Lead | Project Management | — | Production pipeline, milestone tracking, cross-team coordination |
 | 5 | Testing Lead | Testing | — | Test strategy, quality gates, performance benchmarks |
 | 6 | Specialized Agents Lead | Specialized | — | Agent lifecycle, identity/trust, code intelligence, auditing |
@@ -156,7 +156,7 @@ The **Agency Council** is the governing body for all cross-department decisions.
 | Engineering Lead | engineering-lead | Engineering | SendMessage to `engineering-lead` |
 | Design Lead | design-lead | Design | SendMessage to `design-lead` |
 | Chief Content Officer | content-creation-lead | Content Creation | SendMessage to `content-creation-lead` |
-| Project Management Lead | pm-lead | Project Management | SendMessage to `pm-lead` |
+| Project Management Lead | project-management-lead | Project Management | SendMessage to `project-management-lead` |
 | Testing Lead | testing-lead | Testing | SendMessage to `testing-lead` |
 | Specialized Agents Lead | specialized-lead | Specialized | SendMessage to `specialized-lead` |
 | Curmudgeon-in-Chief | critiques-lead | Critiques | SendMessage to `critiques-lead` |
@@ -328,7 +328,7 @@ For focused teams, the trigger phrases include project type:
 1. Use TeamCreate to create a team named "agency-council"
 2. Spawn leaders in TWO WAVES to avoid team config race conditions:
    Wave 1 (4 agents): engineering-lead, design-lead, content-creation-lead,
-                       pm-lead
+                       project-management-lead
    Wave 2 (4 agents): testing-lead, specialized-lead, critiques-lead,
                        video-studio-lead
    Wait for Wave 1 to join (~30s) before spawning Wave 2.
