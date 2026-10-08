@@ -81,8 +81,9 @@ def now_utc():
     return datetime.datetime.now(datetime.timezone.utc)
 
 
-def now_gmt7():
-    return now_utc().astimezone(datetime.timezone(datetime.timedelta(hours=7)))
+def now_local():
+    """Wall-clock time in the machine's own timezone (no hard-coded offset)."""
+    return now_utc().astimezone()
 
 
 def atomic_write(path: pathlib.Path, content: str):
@@ -308,7 +309,7 @@ def write_overseer_brief(p: dict):
     """Step 11 — brief to overseer incoming. Skip for overseer itself."""
     if p["slug"] == "overseer":
         return
-    ts = now_gmt7().strftime("%Y%m%d-%H%M%S")
+    ts = now_local().strftime("%Y%m%d-%H%M%S")
     OVERSEER_INCOMING.mkdir(parents=True, exist_ok=True)
     blocker = (p.get("blockers") or ["no blockers"])[0]
     content = "\n".join([

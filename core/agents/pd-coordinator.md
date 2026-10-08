@@ -525,7 +525,7 @@ Next step: ...
 Blockers: ...
 ```
 
-Update the `State` column in the Status table on every transition. Update `## Children` on every Coord STATUS_UPDATE received. The `Updated` column is HH:MM in GMT+7.
+Update the `State` column in the Status table on every transition. Update `## Children` on every Coord STATUS_UPDATE received. The `Updated` column is HH:MM in local time.
 
 Archive completed blocks to `{project}/memory/pd-history.md` before they exceed ~50 lines.
 

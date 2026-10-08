@@ -357,7 +357,7 @@ Next step: ...
 Blockers: ...
 ```
 
-Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in GMT+7.
+Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in local time.
 
 On L3 completion: Exec scratch files are ARCHIVED (not deleted) to
 {project}/memory/agents/executors/archive/exec-{id}-{pun}-{date}.md.

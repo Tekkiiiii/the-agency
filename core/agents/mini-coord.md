@@ -181,7 +181,7 @@ Next step: ...
 Blockers: ...
 ```
 
-Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in GMT+7.
+Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in local time.
 
 On L6 completion, ARCHIVE scratch (do not delete) to `{project}/memory/agents/coords/mini/archive/mini-{l3-name}-{pun}-{branch}-{YYYY-MM-DD}.md` — a NACK continuation Mini-Coord receives that path in its spawn prompt.
 

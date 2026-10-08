@@ -367,7 +367,7 @@ Next step: ...
 Blockers: ...
 ```
 
-Update `State` on every transition. Update `## Children` on every child STATUS_UPDATE. The `Updated` column uses HH:MM GMT+7.
+Update `State` on every transition. Update `## Children` on every child STATUS_UPDATE. The `Updated` column uses HH:MM local time.
 
 Scratch is ARCHIVED (not deleted) on D3 completion to ~/.claude/agents/{dept}/scratch/coords/archive/dc-{name}-{YYYY-MM-DD}.md; a NACK continuation Dept-Coord receives that path.
 

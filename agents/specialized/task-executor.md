@@ -202,7 +202,7 @@ Next step: ...
 Blockers: ...
 ```
 
-Update the `State` column in the Status table on every transition (IN_PROGRESS, QA_GATE, DONE, BLOCKED, ESCALATE). The `Updated` column is HH:MM in GMT+7.
+Update the `State` column in the Status table on every transition (IN_PROGRESS, QA_GATE, DONE, BLOCKED, ESCALATE). The `Updated` column is HH:MM in local time.
 
 On task completion: move scratch to archive at
 {project}/memory/agents/executors/archive/exec-{id}-{pun}-{YYYY-MM-DD}.md
