@@ -124,33 +124,6 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const cliSrc = path.resolve(__dirname, '../bin/agency.js');
   linkCli(cliSrc, console);
 
-  // 7b. Write default tier to ~/.agency/config.json (only if not already set)
-  // Default is 'standard' as of the 2026-07-14 lite sunset (docs/tiers.md). 'lite'
-  // remains selectable via --tier=lite this release but is deprecated.
-  const tierArg = args.find(a => a && a.startsWith('--tier='));
-  const tierVal = tierArg ? tierArg.split('=')[1] : 'standard';
-  const validTiers = ['lite', 'standard', 'full'];
-  const resolvedTier = validTiers.includes(tierVal) ? tierVal : 'standard';
-
-  const cfgDir = path.join(os.homedir(), '.agency');
-  const cfgPath = path.join(cfgDir, 'config.json');
-  if (!existsSync(cfgDir)) mkdirSync(cfgDir, { recursive: true });
-
-  let existingCfg = {};
-  if (existsSync(cfgPath)) {
-    try { existingCfg = JSON.parse(require('fs').readFileSync(cfgPath, 'utf8')); } catch (_) {}
-  }
-  if (!existingCfg.tier) {
-    existingCfg.tier = resolvedTier;
-    writeFileSync(cfgPath, JSON.stringify(existingCfg, null, 2) + '\n');
-    console.log(`  ✓ Default tier: ${resolvedTier}  (change with: agency tier set lite|standard)`);
-    if (resolvedTier === 'lite') {
-      console.log('  ⚠ DEPRECATED: lite is scheduled for deletion next release. See docs/tiers.md.');
-    }
-  } else {
-    console.log(`  ✓ Tier: ${existingCfg.tier} (existing config preserved)`);
-  }
-
   console.log(`\n✓ The Agency is ready — ${skillsDest}\n`);
   console.log('Next steps:');
   console.log('  agency initiate                           Install tool deps + register MCP servers');

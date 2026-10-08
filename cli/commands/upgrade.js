@@ -1,5 +1,5 @@
 const { execFileSync, spawnSync } = require('child_process');
-const { existsSync, chmodSync, readFileSync, writeFileSync, mkdirSync, realpathSync, readdirSync } = require('fs');
+const { existsSync, chmodSync, readFileSync, realpathSync, readdirSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
 const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncAgentsArchive, syncDesignSystem, syncCore } = require('./sync-assets.js');
@@ -17,9 +17,6 @@ function verifySkillCount(repoCount, skillsDest, console) {
     console.log(`  ⚠ Skill count mismatch: repo has ${repoCount}, installed has ${installedCount}`);
   }
 }
-
-const AGENCY_CONFIG_DIR = join(os.homedir(), '.agency');
-const AGENCY_CONFIG_PATH = join(AGENCY_CONFIG_DIR, 'config.json');
 
 // Loop guard env var. When set, the process knows it was re-exec'd after a pull
 // and must skip fetch/pull entirely — preventing an infinite restart loop.
@@ -43,31 +40,6 @@ function samePath(a, b) {
   } catch (_) {
     return resolve(a) === resolve(b);
   }
-}
-
-function readTier() {
-  if (!existsSync(AGENCY_CONFIG_PATH)) return null;
-  try {
-    const cfg = JSON.parse(readFileSync(AGENCY_CONFIG_PATH, 'utf8'));
-    return cfg.tier || null;
-  } catch {
-    return null;
-  }
-}
-
-function restoreTier(tier) {
-  if (!tier) return;
-  try {
-    let cfg = {};
-    if (existsSync(AGENCY_CONFIG_PATH)) {
-      try { cfg = JSON.parse(readFileSync(AGENCY_CONFIG_PATH, 'utf8')); } catch (_) {}
-    }
-    if (cfg.tier !== tier) {
-      cfg.tier = tier;
-      if (!existsSync(AGENCY_CONFIG_DIR)) mkdirSync(AGENCY_CONFIG_DIR, { recursive: true });
-      writeFileSync(AGENCY_CONFIG_PATH, JSON.stringify(cfg, null, 2) + '\n');
-    }
-  } catch (_) {}
 }
 
 function findRepoRoot() {
@@ -179,12 +151,6 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     process.exit(1);
   }
 
-  // Capture current tier BEFORE any git/sync operations so we can restore it
-  // after the upgrade completes. Upgrade does not intentionally write the tier,
-  // but capturing and restoring it here is a defensive guarantee against any
-  // future change in the upgrade flow accidentally resetting the user's tier.
-  const tierBefore = readTier();
-
   // ─── RE-EXEC PATH ──────────────────────────────────────────────────────────
   // When this process was spawned by a prior upgrade run after a successful
   // pull (AGENCY_UPGRADE_REEXEC=1), skip fetch/pull entirely and jump straight
@@ -219,7 +185,6 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     console.log('\nAgency Upgrade (continuing with fresh code)');
     console.log('===========================================');
     console.log('Repo: ' + repoDir);
-    if (tierBefore) console.log('Tier: ' + tierBefore + ' (will be preserved)');
     console.log('');
     // Skip directly to post-pull steps below.
   } else {
@@ -227,7 +192,6 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     console.log('\nAgency Upgrade');
     console.log('==============');
     console.log('Repo: ' + repoDir);
-    if (tierBefore) console.log('Tier: ' + tierBefore + ' (will be preserved)');
     console.log('');
 
     // Detect in-progress git operations before doing anything
@@ -342,7 +306,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     // ─── RE-EXEC CHECK ─────────────────────────────────────────────────────────
     // Compare HEAD before and after the pull. If HEAD moved, new code is on disk.
     // Re-exec this upgrade under the freshly-pulled Node module so the remaining
-    // sync + tier-restore steps run with the latest logic.
+    // sync steps run with the latest logic.
     //
     // Critical conditions for re-exec:
     //   1. headBefore must be known (git was readable before pull)
@@ -421,14 +385,6 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const core = syncCore(repoDir, coreDest, console);
   console.log(`Core: ${core.updated} updated, ${core.preserved} preserved`);
 
-  // Restore tier — ensure the upgrade has not altered the user's tier setting.
-  // The re-exec'd child reads the tier fresh itself (~/  .agency/config.json is
-  // never touched by git pull — blast-radius confirmed). No env passing needed.
-  if (tierBefore) {
-    restoreTier(tierBefore);
-    console.log(`Tier preserved: ${tierBefore}`);
-  }
-
   // Re-link CLI binary to ensure symlink points into the repo being upgraded.
   // Critical: if the symlink pointed to a different/older clone, re-link it now
   // so future `agency` invocations run from THIS repo.
@@ -483,6 +439,6 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   }
 
   console.log('');
-  console.log('Quick check: agency tier get   (shows your orchestration tier)');
+  console.log('Quick check: agency status   (shows your projects)');
   console.log('');
 };

@@ -23,7 +23,6 @@ const COMMANDS = {
   skill:     () => require('../commands/skill.js'),
   tasks:     () => require('../commands/tasks.js'),
   upgrade:   () => require('../commands/upgrade.js'),
-  tier:      () => require('../commands/tier.js'),
   initiate:  () => require('../commands/bootstrap.js'),
   bootstrap: () => require('../commands/bootstrap.js'),
 };
@@ -48,8 +47,6 @@ async function main() {
     console.log('  agency tasks done <task-id>         Mark task completed');
     console.log('  agency tasks status <id> <status>   Update task status');
     console.log('  agency upgrade                      Pull latest updates from git');
-    console.log('  agency tier get                     Show current orchestration tier');
-    console.log('  agency tier set lite|standard|full  Set orchestration tier (default: standard; lite deprecated)');
     process.exit(0);
   }
 

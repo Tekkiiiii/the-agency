@@ -8,6 +8,15 @@ All notable changes to The Agency are documented here, grouped by release wave (
 
 ### Tiếng Việt
 
+**Đợt 2026-10-08 — gỡ bỏ install tier `lite`/`standard`/`full` (phần A, code).** Một hành vi cho mọi người dùng: đúng những gì trước đây gọi là `standard`. Tier tự chủ (autonomy tier: `autonomy-tier-gate`, `autonomy-tiers.json`, `TIER_A`/`TIER_B`) là hệ thống khác và không bị ảnh hưởng.
+
+#### Removed (2026-10-08)
+- Lệnh `agency tier get|set` (`cli/commands/tier.js`) và hai dòng help tương ứng trong `agency help`. `agency tier ...` giờ trả về `Unknown command`.
+- Cờ `agency init --tier=...`: `agency init` không còn ghi tier mặc định vào `~/.agency/config.json`.
+- Bước đọc/khôi phục tier trong `agency upgrade` (các dòng `Tier: ...`, `Tier preserved: ...`); dòng kiểm tra cuối đổi thành `agency status`.
+- Khóa `"tier"` đã có sẵn trong `~/.agency/config.json` được **bỏ qua im lặng**: không crash, không bị ghi đè hay xoá; file của người dùng không bị đụng tới.
+- Tài liệu tier và các định nghĩa agent `lite` được gỡ trong cùng đợt phát hành.
+
 **Đợt đồng bộ 2026-10-07 — đưa hệ thống live về repo (wave 1).** Số liệu đo lại từ filesystem tại thời điểm đồng bộ, trước đợt dọn (prune): 294 thư mục skill, 133 file agent có frontmatter `name` + `description`, 16 phòng ban còn agent. Hiển thị công khai ghi dạng làm tròn xuống: 290+ skill, 130+ agent.
 
 #### Added (đồng bộ 2026-10-07)
@@ -134,6 +143,15 @@ Mục tiêu: catalog ship ra khớp đúng hệ thống live, không giữ thêm
 - **1M context (`[1m]`) áp dụng CHỌN LỌC, không áp dụng toàn fleet.** Hậu tố `[1m]` chỉ gắn cho các role điều phối — PD, Coord, Mini-Coord, Dept-Coord (21 file) — vì đây là những role duy nhất có context phình theo *khối lượng công việc* chứ không theo độ dài brief của chính nó. Toàn bộ agent còn lại giữ nguyên. Quyết định này đã chốt, không mở lại. Chính sách đầy đủ ở `core/ORG.md` § Model tiering. Kèm theo đó: `modelTier:` chỉ là tag tài liệu và hoàn toàn trơ khi spawn — `model:` mới là key Claude Code thực sự đọc, và là nơi `[1m]` được gắn vào.
 
 ### English
+
+**Wave 2026-10-08 — sunset the `lite`/`standard`/`full` install tiers (part A, code).** One behaviour for everyone: exactly what used to be called `standard`. Autonomy tiers (`autonomy-tier-gate`, `autonomy-tiers.json`, `TIER_A`/`TIER_B`) are a different system and are unaffected.
+
+#### Removed (2026-10-08)
+- The `agency tier get|set` command (`cli/commands/tier.js`) and its two help lines in `agency help`. `agency tier ...` now prints `Unknown command`.
+- The `agency init --tier=...` flag: `agency init` no longer writes a default tier to `~/.agency/config.json`.
+- The tier read/restore step in `agency upgrade` (the `Tier: ...` and `Tier preserved: ...` lines); the closing quick check is now `agency status`.
+- An existing `"tier"` key in `~/.agency/config.json` is **ignored silently**: no crash, and the key is never rewritten or removed, so the user's file is left untouched.
+- The tier docs and the `lite` agent definitions are removed in the same release.
 
 **Sync wave 2026-10-07 — bring the live system into the repo (wave 1).** Counts were re-taken from the filesystem at sync time, before the prune wave: 294 skill directories, 133 agent files with `name` + `description` frontmatter, 16 departments that still hold agents. Public surfaces use rounded-down figures: 290+ skills, 130+ agents.
 
