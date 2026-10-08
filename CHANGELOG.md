@@ -54,7 +54,7 @@ Mục tiêu: catalog ship ra khớp đúng hệ thống live, không giữ thêm
 - Các tham chiếu `task-planner` trong `specialized-coord.md` / `specialized-lead.md` nay theo học thuyết generalist.
 
 #### Security (đồng bộ 2026-10-07)
-- **Đã xóa một credential API bên thứ ba bị hardcode** trong `skills/pinecone_upsert.py` (file lạc chỗ). Script upsert nay chỉ đọc `PINECONE_API_KEY` / `PINECONE_INDEX` từ biến môi trường và nằm ở `skills/save-state/pinecone_upsert.py`, đúng chỗ `scripts/save-state.py` đã trông đợi. Credential cũ vẫn nằm trong lịch sử git: cần **thu hồi (rotate)** ở phía nhà cung cấp, không chỉ xóa file.
+- **Đã xóa một credential API bên thứ ba bị hardcode** trong `skills/pinecone_upsert.py` (file lạc chỗ). Script upsert nay chỉ đọc `PINECONE_API_KEY` / `PINECONE_INDEX` từ biến môi trường và nằm ở `skills/save-state/pinecone_upsert.py`, đúng chỗ `scripts/save-state.py` đã trông đợi. Credential cũ đã được xóa khỏi toàn bộ lịch sử git (viết lại lịch sử ngày 2026-10-08).
 
 #### Cố ý KHÔNG publish ở đợt này
 - **Skill router / granularity gate (Jev).** Nó cần một API key bên thứ ba và dữ liệu routing riêng của operator; không có cách ship an toàn cho người dùng khác. Repo giữ cách routing cũ: bảng dispatch, Delegator, chọn 1-3 skill từ `skills/INDEX.md`.
@@ -181,7 +181,7 @@ Goal: the shipped catalog matches the live system exactly, with nothing the live
 - `task-planner` routing in `specialized-coord.md` and `specialized-lead.md` now follows the generalist doctrine.
 
 #### Security (sync 2026-10-07)
-- **A hardcoded third-party API credential was removed** from the stray `skills/pinecone_upsert.py`. The upsert script now reads `PINECONE_API_KEY` and `PINECONE_INDEX` from the environment only. It lives at `skills/save-state/pinecone_upsert.py`, where `scripts/save-state.py` already expected it. The old credential remains in git history, so **rotate it at the provider**; deleting the file is not enough.
+- **A hardcoded third-party API credential was removed** from the stray `skills/pinecone_upsert.py`. The upsert script now reads `PINECONE_API_KEY` and `PINECONE_INDEX` from the environment only. It lives at `skills/save-state/pinecone_upsert.py`, where `scripts/save-state.py` already expected it. The old credential was purged from all git history (history rewrite on 2026-10-08).
 
 #### Deliberately NOT published in this wave
 - **The skill router / granularity gate (Jev).** It needs a third-party API key and operator-specific routing data, so there is no safe way to ship it to other users. The repo keeps its current routing: the dispatch table, the Delegator, and picking 1-3 skills from `skills/INDEX.md`.
