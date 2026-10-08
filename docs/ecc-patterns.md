@@ -9,7 +9,7 @@ metadata:
 
 # ECC Pattern Library
 
-Patterns extracted from the everything-claude-code system (60 agents, 230 skills, 9-platform cross-harness). Filtered for relevance to the Tekki system. Source code analyzed, not just documentation.
+Patterns extracted from the everything-claude-code system (60 agents, 230 skills, 9-platform cross-harness). Filtered for relevance to the operator's system. Source code analyzed, not just documentation.
 
 ## Tier 2 — Adopt with Modification
 
@@ -69,7 +69,7 @@ Explicit decision table (not implicit agent frontmatter):
 
 Define pass/fail criteria BEFORE coding. Metrics: pass@k (any of k attempts succeeds) vs pass^k (all k must succeed). Targets: pass@3 > 90% for capability evals, pass^1 for release-critical. Storage: `.claude/evals/` with cases.jsonl, eval.sh, baseline.json.
 
-**Our gap:** QA dept and gstack eval system exist but no formal eval framework for Tekki-authored skills.
+**Our gap:** QA dept and gstack eval system exist but no formal eval framework for operator-authored skills.
 
 **When to consult:** When authoring a new skill with non-trivial branching logic.
 

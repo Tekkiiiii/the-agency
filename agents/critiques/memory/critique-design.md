@@ -15,7 +15,7 @@ Format:
 - Read this file before issuing any critique findings on marketing assets, social media, or brand materials.
 - Key standards to grep: 8-point grid, 60-30-10 color rule, WCAG 4.5:1 contrast, 3-second rule, F/Z scan patterns, CTA specs (44px touch target, 24px breathing room), carousel format (1080x1080/1350, 20% text max, 6-slide structure).
 - QA checklist in design-quality-principles.md § 9 is the pass/fail gate. Visual Hierarchy / Color / Typography failures are HIGH blockers — do not approve assets that fail these.
-- Source: NotebookLM research, 33 sources (IxDF, NNG, HubSpot, Unbounce, Material Design, Hootsuite). Notebook: de662c4c-10bd-4225-b9bd-8fb9efb675a2
+- Source: NotebookLM research, 33 sources (IxDF, NNG, HubSpot, Unbounce, Material Design, Hootsuite); notebook is private and not published
 
 ---
 

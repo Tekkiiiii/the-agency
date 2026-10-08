@@ -266,6 +266,15 @@ jobs:
       - name: Assert PowerShell and cmd sources are ASCII-only
         run: node .github/scripts/check-ps1-ascii.js
 
+      # Nothing private ships: no NotebookLM notebook IDs, real e-mail addresses,
+      # /Users/<name> paths, pcsk_/sk-ant- keys or C4 personal terms in any tracked
+      # file. Justified hits are listed in .github/scripts/privacy-allowlist.txt.
+      # The self-test plants each kind of leak in a throwaway repo and must catch it.
+      - name: Assert no private data is tracked (NotebookLM IDs, emails, user paths, keys, personal terms)
+        run: |
+          node .github/scripts/check-privacy.js --self-test
+          node .github/scripts/check-privacy.js
+
       # agents/scripts/lint-agents.sh used to scan only 6 hand-listed directories
       # (and printed "No agent files found" from the repo root). It now derives
       # the department list from agents/*/INDEX.md, so a new department or agent
@@ -735,6 +744,15 @@ jobs:
       # parse checks and the full install.ps1 / rescue.ps1 runs are all blocking.
       - name: Assert PowerShell and cmd sources are ASCII-only
         run: node .github/scripts/check-ps1-ascii.js
+
+      # Nothing private ships: no NotebookLM notebook IDs, real e-mail addresses,
+      # /Users/<name> paths, pcsk_/sk-ant- keys or C4 personal terms in any tracked
+      # file. Justified hits are listed in .github/scripts/privacy-allowlist.txt.
+      # The self-test plants each kind of leak in a throwaway repo and must catch it.
+      - name: Assert no private data is tracked (NotebookLM IDs, emails, user paths, keys, personal terms)
+        run: |
+          node .github/scripts/check-privacy.js --self-test
+          node .github/scripts/check-privacy.js
 
       - name: Assert every tracked *.ps1 parses under Windows PowerShell 5.1
         shell: powershell

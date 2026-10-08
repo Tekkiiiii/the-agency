@@ -1,0 +1,31 @@
+# privacy-allowlist.txt - justified hits for .github/scripts/check-privacy.js.
+#
+# Format (one entry per line, fields separated by " | "):
+#   rule | path-glob | line-regex (or - for any line) | one-line justification
+# rule is notebook|email|userpath|key|term or * for all. Path globs are repo-relative;
+# "*" stays inside a path segment, "**" crosses segments. Keep every entry as narrow
+# as it can be: a path AND a line regex whenever the hit is a single known line.
+# A new entry needs a real justification, not "it was already there".
+
+# The check defines the terms it looks for; the changelog documents their removal.
+term | .github/scripts/check-privacy.js | - | defines the C4 term list and self-test plants
+email | .github/scripts/check-privacy.js | jane\.doe@gmail\.com | self-test plant (fictional address)
+userpath | .github/scripts/check-privacy.js | /Users/janedoe | self-test plant (fictional path)
+term | CHANGELOG.md | - | release notes name what was purged from the tree (the removal itself is the record)
+userpath | CHANGELOG.md | /Users/Tekki | release notes quote the personal path that was removed from five files
+
+# Class D ruling (SYNC-BRIEF C4): existing prose in these two trees is exempt and untouched.
+# New personal lines must not be added there; this only grandfathers the current text.
+term | core/memory/lessons/** | - | Class D: grandfathered lessons prose, exempt from the C4 term rule
+term | agents/critiques/memory/** | - | Class D: grandfathered critique memory, exempt from the C4 term rule
+
+# Illustrative sample data in shipped docs - none of these is a real person.
+userpath | cli/lib/hooks-merge.js | John Smith | code comment: example Windows path with a space in the user name
+email | agents-archive/**/identity-graph-operator.md | wsmith@acme\.com | archived role file: fictional sample record (acme.com)
+email | skills/browse/SKILL.md | user@test\.com | browse skill: generic form-fill example
+email | skills/feedback-pipeline/SKILL.md | x@y\.com | feedback-pipeline: generic placeholder address
+email | skills/postgresql-schema/SKILL.md | password@ep-xxx | postgresql-schema: masked Neon connection-string template
+
+# This file quotes the personal path/term it grandfathers.
+term | .github/scripts/privacy-allowlist.txt | - | entries above name the terms they exempt
+userpath | .github/scripts/privacy-allowlist.txt | - | entries above name the paths they exempt

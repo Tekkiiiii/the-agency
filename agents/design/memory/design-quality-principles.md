@@ -1,7 +1,7 @@
 # Design Quality Principles — Agency Reference
 
 **Source:** NotebookLM research (33 sources: IxDF, NNG, HubSpot, Unbounce, Material Design, Hootsuite + internal synthesis)
-**Notebook ID:** de662c4c-10bd-4225-b9bd-8fb9efb675a2
+**Research notebook:** private NotebookLM notebook (not published; sources listed above)
 **Produced:** 2026-06-12 by PD-overseer
 **Integrated:** 2026-06-12 by PD-system-improvement
 **Audience:** critique-design, critique-brand, design agents, ad copywriters, social content creators
