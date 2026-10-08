@@ -885,7 +885,7 @@ Council members:
 | Engineering Lead | engineering-lead | Engineering |
 | Design Lead | design-lead | Design |
 | Chief Content Officer | content-creation-lead | Content Creation |
-| Project Management Lead | pm-lead | Project Management |
+| Project Management Lead | project-management-lead | Project Management |
 | Testing Lead | testing-lead | Testing |
 | Specialized Agents Lead | specialized-lead | Specialized |
 | Curmudgeon-in-Chief | critiques-lead | Critiques |
@@ -904,7 +904,7 @@ Council members:
 1. Use TeamCreate to create a team named "agency-council"
 2. Spawn leaders in TWO WAVES (race-condition prevention):
    Wave 1 (4): engineering-lead, design-lead, content-creation-lead,
-               pm-lead
+               project-management-lead
    Wave 2 (4): testing-lead, specialized-lead, critiques-lead,
                video-studio-lead
    Wait ~30s for Wave 1 before spawning Wave 2.
