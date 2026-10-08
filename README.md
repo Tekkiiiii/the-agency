@@ -25,16 +25,18 @@ agency init                   # full quality gates
 ## Install in 60 Seconds
 
 ```bash
-git clone https://github.com/Tekkiiiii/the-agency.git ~/.claude
+# Clone anywhere except ~/.claude (that folder already exists if you use Claude Code)
+git clone https://github.com/Tekkiiiii/the-agency.git ~/the-agency
+cd ~/the-agency
 
 # macOS / Linux
-cd ~/.claude && ./install.sh
+bash install.sh
 
 # Windows (PowerShell)
-cd $HOME\.claude; .\install.ps1
+.\install.ps1
 ```
 
-That's it. The skills and agents are live in `~/.claude/`, and the `agency` command is added to your PATH. Open Claude Code and they're ready.
+That's it. The skills and agents are synced into your Claude Code config directory (`~/.claude/` by default), and the `agency` command is added to your PATH. Open Claude Code and they're ready. The installer prints a `Sync root:` line naming the directory it used. Keep the clone: `agency upgrade` pulls it and re-syncs.
 
 ```bash
 agency onboard                        # Interactive setup wizard (start here)
@@ -133,18 +135,20 @@ PD:   All three workstreams complete. QA gate passed.
 
 ## Installation
 
-Clone directly into `~/.claude/` — the Claude Code configuration directory. On Windows, this is `%USERPROFILE%\.claude\`. The repo becomes your config directory.
+Clone the repo anywhere **except** your Claude Code configuration directory, then run the installer from the clone. The installer syncs skills, agents, hooks and core docs *into* the configuration directory (the "root"). On Windows the default root is `%USERPROFILE%\.claude\`. Cloning straight into `~/.claude` fails for anyone who already uses Claude Code, because that folder already exists.
 
 ```bash
-git clone https://github.com/Tekkiiiii/the-agency.git ~/.claude
-cd ~/.claude
+git clone https://github.com/Tekkiiiii/the-agency.git ~/the-agency
+cd ~/the-agency
 ```
 
 | Platform | Command | Requirements |
 |----------|---------|-------------|
-| macOS / Linux | `./install.sh` | bash |
+| macOS / Linux | `bash install.sh` | bash |
 | Windows | `.\install.ps1` | PowerShell |
 | Any (Node.js) | `node cli/bin/agency.js init` | Node.js 18+ |
+
+The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. The installer prints it as `Sync root: <path> (from <source>)` and warns when it fell back to the default and found no `settings.json` there, so you notice a config folder that lives elsewhere. Skills, agents and memory the agency does not ship are left alone, and the agency hooks are merged into `settings.json` without touching hooks you already have (a backup is written next to it).
 
 **What gets installed:**
 
@@ -219,12 +223,14 @@ This is a complete run-through from clone to shipped feature, using a real proje
 ### Part 1: Install
 
 ```bash
-# Clone into ~/.claude — this IS the Claude Code config directory
-git clone https://github.com/Tekkiiiii/the-agency.git ~/.claude
-cd ~/.claude
+# Clone next to your Claude Code config, not into it (~/.claude already exists)
+git clone https://github.com/Tekkiiiii/the-agency.git ~/the-agency
+cd ~/the-agency
 
-# One command sets everything up: checks prerequisites, installs all
-# skills and agents, creates ~/.agency/, and walks you through first project
+# Sync skills, agents and hooks into your Claude Code root and put `agency` on PATH
+bash install.sh        # Windows: .\install.ps1
+
+# Guided setup: checks prerequisites and walks you through your first project
 agency onboard
 ```
 

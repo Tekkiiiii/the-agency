@@ -8,19 +8,30 @@
 
 ## 1. Clone the repo
 
+Clone it **next to** your Claude Code config, not into it. `~/.claude` already exists
+for anyone who has used Claude Code, so `git clone ... ~/.claude` fails there.
+
 ```bash
-git clone https://github.com/the-agency/the-agency.git
-cd the-agency
+git clone https://github.com/Tekkiiiii/the-agency.git ~/the-agency
+cd ~/the-agency
 ```
 
 ## 2. Install
 
 ```bash
-agency init
+bash install.sh      # macOS / Linux
+.\install.ps1        # Windows (PowerShell)
 ```
 
-Creates directories, installs all skills + agent templates, sets up the task store,
-and links the `agency` CLI to your PATH.
+The installer syncs skills, agents, hooks and core docs from the clone into your Claude
+Code root and links the `agency` CLI to your PATH. The root is `$AGENCY_HOME` if set,
+else `$CLAUDE_CONFIG_DIR`, else `~/.claude`; the installer prints a `Sync root:` line
+saying which one it picked, so check it names your real config directory. Skills,
+agents and memory the agency does not ship are left alone, and the agency hooks are merged into
+`settings.json` without touching hooks you already have (a backup is written next to
+it). Keep the clone: `agency upgrade` pulls it and re-syncs.
+
+No bash or PowerShell? `node cli/bin/agency.js init` does the same sync from Node.
 
 ## 3. Get oriented (optional)
 
@@ -102,11 +113,8 @@ It is optional but strongly recommended — without it, Curator falls back to ra
 bash ~/.claude/scripts/setup-graphify.sh
 ```
 
-Or, if you cloned the-agency to `~/.claude/`:
-
-```bash
-bash ~/.claude/scripts/setup-graphify.sh
-```
+The installer copies `scripts/` into your root, so this path works wherever you
+cloned the repo. With a custom root, use `$AGENCY_HOME/scripts/setup-graphify.sh`.
 
 **Package name gotcha:** the PyPI package is `graphifyy` (double-y). `uv tool install graphify`
 (single-y) fails silently. The script handles this correctly — do not install manually.

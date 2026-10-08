@@ -18,7 +18,7 @@ npx @the-agency/cli init
 
 ### `agency init`
 
-Initialize the agency system. Creates `~/.claude/`.
+Initialize the agency system: syncs skills, agents, core docs and hooks into your Claude Code root (`$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`).
 
 ```bash
 agency init

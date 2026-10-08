@@ -183,9 +183,11 @@ if (-not $RepoDir) {
     Write-Host "            $(Join-Path $env:USERPROFILE 'the-agency')"
     Write-Host "            $(Join-Path $env:USERPROFILE '.agency\the-agency')"
     Write-Host ""
-    Write-Host "  Clone it, then run the installer:"
-    Write-Host "    git clone https://github.com/Tekkiiiii/the-agency.git `"$AgencyRoot`""
-    Write-Host "    cd `"$AgencyRoot`"; .\install.ps1"
+    $CloneDir = Join-Path $env:USERPROFILE 'the-agency'
+    Write-Host "  Clone it somewhere other than your Claude Code config folder, then run the installer"
+    Write-Host "  (it syncs into $AgencyRoot):"
+    Write-Host "    git clone https://github.com/Tekkiiiii/the-agency.git `"$CloneDir`""
+    Write-Host "    cd `"$CloneDir`"; .\install.ps1"
     exit 1
 }
 
