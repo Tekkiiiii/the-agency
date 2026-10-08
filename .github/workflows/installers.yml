@@ -266,6 +266,13 @@ jobs:
       - name: Assert PowerShell and cmd sources are ASCII-only
         run: node .github/scripts/check-ps1-ascii.js
 
+      # agents/scripts/lint-agents.sh used to scan only 6 hand-listed directories
+      # (and printed "No agent files found" from the repo root). It now derives
+      # the department list from agents/*/INDEX.md, so a new department or agent
+      # with broken frontmatter fails here instead of shipping.
+      - name: Assert every agent definition has valid frontmatter (all departments)
+        run: bash agents/scripts/lint-agents.sh
+
   install-ps1:
     name: install.ps1 (windows)
     runs-on: windows-latest
