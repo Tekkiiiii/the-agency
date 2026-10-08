@@ -1,0 +1,927 @@
+{
+ "version": 1,
+ "domains": {
+  "frontend-ui": "Writing web UI code: pages, React/Next components, CSS/Tailwind, shadcn/Cult/Material 3 libraries, htmx, accessibility. NOT aesthetic direction, restyling or design critique (design-visual) and NOT backend/APIs (backend-infra-deploy).",
+  "design-visual": "Visual design direction and review: aesthetic style systems, design-token extraction, redesigns, UI/design critique, mockup variants, brand kits, logos, posters. NOT writing production UI code (frontend-ui) and NOT AI image prompting (image-gen).",
+  "image-gen": "AI still-image generation: image prompts, GPT-Image prompt libraries, image-direction references for web/mobile screens. NOT video prompts or rendering (video-audio) and NOT HTML/CSS graphics (design-visual).",
+  "backend-infra-deploy": "Server-side and ops: APIs, databases/SQL schemas, auth, webhooks, MCP servers, n8n, cloud cost, observability, deploys to Vercel/Railway/Supabase/GitHub, ship/merge/release flow. NOT testing, debugging or code review (code-quality-testing).",
+  "code-quality-testing": "Verifying and fixing code: QA/testing, debugging and root cause, code review (requesting/receiving), security audits, performance and health checks, benchmarks. NOT building features (frontend-ui, backend-infra-deploy), reviewing plans (planning-strategy-review) or explaining how code works (research).",
+  "browser-web-data": "Driving a browser and pulling data from the web: headless or real-browser automation, scraping, crawling, screenshots, cookies, browser skills. NOT open-ended topic research (research) and NOT QA fix/health verdicts (code-quality-testing).",
+  "writing-en": "English prose craft: de-AI humanizing, proofreading, plain-English and developer docs/READMEs, copy critique, one-pass polish. NOT persuasive marketing copy (marketing-growth-seo) and NOT Vietnamese text (writing-vi).",
+  "writing-vi": "Vietnamese-language text work: humanizing, grammar checking, translationese cleanup, VN style guide, VN factual reference. NOT English writing (writing-en).",
+  "marketing-growth-seo": "Marketing and growth: persuasive copy, ads, social posts, content strategy/calendars, blog and SEO/GEO/AEO, marketing assessments, lead funnels, feedback routing. NOT neutral docs (writing-en) and NOT video/image production.",
+  "video-audio": "Video and audio production: HyperFrames compositions and animation adapters (GSAP, Lottie, Three, anime.js, CSS, WAAPI), Remotion, ffmpeg, subtitles, music, narration scripts, video prompts. NOT still-image generation (image-gen).",
+  "decks-docs-reports-charts": "Presentation and document artifacts: slide decks, HTML plans/reports, PDFs, charts, diagrams, spreadsheets, file-to-markdown conversion. NOT writing prose content (writing-en) and NOT Google Docs/Sheets/Slides API operations (google-workspace).",
+  "planning-strategy-review": "Thinking, planning and reviewing around building: idea refinement, brainstorming, plans, decision stress-testing, migration/deprecation planning, CEO/eng/design/devex plan reviews, strategy, product/ops/workflow critique, contract review, quality loops, OpenSpec, end-to-end feature pipelines. NOT writing the code itself.",
+  "google-workspace": "Anything done through the gws CLI on Gmail, Calendar, Drive, Docs, Sheets, Slides, Forms, Chat, Meet, Tasks, Keep, Contacts, Classroom and Apps Script. NOT local .xlsx/.pptx files (decks-docs-reports-charts).",
+  "claude-system-ops": "Operating the Claude Code agency itself: spawning/handoff, context and session save, project status briefings and PD swarm checks (recall, swarm), lessons and memory upkeep, skill creation/import/quality and rewriting skill front-matter descriptions, task DB, safety guardrails, prompt engineering, Claude Code harness config (settings.json hooks, permissions, keybindings) and Claude Code mods (panes, bands, status lines). NOT product work for a client project.",
+  "research": "Gathering and synthesizing information: web and social research, briefings, in-depth research pipelines, codebase knowledge graphs, NotebookLM notebooks. NOT driving a browser or scraping (browser-web-data) and NOT project status briefings (claude-system-ops).",
+  "career-personal": "Job search and personal career work: scoring job offers, ATS CVs, cover letters, interview prep, application tracking. NOT general writing (writing-en)."
+ },
+ "skills": {
+  "admin-shell-foundation": {
+   "domain": "frontend-ui"
+  },
+  "agent-browser": {
+   "domain": "browser-web-data",
+   "hint": "Use for headless automation and QA with health scores; not for the user's real Chrome (browser-harness) or light data fetch (lightpanda)."
+  },
+  "agent-dispatch": {
+   "exclude": "internal",
+   "why": "Main-session/PD routing procedure (act directly vs delegate, spawn choice); loaded via the CLAUDE.md on-demand table, no Exec task loads it"
+  },
+  "agents-sdk": {
+   "domain": "backend-infra-deploy"
+  },
+  "animejs": {
+   "domain": "video-audio"
+  },
+  "auto-researcher": {
+   "domain": "research",
+   "hint": "Use for quick proactive WEB research with sourced evidence; not for project status (recall); for multi-stage in-depth research use pipeline-research."
+  },
+  "autoplan": {
+   "domain": "planning-strategy-review"
+  },
+  "awesome-design-md": {
+   "domain": "design-visual"
+  },
+  "backend": {
+   "domain": "backend-infra-deploy"
+  },
+  "backend-critique": {
+   "domain": "backend-infra-deploy"
+  },
+  "benchmark": {
+   "domain": "code-quality-testing"
+  },
+  "benchmark-models": {
+   "domain": "code-quality-testing"
+  },
+  "better-auth-best-practices": {
+   "domain": "backend-infra-deploy"
+  },
+  "better-auth-organization": {
+   "domain": "backend-infra-deploy"
+  },
+  "better-auth-two-factor": {
+   "domain": "backend-infra-deploy"
+  },
+  "brandkit": {
+   "domain": "design-visual"
+  },
+  "browse": {
+   "domain": "browser-web-data",
+   "hint": "Use for headless QA/dogfooding of LIVE sites with screenshots; not report-only QA gates (qa-only), local-app capture (webapp-testing), scraping or the user's real Chrome.",
+   "also_domains": [
+    "code-quality-testing"
+   ]
+  },
+  "browser-domain-skills": {
+   "domain": "browser-web-data"
+  },
+  "browser-harness": {
+   "domain": "browser-web-data",
+   "hint": "Use when automation needs the user's real Chrome with sessions/cookies; not for isolated headless runs (agent-browser, browse)."
+  },
+  "canary": {
+   "domain": "backend-infra-deploy"
+  },
+  "career-ops": {
+   "domain": "career-personal"
+  },
+  "careful": {
+   "domain": "claude-system-ops"
+  },
+  "cc-loop": {
+   "domain": "planning-strategy-review",
+   "hint": "Use to iterate a deliverable to a quality bar with parallel critics; for one polish pass use content-polish."
+  },
+  "cli-anything": {
+   "domain": "claude-system-ops"
+  },
+  "codex": {
+   "domain": "code-quality-testing"
+  },
+  "connect-chrome": {
+   "exclude": "renamed",
+   "why": "Alias of open-gstack-browser (frontmatter name = open-gstack-browser); route to the real dir"
+  },
+  "content-creator": {
+   "domain": "marketing-growth-seo",
+   "hint": "Use to draft conversion-focused ads, social posts, hooks and scripts; not for long-form strategy (content-strategy) or SEO audits."
+  },
+  "content-critique": {
+   "domain": "writing-en",
+   "hint": "Use to review/audit existing copy with a severity report (never rewrites); to fix prose use humanizer, stop-slop or content-polish."
+  },
+  "content-experimentation-best-practices": {
+   "domain": "marketing-growth-seo"
+  },
+  "content-modeling-best-practices": {
+   "domain": "backend-infra-deploy"
+  },
+  "content-polish": {
+   "domain": "writing-en",
+   "hint": "Use for a one-pass publish-ready polish of EN or VI drafts (humanize + proofread); not for a single narrow edit (use humanizer or proofreader alone).",
+   "also_domains": [
+    "writing-vi"
+   ]
+  },
+  "content-strategy": {
+   "domain": "marketing-growth-seo"
+  },
+  "context-mode": {
+   "domain": "claude-system-ops"
+  },
+  "context-pressure": {
+   "exclude": "internal",
+   "why": "Agent context-% lifecycle procedure (save-state/respawn at 75/80%); triggered by CONTEXT_PCT_ALERT, no Exec task loads it"
+  },
+  "context-restore": {
+   "domain": "claude-system-ops"
+  },
+  "context-save": {
+   "domain": "claude-system-ops"
+  },
+  "coord-respawn-self": {
+   "exclude": "internal",
+   "why": "Coord self-respawn at context 80% mid-L3; invoked by the Coord itself, never an Exec skill"
+  },
+  "copywriting": {
+   "domain": "marketing-growth-seo",
+   "hint": "Use to write/improve persuasive marketing copy (landing pages, ads, emails); not for neutral docs (tech-writer) or social post drafting (content-creator)."
+  },
+  "cover-letter-gen": {
+   "domain": "career-personal"
+  },
+  "cso": {
+   "domain": "code-quality-testing",
+   "hint": "Use for infra-first security audits (secrets, supply chain, CI/CD, STRIDE); not for a code-level OWASP pass (security, security-critique)."
+  },
+  "css-animations": {
+   "domain": "video-audio"
+  },
+  "cult-ui": {
+   "domain": "frontend-ui"
+  },
+  "deck-narrative": {
+   "domain": "decks-docs-reports-charts",
+   "hint": "Use to review/fix a deck's argument and action titles; not to build or style a deck (co-load a deck skill)."
+  },
+  "delegate": {
+   "domain": "claude-system-ops",
+   "hint": "Use to hand a task to a subagent with full context snapshot; not to spawn another PD (pd-spawn) or hand off between agents (task-handoff)."
+  },
+  "dept-resume": {
+   "exclude": "internal",
+   "why": "Department session-start lifecycle command; no Exec task loads it"
+  },
+  "dept-save-state": {
+   "exclude": "renamed",
+   "why": "Renamed to dept-wrap (skills/INDEX.md: \"RENAMED -> use dept-wrap\"); dept-wrap SKILL.md says renamed from it"
+  },
+  "dept-status": {
+   "domain": "claude-system-ops"
+  },
+  "dept-wrap": {
+   "exclude": "internal",
+   "why": "Department session-end lifecycle command; no Exec task loads it"
+  },
+  "design-consultation": {
+   "domain": "design-visual"
+  },
+  "design-critique": {
+   "domain": "design-visual",
+   "hint": "Use to critique a UI/design from screenshots or Figma; not for live-site visual QA (design-review) or reviewing a plan (plan-design-review)."
+  },
+  "design-html": {
+   "domain": "frontend-ui"
+  },
+  "design-review": {
+   "domain": "design-visual",
+   "hint": "Use for live-site visual QA (spacing, hierarchy, AI-slop); not for screenshot/Figma critique (design-critique) or plan review (plan-design-review)."
+  },
+  "design-shotgun": {
+   "domain": "design-visual"
+  },
+  "design-taste-frontend": {
+   "domain": "design-visual",
+   "hint": "Use for anti-slop landing pages/portfolios with strong visual direction; not for plain component building (frontend) or UI audits (impeccable)."
+  },
+  "devex-review": {
+   "domain": "code-quality-testing"
+  },
+  "document-release": {
+   "domain": "backend-infra-deploy"
+  },
+  "emil-design-eng": {
+   "domain": "frontend-ui"
+  },
+  "excalidraw-diagram": {
+   "domain": "decks-docs-reports-charts",
+   "hint": "Use for Excalidraw JSON diagrams that make a visual argument; not for data charts or formal diagrams."
+  },
+  "extract-design": {
+   "domain": "design-visual",
+   "hint": "Use to pull design tokens/colors/fonts from a URL; not for component/motion/structure analysis."
+  },
+  "feedback-pipeline": {
+   "domain": "marketing-growth-seo"
+  },
+  "ffmpeg": {
+   "domain": "video-audio",
+   "hint": "Use as FFmpeg/FFprobe command reference for media ops; not for conversational editing (video-use)."
+  },
+  "figma-ui-ux-consistency": {
+   "domain": "design-visual"
+  },
+  "finops": {
+   "domain": "backend-infra-deploy"
+  },
+  "firecrawl-agent": {
+   "domain": "browser-web-data",
+   "hint": "Use for autonomous structured web extraction; not for known single URLs (firecrawl-scrape) or link crawls (firecrawl-crawl)."
+  },
+  "firecrawl-crawl": {
+   "domain": "browser-web-data",
+   "hint": "Use to bulk-extract a site by following links; not for single-URL scrapes (firecrawl-scrape)."
+  },
+  "firecrawl-scrape": {
+   "domain": "browser-web-data",
+   "hint": "Use to scrape specific URLs to markdown via Firecrawl; not for whole-site crawls (firecrawl-crawl) or autonomous extraction (firecrawl-agent)."
+  },
+  "freeze": {
+   "domain": "claude-system-ops"
+  },
+  "frontend": {
+   "domain": "frontend-ui",
+   "hint": "Use to BUILD a frontend UI/component from scratch; not for restyling/critique passes (impeccable) or bold visual direction (design-taste-frontend)."
+  },
+  "full-output-enforcement": {
+   "domain": "claude-system-ops"
+  },
+  "github-deploy": {
+   "domain": "backend-infra-deploy",
+   "hint": "Use to scaffold GitHub Actions deploy workflows and secrets; not for Vercel/Railway CLI deploys."
+  },
+  "gpt-image-prompts": {
+   "domain": "image-gen"
+  },
+  "gpt-taste": {
+   "domain": "design-visual"
+  },
+  "grammar-checker-vi": {
+   "domain": "writing-vi",
+   "hint": "Use to proofread Vietnamese spelling/punctuation/grammar; not to restyle (humanizer-vi) or fix translationese (translationese-cleaner-vi)."
+  },
+  "graphify": {
+   "domain": "research"
+  },
+  "gsap": {
+   "domain": "video-audio"
+  },
+  "guard": {
+   "domain": "claude-system-ops"
+  },
+  "gws": {
+   "domain": "google-workspace",
+   "hint": "Use to pick the right Google Workspace service skill or run multi-service gws work; for one service operation use that gws-* skill directly."
+  },
+  "gws-chat": {
+   "domain": "google-workspace"
+  },
+  "gws-forms": {
+   "domain": "google-workspace"
+  },
+  "gws-slides": {
+   "domain": "google-workspace"
+  },
+  "gws-tasks": {
+   "domain": "google-workspace"
+  },
+  "health": {
+   "domain": "code-quality-testing"
+  },
+  "high-end-visual-design": {
+   "domain": "design-visual"
+  },
+  "html-plan-style": {
+   "domain": "decks-docs-reports-charts",
+   "hint": "Use for ANY HTML page made for human review: plans, reports, ADRs, digests, sampler or comparison pages; not for slide decks (marp, strategic-deck).",
+   "also_domains": [
+    "frontend-ui"
+   ]
+  },
+  "huashu-design": {
+   "domain": "design-visual"
+  },
+  "humanizer": {
+   "domain": "writing-en",
+   "hint": "Use to rewrite EN AI-sounding prose, tuned to doc type (CV/blog/email); not Vietnamese (humanizer-vi) or rubric scoring (stop-slop)."
+  },
+  "humanizer-vi": {
+   "domain": "writing-vi",
+   "hint": "Use to edit mechanical/monotone Vietnamese; not for grammar-only fixes (grammar-checker-vi) or English-calqued text (translationese-cleaner-vi)."
+  },
+  "humanizer-writing": {
+   "domain": "writing-en",
+   "hint": "Use when drafting/editing EN prose to avoid AI tells (alias /hw); not Vietnamese (humanizer-vi) or full proofreading (proofreader)."
+  },
+  "hw": {
+   "exclude": "meta",
+   "why": "Pure /hw shortcut that invokes humanizer-writing; route to humanizer-writing instead"
+  },
+  "hyperframes": {
+   "domain": "video-audio",
+   "hint": "Mandatory entry point for any HyperFrames video; then load the specific hyperframes-* or adapter skill."
+  },
+  "hyperframes-cli": {
+   "domain": "video-audio"
+  },
+  "hyperframes-media": {
+   "domain": "video-audio",
+   "hint": "TTS narration (Kokoro), transcription (Whisper) and background removal for HyperFrames assets; does not clone voices or dub video."
+  },
+  "hyperframes-registry": {
+   "domain": "video-audio"
+  },
+  "image-prompt-engineer": {
+   "domain": "image-gen",
+   "hint": "Use to write/debug still-image generation prompts; not for video prompts or for driving an image tool."
+  },
+  "image-to-code": {
+   "domain": "frontend-ui",
+   "hint": "Use to generate a design image first and then build the site from it; not for plain frontend builds without an image step (frontend)."
+  },
+  "imagegen-frontend-mobile": {
+   "domain": "image-gen"
+  },
+  "imagegen-frontend-web": {
+   "domain": "image-gen"
+  },
+  "impeccable": {
+   "domain": "design-visual",
+   "hint": "Use to redesign, critique, polish or harden an existing frontend UI; not to build from scratch (frontend) or for backend-only work."
+  },
+  "inbound-sales": {
+   "domain": "marketing-growth-seo"
+  },
+  "inbox-tasks": {
+   "exclude": "internal",
+   "why": "Main-session rule for where an ownerless task's tracking file lives; filing plumbing, no Exec task loads it"
+  },
+  "industrial-brutalist-ui": {
+   "domain": "design-visual"
+  },
+  "investigate": {
+   "domain": "code-quality-testing",
+   "hint": "Use to debug with root-cause phases (gstack); same discipline as superpowers-systematic-debugging; not for runtime-failure triage (self-healing)."
+  },
+  "land-and-deploy": {
+   "domain": "backend-infra-deploy",
+   "hint": "Use to merge the PR, wait for CI/deploy and verify prod; for first-time config use setup-deploy, for the full flow use pipeline-deploy."
+  },
+  "landing-report": {
+   "domain": "claude-system-ops"
+  },
+  "laravel-builder": {
+   "domain": "backend-infra-deploy"
+  },
+  "learn": {
+   "domain": "claude-system-ops"
+  },
+  "legal-contract-review": {
+   "domain": "planning-strategy-review"
+  },
+  "lessons-sync": {
+   "domain": "claude-system-ops",
+   "hint": "Use to copy new root lessons into projects at session boundaries; not to curate or dedup them."
+  },
+  "lightpanda": {
+   "domain": "browser-web-data",
+   "hint": "Use for fast, light browsing/data retrieval without rendering; not for screenshots or visual checks (browse, agent-browser)."
+  },
+  "lint-memory": {
+   "domain": "claude-system-ops"
+  },
+  "lottie": {
+   "domain": "video-audio"
+  },
+  "make-pdf": {
+   "domain": "decks-docs-reports-charts",
+   "hint": "Use to turn a markdown file into a finished PDF; not for building slides (marp) or HTML decks."
+  },
+  "marketing-critique": {
+   "domain": "marketing-growth-seo"
+  },
+  "markitdown": {
+   "domain": "decks-docs-reports-charts"
+  },
+  "marp": {
+   "domain": "decks-docs-reports-charts",
+   "hint": "Use for Markdown-to-slides via Marp (PDF/PPTX/HTML); not for HTML plans (html-plan-style) or the 25-30 slide strategic deck (strategic-deck)."
+  },
+  "material-3": {
+   "domain": "frontend-ui"
+  },
+  "mcp-builder": {
+   "domain": "backend-infra-deploy"
+  },
+  "memory-crosslink": {
+   "exclude": "internal",
+   "why": "Memory-file linking convention (See also: [[stem]] wikilinks) loaded via the CLAUDE.md on-demand table when editing memories; not a task skill"
+  },
+  "minimalist-ui": {
+   "domain": "design-visual"
+  },
+  "multi-role-auth": {
+   "domain": "backend-infra-deploy"
+  },
+  "musicgen": {
+   "domain": "video-audio"
+  },
+  "n8n-automation": {
+   "domain": "backend-infra-deploy"
+  },
+  "new-project": {
+   "domain": "claude-system-ops"
+  },
+  "next-best-practices": {
+   "domain": "frontend-ui"
+  },
+  "next-cache-components": {
+   "domain": "frontend-ui"
+  },
+  "nexus-gatekeeper": {
+   "domain": "claude-system-ops",
+   "hint": "Use only to enforce a task-store gate that blocks a task until PASS is recorded; not for a one-off independent QA check (qa-only)."
+  },
+  "notebooklm-memory": {
+   "domain": "research"
+  },
+  "obsidian-vault": {
+   "domain": "claude-system-ops"
+  },
+  "office-hours": {
+   "domain": "planning-strategy-review"
+  },
+  "onboard": {
+   "domain": "claude-system-ops"
+  },
+  "open-gstack-browser": {
+   "domain": "browser-web-data",
+   "hint": "Use to launch the visible GStack Chromium with sidebar; not for headless automation (browse, agent-browser)."
+  },
+  "openspec-apply-change": {
+   "domain": "planning-strategy-review"
+  },
+  "openspec-archive-change": {
+   "domain": "planning-strategy-review"
+  },
+  "openspec-explore": {
+   "domain": "planning-strategy-review"
+  },
+  "openspec-propose": {
+   "domain": "planning-strategy-review"
+  },
+  "operations-critique": {
+   "domain": "backend-infra-deploy"
+  },
+  "pair-agent": {
+   "domain": "browser-web-data"
+  },
+  "pd-resume": {
+   "exclude": "internal",
+   "why": "Session-start lifecycle command run by parent/PD boot; no Exec task loads it"
+  },
+  "pd-routing": {
+   "exclude": "internal",
+   "why": "Main-session procedure for forwarding project work to a running PD or spawning one; no Exec task loads it"
+  },
+  "pd-showcase": {
+   "exclude": "internal",
+   "why": "Toggle for live-demo mode of pd-spawn/pd-resume; session switch, never an Exec task"
+  },
+  "pd-spawn": {
+   "domain": "claude-system-ops",
+   "hint": "Use for a PD to hand work to another Project Director; to hand a task to a subagent with context use delegate."
+  },
+  "pipeline-audit": {
+   "domain": "planning-strategy-review",
+   "hint": "Use for a full multi-critique audit of a whole system (pre-launch); not for a focused security audit (security, cso)."
+  },
+  "pipeline-bugfix": {
+   "domain": "code-quality-testing"
+  },
+  "pipeline-content": {
+   "domain": "marketing-growth-seo"
+  },
+  "pipeline-deploy": {
+   "domain": "backend-infra-deploy",
+   "hint": "Use for a verified deploy only (pre-checks, canary); not when the task also covers planning/building the feature (pipeline-feature)."
+  },
+  "pipeline-feature": {
+   "domain": "planning-strategy-review",
+   "hint": "Use for the full plan->critique->QA->ship->deploy flow of ONE feature end to end; not for deploy-only (pipeline-deploy) or a single stage."
+  },
+  "pipeline-onboard": {
+   "domain": "claude-system-ops"
+  },
+  "pipeline-research": {
+   "domain": "research",
+   "hint": "Use for in-depth multi-stage research (competitors, context); not for a quick lookup (auto-researcher)."
+  },
+  "pipeline-seo-geo-aeo": {
+   "domain": "marketing-growth-seo",
+   "hint": "Use for a standalone 7-stage SEO/GEO/AEO audit; not for on-page reference rules (seo-aeo-best-practices)."
+  },
+  "plan-ceo-review": {
+   "domain": "planning-strategy-review"
+  },
+  "plan-design-review": {
+   "domain": "planning-strategy-review",
+   "hint": "Use to rate a design PLAN on 0-10 dimensions before building; not to critique built UI (design-critique, design-review)."
+  },
+  "plan-devex-review": {
+   "domain": "planning-strategy-review"
+  },
+  "plan-eng-review": {
+   "domain": "planning-strategy-review"
+  },
+  "plan-tune": {
+   "domain": "claude-system-ops"
+  },
+  "postgresql-schema": {
+   "domain": "backend-infra-deploy"
+  },
+  "product-critique": {
+   "domain": "planning-strategy-review"
+  },
+  "project-expansion-scout": {
+   "domain": "claude-system-ops"
+  },
+  "project-status": {
+   "domain": "claude-system-ops"
+  },
+  "promt-engineering": {
+   "domain": "claude-system-ops"
+  },
+  "proofreader": {
+   "domain": "writing-en",
+   "hint": "Use to proofread typos/grammar/flow in EN, VI or mixed text; not to restyle or de-AI prose (humanizer, stop-slop)."
+  },
+  "qa": {
+   "domain": "code-quality-testing",
+   "hint": "Use to test a web app AND fix the bugs found; not for report-only health scores (qa-only)."
+  },
+  "qa-only": {
+   "domain": "code-quality-testing",
+   "hint": "Use for report-only QA with a 0-100 health score, never fixes; not when fixes are wanted (qa)."
+  },
+  "quality-loop-router": {
+   "domain": "planning-strategy-review",
+   "hint": "Use as the final step of a creative pipeline to choose Mode A loop or Mode B approval; not for the loop itself (cc-loop)."
+  },
+  "railway-deploy": {
+   "domain": "backend-infra-deploy",
+   "hint": "Use to deploy to Railway (link, env vars, logs, domain); not for Vercel, Supabase or GitHub Actions deploys."
+  },
+  "recall": {
+   "domain": "claude-system-ops",
+   "hint": "Use to brief on ONE project's current state and next steps from its memory files; not for web research (auto-researcher) or all projects at once (swarm)."
+  },
+  "receiving-code-review": {
+   "domain": "code-quality-testing",
+   "hint": "Use when acting on review feedback (verify, then implement item by item); not for performing or requesting a review (review, requesting-code-review)."
+  },
+  "redesign-existing-projects": {
+   "domain": "design-visual"
+  },
+  "refactor-module": {
+   "domain": "backend-infra-deploy"
+  },
+  "remotion-best-practices": {
+   "domain": "video-audio"
+  },
+  "remotion-to-hyperframes": {
+   "domain": "video-audio"
+  },
+  "requesting-code-review": {
+   "domain": "code-quality-testing",
+   "hint": "Use to dispatch a structured two-pass review before merge; not to review a diff directly (review, code-review) or act on feedback (receiving-code-review)."
+  },
+  "respawn-self": {
+   "exclude": "internal",
+   "why": "PD self-respawn at context >=80%; invoked by the PD itself, never chosen for an Exec task"
+  },
+  "resume-bod": {
+   "exclude": "internal",
+   "why": "Board/council session-restore command run by parent session; no Exec task loads it"
+  },
+  "retro": {
+   "domain": "planning-strategy-review"
+  },
+  "review": {
+   "domain": "code-quality-testing",
+   "hint": "Use for gstack pre-landing review of the branch diff; not to dispatch a structured review (requesting-code-review) or act on feedback (receiving-code-review)."
+  },
+  "room-manager": {
+   "exclude": "internal",
+   "why": "Background 10-min chat-room polling loop; infrastructure plumbing, not an Exec task skill"
+  },
+  "room-manager-digest": {
+   "exclude": "internal",
+   "why": "12h cron dept-room digest; infrastructure plumbing, not an Exec task skill"
+  },
+  "run-acceptance-tests": {
+   "domain": "backend-infra-deploy"
+  },
+  "sanity-best-practices": {
+   "domain": "backend-infra-deploy"
+  },
+  "save-state": {
+   "exclude": "internal",
+   "why": "Session-end lifecycle command; no Exec task loads it"
+  },
+  "scrape": {
+   "domain": "browser-web-data",
+   "hint": "Use to pull data from one page via the gstack browser; not for mutating flows (clicks/forms) or bulk crawls (firecrawl-crawl)."
+  },
+  "security": {
+   "domain": "code-quality-testing",
+   "hint": "Use when code touches auth, secrets, input or payments (OWASP checks with fixes); not for infra-wide audits (cso) or report-only reviews (security-critique)."
+  },
+  "security-critique": {
+   "domain": "code-quality-testing",
+   "hint": "Use for a report-only AppSec review with file:line citations (never rewrites); for fixes use security, for infra audit use cso."
+  },
+  "seed": {
+   "domain": "planning-strategy-review"
+  },
+  "self-healing": {
+   "domain": "code-quality-testing",
+   "hint": "Use when a script/build/command fails (two attempts, then escalate); for deep root-cause use superpowers-systematic-debugging."
+  },
+  "seo-aeo-best-practices": {
+   "domain": "marketing-growth-seo",
+   "hint": "Use as an SEO/GEO/AEO knowledge base while writing/fixing pages; for a full 7-stage audit use pipeline-seo-geo-aeo."
+  },
+  "setup-browser-cookies": {
+   "domain": "browser-web-data"
+  },
+  "setup-deploy": {
+   "domain": "backend-infra-deploy",
+   "hint": "Use to configure deploy settings before /land-and-deploy; not to run the deploy itself."
+  },
+  "setup-gbrain": {
+   "domain": "claude-system-ops"
+  },
+  "shadcn-ui": {
+   "domain": "frontend-ui"
+  },
+  "ship": {
+   "domain": "backend-infra-deploy",
+   "hint": "Use to run the ship workflow (merge base, tests, review, version bump, PR); not to merge/deploy (land-and-deploy)."
+  },
+  "simple-english": {
+   "domain": "writing-en",
+   "hint": "Use for plain/STE-style English docs for non-expert readers; not for general AI-tell cleanup (humanizer) or developer docs (tech-writer)."
+  },
+  "skill-creator": {
+   "domain": "claude-system-ops"
+  },
+  "skill-import": {
+   "domain": "claude-system-ops"
+  },
+  "skill-quality": {
+   "domain": "claude-system-ops"
+  },
+  "skill-tracker": {
+   "domain": "claude-system-ops"
+  },
+  "skillify": {
+   "domain": "browser-web-data"
+  },
+  "stitch-design-taste": {
+   "domain": "design-visual"
+  },
+  "stop-slop": {
+   "domain": "writing-en",
+   "hint": "Use to strip filler and AI tells with a 50-point rubric; not for full proofreading (proofreader) or Vietnamese (humanizer-vi)."
+  },
+  "strategic-deck": {
+   "domain": "decks-docs-reports-charts",
+   "hint": "Use for a 25-30 slide strategic pitch/audit deck (pptxgenjs); not for HTML plans or reports (html-plan-style), Marp slides (marp) or reviewing a deck's argument (deck-narrative)."
+  },
+  "style-guide-vi": {
+   "domain": "writing-vi",
+   "hint": "Use to enforce a consistent Vietnamese style guide (address terms, terminology, numbers/dates); not for grammar (grammar-checker-vi)."
+  },
+  "subtitle-burner": {
+   "domain": "video-audio",
+   "hint": "Use to burn karaoke-style captions into short vertical video; not for general video editing (video-use)."
+  },
+  "supabase-deploy": {
+   "domain": "backend-infra-deploy",
+   "hint": "Use to link Supabase, push migrations and deploy edge functions; not for app hosting (vercel-deploy, railway-deploy)."
+  },
+  "supabase-postgres-best-practices": {
+   "domain": "backend-infra-deploy"
+  },
+  "supabase-sql": {
+   "domain": "backend-infra-deploy"
+  },
+  "superpowers-brainstorming": {
+   "domain": "planning-strategy-review"
+  },
+  "superpowers-dispatching-parallel-agents": {
+   "domain": "claude-system-ops"
+  },
+  "superpowers-executing-plans": {
+   "domain": "planning-strategy-review"
+  },
+  "superpowers-finishing-a-development-branch": {
+   "domain": "backend-infra-deploy"
+  },
+  "superpowers-receiving-code-review": {
+   "domain": "code-quality-testing",
+   "hint": "Superpowers 6-step variant for acting on review feedback; not for performing a review (review, code-review) or requesting one."
+  },
+  "superpowers-requesting-code-review": {
+   "domain": "code-quality-testing",
+   "hint": "Same description as requesting-code-review; prefer requesting-code-review unless in the superpowers flow; not for acting on feedback."
+  },
+  "superpowers-subagent-driven-development": {
+   "domain": "claude-system-ops"
+  },
+  "superpowers-systematic-debugging": {
+   "domain": "code-quality-testing",
+   "hint": "Use for five-phase root-cause debugging of bugs/test failures; not for quick failed-command triage (self-healing)."
+  },
+  "superpowers-test-driven-development": {
+   "domain": "code-quality-testing"
+  },
+  "superpowers-unbundle": {
+   "domain": "planning-strategy-review"
+  },
+  "superpowers-using-git-worktrees": {
+   "domain": "backend-infra-deploy"
+  },
+  "superpowers-using-superpowers": {
+   "domain": "claude-system-ops"
+  },
+  "superpowers-writing-plans": {
+   "domain": "planning-strategy-review",
+   "hint": "Use to turn an approved spec/epic into a file-level task plan with dependencies (sprint planning); not for diagrams (excalidraw-diagram)."
+  },
+  "superpowers-writing-skills": {
+   "domain": "claude-system-ops"
+  },
+  "svgl": {
+   "domain": "design-visual"
+  },
+  "swarm": {
+   "domain": "claude-system-ops",
+   "hint": "Use to get a one-line status and blockers from EVERY project director at once; not for a single project (recall)."
+  },
+  "sync-md-json": {
+   "domain": "claude-system-ops"
+  },
+  "tailwind": {
+   "domain": "video-audio"
+  },
+  "task-handoff": {
+   "domain": "claude-system-ops",
+   "hint": "Use when an agent finishes work that unblocks another agent; not to delegate a task with a context briefing (delegate)."
+  },
+  "task-store": {
+   "domain": "claude-system-ops"
+  },
+  "tech-stack": {
+   "domain": "planning-strategy-review"
+  },
+  "tech-writer": {
+   "domain": "writing-en",
+   "hint": "Use for developer docs, READMEs, API refs, changelogs, runbooks; not for plain-English rewrites (simple-english) or marketing copy (copywriting)."
+  },
+  "three": {
+   "domain": "video-audio"
+  },
+  "translationese-cleaner-vi": {
+   "domain": "writing-vi",
+   "hint": "Use for Vietnamese that reads like literal English translation; not for plain grammar (grammar-checker-vi) or legal/standard-term changes."
+  },
+  "ui-ux-pro-max": {
+   "domain": "frontend-ui",
+   "hint": "Broad UI/UX knowledge for pages, dashboards and design systems; for pure building prefer frontend, for critique impeccable."
+  },
+  "unfreeze": {
+   "domain": "claude-system-ops"
+  },
+  "unwrap": {
+   "exclude": "internal",
+   "why": "Inbox task pickup lifecycle command run by parent session; no Exec task loads it"
+  },
+  "vercel-deploy": {
+   "domain": "backend-infra-deploy",
+   "hint": "Use to deploy to Vercel (link, env vars, preview/prod, logs); not for Railway, Supabase or GitHub Actions deploys."
+  },
+  "video-use": {
+   "domain": "video-audio",
+   "hint": "Use to edit video by conversation (transcribe, cut, grade, overlays); not for HyperFrames HTML compositions (hyperframes)."
+  },
+  "vietnamese-language": {
+   "domain": "writing-vi"
+  },
+  "waapi": {
+   "domain": "video-audio"
+  },
+  "web-perf": {
+   "domain": "code-quality-testing"
+  },
+  "webapp-testing": {
+   "domain": "code-quality-testing",
+   "hint": "Use to test or capture a LOCAL web app with Playwright scripts (boot it, screenshots at viewports); not for QA health scores (qa-only) or live-site dogfooding (browse).",
+   "also_domains": [
+    "browser-web-data"
+   ]
+  },
+  "webhook-security": {
+   "domain": "backend-infra-deploy"
+  },
+  "website-to-hyperframes": {
+   "domain": "video-audio"
+  },
+  "workflow-critique": {
+   "domain": "planning-strategy-review"
+  },
+  "wrap": {
+   "exclude": "internal",
+   "why": "Session-end inbox-task wrap command; lifecycle plumbing, no Exec task loads it"
+  },
+  "xlsx-toolkit": {
+   "domain": "decks-docs-reports-charts",
+   "hint": "Use for local .xlsx/.csv work (formulas, pivots, merge); for Google Sheets API operations use the gws skills."
+  }
+ },
+ "synthetic": {
+  "code-review": {
+   "description": "Review the current diff/PR for correctness bugs at an effort level; built-in command",
+   "domain": "code-quality-testing",
+   "hint": "Use for a quick built-in correctness review of a diff/PR; not the gstack checklist (review), dispatching one (requesting-code-review) or acting on feedback."
+  },
+  "simplify": {
+   "description": "Review the changed code for reuse, simplification, efficiency and altitude cleanups, then apply the fixes; quality only, not bug hunting; built-in command",
+   "domain": "code-quality-testing",
+   "hint": "Use to clean up changed code (reuse, simplification, efficiency) and apply fixes; not to hunt bugs (code-review)."
+  },
+  "security-review": {
+   "description": "Security review of the pending changes on the current branch; built-in command",
+   "domain": "code-quality-testing",
+   "hint": "Use for a built-in security review of pending branch changes; for infra audits use cso, for report-only AppSec critique use security-critique."
+  },
+  "plugin-authoring": {
+   "description": "Make a Claude Code mod: a live pane, band, status line, toast or hook inside Claude Code (terminal or desktop), written as a plugin of function hooks that hot-reloads; load before writing or debugging a hooks module; built-in",
+   "domain": "claude-system-ops",
+   "hint": "Use to build or debug a Claude Code mod (pane, band, status line, toast, hooks module); not settings.json hooks/permissions (update-config) or new skills (skill-creator)."
+  },
+  "claude-api": {
+   "description": "Reference for the Claude API / Anthropic SDK: model ids, pricing, params, streaming, tool use, MCP, agents, prompt caching, token counting, model migration; built-in",
+   "domain": "backend-infra-deploy",
+   "hint": "Use when code calls the Claude/Anthropic API or SDK, or for Claude model, pricing, limits or caching facts; not for prompt wording alone (promt-engineering) or building an MCP server (mcp-builder)."
+  },
+  "update-config": {
+   "description": "Configure the Claude Code harness via settings.json: hooks for automated behaviors (whenever/before/after X), permissions and allowlists, env vars, hook troubleshooting; built-in",
+   "domain": "claude-system-ops",
+   "hint": "Use to edit settings.json hooks, permissions or env vars; not to build a mod/pane (plugin-authoring), keyboard shortcuts (keybindings-help) or derive an allowlist from transcripts (fewer-permission-prompts)."
+  },
+  "keybindings-help": {
+   "description": "Customize Claude Code keyboard shortcuts: rebind keys, add chord bindings, edit ~/.claude/keybindings.json; built-in",
+   "domain": "claude-system-ops",
+   "hint": "Use only for Claude Code keyboard shortcuts and keybindings.json."
+  },
+  "fewer-permission-prompts": {
+   "description": "Scan past transcripts for common read-only Bash and MCP tool calls, then add a prioritized allowlist to project .claude/settings.json to reduce permission prompts; built-in",
+   "domain": "claude-system-ops",
+   "hint": "Use to cut permission prompts by deriving an allowlist from transcripts; for one specific permission or hook edit use update-config."
+  },
+  "dataviz": {
+   "description": "Library-agnostic chart design method for any chart, plot, dashboard, stat tile or sparkline (matplotlib, plotly, d3, Recharts, SVG, PNG): chart form heuristic, accessible categorical/sequential palettes, mark specs, interaction rules; built-in",
+   "domain": "decks-docs-reports-charts",
+   "hint": "Use for chart design quality (form, color, accessibility) in plotting code, app UIs or reports."
+  }
+ },
+ "vi_map": {
+  "humanizer": "humanizer-vi",
+  "humanizer-writing": "humanizer-vi",
+  "stop-slop": "humanizer-vi",
+  "proofreader": "grammar-checker-vi"
+ },
+ "en_only": [
+  "simple-english"
+ ],
+ "notes": [
+  "Skill-router menu overlay. It assigns every shipped skill (keyed by directory name) a routing domain or an exclude reason; the menu builder fails loudly if a skill has no entry. Add entries with scripts/skill-route-overlay-add.py (default entry is excluded as 'internal'; pass --domain and --hint to make a skill routable)."
+ ]
+}

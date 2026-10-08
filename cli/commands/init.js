@@ -3,6 +3,7 @@ const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncAgentsArchive, syncDesignSystem, syncCore } = require('./sync-assets.js');
+const { routerLine } = require('../lib/skill-router.js');
 
 // Repo skill count vs installed skill count — a silent mismatch is exactly
 // the failure mode this whole sync rewrite exists to catch (see
@@ -127,8 +128,10 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const cliSrc = path.resolve(__dirname, '../bin/agency.js');
   linkCli(cliSrc, console);
 
-  console.log(`\n✓ The Agency is ready — ${skillsDest}\n`);
-  console.log('Next steps:');
+  console.log(`\n✓ The Agency is ready — ${skillsDest}`);
+  // One line: the optional skill router ships disabled (see cli/lib/skill-router.js).
+  console.log(routerLine(agencyRoot, process.env));
+  console.log('\nNext steps:');
   console.log('  agency initiate                           Install tool deps + register MCP servers');
   console.log('  agency onboard                            Guided introduction');
   console.log('  agency new <project-slug> "<description>"  Create your first project');

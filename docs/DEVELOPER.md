@@ -108,7 +108,18 @@ Add to `skills/INDEX.md`:
 | my-skill | Does X for any project | Skills |
 ```
 
-### 3. Use it
+### 3. Add the skill-router overlay entry
+
+The repo ships an optional skill router (off by default). Its menu builder needs an entry for every skill directory in `scripts/skill-route/overlay.json`; CI's `check-skill-route-menu.py` fails when `skills/` and the overlay differ.
+
+```bash
+python3 scripts/skill-route-overlay-add.py my-skill                                   # not routable ("internal")
+python3 scripts/skill-route-overlay-add.py my-skill --domain frontend-ui --hint "Use to build X; not for Y"
+```
+
+Run it in the same commit as the new skill. Pick `--domain` from the keys of `overlay["domains"]` (an unknown name exits 2 and lists the valid ones). Details: `scripts/skill-route/README.md`.
+
+### 4. Use it
 
 In Claude Code:
 ```
@@ -299,6 +310,8 @@ agency skill install my-skill   # installs to ~/.claude/skills/my-skill/SKILL.md
 
 After creating a new skill, register it in `skills/INDEX.md` immediately — the
 system will not discover unregistered skills.
+Also add its router overlay entry (`python3 scripts/skill-route-overlay-add.py
+<name> [--domain D --hint H]`); without it CI's skill-router menu gate fails.
 
 ---
 

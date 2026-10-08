@@ -200,8 +200,9 @@ foreach ($tree in @("hooks", "runbooks", "scripts", "design-system", "agents-arc
             New-Item -ItemType Directory -Path $TreeDest -Force | Out-Null
         }
         Copy-Item -Path (Join-Path $TreeSrc "*") -Destination $TreeDest -Recurse -Force
-        $PyCache = Join-Path $TreeDest "__pycache__"
-        if (Test-Path $PyCache) { Remove-Item -Path $PyCache -Recurse -Force }
+        # Recursive: scripts\skill-route\ (and any future subdir) must not ship bytecode either.
+        @(Get-ChildItem -Path $TreeDest -Directory -Recurse -Force -Filter "__pycache__" -ErrorAction SilentlyContinue) |
+            ForEach-Object { Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
         Write-Host "  ✓ $tree installed"
     } else {
         Write-Host "  ⚠ No $tree/ directory found"
@@ -270,6 +271,30 @@ if (Test-Path $CliSrc) {
 
 Write-Host ""
 Write-Host "✓ The Agency installed to $ClaudeHome"
+# One line: the optional skill router ships DISABLED. Read-only: enabled iff
+# AGENCY_SKILL_ROUTER is exactly "1" in this environment OR in the "env" block of
+# settings.json (where Claude Code users set it; a terminal does not inherit that).
+# Any read/parse error means "not set". Same rule as cli/lib/skill-router.js; never
+# creates the Jev key file.
+$RouterOn = ($env:AGENCY_SKILL_ROUTER -eq "1")
+if (-not $RouterOn) {
+    try {
+        $RouterSettings = Join-Path $ClaudeHome "settings.json"
+        if (Test-Path $RouterSettings) {
+            $RouterJson = Get-Content $RouterSettings -Raw | ConvertFrom-Json
+            $RouterVal = $RouterJson.env.AGENCY_SKILL_ROUTER
+            if (($RouterVal -is [string]) -and ($RouterVal -eq "1")) { $RouterOn = $true }
+        }
+    } catch { $RouterOn = $false }
+}
+if ($RouterOn) {
+    Write-Host "Skill router: enabled (AGENCY_SKILL_ROUTER=1)"
+} else {
+    $RouterRoot = $ClaudeHome
+    try { $RouterRoot = (Resolve-Path $ClaudeHome).Path } catch { }
+    $RouterDoc = Join-Path $RouterRoot 'scripts\skill-route\README.md'
+    Write-Host "Skill router: disabled (see $RouterDoc to enable)"
+}
 if ($RootWarn) { Write-RootWarning }
 Write-Host ""
 Write-Host "Next steps:"

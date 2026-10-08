@@ -242,6 +242,22 @@ jobs:
       - name: Assert hooks merge keeps user hooks and is idempotent
         run: node .github/scripts/check-hooks-merge.js
 
+      # The skill router ships DISABLED, but its menu builder fails loudly on any
+      # shipped skill without an entry in scripts/skill-route/overlay.json. A skill
+      # added to skills/ without an overlay entry would break the router for every
+      # user who enables it. This checks overlay == skills/ exactly, builds the
+      # menu, and proves the builder still refuses a stripped overlay (so this
+      # check cannot go green on a builder that quietly skips skills). A socket
+      # guard asserts zero network attempts; no key, no switch needed.
+      - name: Assert the skill-router overlay matches skills/ and the menu builder fails loudly
+        run: python3 .github/scripts/check-skill-route-menu.py
+
+      # "Disabled by default" means no network call and no output change unless
+      # AGENCY_SKILL_ROUTER=1. Same socket-guard approach, run against the router
+      # scripts with the switch off. (Script owned by the router port.)
+      - name: Assert the skill router is inert while disabled (no network, no key)
+        run: python3 .github/scripts/check-skill-route-disabled.py
+
   install-ps1:
     name: install.ps1 (windows)
     runs-on: windows-latest
@@ -684,3 +700,15 @@ jobs:
         continue-on-error: true
         shell: bash
         run: node .github/scripts/check-hooks-merge.js
+
+      # Same two skill-router checks as the ubuntu job, on the Windows runner's
+      # python3 under Git Bash (os.path paths, tempfile dirs, no shell-isms). The
+      # router ships disabled; these prove the overlay still matches skills/ and
+      # that nothing reaches the network while it is off.
+      - name: Assert the skill-router overlay matches skills/ and the menu builder fails loudly
+        shell: bash
+        run: python3 .github/scripts/check-skill-route-menu.py
+
+      - name: Assert the skill router is inert while disabled (no network, no key)
+        shell: bash
+        run: python3 .github/scripts/check-skill-route-disabled.py

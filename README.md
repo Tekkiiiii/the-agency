@@ -473,6 +473,12 @@ Skills chain into pipelines. Example — full content workflow:
 
 Full catalog: `skills/INDEX.md`
 
+### Skill router (optional, off by default)
+
+`scripts/skill-route.py` can pick 1-3 skills for a task text, plus a model tier and a tool profile, using Jev (TypeSafe SystemOne) with a Haiku and a local grep fallback. **It is off.** Nothing calls it, it makes no network request while off, and routing stays "pick 1-3 skills from `skills/INDEX.md`". The Agency ships no key.
+
+To enable: get your own key from TypeSafe, put `TYPESAFE_API_KEY=...` in `~/.config/typesafe/.env`, set `AGENCY_SKILL_ROUTER=1` (the `env` block of `settings.json` works), rebuild the menu with `skill-route.py --rebuild-menu`. Exact steps for macOS, Linux and Windows, the output contract, fallback and cost logging: [`scripts/skill-route/README.md`](scripts/skill-route/README.md).
+
 ### Project Directors
 
 Spawned via `/recall {project}`. Owns the project end-to-end:
@@ -561,7 +567,7 @@ Two ways to extend the system:
 
 **New agents** — add a specialist to an existing department or propose a new one. See `agents/CONTRIBUTING.md` for the agent spec format and review process.
 
-**New skills** — create a markdown file in `skills/`, register it in `skills/INDEX.md`, and invoke it with `/skill-name`. Skills are reusable workflows: a skill can call other skills, spawn agents, or chain multi-stage pipelines. See `docs/DEVELOPER.md` for the full guide.
+**New skills** — create a markdown file in `skills/`, register it in `skills/INDEX.md`, and invoke it with `/skill-name`. Skills are reusable workflows: a skill can call other skills, spawn agents, or chain multi-stage pipelines. Contributors also add an overlay entry for the new skill (`python3 scripts/skill-route-overlay-add.py <name> [--domain D --hint H]`); CI's skill-router menu gate fails without it. Users who enable the optional skill router need an entry for their own skills too, to make them routable. See `docs/DEVELOPER.md` for the full guide.
 
 ---
 
@@ -922,7 +928,8 @@ Each project carries a `scope.json` that defines the PD's authority boundaries. 
 **Adding a skill:**
 1. Create `skills/{skill-name}/SKILL.md` with the skill definition
 2. Register it in `skills/INDEX.md`
-3. Invoke with `/{skill-name}` in Claude Code
+3. Add its skill-router overlay entry: `python3 scripts/skill-route-overlay-add.py {skill-name} [--domain D --hint H]` (required for contributors: CI's menu gate fails without it; for users it is only needed to make the skill routable once the optional router is enabled)
+4. Invoke with `/{skill-name}` in Claude Code
 
 **Adding an agent:**
 1. Create the agent spec in `agents/{department}/{agent-name}.md`

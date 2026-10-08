@@ -55,7 +55,7 @@ resolve.
 | `core/` | ✓ | ✓ | ✓ | ✓ | **skip-if-exists** for the paths in `core/.preserve`; everything else overwritten as normal — see below |
 | `hooks/` | ✓ | ✓ | ✓ | ✓ | incl. `hooks/lib/` (carries `resolve-root.sh`) and `hooks/fable/`; `+x` on `.sh` |
 | `runbooks/` | ✓ | ✓ | ✓ | ✓ | docs only |
-| `scripts/` | ✓ | ✓ | ✓ | ✓ | `+x` on `.sh`/`.py`/`.js`; `__pycache__` excluded |
+| `scripts/` | ✓ | ✓ | ✓ | ✓ | `+x` on `.sh`/`.py`/`.js`; `__pycache__` excluded at any depth; includes `scripts/skill-route/` (the optional, disabled-by-default skill router's overlay and `README.md`) |
 | `agents-archive/` | ✓ | ✓ | ✓ | ✓ | role files + `ROLE-MAP.md` read by spawners at runtime; plain copy to `{agency-root}/agents-archive/`, **never under `agents/`** so nothing registers as an agent type |
 | `design-system/` | ✓ | ✓ | ✓ | ✓ | brand-token SSOT; `+x` on `.js`; skills resolve `{agency-root}/design-system/brands/{name}.json` at generation time |
 

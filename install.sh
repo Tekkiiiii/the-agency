@@ -261,7 +261,8 @@ SCRIPTS_DEST="$CLAUDE_HOME/scripts"
 if [ -d "$SCRIPTS_SRC" ]; then
     mkdir -p "$SCRIPTS_DEST"
     cp -r "$SCRIPTS_SRC"/* "$SCRIPTS_DEST/"
-    rm -rf "$SCRIPTS_DEST"/__pycache__
+    # Recursive: scripts/skill-route/ (and any future subdir) must not ship bytecode either.
+    find "$SCRIPTS_DEST" -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true
     chmod +x "$SCRIPTS_DEST"/*.sh "$SCRIPTS_DEST"/*.py "$SCRIPTS_DEST"/*.js 2>/dev/null || true
     echo "  ✓ Scripts installed"
 fi
@@ -321,6 +322,18 @@ fi
 
 echo ""
 echo "✓ The Agency installed to $CLAUDE_HOME"
+# One line: the optional skill router ships DISABLED. Read-only: cli/lib/skill-router.js
+# checks AGENCY_SKILL_ROUTER=1 in this environment and in the "env" block of
+# $CLAUDE_HOME/settings.json (where Claude Code users set it; a terminal does not
+# inherit that). Without node, only the process environment is checked: a wrong
+# "disabled" is safer than a hand-rolled JSON parse. Never creates the Jev key file.
+if command -v node >/dev/null 2>&1 && [ -f "$SCRIPT_DIR/cli/lib/skill-router.js" ]; then
+    node "$SCRIPT_DIR/cli/lib/skill-router.js" line "$CLAUDE_HOME" 2>/dev/null || true
+elif [ "${AGENCY_SKILL_ROUTER:-}" = "1" ]; then
+    echo "Skill router: enabled (AGENCY_SKILL_ROUTER=1)"
+else
+    echo "Skill router: disabled (see $(cd "$CLAUDE_HOME" && pwd)/scripts/skill-route/README.md to enable)"
+fi
 [ "$ROOT_WARN" = true ] && root_warning
 echo ""
 if [ "$LINKED" = true ]; then

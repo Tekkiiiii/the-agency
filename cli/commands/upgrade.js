@@ -5,6 +5,7 @@ const os = require('os');
 const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncAgentsArchive, syncDesignSystem, syncCore } = require('./sync-assets.js');
 const { printSyncRoot, printNoSettingsWarning } = require('../lib/root.js');
 const hooksMerge = require('../lib/hooks-merge.js');
+const { routerLine } = require('../lib/skill-router.js');
 const {
   createBackup, checkIndexLock, rescueUnmerged, changedPaths,
   classify, findCounterparts, createBackupBranch,
@@ -604,6 +605,10 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     console.log('');
     console.log(`Hooks changed (see "Hooks:" above). ${hooksMerge.RESTART_LINE}`);
   }
+
+  // One line, always: the optional skill router ships disabled (see cli/lib/skill-router.js).
+  console.log('');
+  console.log(routerLine(agencyRoot, process.env));
 
   console.log('');
   console.log('Quick check: agency status   (shows your projects)');
