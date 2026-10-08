@@ -183,6 +183,22 @@ if (Test-Path $CoreSrc) {
     Write-Host "  [OK] Core docs installed ($CoreSynced synced, $CorePreserved preserved)"
 }
 
+# --- Project registry ---
+# ONE registry path: <root>\memory\medium-term.md. /recall, /pd-resume, /pd-spawn
+# and the spawn-log hooks all read it, and `agency new` / project-scaffolder write
+# it. Seed it ONLY when absent, never overwrite: it holds the user's projects. The
+# seed is the core copy: the repo stub on a fresh install, the user's own
+# accumulated rows on an upgrade from when project-scaffolder wrote there
+# (core/.preserve keeps that copy). Keep in step with ensureRegistry() in
+# cli/lib/registry.js and the block in install.sh.
+$Registry = Join-Path $ClaudeHome "memory\medium-term.md"
+$RegistrySeed = Join-Path $ClaudeHome "core\memory\medium-term.md"
+if (-not (Test-Path -LiteralPath $Registry) -and (Test-Path -LiteralPath $RegistrySeed)) {
+    New-Item -ItemType Directory -Path (Split-Path -Parent $Registry) -Force | Out-Null
+    Copy-Item -LiteralPath $RegistrySeed -Destination $Registry
+    Write-Host "  [OK] Project registry created: $Registry"
+}
+
 # --- Hooks, runbooks, scripts, design-system, agents-archive ---
 # These five trees carry paths that shipped agent defs, runbooks and skills
 # reference as `{agency-root}/hooks/...`, `{agency-root}/runbooks/...`,

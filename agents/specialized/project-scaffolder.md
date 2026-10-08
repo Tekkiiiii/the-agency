@@ -396,7 +396,7 @@ Update `"updated"` to `"{TODAY}"`. Write back with 2-space indent.
 
 If JSON parsing fails: output "ERROR: ~/projects/index.json is malformed — fix manually." and continue to next step.
 
-#### 4c. {agency-root}/core/memory/medium-term.md
+#### 4c. {agency-root}/memory/medium-term.md
 
 Read the file. Find the Active Projects table (header contains `| Project | Memory Path | PD | Status |`).
 Append a new row:

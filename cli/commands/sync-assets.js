@@ -239,9 +239,14 @@ function readCorePreserveList(repoDir) {
 }
 
 function syncCore(repoDir, destDir, console) {
-  return syncTree(repoDir, destDir, 'core', console, {
+  const result = syncTree(repoDir, destDir, 'core', console, {
     preserveIfExists: readCorePreserveList(repoDir),
   });
+  // The project registry readers use is {root}/memory/medium-term.md, not the copy
+  // under core/. Seed it from the core copy only if absent (see cli/lib/registry.js);
+  // destDir is {root}/core. Mirrors the same step in install.sh and install.ps1.
+  require('../lib/registry.js').ensureRegistry(require('path').dirname(destDir));
+  return result;
 }
 
 module.exports = {

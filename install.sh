@@ -223,6 +223,21 @@ if [ -d "$CORE_SRC" ]; then
     echo "  ✓ Core docs installed ($core_synced synced, $core_preserved preserved)"
 fi
 
+# --- Project registry ---
+# ONE registry path: $CLAUDE_HOME/memory/medium-term.md. /recall, /pd-resume,
+# /pd-spawn and the spawn-log hooks all read it, and `agency new` /
+# project-scaffolder write it. Seed it ONLY when absent, never overwrite: it holds
+# the user's projects. The seed is the core/ copy, which is the repo stub on a
+# fresh install and the user's own accumulated rows on an upgrade from the time
+# project-scaffolder wrote there (core/.preserve keeps that copy). Keep in step
+# with ensureRegistry() in cli/lib/registry.js and the block in install.ps1.
+REGISTRY="$CLAUDE_HOME/memory/medium-term.md"
+if [ ! -e "$REGISTRY" ] && [ -f "$CORE_DEST/memory/medium-term.md" ]; then
+    mkdir -p "$CLAUDE_HOME/memory"
+    cp "$CORE_DEST/memory/medium-term.md" "$REGISTRY"
+    echo "  ✓ Project registry created: $REGISTRY"
+fi
+
 # --- Runbooks ---
 # Protocol docs that deployed agents/ files reference as `{agency-root}/runbooks/...`.
 # Not shipping these makes every one of those references dangle. See the deploy

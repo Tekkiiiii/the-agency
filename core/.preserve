@@ -28,9 +28,12 @@
 # .github/scripts/check-core-preserve.js fails the build if a path listed
 # here does not exist in the repo — a typo here preserves nothing, silently.
 
-# Active Projects registry. project-scaffolder appends a row on every
-# /new-project (agents/specialized/project-scaffolder.md §4c). Losing it
-# breaks slug-to-path resolution for codebase-search, wrap and every PD.
+# Legacy copy of the Active Projects registry. The live registry is
+# {agency-root}/memory/medium-term.md (what /recall and /pd-resume read, and what
+# `agency new` and project-scaffolder write); the installers seed it from THIS
+# file only when it is absent. Older installs accumulated their rows here (that is
+# where project-scaffolder used to write), so it must survive an upgrade to be
+# carried over once. Losing it would lose those rows.
 memory/medium-term.md
 
 # Delegator route cache. CLAUDE.md instructs every caller to append the

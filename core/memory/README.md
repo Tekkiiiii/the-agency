@@ -22,8 +22,10 @@ overwrites it:
   **overwritten on every upgrade, deliberately** — that is how an existing
   install receives new agent routes, new tier definitions and new lessons.
   Freezing them would be a silent regression, not a safe default.
-- **Accumulating files** — `medium-term.md` (active-projects registry, appended
-  by `project-scaffolder` on every `/new-project`), `delegator-cache.md`
+- **Accumulating files** — `medium-term.md` (seed and legacy copy of the
+  active-projects registry; the LIVE registry is `{agency-root}/memory/medium-term.md`,
+  seeded from this file only if absent and appended by `agency new` and
+  `project-scaffolder`), `delegator-cache.md`
   (task-pattern → route cache, appended by every caller on a Delegator miss).
   The running system writes rows into these **at their installed path**, so an
   upgrade that overwrote them would destroy real user data. They are listed in

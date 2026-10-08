@@ -1,9 +1,16 @@
 const { mkdirSync, existsSync, writeFileSync } = require('fs');
+const { registerProject } = require('../lib/registry.js');
 
 module.exports = async function newProject({ args, AGENCY_ROOT, console }) {
   const [slug, ...descParts] = args;
   if (!slug) {
     console.error('Usage: agency new <project-slug> "<description>"');
+    process.exit(1);
+  }
+
+  // The slug becomes a directory name and a table cell in the registry.
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(slug)) {
+    console.error(`Invalid project slug "${slug}": use letters, digits, '.', '_' and '-' (no spaces, slashes or '|').`);
     process.exit(1);
   }
 
@@ -17,6 +24,7 @@ module.exports = async function newProject({ args, AGENCY_ROOT, console }) {
   const today = new Date().toISOString().split('T')[0];
 
   mkdirSync(projectPath, { recursive: true });
+  mkdirSync(`${projectPath}/memory`, { recursive: true });
   mkdirSync(`${AGENCY_ROOT}/sessions/${slug}`, { recursive: true });
 
   const state = `# ${slug} — STATE
@@ -37,6 +45,9 @@ None
 `;
 
   writeFileSync(`${projectPath}/STATE.md`, state);
+
+  // Register in {root}/memory/medium-term.md - the registry /recall and /pd-resume read.
+  registerProject(AGENCY_ROOT, slug, projectPath);
   console.log(`\n✅ Project "${slug}" created at ${projectPath}\n`);
-  console.log('Next: cd to your project and start working\n');
+  console.log(`Registered in ${AGENCY_ROOT}/memory/medium-term.md. Next: /recall ${slug}\n`);
 };

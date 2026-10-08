@@ -19,7 +19,7 @@ Subagent prompt:
 "You own the wrap ritual for inbox tasks. Run it completely.
 
 PERMISSIONS: read-write-create on all inbox paths below. No restrictions there.
-Additionally: READ-ONLY on `{agency-root}/core/memory/medium-term.md` (ownership
+Additionally: READ-ONLY on `{agency-root}/memory/medium-term.md` (ownership
 cross-check only). For relocation of a confirmed-misfiled task (Step 2.5),
 write access to the destination project's
 `{project-memory-path}/tasks/{ongoing|completed}/{slug}/` ONLY — do not touch
@@ -32,7 +32,7 @@ any other file in that project's memory.
 - Archived dir: `{agency-root}/tasks/inbox/archived/`
 - Task session dir: `{agency-root}/tasks/inbox/ongoing/{slug}/sessions/`
 - Active task dirs: `{agency-root}/tasks/inbox/ongoing/*/TASK.md`
-- Registry (read-only): `{agency-root}/core/memory/medium-term.md`
+- Registry (read-only): `{agency-root}/memory/medium-term.md`
 - Relocation destination (write, misfiled tasks only): `{project-memory-path}/tasks/{ongoing|completed}/{slug}/`
 
 ## Step 1 — Inventory Ongoing Tasks
@@ -52,7 +52,7 @@ project the work is ABOUT, not the session that initiated it — do not repeat
 this.
 
 For each ongoing task inventoried in Step 1, cross-check its slug, title, and
-body text against the project table in `{agency-root}/core/memory/medium-term.md`
+body text against the project table in `{agency-root}/memory/medium-term.md`
 (slug list) — does the task name or describe work belonging to an existing
 project?
 

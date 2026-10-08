@@ -275,6 +275,13 @@ jobs:
           node .github/scripts/check-privacy.js --self-test
           node .github/scripts/check-privacy.js
 
+      # The first-run path: install -> `agency new demo` -> /recall, /pd-resume and the
+      # spawn-log hooks all resolve demo from ONE registry, {root}/memory/medium-term.md.
+      # Also: a second install leaves an existing registry byte-identical, and a registry
+      # that only exists under core/memory (older installs) is carried over.
+      - name: Assert install seeds the project registry and `agency new` registers into it
+        run: node .github/scripts/check-quickstart-registry.js
+
       # agents/scripts/lint-agents.sh used to scan only 6 hand-listed directories
       # (and printed "No agent files found" from the repo root). It now derives
       # the department list from agents/*/INDEX.md, so a new department or agent
@@ -760,6 +767,14 @@ jobs:
         run: |
           node .github/scripts/check-privacy.js --self-test
           node .github/scripts/check-privacy.js
+
+      # Same check through install.ps1 (pwsh) with the Windows node CLI. Git Bash supplies
+      # awk for the documented /pd-resume lookup.
+      - name: Assert install.ps1 seeds the project registry and `agency new` registers into it
+        shell: bash
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\quickstart-registry
+        run: node .github/scripts/check-quickstart-registry.js --installer ps1
 
       - name: Assert every tracked *.ps1 parses under Windows PowerShell 5.1
         shell: powershell

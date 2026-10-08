@@ -90,7 +90,8 @@ content. Your own root-level `MEMORY.md` index, `lessons/*.md`, and any
 work; none of them ship with the repo.
 
 Agency-wide system tables — `agency-dispatch.md` (routing table),
-`delegator-cache.md` (route cache), `medium-term.md` (project registry) —
+`delegator-cache.md` (route cache), `medium-term.md` (project registry seed; the
+live registry is `{agency-root}/memory/medium-term.md`) —
 ship pre-seeded at `{agency-root}/core/memory/` instead, alongside this spec
 doc. See `core/memory/README.md` for the full two-directory contract and why
 the split exists.
