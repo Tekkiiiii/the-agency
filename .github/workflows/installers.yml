@@ -298,10 +298,8 @@ jobs:
 
       # install.ps1 now wires hooks/hooks.json into settings.json through
       # cli/lib/hooks-merge.js (Git Bash is on PATH on windows-latest, so it must
-      # wire, not skip). Advisory until its first green run on windows-latest:
-      # it has never executed there. Drop continue-on-error once it has.
-      - name: Assert install.ps1 wired the hooks (advisory until first green run)
-        continue-on-error: true
+      # wire, not skip).
+      - name: Assert install.ps1 wired the hooks
         env:
           AGENCY_HOME: ${{ runner.temp }}\agency-default
         run: |
@@ -692,20 +690,15 @@ jobs:
           }
 
       # Same script under Git Bash + Windows node (os.homedir() -> USERPROFILE,
-      # MSYS paths). Advisory until its first green run: it has never executed
-      # on windows-latest, so a path-translation quirk must not turn the job red
-      # before anyone has seen it pass. Drop continue-on-error once it has.
-      - name: Assert agency upgrade + rescue.sh recover a rewritten origin (advisory until first green run)
-        continue-on-error: true
+      # MSYS paths).
+      - name: Assert agency upgrade + rescue.sh recover a rewritten origin
         shell: bash
         run: bash .github/scripts/check-upgrade-rewrite.sh
 
       # Same merge test as the ubuntu job, under Git Bash + Windows node
       # (os.homedir() -> USERPROFILE, C:/ paths, case-insensitive root match).
-      # Its install.sh section skips itself on win32. Advisory until its first
-      # green run on windows-latest; drop continue-on-error once it has.
-      - name: Assert hooks merge keeps user hooks and is idempotent (advisory until first green run)
-        continue-on-error: true
+      # Its install.sh section skips itself on win32.
+      - name: Assert hooks merge keeps user hooks and is idempotent
         shell: bash
         run: node .github/scripts/check-hooks-merge.js
 
@@ -724,9 +717,8 @@ jobs:
       # ---- Windows PowerShell 5.1 (shell: powershell) ----------------------
       # Every step above runs under pwsh (PowerShell 7), which defaults to UTF-8.
       # Real Windows machines run install.ps1 and rescue.ps1 under Windows
-      # PowerShell 5.1, which does not. These steps close that gap. ASCII and
-      # parse checks are deterministic and blocking; the full runs are advisory
-      # until their first green run on windows-latest.
+      # PowerShell 5.1, which does not. These steps close that gap: the ASCII and
+      # parse checks and the full install.ps1 / rescue.ps1 runs are all blocking.
       - name: Assert PowerShell and cmd sources are ASCII-only
         run: node .github/scripts/check-ps1-ascii.js
 
@@ -752,8 +744,7 @@ jobs:
           }
           if ($failed -gt 0) { throw "$failed file(s) do not parse under Windows PowerShell 5.1" }
 
-      - name: Run install.ps1 under Windows PowerShell 5.1 (advisory until first green run)
-        continue-on-error: true
+      - name: Run install.ps1 under Windows PowerShell 5.1
         shell: powershell
         env:
           AGENCY_HOME: ${{ runner.temp }}\agency-ps51
@@ -780,8 +771,7 @@ jobs:
           if ($cmds.Count -ne $m.hooks.Count) { throw "expected $($m.hooks.Count) hook entries, got $($cmds.Count)" }
           Write-Host "OK: install.ps1 ran under Windows PowerShell 5.1"
 
-      - name: Run rescue.ps1 under Windows PowerShell 5.1 (advisory until first green run)
-        continue-on-error: true
+      - name: Run rescue.ps1 under Windows PowerShell 5.1
         shell: powershell
         env:
           AGENCY_HOME: ${{ runner.temp }}\rescue-root-ps51
