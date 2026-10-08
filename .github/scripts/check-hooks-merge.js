@@ -36,7 +36,12 @@
 //  10. Windows bash resolver: env > git --exec-path > %ProgramFiles% >
 //      %LOCALAPPDATA% > PATH, WSL launcher skipped, none -> skipped with the
 //      Git for Windows instruction + `agency hooks sync`, non-standard -> hint
-//  11. install.sh end to end: fresh root -> settings.json created with hooks;
+//  11. deleted-hook opt-out: a hook the agency wired and the user then removed
+//      is marked disabled in the state file, never re-added, and reported on
+//      every sync; `hooks disable|enable <id>`; unknown/retired id -> exit 1;
+//      a manifest command change is an update, not a deletion; remove still
+//      removes only ours
+//  12. install.sh end to end: fresh root -> settings.json created with hooks;
 //      second install -> no change, no backup (skipped on win32: install.sh
 //      there is Git Bash, covered by the install.ps1 job instead)
 'use strict';
@@ -378,7 +383,198 @@ section('10. Windows bash resolver (order, WSL skipped, no-bash message, hint)')
 }
 
 // ---------------------------------------------------------------------------
-section('11. install.sh end to end');
+section('11. deleted-hook opt-out, agency hooks disable|enable');
+{
+  const T = sandbox();
+  const ROOT = path.join(T, 'root');
+  const HOME = path.join(T, 'home');
+  fs.mkdirSync(path.join(ROOT, 'hooks'), { recursive: true });
+  fs.mkdirSync(HOME, { recursive: true });
+  const env = { HOME, USERPROFILE: HOME, AGENCY_HOME: ROOT };
+  const S = path.join(ROOT, 'settings.json');
+  const STATE = path.join(ROOT, 'hooks', '.agency-hooks-state.json');
+  const Rf = ROOT.split(path.sep).join('/');
+  const userHook = `bash ${Rf}/hooks/my-personal.sh`;
+  const userStopHook = 'sh ~/.agent-memory/heartbeat.sh stop';
+  fs.writeFileSync(S, JSON.stringify({
+    model: 'opus',
+    hooks: {
+      PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: userHook }] }],
+      Stop: [{ matcher: '', hooks: [{ type: 'command', command: userStopHook }] }],
+    },
+  }, null, 2) + '\n');
+  const cmdOf = id => hm.renderCommand(manifest.hooks.find(h => h.id === id).command, ROOT);
+  const ids = manifest.hooks.map(h => h.id);
+  const SKIP = id => `skipped ${id} (you removed it; agency hooks enable ${id} to restore)`;
+  // delete every entry of `id` from settings.json, by hand
+  const deleteByHand = id => {
+    const c = cmdOf(id);
+    const s = readJson(S);
+    for (const ev of Object.keys(s.hooks)) {
+      for (const g of s.hooks[ev]) g.hooks = g.hooks.filter(h => h.command !== c);
+      s.hooks[ev] = s.hooks[ev].filter(g => g.hooks.length > 0);
+      if (s.hooks[ev].length === 0) delete s.hooks[ev];
+    }
+    fs.writeFileSync(S, JSON.stringify(s, null, 2) + '\n');
+  };
+  const userIntact = () => {
+    const c = allCommands(readJson(S)).map(x => x.command);
+    return c.includes(userHook) && c.includes(userStopHook);
+  };
+
+  // a. first-ever install adds everything and records nothing as disabled
+  const a = run(['sync', '--root', ROOT], env);
+  ok(a.code === 0 && ids.every(id => countCmd(readJson(S), cmdOf(id)) === 1), 'a. first-ever sync (no state) wires every manifest hook');
+  ok(!/skipped /.test(a.out) && !('disabled' in readJson(STATE)), 'a. ... and nothing is skipped or recorded as disabled');
+
+  // b. delete by hand -> sync keeps it gone and says so, every time
+  deleteByHand('gate-guard');
+  const bk0 = backups(ROOT).length;
+  const b1 = run(['sync', '--root', ROOT], env);
+  ok(b1.code === 0 && countCmd(readJson(S), cmdOf('gate-guard')) === 0, 'b. hook deleted by hand stays gone after sync');
+  ok(b1.out.includes(SKIP('gate-guard')), `b. sync prints the skipped line (got ${JSON.stringify(b1.out.slice(0, 160))})`);
+  ok(readJson(STATE).disabled && readJson(STATE).disabled['gate-guard'] && !readJson(STATE).hooks['gate-guard'], 'b. state: gate-guard disabled, no longer "wired"');
+  const b1j = runJson(['sync', '--root', ROOT], env);
+  ok(b1j.json && b1j.json.skipped && b1j.json.skipped.some(x => x.id === 'gate-guard'), 'b. --json lists it under "skipped"');
+  ok(backups(ROOT).length === bk0, 'b. marking it disabled changes state only: no settings.json backup');
+  const b2 = run(['sync', '--root', ROOT], env);
+  ok(countCmd(readJson(S), cmdOf('gate-guard')) === 0 && b2.out.includes(SKIP('gate-guard')), 'b. second sync: still gone, message printed again');
+  const b3 = run(['sync', '--root', ROOT, '--auto'], env);
+  ok(countCmd(readJson(S), cmdOf('gate-guard')) === 0 && b3.out.includes(SKIP('gate-guard')), 'b. --auto (installer / init / upgrade path) honours it too');
+  ok(/Hooks: \d+ wired, up to date/.test(b2.out), 'b. the quiet "up to date" line is kept');
+  ok(userIntact(), 'b. user hooks untouched');
+
+  // c. the composite Stop chain is one id too
+  deleteByHand('stop-chain');
+  const c1 = run(['sync', '--root', ROOT], env);
+  ok(countCmd(readJson(S), cmdOf('stop-chain')) === 0 && c1.out.includes(SKIP('stop-chain')), 'c. composite stop-chain deleted by hand stays gone');
+
+  // d. enable brings one back
+  const d1 = runJson(['enable', 'gate-guard', '--root', ROOT], env);
+  ok(d1.code === 0 && countCmd(readJson(S), cmdOf('gate-guard')) === 1, `d. enable gate-guard wires it now (exit ${d1.code})`);
+  ok(!(readJson(STATE).disabled || {})['gate-guard'] && readJson(STATE).hooks['gate-guard'], 'd. state: gate-guard wired again, not disabled');
+  ok(countCmd(readJson(S), cmdOf('stop-chain')) === 0, 'd. enabling one hook does not resurrect the other disabled one');
+  const d2 = run(['sync', '--root', ROOT], env);
+  ok(countCmd(readJson(S), cmdOf('gate-guard')) === 1 && !d2.out.includes(SKIP('gate-guard')) && d2.out.includes(SKIP('stop-chain')), 'd. after enable: sync keeps gate-guard, still skips stop-chain');
+  const d3 = run(['enable', 'gate-guard', '--root', ROOT], env);
+  ok(d3.code === 0 && /already enabled/.test(d3.out) && countCmd(readJson(S), cmdOf('gate-guard')) === 1, 'd. enable on an enabled id: exit 0, "already enabled", no duplicate');
+  const d4 = run(['enable', 'stop-chain', '--root', ROOT], env);
+  ok(d4.code === 0 && countCmd(readJson(S), cmdOf('stop-chain')) === 1, 'd. enable stop-chain restores the composite command');
+
+  // e. disable removes our entry, marks it disabled, survives sync
+  const e1 = runJson(['disable', 'secret-scanner', '--root', ROOT], env);
+  ok(e1.code === 0 && countCmd(readJson(S), cmdOf('secret-scanner')) === 0, `e. disable secret-scanner removes our entry (exit ${e1.code})`);
+  ok(readJson(STATE).disabled && readJson(STATE).disabled['secret-scanner'] && !readJson(STATE).hooks['secret-scanner'], 'e. state: secret-scanner disabled');
+  const e2 = run(['sync', '--root', ROOT], env);
+  ok(countCmd(readJson(S), cmdOf('secret-scanner')) === 0 && e2.out.includes(SKIP('secret-scanner')), 'e. sync after disable: stays gone, message printed');
+  const bkE = backups(ROOT).length;
+  const e3 = run(['disable', 'secret-scanner', '--root', ROOT], env);
+  ok(e3.code === 0 && /already disabled/.test(e3.out) && backups(ROOT).length === bkE, 'e. disable twice: exit 0, "already disabled", no new backup');
+  ok(userIntact(), 'e. user hooks untouched by disable');
+
+  // f. unknown / retired id
+  const settingsBefore = sha(S);
+  const stateBefore = sha(STATE);
+  const f1 = run(['disable', 'no-such-hook', '--root', ROOT], env);
+  ok(f1.code === 1 && ids.every(id => f1.out.includes(id)) && /no-such-hook/.test(f1.out), `f. disable unknown id: exit 1, names it and lists every valid id (exit ${f1.code})`);
+  const f2 = run(['enable', 'no-such-hook', '--root', ROOT], env);
+  ok(f2.code === 1 && ids.every(id => f2.out.includes(id)), 'f. enable unknown id: exit 1 + valid ids');
+  const mRet = JSON.parse(JSON.stringify(manifest));
+  const gone = mRet.hooks.find(h => h.id === 'track-edits');
+  mRet.hooks = mRet.hooks.filter(h => h.id !== 'track-edits');
+  mRet.retired = (mRet.retired || []).concat([{ id: gone.id, event: gone.event, command: gone.command }]);
+  const MRET = path.join(T, 'hooks-retired.json');
+  fs.writeFileSync(MRET, JSON.stringify(mRet, null, 2) + '\n');
+  const f3 = run(['enable', 'track-edits', '--root', ROOT, '--manifest', MRET], env);
+  ok(f3.code === 1 && /retired/.test(f3.out), 'f. enable a retired id: exit 1, says retired');
+  const f4 = run(['disable', 'track-edits', '--root', ROOT, '--manifest', MRET], env);
+  ok(f4.code === 1 && /retired/.test(f4.out), 'f. disable a retired id: exit 1, says retired');
+  const f5 = run(['disable', '--root', ROOT], env);
+  ok(f5.code !== 0 && ids.every(id => f5.out.includes(id)), 'f. disable without an id: usage error + valid ids');
+  ok(sha(S) === settingsBefore && sha(STATE) === stateBefore, 'f. errors touch neither settings.json nor state');
+
+  // g. a manifest command change is an UPDATE, not a deletion
+  const mUpd = JSON.parse(JSON.stringify(manifest));
+  const sc = mUpd.hooks.find(h => h.id === 'stop-chain');
+  const oldStop = sc.command;
+  sc.command = 'bash {root}/hooks/session-end.sh && bash {root}/hooks/batch-check.sh';
+  const MUPD = path.join(T, 'hooks-updated.json');
+  fs.writeFileSync(MUPD, JSON.stringify(mUpd, null, 2) + '\n');
+  ok(countCmd(readJson(S), cmdOf('stop-chain')) === 1, 'g. precondition: old stop-chain command is wired');
+  const g1 = runJson(['sync', '--root', ROOT, '--manifest', MUPD], env);
+  ok(g1.json && g1.json.updated.some(u => u.id === 'stop-chain'), 'g. changed command is reported as updated');
+  ok(countCmd(readJson(S), hm.renderCommand(sc.command, ROOT)) === 1 && countCmd(readJson(S), hm.renderCommand(oldStop, ROOT)) === 0, 'g. old command replaced by the new one');
+  ok(!(readJson(STATE).disabled || {})['stop-chain'] && !g1.out.includes('skipped stop-chain'), 'g. ... and stop-chain is NOT marked disabled');
+  runJson(['sync', '--root', ROOT], env); // back to the real manifest
+  // deleted AND changed in the same release: neither command present -> deleted
+  deleteByHand('stop-chain');
+  const g2 = run(['sync', '--root', ROOT, '--manifest', MUPD], env);
+  ok(g2.out.includes(SKIP('stop-chain')) && countCmd(readJson(S), hm.renderCommand(sc.command, ROOT)) === 0, 'g. deleted by hand, then the manifest changes its command: still opted out');
+  run(['enable', 'stop-chain', '--root', ROOT], env);
+
+  // h. wiring it back by hand clears the opt-out
+  run(['disable', 'track-edits', '--root', ROOT], env);
+  {
+    const s = readJson(S);
+    s.hooks.PostToolUse.push({ matcher: 'Edit|Write', hooks: [{ type: 'command', command: cmdOf('track-edits') }] });
+    fs.writeFileSync(S, JSON.stringify(s, null, 2) + '\n');
+  }
+  const h1 = run(['sync', '--root', ROOT], env);
+  ok(countCmd(readJson(S), cmdOf('track-edits')) === 1 && !h1.out.includes('skipped track-edits') && !(readJson(STATE).disabled || {})['track-edits'], 'h. user re-adds a disabled hook by hand: kept once, no longer disabled');
+
+  // i. a disabled id the manifest no longer ships is dropped from state
+  run(['disable', 'startup-sync', '--root', ROOT], env);
+  const mDrop = JSON.parse(JSON.stringify(manifest));
+  mDrop.hooks = mDrop.hooks.filter(h => h.id !== 'startup-sync');
+  const MDROP = path.join(T, 'hooks-dropped.json');
+  fs.writeFileSync(MDROP, JSON.stringify(mDrop, null, 2) + '\n');
+  run(['sync', '--root', ROOT, '--manifest', MDROP], env);
+  ok(!(readJson(STATE).disabled || {})['startup-sync'], 'i. disabled id no longer in the manifest is dropped from state');
+
+  // j. remove still removes only ours, with disabled ids around
+  run(['disable', 'spawn-gate', '--root', ROOT], env);
+  const j1 = runJson(['remove', '--root', ROOT], env);
+  const left = allCommands(readJson(S)).map(c => c.command).sort();
+  ok(j1.code === 0 && JSON.stringify(left) === JSON.stringify([userHook, userStopHook].sort()), `j. remove with disabled ids: only user hooks remain (got ${JSON.stringify(left)})`);
+  ok(readJson(S).model === 'opus' && !fs.existsSync(STATE), 'j. other keys intact, state file deleted');
+  const j2 = run(['sync', '--root', ROOT], env);
+  ok(ids.every(id => countCmd(readJson(S), cmdOf(id)) === 1) && !/skipped /.test(j2.out), 'j. sync after remove is a first-ever install again: everything wired');
+
+  // k. installer end to end keeps a deleted hook gone
+  if (process.platform !== 'win32') {
+    const T2 = sandbox();
+    const env2 = Object.assign({}, process.env, { HOME: path.join(T2, 'home'), AGENCY_HOME: path.join(T2, 'root'), AGENCY_NO_HOOKS: '' });
+    fs.mkdirSync(env2.HOME, { recursive: true });
+    spawnSync('bash', [path.join(REPO, 'install.sh')], { encoding: 'utf8', env: env2, cwd: T2 });
+    const S2 = path.join(env2.AGENCY_HOME, 'settings.json');
+    const s2 = readJson(S2);
+    const c2 = hm.renderCommand(manifest.hooks.find(h => h.id === 'write-evidence').command, env2.AGENCY_HOME);
+    for (const ev of Object.keys(s2.hooks)) for (const g of s2.hooks[ev]) g.hooks = g.hooks.filter(h => h.command !== c2);
+    fs.writeFileSync(S2, JSON.stringify(s2, null, 2) + '\n');
+    const k = spawnSync('bash', [path.join(REPO, 'install.sh')], { encoding: 'utf8', env: env2, cwd: T2 });
+    ok(k.status === 0 && countCmd(readJson(S2), c2) === 0, 'k. install.sh run again does not re-add a hook the user deleted');
+    ok(k.stdout.includes(SKIP('write-evidence')), 'k. ... and prints the skipped line');
+  }
+
+  // l. the CLI entry point and help text
+  const agencyJs = path.join(REPO, 'cli', 'bin', 'agency.js');
+  const T3 = sandbox();
+  const env3 = Object.assign({}, process.env, { HOME: path.join(T3, 'home'), AGENCY_HOME: path.join(T3, 'root'), AGENCY_NO_HOOKS: '' });
+  fs.mkdirSync(env3.HOME, { recursive: true });
+  const l1 = spawnSync(process.execPath, [agencyJs, 'hooks', 'sync'], { encoding: 'utf8', env: env3 });
+  const l2 = spawnSync(process.execPath, [agencyJs, 'hooks', 'disable', 'loop-detector'], { encoding: 'utf8', env: env3 });
+  const s3 = readJson(path.join(env3.AGENCY_HOME, 'settings.json'));
+  ok(l1.status === 0 && l2.status === 0 && countCmd(s3, hm.renderCommand(manifest.hooks.find(h => h.id === 'loop-detector').command, env3.AGENCY_HOME)) === 0, 'l. agency hooks disable <id> works through the CLI');
+  const l3 = spawnSync(process.execPath, [agencyJs, 'hooks', 'enable', 'nope'], { encoding: 'utf8', env: env3 });
+  ok(l3.status === 1, 'l. agency hooks enable <unknown>: exit 1');
+  const l4 = spawnSync(process.execPath, [agencyJs, 'help'], { encoding: 'utf8', env: env3 });
+  ok(/agency hooks disable <id>/.test(l4.stdout) && /agency hooks enable <id>/.test(l4.stdout), 'l. agency help lists hooks disable|enable');
+  const l5 = spawnSync(process.execPath, [agencyJs, 'hooks'], { encoding: 'utf8', env: env3 });
+  ok(/hooks disable <id>/.test(l5.stdout) && /hooks enable <id>/.test(l5.stdout), 'l. agency hooks (no subcommand) usage lists disable|enable');
+}
+
+// ---------------------------------------------------------------------------
+section('12. install.sh end to end');
 if (process.platform === 'win32') {
   console.log('  skip install.sh e2e on win32 (covered by the install.ps1 job)');
 } else {

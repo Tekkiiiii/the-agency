@@ -50,6 +50,8 @@ async function main() {
     console.log('  agency upgrade                      Pull latest updates from git (also re-wires hooks)');
     console.log('  agency hooks sync                   Wire the agency hooks into settings.json (keeps your own hooks)');
     console.log('  agency hooks remove                 Unwire the agency hooks (keeps your own hooks)');
+    console.log('  agency hooks disable <id>           Unwire one hook and keep it off (also what deleting it by hand means)');
+    console.log('  agency hooks enable <id>            Wire a disabled hook again');
     process.exit(0);
   }
 

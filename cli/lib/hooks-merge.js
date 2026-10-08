@@ -10,7 +10,7 @@
 //
 // Callers: install.sh, install.ps1, `agency init`, `agency upgrade`, and
 // `agency hooks sync|remove`. Shell callers use the CLI form:
-//   node cli/lib/hooks-merge.js sync|remove [--root <root>] [--manifest <file>]
+//   node cli/lib/hooks-merge.js sync|remove|disable <id>|enable <id> [--root <root>] [--manifest <file>]
 //                                           [--auto] [--force] [--json]
 //   --auto   called by an installer/upgrade: honour AGENCY_NO_HOOKS=1
 //   --force  wire even on Windows when Git Bash (bash.exe) cannot be found
@@ -29,6 +29,13 @@
 //   the MSYS form (/c/Users/...), and — only when root is <home>/.claude —
 //   `~/.claude`, `$HOME/.claude`, `${HOME}/.claude`. A working `~/.claude` entry
 //   is never rewritten into an absolute path.
+//
+// Opt-out: an id the state file records as wired, whose entry is then gone from
+// settings.json under both its recorded and its current command, was removed by
+// the user. It is moved to state.disabled, never re-added, and reported
+// ("skipped <id> (you removed it; agency hooks enable <id> to restore)") on
+// every sync. `disable <id>` does the same on purpose; `enable <id>` undoes it.
+// With no state file (first-ever install) nothing is treated as deleted.
 //
 // Safety: a timestamped copy settings.json.bak-YYYYMMDD-HHMMSS is written NEXT
 // TO settings.json before any change (it travels with the root it belongs to,
@@ -139,9 +146,12 @@ function statePath(root) {
 function readState(root) {
   try {
     const s = JSON.parse(fs.readFileSync(statePath(root), 'utf8'));
-    if (s && typeof s.hooks === 'object' && !Array.isArray(s.hooks)) return s;
+    if (s && typeof s.hooks === 'object' && !Array.isArray(s.hooks)) {
+      if (!isPlainObject(s.disabled)) s.disabled = {};
+      return s;
+    }
   } catch (_) {}
-  return { version: 1, hooks: {} };
+  return { version: 1, hooks: {}, disabled: {} };
 }
 
 function isPlainObject(v) {
@@ -257,6 +267,9 @@ function planSync(data, manifest, state, ctx) {
   const added = [];
   const updated = [];
   const removed = [];
+  // Opt-outs: ids the user removed (or `agency hooks disable`d). id -> {event, matcher, command}
+  const disabled = Object.assign({}, state.disabled || {});
+  const newlyDisabled = new Set();
 
   const groupsOf = event => (isPlainObject(data.hooks) && Array.isArray(data.hooks[event])) ? data.hooks[event] : [];
   const findIn = (event, cmd, except) => {
@@ -276,8 +289,27 @@ function planSync(data, manifest, state, ctx) {
     else groups.push({ matcher: h.matcher, hooks: [entry] });
   };
 
+  // 0. opt-out: an id we wired last time (recorded in state) whose entry is now
+  // gone from settings.json under BOTH its recorded and its current command was
+  // removed by the user. Mark it disabled instead of putting it back. A changed
+  // command whose old form is still present is an update (step 1), not this.
+  // No state (first-ever install) means nothing is ever treated as deleted.
+  for (const h of manifest.hooks) {
+    if (disabled[h.id]) {
+      // wired by hand again: the opt-out is over
+      if (findIn(h.event, h.command)) delete disabled[h.id];
+      continue;
+    }
+    const prev = (state.hooks || {})[h.id];
+    if (!prev) continue;
+    if (findIn(h.event, h.command) || findIn(prev.event, prev.command)) continue;
+    disabled[h.id] = { event: prev.event, matcher: prev.matcher, command: prev.command };
+    newlyDisabled.add(h.id);
+  }
+
   // 1. updates: the manifest changed an entry we wired last time
   for (const h of manifest.hooks) {
+    if (disabled[h.id]) continue;
     const prev = (state.hooks || {})[h.id];
     if (!prev || (prev.command === h.command && prev.matcher === h.matcher && prev.event === h.event)) continue;
     let found = null;
@@ -322,6 +354,7 @@ function planSync(data, manifest, state, ctx) {
 
   // 3. add: shipped, not present in any equivalent form in that event
   for (const h of manifest.hooks) {
+    if (disabled[h.id]) continue;
     if (findIn(h.event, h.command)) continue;
     if (updated.some(u => u.id === h.id)) continue;
     place(h);
@@ -331,14 +364,45 @@ function planSync(data, manifest, state, ctx) {
   cleanup(data, touched, false);
 
   const newState = { version: 1, hooks: {} };
+  const skipped = [];
   let wired = 0;
   for (const h of manifest.hooks) {
-    if (findIn(h.event, h.command)) {
+    if (disabled[h.id]) {
+      // kept only while the manifest still ships the id
+      newState.disabled = newState.disabled || {};
+      newState.disabled[h.id] = disabled[h.id];
+      skipped.push({ id: h.id, event: h.event, matcher: h.matcher, newly: newlyDisabled.has(h.id) });
+    } else if (findIn(h.event, h.command)) {
       wired++;
       newState.hooks[h.id] = { event: h.event, matcher: h.matcher, command: h.command };
     }
   }
-  return { added, updated, removed, newState, wired };
+  return { added, updated, removed, newState, wired, skipped };
+}
+
+// `agency hooks disable <id>`: take our entry for <id> out of settings.json and
+// record the opt-out, so sync/upgrade/install never put it back.
+function planDisable(data, manifest, state, ctx, id) {
+  const norm = c => normaliseCommand(c, ctx);
+  const h = manifest.hooks.find(x => x.id === id);
+  const cmds = new Set([h.command]);
+  const prev = (state.hooks || {})[id];
+  if (prev && prev.command) cmds.add(prev.command);
+  const touched = new Set();
+  let removedEntries = 0;
+  if (isPlainObject(data.hooks)) {
+    for (const groups of Object.values(data.hooks)) {
+      for (const g of groups) {
+        for (const e of g.hooks.slice()) {
+          if (!isPlainObject(e) || !cmds.has(norm(e.command))) continue;
+          removeEntry(g, e, touched);
+          removedEntries++;
+        }
+      }
+    }
+  }
+  cleanup(data, touched, false);
+  return { removedEntries, entry: { event: prev ? prev.event : h.event, matcher: prev ? prev.matcher : h.matcher, command: h.command } };
 }
 
 function planRemove(data, manifest, state, ctx) {
@@ -500,6 +564,7 @@ function baseResult(action, ctx, opts) {
     updated: [],
     removed: [],
     wired: 0,
+    skipped: [],
     notes: [],
     bash: null,
     bashHint: false,
@@ -515,6 +580,28 @@ function commitSettings(res, settings, data, opts) {
   return true;
 }
 
+// State follows settings.json: rewritten only when it is missing or stale, so a
+// no-op run stays a no-op on disk.
+function writeStateIfChanged(root, newState) {
+  const stateText = JSON.stringify(newState, null, 2) + '\n';
+  let stateOld = null;
+  try { stateOld = fs.readFileSync(statePath(root), 'utf8'); } catch (_) {}
+  if (stateOld !== stateText) atomicWrite(statePath(root), stateText);
+}
+
+// Unknown or retired id for enable/disable -> an error result that lists the valid ids.
+function badHookId(res, manifest, id) {
+  const valid = manifest.hooks.map(h => h.id);
+  const isRetired = manifest.retired.some(r => r && r.id === id);
+  const what = isRetired ? `"${id}" is retired (no longer shipped), so it cannot be ${res.action}d`
+    : `unknown hook id ${JSON.stringify(id == null ? '' : id)}`;
+  return Object.assign(res, {
+    status: 'error',
+    reason: 'unknown-id',
+    error: `${what}. Valid ids: ${valid.join(', ')}`,
+  });
+}
+
 function syncHooks(opts = {}) {
   const ctx = makeCtx(opts);
   const res = baseResult('sync', ctx, opts);
@@ -526,6 +613,10 @@ function syncHooks(opts = {}) {
     manifest = loadManifest(manifestPath);
   } catch (e) {
     return Object.assign(res, { status: fs.existsSync(manifestPath) ? 'error' : 'skipped', reason: 'no-manifest', error: e.message });
+  }
+  if (opts.enable !== undefined) {
+    res.action = 'enable';
+    if (!manifest.hooks.some(h => h.id === opts.enable)) return badHookId(res, manifest, opts.enable);
   }
   if (ctx.platform === 'win32' && !opts.force) {
     let bash = null;
@@ -545,21 +636,54 @@ function syncHooks(opts = {}) {
   const settings = readSettings(res.settingsPath);
   if (settings.error) return Object.assign(res, { status: 'error', reason: 'malformed', error: `${res.settingsPath} is ${settings.error}` });
   const state = readState(ctx.root);
+  if (opts.enable !== undefined) {
+    res.enable = { id: opts.enable, wasDisabled: !!state.disabled[opts.enable] };
+    delete state.disabled[opts.enable];
+  }
   const plan = planSync(settings.data, manifest, state, ctx);
-  Object.assign(res, { added: plan.added, updated: plan.updated, removed: plan.removed, wired: plan.wired });
+  Object.assign(res, { added: plan.added, updated: plan.updated, removed: plan.removed, wired: plan.wired, skipped: plan.skipped });
   const changed = plan.added.length + plan.updated.length + plan.removed.length > 0;
   try {
     if (changed) commitSettings(res, settings, settings.data, opts);
-    // State follows settings.json: rewritten only when it is missing or stale,
-    // so a no-op run stays a no-op on disk.
-    const stateText = JSON.stringify(plan.newState, null, 2) + '\n';
-    let stateOld = null;
-    try { stateOld = fs.readFileSync(statePath(ctx.root), 'utf8'); } catch (_) {}
-    if (stateOld !== stateText) atomicWrite(statePath(ctx.root), stateText);
+    writeStateIfChanged(ctx.root, plan.newState);
   } catch (e) {
     return Object.assign(res, { status: 'error', reason: 'write-failed', error: e.message });
   }
   res.status = changed ? 'changed' : 'unchanged';
+  return res;
+}
+
+function disableHook(opts = {}) {
+  const ctx = makeCtx(opts);
+  const res = baseResult('disable', ctx, opts);
+  const manifestPath = opts.manifestPath || DEFAULT_MANIFEST;
+  let manifest;
+  try {
+    manifest = loadManifest(manifestPath);
+  } catch (e) {
+    return Object.assign(res, { status: 'error', reason: 'no-manifest', error: e.message });
+  }
+  const id = opts.id;
+  if (!manifest.hooks.some(h => h.id === id)) return badHookId(res, manifest, id);
+  const settings = readSettings(res.settingsPath);
+  if (settings.error) return Object.assign(res, { status: 'error', reason: 'malformed', error: `${res.settingsPath} is ${settings.error}` });
+  const state = readState(ctx.root);
+  const wasDisabled = !!state.disabled[id];
+  const plan = planDisable(settings.data, manifest, state, ctx, id);
+  res.disable = { id, wasDisabled, removedEntries: plan.removedEntries };
+  const newState = { version: 1, hooks: Object.assign({}, state.hooks) };
+  delete newState.hooks[id];
+  const disabled = Object.assign({}, state.disabled, { [id]: wasDisabled ? state.disabled[id] : plan.entry });
+  for (const k of Object.keys(disabled)) if (!manifest.hooks.some(h => h.id === k)) delete disabled[k];
+  newState.disabled = disabled;
+  try {
+    if (plan.removedEntries > 0 && settings.exists) commitSettings(res, settings, settings.data, opts);
+    writeStateIfChanged(ctx.root, newState);
+  } catch (e) {
+    return Object.assign(res, { status: 'error', reason: 'write-failed', error: e.message });
+  }
+  res.skipped = [{ id, event: plan.entry.event, matcher: plan.entry.matcher, newly: !wasDisabled }];
+  res.status = (plan.removedEntries > 0 || !wasDisabled) ? 'changed' : 'unchanged';
   return res;
 }
 
@@ -616,10 +740,21 @@ function where(event, matcher) {
 function formatResult(res) {
   const out = [];
   const file = res.settingsPath;
+  const skippedLines = () => (res.skipped || []).map(k =>
+    `  skipped ${k.id} (you removed it; agency hooks enable ${k.id} to restore)`);
+  if (res.reason === 'unknown-id') {
+    out.push(`Hooks: ${res.error}`);
+    out.push('  Nothing was changed.');
+    return out;
+  }
   if (res.status === 'skipped' || res.status === 'error') {
     const why = res.status === 'error' ? res.error : (REASONS[res.reason] || res.reason);
     if (res.action === 'remove') {
       out.push(`Hooks: NOT removed: ${why}. Nothing was changed.`);
+      return out;
+    }
+    if (res.action === 'disable') {
+      out.push(`Hooks: NOT disabled: ${why}. Nothing was changed.`);
       return out;
     }
     out.push(`Hooks: NOT wired: ${why}.${res.status === 'error' ? ' Nothing was changed.' : ''}`);
@@ -653,8 +788,26 @@ function formatResult(res) {
     out.push('  Restart Claude Code to apply the change. Re-wire any time with: agency hooks sync');
     return out;
   }
+  if (res.action === 'disable') {
+    const id = res.disable.id;
+    if (res.status === 'unchanged') {
+      out.push(`Hooks: ${id} is already disabled. Restore it with: agency hooks enable ${id}`);
+      return out;
+    }
+    const n = res.disable.removedEntries;
+    out.push(n > 0
+      ? `Hooks: disabled ${id} (removed ${n} entr${n === 1 ? 'y' : 'ies'} from ${file})`
+      : `Hooks: disabled ${id} (it was not wired; the opt-out is recorded)`);
+    out.push(`  It stays off across install, upgrade and sync. Restore it with: agency hooks enable ${id}`);
+    if (res.backup) out.push(`  Backup of the previous file: ${res.backup}`);
+    if (n > 0) out.push(`  ${RESTART_LINE}`);
+    return out;
+  }
   if (res.status === 'unchanged') {
-    out.push(`Hooks: ${res.wired} wired, up to date`);
+    if (res.enable && !res.enable.wasDisabled) out.push(`Hooks: ${res.enable.id} is already enabled`);
+    else if (res.enable) out.push(`Hooks: enabled ${res.enable.id} (it was already wired in ${file})`);
+    else out.push(`Hooks: ${res.wired} wired, up to date`);
+    out.push(...skippedLines());
     return out;
   }
   out.push(res.created
@@ -663,6 +816,7 @@ function formatResult(res) {
   for (const a of res.added) out.push(`  + ${pad(a.id, 24)}${pad(where(a.event, a.matcher), 26)}${a.purpose}`);
   for (const u of res.updated) out.push(`  ~ ${pad(u.id, 24)}${pad(where(u.event, u.matcher), 26)}${u.purpose} (updated: ${u.change})`);
   for (const r of res.removed) out.push(`  - ${pad(r.id, 24)}${pad(r.event, 26)}removed: no longer shipped`);
+  out.push(...skippedLines());
   if (res.backup) out.push(`  Backup of the previous file: ${res.backup}`);
   if (!res.created) out.push('  Your own hooks and settings were left as they were.');
   for (const n of res.notes || []) out.push(`  Note: ${n}.`);
@@ -701,6 +855,8 @@ function parseArgs(argv) {
     else if (/^--(root|manifest|repo)=/.test(a)) {
       const eq = a.indexOf('=');
       out.flags[a.slice(2, eq)] = a.slice(eq + 1);
+    } else if ((out.cmd === 'disable' || out.cmd === 'enable') && !a.startsWith('--') && out.id === undefined) {
+      out.id = a;
     } else {
       out.bad = a;
     }
@@ -708,11 +864,11 @@ function parseArgs(argv) {
   return out;
 }
 
-const USAGE = 'Usage: node cli/lib/hooks-merge.js sync|remove [--root <dir>] [--manifest <file>] [--auto] [--force] [--json]';
+const USAGE = 'Usage: node cli/lib/hooks-merge.js sync|remove|disable <id>|enable <id> [--root <dir>] [--manifest <file>] [--auto] [--force] [--json]';
 
 function runCli(argv, console = global.console) {
-  const { cmd, flags, bad } = parseArgs(argv);
-  if ((cmd !== 'sync' && cmd !== 'remove') || bad) {
+  const { cmd, flags, bad, id } = parseArgs(argv);
+  if (!['sync', 'remove', 'disable', 'enable'].includes(cmd) || bad) {
     console.error(USAGE);
     return 2;
   }
@@ -723,7 +879,11 @@ function runCli(argv, console = global.console) {
     auto: !!flags.auto,
     force: !!flags.force,
   };
-  const res = cmd === 'sync' ? syncHooks(opts) : removeHooks(opts);
+  let res;
+  if (cmd === 'sync') res = syncHooks(opts);
+  else if (cmd === 'remove') res = removeHooks(opts);
+  else if (cmd === 'disable') res = disableHook(Object.assign(opts, { id }));
+  else res = syncHooks(Object.assign(opts, { enable: id }));
   if (flags.json) console.log(JSON.stringify(res, null, 2));
   else for (const line of formatResult(res)) console.log(line);
   return res.status === 'error' ? 1 : 0;
@@ -745,6 +905,7 @@ module.exports = {
   planSync,
   planRemove,
   syncHooks,
+  disableHook,
   removeHooks,
   formatResult,
   manualCommands,

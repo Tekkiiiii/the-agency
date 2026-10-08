@@ -83,7 +83,7 @@ changed. Set `AGENCY_NO_HOOKS=1` to skip the wiring.
 agency upgrade
 ```
 
-### `agency hooks sync` / `agency hooks remove`
+### `agency hooks sync` / `agency hooks remove` / `agency hooks disable <id>` / `agency hooks enable <id>`
 
 Wire the hooks listed in `hooks/hooks.json` into `<agency-root>/settings.json`,
 or unwire them. Your own hooks and every other key in `settings.json` are left
@@ -95,7 +95,14 @@ Claude Code afterwards. See `docs/HOOKS.md`.
 ```bash
 agency hooks sync
 agency hooks remove
+agency hooks disable gate-guard   # unwire one hook and keep it off
+agency hooks enable gate-guard    # wire it again, now
 ```
+
+A hook you delete from `settings.json` by hand is treated like `disable`: sync,
+upgrade and the installers leave it out and print `skipped <id> (you removed it;
+agency hooks enable <id> to restore)`. An unknown or retired id exits 1 and
+lists the valid ids.
 
 `agency hooks sync` works even with `AGENCY_NO_HOOKS=1` set (that variable only
 turns off the automatic wiring in the installers, `agency init` and
