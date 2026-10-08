@@ -3,7 +3,7 @@ name: Protocol Registry
 description: Cross-department protocol index. Single source of truth for all protocols that span two or more departments. Dept Heads reference this before creating or modifying any cross-dept protocol.
 type: runbook
 owner: agency-council
-lastUpdated: 2026-05-13
+lastUpdated: 2026-10-08
 ---
 
 # Protocol Registry
@@ -69,21 +69,24 @@ proposed → testing → active → deprecated
    {agency-root}/agents/{owner-dept}/protocols/{protocol-slug}.md
    ```
 
-2. Notify all participant dept heads via SendMessage with:
+2. Notify all participant dept heads by writing a handoff file to each participant's inbox, `{agency-root}/agents/{participant-dept}/state/incoming/{protocol-slug}-{YYYY-MM-DD}.md` (dept heads read `incoming/` on boot; no SendMessage — same convention as `dept-coord-protocol.md` §14):
    ```
-   TYPE: coordination_request
-   SUBJECT: New cross-dept protocol — {protocol-slug}
-   STATUS: proposed
-   FILE: {agency-root}/agents/{owner-dept}/protocols/{protocol-slug}.md
+   From: {owner-dept}-lead
+   Date: {YYYY-MM-DD}
+   Subject: New cross-dept protocol — {protocol-slug}
+   Priority: medium
+   Type: coordination_request
+   Status: proposed
+   File: {agency-root}/agents/{owner-dept}/protocols/{protocol-slug}.md
    ---
    [Brief description and request for review]
    ```
 
-3. Once both dept heads signal agreement (in writing, via SendMessage), update status to `testing` in the protocol file header.
+3. Each participant dept head signals agreement in writing by dropping a reply file with `Status: agreed` into the owner dept head's `{agency-root}/agents/{owner-dept}/state/incoming/{protocol-slug}-{participant-dept}-{YYYY-MM-DD}.md` (no SendMessage). Once every participant has agreed, the owner dept head updates status to `testing` in the protocol file header.
 
 4. After a successful testing cycle, add a row to this registry and update the protocol file's status to `active`.
 
-5. Notify all participant dept heads of activation.
+5. Notify all participant dept heads of activation (same `state/incoming/` file handoff as step 2, `Status: active`).
 
 ---
 
@@ -91,7 +94,7 @@ proposed → testing → active → deprecated
 
 1. Owner dept head drafts the changes in the protocol file.
 2. Bump the version (e.g. v1.0 → v1.1 for minor, v1.0 → v2.0 for breaking).
-3. Notify all participant dept heads — same `coordination_request` format as above.
+3. Notify all participant dept heads — same `coordination_request` file handoff into their `state/incoming/` as above.
 4. **Both dept heads must ACK the change before it takes effect.**
 5. Update the version in this registry.
 
