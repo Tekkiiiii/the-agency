@@ -1,0 +1,91 @@
+{
+  "$comment": "Single source of truth for which hooks The Agency wires into settings.json. Read by cli/lib/hooks-merge.js (install.sh, install.ps1, agency init, agency upgrade, agency hooks sync|remove). {root} is replaced by the resolved agency root. The table in docs/HOOKS.md is generated from this file: node .github/scripts/check-hooks-manifest.js --write. To stop shipping a hook, move its entry to \"retired\" (id, event, command) so existing installs get it pruned.",
+  "version": 1,
+  "hooks": [
+    {
+      "id": "gate-guard",
+      "event": "PreToolUse",
+      "matcher": "Edit|Write",
+      "command": "bash {root}/hooks/gate-guard.sh",
+      "purpose": "Gate writes to sensitive files (settings, agents, hooks, SKILL.md)"
+    },
+    {
+      "id": "config-protection",
+      "event": "PreToolUse",
+      "matcher": "Edit|Write",
+      "command": "bash {root}/hooks/config-protection.sh",
+      "purpose": "Block modification of existing linter/formatter configs"
+    },
+    {
+      "id": "secret-scanner",
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "command": "bash {root}/hooks/secret-scanner.sh",
+      "purpose": "Scan shell commands for credential-looking patterns"
+    },
+    {
+      "id": "spawn-gate",
+      "event": "PreToolUse",
+      "matcher": "Agent",
+      "command": "bash {root}/hooks/spawn-gate.sh",
+      "purpose": "Generalist-switch gate: unknown or archived agent types get an ask pointing to agents-archive/ROLE-MAP.md"
+    },
+    {
+      "id": "track-edits",
+      "event": "PostToolUse",
+      "matcher": "Edit|Write",
+      "command": "bash {root}/hooks/track-edits.sh",
+      "purpose": "Buffer edited file paths for batch checking at session end"
+    },
+    {
+      "id": "write-evidence",
+      "event": "PostToolUse",
+      "matcher": "Edit|Write",
+      "command": "bash {root}/hooks/write-evidence.sh",
+      "purpose": "Log path + byte count of deliverable-shaped writes (paper trail against fabricated completions)"
+    },
+    {
+      "id": "loop-detector",
+      "event": "PostToolUse",
+      "matcher": "",
+      "command": "bash {root}/hooks/loop-detector.sh",
+      "purpose": "Detect stall loops: 5 identical tool calls in a row triggers a warning"
+    },
+    {
+      "id": "artifact-verify",
+      "event": "PostToolUse",
+      "matcher": "Agent",
+      "command": "bash {root}/hooks/artifact-verify.sh",
+      "purpose": "Check that files an agent claims to have delivered exist on disk"
+    },
+    {
+      "id": "startup-sync",
+      "event": "SessionStart",
+      "matcher": "",
+      "command": "bash {root}/hooks/startup-sync.sh",
+      "purpose": "Fast-forward the agency root's config from GitHub on session open"
+    },
+    {
+      "id": "check-settings-secrets",
+      "event": "SessionStart",
+      "matcher": "",
+      "command": "bash {root}/hooks/check-settings-secrets.sh",
+      "purpose": "Warn if settings.json has plaintext tokens in MCP env blocks"
+    },
+    {
+      "id": "check-session-state",
+      "event": "SessionStart",
+      "matcher": "",
+      "command": "bash {root}/hooks/check-session-state.sh",
+      "purpose": "Detect an unclean prior exit (crash / Ctrl+C)"
+    },
+    {
+      "id": "stop-chain",
+      "event": "Stop",
+      "matcher": "",
+      "command": "bash {root}/hooks/session-end.sh && bash {root}/hooks/batch-check.sh && bash {root}/hooks/cost-tracker.sh",
+      "purpose": "Mark the session cleanly ended, typecheck/shellcheck edited files, record session cost"
+    }
+  ],
+  "retired": []
+}

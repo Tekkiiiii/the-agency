@@ -138,6 +138,10 @@ if [ -d "$HOOKS_SRC" ]; then
         chmod +x "$HOOKS_DEST"/lib/*.sh 2>/dev/null || true
     fi
 
+    # The manifest of wired hooks (read by `agency hooks sync`; deployed so the
+    # installed tree matches what `agency upgrade` syncs).
+    [ -f "$HOOKS_SRC/hooks.json" ] && cp "$HOOKS_SRC/hooks.json" "$HOOKS_DEST/hooks.json"
+
     # Install default profile if not already set
     if [ ! -f "$CLAUDE_HOME/.hook-profile" ] && [ -f "$HOOKS_SRC/.hook-profile.template" ]; then
         cp "$HOOKS_SRC/.hook-profile.template" "$CLAUDE_HOME/.hook-profile"
@@ -149,63 +153,32 @@ else
 fi
 
 # --- Wire hooks into settings.json ---
-SETTINGS="$CLAUDE_HOME/settings.json"
-if [ -f "$SETTINGS" ]; then
-    # Check if hooks already wired
-    if ! grep -q "gate-guard.sh" "$SETTINGS" 2>/dev/null; then
-        echo "  ℹ Hook wiring: add the hooks block from docs/HOOKS.md to $SETTINGS"
-        echo "    (Automatic wiring skipped — settings.json exists and may have custom config)"
-    else
-        echo "  ✓ Hooks already wired in settings.json"
-    fi
-else
-    # Create minimal settings.json with hooks wired
-    # Hook commands are written with the RESOLVED root, not a literal ~/.claude.
-    # Under a custom AGENCY_HOME the two are different directories, and a
-    # settings.json pointing at ~/.claude/hooks/ would silently run nothing.
-    python3 -c "
-import json
-H = '$CLAUDE_HOME/hooks'
-hooks_config = {
-    'hooks': {
-        'PreToolUse': [
-            {'matcher': 'Edit|Write', 'hooks': [
-                {'type': 'command', 'command': f'bash {H}/gate-guard.sh'},
-                {'type': 'command', 'command': f'bash {H}/config-protection.sh'}
-            ]},
-            {'matcher': 'Bash', 'hooks': [
-                {'type': 'command', 'command': f'bash {H}/secret-scanner.sh'}
-            ]},
-            {'matcher': 'Agent', 'hooks': [
-                {'type': 'command', 'command': f'bash {H}/spawn-gate.sh'}
-            ]}
-        ],
-        'PostToolUse': [
-            {'matcher': 'Edit|Write', 'hooks': [
-                {'type': 'command', 'command': f'bash {H}/track-edits.sh'},
-                {'type': 'command', 'command': f'bash {H}/write-evidence.sh'}
-            ]},
-            {'matcher': '', 'hooks': [
-                {'type': 'command', 'command': f'bash {H}/loop-detector.sh'}
-            ]},
-            {'matcher': 'Agent', 'hooks': [
-                {'type': 'command', 'command': f'bash {H}/artifact-verify.sh'}
-            ]}
-        ],
-        'SessionStart': [
-            {'matcher': '', 'hooks': [{'type': 'command', 'command': f'bash {H}/startup-sync.sh'}]},
-            {'matcher': '', 'hooks': [{'type': 'command', 'command': f'bash {H}/check-settings-secrets.sh'}]},
-            {'matcher': '', 'hooks': [{'type': 'command', 'command': f'bash {H}/check-session-state.sh'}]}
-        ],
-        'Stop': [
-            {'matcher': '', 'hooks': [{'type': 'command', 'command': f'bash {H}/session-end.sh && bash {H}/batch-check.sh && bash {H}/cost-tracker.sh'}]}
-        ]
-    }
+# hooks/hooks.json is the one list of hooks we wire. cli/lib/hooks-merge.js
+# merges it into settings.json on EVERY install: it adds missing hooks, updates
+# or prunes only entries it owns, never touches the user's own hooks or other
+# keys, backs the file up next to itself before any change, and is a no-op on
+# disk when nothing changed. The python block it replaces wired hooks only when
+# settings.json did not exist yet, so anyone who already used Claude Code got
+# none at all. This step never fails the install: when wiring is skipped or
+# errors, the exact command to finish it is printed instead.
+# Opt out with AGENCY_NO_HOOKS=1 (same test as hooks-merge.js: set and not 0).
+HOOKS_MERGE="$SCRIPT_DIR/cli/lib/hooks-merge.js"
+hooks_manual() {
+    echo "    agency hooks sync"
+    echo "  or, without the agency command:"
+    echo "    node \"$HOOKS_MERGE\" sync --root \"$CLAUDE_HOME\""
+    echo "  Then: Restart Claude Code to activate the hooks."
 }
-with open('$SETTINGS', 'w') as f:
-    json.dump(hooks_config, f, indent=2)
-    f.write('\n')
-" 2>/dev/null && echo "  ✓ settings.json created with hooks wired" || echo "  ⚠ Could not create settings.json — wire hooks manually (see docs/HOOKS.md)"
+if [ -n "${AGENCY_NO_HOOKS:-}" ] && [ "${AGENCY_NO_HOOKS}" != 0 ]; then
+    echo "  Hooks: NOT wired: AGENCY_NO_HOOKS=1 is set. To set them up, run:"
+    hooks_manual
+elif ! command -v node >/dev/null 2>&1; then
+    echo "  Hooks: NOT wired: Node.js (node) was not found. Install Node.js, then run:"
+    hooks_manual
+elif [ ! -f "$HOOKS_MERGE" ] || [ ! -f "$HOOKS_SRC/hooks.json" ]; then
+    echo "  Hooks: NOT wired: cli/lib/hooks-merge.js or hooks/hooks.json is missing from $SCRIPT_DIR."
+else
+    node "$HOOKS_MERGE" sync --root "$CLAUDE_HOME" --auto 2>&1 | sed 's/^/  /' || true
 fi
 
 # --- Core docs ---

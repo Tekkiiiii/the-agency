@@ -226,6 +226,22 @@ jobs:
       - name: Assert agency upgrade + rescue.sh recover a rewritten origin safely
         run: bash .github/scripts/check-upgrade-rewrite.sh
 
+      # hooks/hooks.json is the one list of hooks every install path wires;
+      # docs/HOOKS.md carries a table generated from it. This fails when a
+      # manifest command names a script that is not in hooks/, hardcodes a root,
+      # or the docs table drifts from the manifest.
+      - name: Assert hooks manifest matches hooks/ and docs/HOOKS.md
+        run: node .github/scripts/check-hooks-manifest.js
+
+      # install.sh used to wire hooks only when settings.json did not exist, and
+      # agency upgrade never wired them, so existing users ran no hooks. The
+      # merge that replaced it edits a LIVE settings.json: this asserts that user
+      # hooks and keys survive sync/re-sync/manifest change/remove, that a second
+      # run is byte-identical with no new backup, and runs install.sh twice end
+      # to end. Sandboxed HOME/AGENCY_HOME throughout.
+      - name: Assert hooks merge keeps user hooks and is idempotent
+        run: node .github/scripts/check-hooks-merge.js
+
   install-ps1:
     name: install.ps1 (windows)
     runs-on: windows-latest
@@ -255,6 +271,33 @@ jobs:
         env:
           AGENCY_HOME: ${{ runner.temp }}\agency-default
         run: .\.github\scripts\verify-agency-refs.ps1 -AgencyRoot $env:AGENCY_HOME
+
+      # install.ps1 now wires hooks/hooks.json into settings.json through
+      # cli/lib/hooks-merge.js (Git Bash is on PATH on windows-latest, so it must
+      # wire, not skip). Advisory until its first green run on windows-latest:
+      # it has never executed there. Drop continue-on-error once it has.
+      - name: Assert install.ps1 wired the hooks (advisory until first green run)
+        continue-on-error: true
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: |
+          $settings = Join-Path $env:AGENCY_HOME 'settings.json'
+          if (-not (Test-Path $settings)) { throw "install.ps1 did not create settings.json" }
+          $s = Get-Content $settings -Raw | ConvertFrom-Json
+          $cmds = @()
+          foreach ($ev in $s.hooks.PSObject.Properties) {
+            foreach ($g in $ev.Value) { foreach ($h in $g.hooks) { $cmds += $h.command } }
+          }
+          $m = Get-Content hooks\hooks.json -Raw | ConvertFrom-Json
+          Write-Host "wired=$($cmds.Count) manifest=$($m.hooks.Count)"
+          if ($cmds.Count -ne $m.hooks.Count) { throw "expected $($m.hooks.Count) hook entries, got $($cmds.Count)" }
+          if (-not ($cmds | Where-Object { $_ -like 'bash *gate-guard.sh' })) { throw "gate-guard.sh not wired" }
+          if ($cmds | Where-Object { $_ -match '\\' }) { throw "a hook command contains a backslash: $($cmds -join '; ')" }
+          $before = (Get-FileHash $settings).Hash
+          .\install.ps1 | Out-Null
+          if ((Get-FileHash $settings).Hash -ne $before) { throw "second install.ps1 changed settings.json" }
+          if (Get-ChildItem $env:AGENCY_HOME -Filter 'settings.json.bak-*') { throw "no-op install wrote a backup" }
+          Write-Host "OK: hooks wired once, second install is a no-op"
 
       - name: Assert emit-metric.sh writes an event line
         env:
@@ -632,3 +675,12 @@ jobs:
         continue-on-error: true
         shell: bash
         run: bash .github/scripts/check-upgrade-rewrite.sh
+
+      # Same merge test as the ubuntu job, under Git Bash + Windows node
+      # (os.homedir() -> USERPROFILE, C:/ paths, case-insensitive root match).
+      # Its install.sh section skips itself on win32. Advisory until its first
+      # green run on windows-latest; drop continue-on-error once it has.
+      - name: Assert hooks merge keeps user hooks and is idempotent (advisory until first green run)
+        continue-on-error: true
+        shell: bash
+        run: node .github/scripts/check-hooks-merge.js

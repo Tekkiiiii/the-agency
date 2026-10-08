@@ -208,6 +208,43 @@ foreach ($tree in @("hooks", "runbooks", "scripts", "design-system", "agents-arc
     }
 }
 
+# --- Wire hooks into settings.json ---
+# Same merge as install.sh, `agency init` and `agency upgrade`:
+# cli\lib\hooks-merge.js reads hooks\hooks.json and merges it into
+# settings.json on EVERY install. It adds missing hooks, updates or prunes only
+# entries it owns, never touches the user's own hooks or other keys, copies the
+# file to settings.json.bak-<timestamp> next to itself before any change, and
+# writes nothing when nothing changed. It also checks for bash (Git Bash):
+# Claude Code runs these hooks with bash, so without it wiring is skipped and
+# the command to finish later is printed. This step never fails the install.
+# Opt out with AGENCY_NO_HOOKS=1. Hook paths are written with forward slashes.
+$HooksMerge = Join-Path $ScriptDir "cli\lib\hooks-merge.js"
+function Write-HooksManual {
+    Write-Host "    agency hooks sync"
+    Write-Host "  or, without the agency command:"
+    Write-Host "    node `"$HooksMerge`" sync --root `"$ClaudeHome`""
+    Write-Host "  Then: Restart Claude Code to activate the hooks."
+}
+if ($env:AGENCY_NO_HOOKS -and $env:AGENCY_NO_HOOKS -ne "0") {
+    Write-Host "  Hooks: NOT wired: AGENCY_NO_HOOKS=1 is set. To set them up, run:"
+    Write-HooksManual
+} elseif (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Write-Host "  Hooks: NOT wired: Node.js (node) was not found. Install Node.js, then run:"
+    Write-HooksManual
+} elseif (-not (Test-Path $HooksMerge) -or -not (Test-Path (Join-Path $ScriptDir "hooks\hooks.json"))) {
+    Write-Host "  Hooks: NOT wired: cli\lib\hooks-merge.js or hooks\hooks.json is missing from $ScriptDir."
+} else {
+    try {
+        # stdout only: under $ErrorActionPreference = "Stop", redirecting a
+        # native command's stderr can turn a warning line into a terminating error.
+        $HooksOut = & node $HooksMerge sync --root $ClaudeHome --auto
+        foreach ($line in $HooksOut) { Write-Host "  $line" }
+    } catch {
+        Write-Host "  Hooks: NOT wired: $($_.Exception.Message). To set them up, run:"
+        Write-HooksManual
+    }
+}
+
 # --- CLI command ---
 $CliSrc = Join-Path $ScriptDir "cli\bin\agency.js"
 if (Test-Path $CliSrc) {

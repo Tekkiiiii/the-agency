@@ -4,6 +4,7 @@ const { resolve, join } = require('path');
 const os = require('os');
 const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncAgentsArchive, syncDesignSystem, syncCore } = require('./sync-assets.js');
 const { printSyncRoot, printNoSettingsWarning } = require('../lib/root.js');
+const hooksMerge = require('../lib/hooks-merge.js');
 const {
   createBackup, checkIndexLock, rescueUnmerged, changedPaths,
   classify, findCounterparts, createBackupBranch,
@@ -514,6 +515,10 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const hooksDest = join(agencyRoot, 'hooks');
   const hooks = syncHooks(repoDir, hooksDest, console);
   console.log(`Hooks: ${hooks.updated} updated, ${hooks.preserved} preserved`);
+  // Wire hooks/hooks.json into settings.json. Upgrade used to sync the hook
+  // FILES only, so an existing user never got a hook registered. Non-fatal and
+  // non-destructive (see cli/lib/hooks-merge.js); AGENCY_NO_HOOKS=1 skips it.
+  const hooksWiring = hooksMerge.autoSync({ root: agencyRoot, repoDir, console });
 
   const runbooksDest = join(agencyRoot, 'runbooks');
   const runbooks = syncRunbooks(repoDir, runbooksDest, console);
@@ -593,6 +598,11 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   if (syncRootWarned) {
     console.log('');
     printNoSettingsWarning(agencyRoot, console);
+  }
+
+  if (hooksWiring.status === 'changed') {
+    console.log('');
+    console.log(`Hooks changed (see "Hooks:" above). ${hooksMerge.RESTART_LINE}`);
   }
 
   console.log('');

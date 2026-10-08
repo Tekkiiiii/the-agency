@@ -23,6 +23,7 @@ const COMMANDS = {
   skill:     () => require('../commands/skill.js'),
   tasks:     () => require('../commands/tasks.js'),
   upgrade:   () => require('../commands/upgrade.js'),
+  hooks:     () => require('../commands/hooks.js'),
   initiate:  () => require('../commands/bootstrap.js'),
   bootstrap: () => require('../commands/bootstrap.js'),
 };
@@ -46,7 +47,9 @@ async function main() {
     console.log('  agency tasks add <project> <name>   Add a task');
     console.log('  agency tasks done <task-id>         Mark task completed');
     console.log('  agency tasks status <id> <status>   Update task status');
-    console.log('  agency upgrade                      Pull latest updates from git');
+    console.log('  agency upgrade                      Pull latest updates from git (also re-wires hooks)');
+    console.log('  agency hooks sync                   Wire the agency hooks into settings.json (keeps your own hooks)');
+    console.log('  agency hooks remove                 Unwire the agency hooks (keeps your own hooks)');
     process.exit(0);
   }
 

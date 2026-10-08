@@ -75,6 +75,9 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const hooksDest = path.join(agencyRoot, 'hooks');
   const hooks = syncHooks(repoRoot, hooksDest, console);
   console.log(`  ✓ ${hooks.updated} hooks installed, ${hooks.preserved} preserved`);
+  // ...and wire them into settings.json (same merge as install.sh and
+  // `agency upgrade`; non-fatal, non-destructive, AGENCY_NO_HOOKS=1 skips it).
+  require('../lib/hooks-merge.js').autoSync({ root: agencyRoot, repoDir: repoRoot, console, indent: '  ' });
 
   // 4d. Runbooks (protocol docs referenced as `{agency-root}/runbooks/...` by
   // deployed agents/ files). Never deployed by any installer before this.

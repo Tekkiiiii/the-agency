@@ -1,6 +1,6 @@
 # Hook System
 
-The Agency ships a lifecycle hook system that runs shell scripts at key Claude Code events. Hook installation and wiring currently happens only in `install.sh` — it copies the scripts to `{agency-root}/hooks/` and, on a fresh install with no existing `settings.json`, writes the wiring into `{agency-root}/settings.json` for you. `agency init` and `agency upgrade` sync skills, agents, and core docs but do not sync or wire `hooks/` at all (see [Helper Scripts](#helper-scripts-hookslib) below). Re-running `install.sh` is the only supported way to pick up new or updated hooks after the initial install.
+The Agency ships a lifecycle hook system that runs shell scripts at key Claude Code events. Every install path — `install.sh`, `install.ps1`, `agency init` and `agency upgrade` — copies the scripts to `{agency-root}/hooks/` and then wires the hooks listed in [`hooks/hooks.json`](../hooks/hooks.json) into `{agency-root}/settings.json`, keeping every hook and key you added yourself. `agency hooks sync` and `agency hooks remove` do the same wiring on demand. See [Settings Wiring](#settings-wiring) below.
 
 > **`{agency-root}`** = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`.
 > Every path in this document is written with the default (`~/.claude`) for
@@ -9,7 +9,7 @@ The Agency ships a lifecycle hook system that runs shell scripts at key Claude C
 > every hook resolves its own root via `hooks/lib/resolve-root.sh`. See
 > [INSTALL-LAYOUT.md](INSTALL-LAYOUT.md#where-the-root-comes-from).
 
-This is a significant security and observability upgrade over a bare Claude Code install: 2 → 18 hooks across 5 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below). Of those 18, `install.sh` wires 14 into `settings.json` by default on a fresh install (see [Settings Wiring](#settings-wiring) below); the remaining 4 — telemetry/convenience hooks plus the deliberately-unregistered `fable-on-opus.sh` — ship on disk but are not registered until an operator adds them manually.
+This is a significant security and observability upgrade over a bare Claude Code install: 2 → 18 hooks across 5 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below). Of those 18, 14 are wired into `settings.json` by every install and upgrade — they are the entries of `hooks/hooks.json` (see [Settings Wiring](#settings-wiring) below); the remaining 4 — telemetry/convenience hooks plus the deliberately-unregistered `fable-on-opus.sh` — ship on disk but are not registered until an operator adds them manually.
 
 ---
 
@@ -42,78 +42,53 @@ This is a significant security and observability upgrade over a bare Claude Code
 
 ## Settings Wiring
 
-`install.sh` only wires hooks when it is creating a brand-new `settings.json` — if one already exists, it leaves it untouched (it may hold custom config) and prints a message pointing back at this file so you can wire hooks in by hand. On that fresh-install path, it writes this into `~/.claude/settings.json`:
+`hooks/hooks.json` is the single list of hooks The Agency wires. Each entry has an `id`, the Claude Code `event`, a `matcher` (`""` = every tool / always), the `command` with the agency root written as `{root}`, and a one-line `purpose`. `cli/lib/hooks-merge.js` merges that list into `{agency-root}/settings.json`. It runs:
 
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          { "type": "command", "command": "bash ~/.claude/hooks/gate-guard.sh" },
-          { "type": "command", "command": "bash ~/.claude/hooks/config-protection.sh" }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          { "type": "command", "command": "bash ~/.claude/hooks/secret-scanner.sh" }
-        ]
-      },
-      {
-        "matcher": "Agent",
-        "hooks": [
-          { "type": "command", "command": "bash ~/.claude/hooks/spawn-gate.sh" }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          { "type": "command", "command": "bash ~/.claude/hooks/track-edits.sh" },
-          { "type": "command", "command": "bash ~/.claude/hooks/write-evidence.sh" }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          { "type": "command", "command": "bash ~/.claude/hooks/loop-detector.sh" }
-        ]
-      },
-      {
-        "matcher": "Agent",
-        "hooks": [
-          { "type": "command", "command": "bash ~/.claude/hooks/artifact-verify.sh" }
-        ]
-      }
-    ],
-    "SessionStart": [
-      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/startup-sync.sh" }] },
-      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/check-settings-secrets.sh" }] },
-      { "matcher": "", "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/check-session-state.sh" }] }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/session-end.sh && bash ~/.claude/hooks/batch-check.sh && bash ~/.claude/hooks/cost-tracker.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+- on every `install.sh` / `install.ps1` run (not only when `settings.json` is new — that was the old behaviour, and it left every existing Claude Code user with no agency hooks at all);
+- on `agency init`, and on `agency upgrade` right after the hook scripts are synced;
+- on demand: `agency hooks sync` (wire) and `agency hooks remove` (unwire). Without the `agency` command on PATH: `node <repo>/cli/lib/hooks-merge.js sync --root "<agency-root>"`.
 
-That block is a literal transcription of `install.sh`'s `hooks_config` dict — 14 hooks across 4 events, nothing aspirational. Note what is **absent**: of the 18 lifecycle hooks that ship in `hooks/`, only these 14 are ever wired for you. The other 4 are copied to disk and left unregistered — see [Hooks Not Wired By Default](#hooks-not-wired-by-default) below.
+These are the hooks it wires (the table is generated from `hooks/hooks.json`):
 
-**`fable-on-opus.sh` is no longer wired by the installer.** Earlier releases wrote a `UserPromptSubmit` entry for it on every fresh install. Recent Opus-line models carry the reasoning/behavioral discipline this hook injects natively, so wiring it by default duplicated guidance the model already applies on its own — the installer now leaves it unregistered. The script and its `hooks/fable/` playbooks still ship and stay useful for operators on older model lines, or anyone who wants that discipline injected explicitly regardless of model tier.
+<!-- hooks-manifest:begin -->
+<!-- Generated from hooks/hooks.json by `node .github/scripts/check-hooks-manifest.js --write`. Do not edit by hand: CI fails when it drifts. -->
 
-Existing installs are untouched: the installer only writes `settings.json` when creating it fresh, so an entry you already have stays until you remove it (see [Unregistering a hook without deleting it](#unregistering-a-hook-without-deleting-it) below).
+| ID | Event | Matcher | Command | Purpose |
+|----|-------|---------|---------|---------|
+| `gate-guard` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/gate-guard.sh` | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
+| `config-protection` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/config-protection.sh` | Block modification of existing linter/formatter configs |
+| `secret-scanner` | PreToolUse | `Bash` | `bash {root}/hooks/secret-scanner.sh` | Scan shell commands for credential-looking patterns |
+| `spawn-gate` | PreToolUse | `Agent` | `bash {root}/hooks/spawn-gate.sh` | Generalist-switch gate: unknown or archived agent types get an ask pointing to agents-archive/ROLE-MAP.md |
+| `track-edits` | PostToolUse | `Edit\|Write` | `bash {root}/hooks/track-edits.sh` | Buffer edited file paths for batch checking at session end |
+| `write-evidence` | PostToolUse | `Edit\|Write` | `bash {root}/hooks/write-evidence.sh` | Log path + byte count of deliverable-shaped writes (paper trail against fabricated completions) |
+| `loop-detector` | PostToolUse | (all) | `bash {root}/hooks/loop-detector.sh` | Detect stall loops: 5 identical tool calls in a row triggers a warning |
+| `artifact-verify` | PostToolUse | `Agent` | `bash {root}/hooks/artifact-verify.sh` | Check that files an agent claims to have delivered exist on disk |
+| `startup-sync` | SessionStart | (all) | `bash {root}/hooks/startup-sync.sh` | Fast-forward the agency root's config from GitHub on session open |
+| `check-settings-secrets` | SessionStart | (all) | `bash {root}/hooks/check-settings-secrets.sh` | Warn if settings.json has plaintext tokens in MCP env blocks |
+| `check-session-state` | SessionStart | (all) | `bash {root}/hooks/check-session-state.sh` | Detect an unclean prior exit (crash / Ctrl+C) |
+| `stop-chain` | Stop | (all) | `bash {root}/hooks/session-end.sh && bash {root}/hooks/batch-check.sh && bash {root}/hooks/cost-tracker.sh` | Mark the session cleanly ended, typecheck/shellcheck edited files, record session cost |
+
+Retired (pruned from `settings.json` on the next sync): none.
+<!-- hooks-manifest:end -->
+
+The three Stop scripts stay one chained command, exactly as earlier installers wrote it, so an existing install is recognised as already wired instead of getting a duplicate.
+
+**What the merge changes, and what it never touches.** An entry in `settings.json` is the agency's when its command, with the root spelled `{root}`, equals a command in `hooks/hooks.json`, in its `retired` list, or in `{agency-root}/hooks/.agency-hooks-state.json` (the record of what the last sync wired). Everything else is yours and is never edited, moved or reordered — including scripts of your own that live in `{agency-root}/hooks/` but are not in the manifest, composite commands that happen to call one of our scripts, and every other top-level key (`permissions`, `env`, `mcpServers`, `statusLine`, ...).
+
+- **Add:** a manifest hook that is not wired yet goes into an existing group with the same matcher that holds only agency hooks, or into a new `{matcher, hooks: [...]}` group at the end of that event.
+- **Already wired:** an entry counts as present in any equivalent spelling of the root — the resolved path with forward or back slashes, the Git Bash form `/c/Users/...`, and, when the root is the default `<home>/.claude`, `~/.claude`, `$HOME/.claude` and `${HOME}/.claude`. A working `bash ~/.claude/hooks/x.sh` entry is left exactly as it is, under whatever matcher you put it.
+- **Update:** when a release changes the command or matcher of a hook the last sync wired, that one entry is changed or moved.
+- **Remove:** an agency hook that is no longer shipped (listed under `retired`, or recorded in the state file but gone from the manifest) is pruned. Groups and events that this leaves empty are removed; groups you left empty are not.
+- **Safety:** before any change the previous file is copied to `settings.json.bak-YYYYMMDD-HHMMSS` next to it, and the new file is written to a temporary file in the same folder and renamed into place. When nothing changed, nothing is written — no backup, no rewrite. A `settings.json` that is not valid JSON is never written; you get the error and the command to run once it is fixed.
+- **Paths:** commands are written with the resolved root and forward slashes (`bash C:/Users/me/.claude/hooks/gate-guard.sh` on Windows). A root that contains a space or another shell-special character is quoted per path.
+
+**What you see.** When hooks were added, updated or removed, the installer or upgrade prints one line per hook (name, event, purpose, what was done), the backup path and `Restart Claude Code to activate the hooks.` — Claude Code reads `settings.json` at start-up. When nothing changed it prints one line: `Hooks: 12 wired, up to date`. When wiring is skipped it prints why and the exact command to finish it:
+
+- `AGENCY_NO_HOOKS=1` — opt out of the automatic wiring in the installers, `agency init` and `agency upgrade`. An explicit `agency hooks sync` still works.
+- Windows without `bash` (Git Bash) on PATH — Claude Code runs these hooks with bash, so wiring is skipped (`agency hooks sync --force` wires them anyway).
+- `node` not installed (installers only) — install Node.js, then run the command printed.
+
+**Fable-on-Opus is not wired.** `fable-on-opus.sh` is not in `hooks/hooks.json`. Recent Opus-line models carry the reasoning/behavioral discipline this hook injects natively, so wiring it by default duplicated guidance the model already applies on its own. The script and its `hooks/fable/` playbooks still ship and stay useful for operators on older model lines, or anyone who wants that discipline injected explicitly regardless of model tier. An entry you added yourself is yours: the merge never removes it.
 
 To wire it in yourself, this is the block under `hooks`:
 
@@ -133,7 +108,7 @@ See [fable-on-opus.sh](#fable-on-opussh-userpromptsubmit) below for full behavio
 
 ### Hooks Not Wired By Default
 
-Four of the 18 shipped lifecycle hooks are copied to `hooks/` but never written into `settings.json` by `install.sh`:
+Four of the 18 shipped lifecycle hooks are copied to `hooks/` but are not in `hooks/hooks.json`, so no install or upgrade path wires them:
 
 | Hook | Event | Unwired because | What you lose |
 |------|-------|-----------------|---------------|
@@ -142,7 +117,7 @@ Four of the 18 shipped lifecycle hooks are copied to `hooks/` but never written 
 | `bg-job-warn.sh` | PostToolUse: Bash | convenience, opt-in is defensible | No warning when a render/build is backgrounded |
 | `fable-on-opus.sh` | UserPromptSubmit | deliberate — superseded on recent Opus-line models | No Fable discipline injection on older model lines |
 
-All four are unwired on purpose — three are telemetry and convenience, and `fable-on-opus.sh` was deliberately unregistered because recent model lines carry its discipline natively. Nothing in this list is a safety gap: `spawn-gate.sh`, `loop-detector.sh`, `write-evidence.sh`, and `artifact-verify.sh` — the four hooks previously documented here as an installer gap — are wired as of this release. See [Settings Wiring](#settings-wiring) above for their entries in `hooks_config`, and [spawn-gate.sh](#spawn-gatesh-pretooluse-agent) / [loop-detector.sh](#loop-detectorsh-posttooluse-all-tools) / [write-evidence.sh](#write-evidencesh-posttooluse-write-edit) / [artifact-verify.sh](#artifact-verifysh-posttooluse-agent) below for full behavior.
+All four are unwired on purpose — three are telemetry and convenience, and `fable-on-opus.sh` was deliberately unregistered because recent model lines carry its discipline natively. Nothing in this list is a safety gap: `spawn-gate.sh`, `loop-detector.sh`, `write-evidence.sh`, and `artifact-verify.sh` — the four hooks previously documented here as an installer gap — are wired by every install path. See [Settings Wiring](#settings-wiring) above for their entries in `hooks/hooks.json`, and [spawn-gate.sh](#spawn-gatesh-pretooluse-agent) / [loop-detector.sh](#loop-detectorsh-posttooluse-all-tools) / [write-evidence.sh](#write-evidencesh-posttooluse-write-edit) / [artifact-verify.sh](#artifact-verifysh-posttooluse-agent) below for full behavior.
 
 To wire any of the remaining four in yourself, merge an entry into the corresponding array in your `settings.json` `hooks` block (don't replace the entries already there — add alongside them). For example, for `spawn-logger.sh`:
 
@@ -166,6 +141,8 @@ To wire any of the remaining four in yourself, merge an entry into the correspon
 ### Unregistering a hook without deleting it
 
 When a hook's behavior becomes redundant (superseded by newer model/tool behavior, replaced by another hook, or simply not needed for your workflow), remove its event entry from `settings.json` — do not delete the script from `hooks/`.
+
+Note: this sticks for hooks that are **not** in `hooks/hooks.json`. A hook that is in the manifest is wired again by the next install, `agency upgrade` or `agency hooks sync`. To keep one of those off, either set `AGENCY_NO_HOOKS=1` and manage the wiring by hand, or turn it off through the [profile system](#profile-system) instead of unregistering it.
 
 This beats deletion for three reasons:
 - **Reversible.** Re-adding the event entry restores the behavior instantly; no need to re-fetch or rewrite the script.
@@ -230,7 +207,7 @@ The template `hooks/.hook-profile.template` ships `standard` as the default.
 
 ### fable-on-opus.sh (UserPromptSubmit)
 
-**Status: ships in `hooks/` but is no longer wired by `install.sh`** — recent Opus-line models carry this discipline natively, so the default registration was removed. See [Settings Wiring](#settings-wiring) above for the rationale and the opt-in wiring block.
+**Status: ships in `hooks/` but is not in `hooks/hooks.json`, so no install path wires it** — recent Opus-line models carry this discipline natively, so the default registration was removed. See [Settings Wiring](#settings-wiring) above for the rationale and the opt-in wiring block.
 
 Reads the incoming prompt payload from stdin (`session_id`, `transcript_path`, `model`, `prompt`) and determines the active model in order: the hook's own `.model` field, then the last assistant-model entry in the transcript JSONL, then the `model` key in `settings.json`. If the resolved model is not Opus-line, it clears any per-session marker files for that session and exits — a no-op on every other model tier.
 
@@ -293,7 +270,7 @@ Also scans write content for JWT/API key patterns. Returns `permissionDecision: 
 
 ### spawn-gate.sh (PreToolUse: Agent)
 
-**Status: wired into `settings.json` by `install.sh`** — see [Settings Wiring](#settings-wiring) above.
+**Status: wired into `settings.json` by every install path (`hooks/hooks.json`)** — see [Settings Wiring](#settings-wiring) above.
 
 Since the generalist switch (2026-10-06), `general-purpose` plus 1-3 named skills is the default spawn, and it passes without a question. The specialist agents are archived; their role-to-skills table is `{agency-root}/agents-archive/ROLE-MAP.md`. The gate only catches a `subagent_type` that is not recognized, such as a typo or a stale archived name. It never blocks: its strongest answer is an `ask`.
 
@@ -360,7 +337,7 @@ Any internal error is silent; the hook never blocks a write.
 
 ### loop-detector.sh (PostToolUse: all tools)
 
-**Status: wired into `settings.json` by `install.sh` as of this release** — see [Settings Wiring](#settings-wiring) above.
+**Status: wired into `settings.json` by every install path (`hooks/hooks.json`)** — see [Settings Wiring](#settings-wiring) above.
 
 Tracks the last 10 tool calls in `~/.claude/.tool-call-tracker.jsonl`. If 5 identical tool+input signatures appear consecutively, prints a stall warning to stderr visible to the running agent and writes a `stall_detected` marker to `session-state.json`.
 
@@ -424,7 +401,7 @@ A shared one-line utility, not itself wired into `settings.json`. Other hooks (`
 
 Always exits 0 and never raises; if the input is missing or unparseable, it's a silent no-op.
 
-`hooks/fable/` is the one other subdirectory under `hooks/` — it holds the Fable playbook modules read by `fable-on-opus.sh` above, not additional registered hooks. `install.sh` copies it explicitly, as a separate step from the generic `hooks/*.sh` glob it uses for flat hook scripts (that glob does not pick up `*.md` files or subdirectories). Note that hook installation currently happens only in `install.sh` — `agency init`/`agency upgrade` sync skills, agents, and core docs but do not currently sync `hooks/` at all; re-running `install.sh` is the only supported way to pick up new or updated hooks post-install.
+`hooks/fable/` is the one other subdirectory under `hooks/` — it holds the Fable playbook modules read by `fable-on-opus.sh` above, not additional registered hooks. `install.sh` copies it explicitly, as a separate step from the generic `hooks/*.sh` glob it uses for flat hook scripts (that glob does not pick up `*.md` files or subdirectories). `agency init` and `agency upgrade` copy the whole `hooks/` tree, `fable/` and `lib/` included.
 
 ---
 
@@ -480,8 +457,8 @@ Reads the current context-window usage (from `$CLAUDE_CONTEXT_PCT`, or parsed ou
 
 To add a new hook:
 
-1. Write the script to `hooks/{name}.sh`
-2. Add it to `~/.claude/settings.json` under the correct event
+1. Write the script to `hooks/{name}.sh` and document it under [Hook Details](#hook-details)
+2. Add an entry to `hooks/hooks.json` (`id`, `event`, `matcher`, `command` as `bash {root}/hooks/{name}.sh`, `purpose`), then run `node .github/scripts/check-hooks-manifest.js --write` to regenerate the table in [Settings Wiring](#settings-wiring). Every install and `agency upgrade` then wires it, and prints it as new. To stop shipping a hook later, move its entry to `retired` (`id`, `event`, `command`) so existing installs get it pruned.
 3. Make it profile-aware if it blocks or warns:
    ```bash
    PROFILE=$(cat "$HOME/.claude/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
