@@ -175,10 +175,6 @@ If an Exec/Member's completion report includes `APPROACH_UNREVIEWED` or
 - TIER_A tasks still skip the APPROACH gate entirely (one-sentence "starting" fire-and-
   forget notice, no checkpoint file, no poll). CHECKPOINT is still mandatory for all
   tiers, TIER_A included.
-- The LITE tier removes both gates outright (`core/agents/coord-lite.md`,
-  `task-executor-lite.md`), so this protocol does not apply there. If either gate is
-  ever re-enabled in lite, it must adopt this handshake — never the old
-  SendMessage-and-wait pattern.
 
 ## Failure record
 

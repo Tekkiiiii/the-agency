@@ -274,32 +274,6 @@ Preserves: `projects/`, `sessions/`, `lessons/`, `decisions/`, `skills/`, `task-
 
 Overwrites: `core/`, `cli/`, `docs/`
 
-### LITE-PROPAGATION GATE (D42) — DEPRECATED, still mandatory until file deletion
-
-> **Deprecated 2026-07-14.** The `lite` tier itself is sunset (see `docs/tiers.md`) —
-> the token pressure D42 existed to manage no longer applies. This gate still runs on
-> every upgrade until `pd-coordinator-lite.md` / `coord-lite.md` / `task-executor-lite.md`
-> are deleted next release; do not skip it early just because lite is deprecated.
-
-Any change to the pd/coord/executor trio in `core/agents/` MUST include a matching
-re-derive of the lite variants in the same commit. The upgrade flow does NOT do this
-automatically — lite variants are repo-only packaging artifacts and are never touched
-by `~/.claude/` → repo delta syncs.
-
-**Checklist after any trio change:**
-
-1. Identify which of `pd-coordinator.md`, `coord.md`, `task-executor.md` changed
-2. For each changed file: re-derive its `-lite` counterpart
-   - NEW CAPABILITY (something agents can do) → carry into lite, compressed
-   - VERBOSE PROTOCOL/EXPLANATION (why/how spelled out at length) → drop or replace with a 1-line pointer to the standard doc
-3. Verify lite is genuinely lighter: lite word count should be ~55-70% of standard (never ≥ 90%)
-4. Run `node cli/bin/agency.js tier get` and confirm `agentTrio()` still maps to the correct filenames
-5. Check `docs/tiers.md` — if the feature table changed, update it
-
-If a new pd-coord agent is added with no lite equivalent, CREATE one before the commit.
-
-See `~/.claude/projects/the-agency/memory/decisions.md` D42 for the full rationale.
-
 ---
 
 ## Skill Directory Format

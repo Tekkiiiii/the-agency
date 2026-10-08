@@ -19,12 +19,8 @@ Out of the box, Claude Code forgets everything when a session ends. Long tasks s
 240+ skills and 45+ agents. No cloud, no extra API keys.
 
 ```bash
-agency init                   # standard — full quality gates (default)
+agency init                   # full quality gates
 ```
-
-`standard` is the only supported tier. A `lite` tier existed for Claude Pro's tighter
-context budget; it's deprecated as of 2026-07-14 (the token pressure it addressed no
-longer applies — see `docs/tiers.md`) and will be removed next release.
 
 ---
 
@@ -185,27 +181,6 @@ same order — `$AGENCY_HOME`, then `$CLAUDE_CONFIG_DIR`, then `~/.claude` — s
 custom root is installed to *and* read from consistently. CI verifies this on both
 Linux and Windows on every push. See
 [docs/INSTALL-LAYOUT.md](docs/INSTALL-LAYOUT.md#where-the-root-comes-from).
-
-## Choosing Your Tier
-
-The Agency ships one supported tier:
-
-```bash
-agency init                   # standard — full quality gates (default)
-```
-
-| | standard |
-|--|--|
-| Agent trio | pd-coordinator + coord + task-executor |
-| Coord role | Team-lead (Approach Gate, 50% Check-In) |
-| QA gates | Phase A + Phase B (IntegrationTester) |
-| Approach Gate | Yes |
-| 50% Check-In | Yes |
-
-A `lite` tier (lower token use, fewer gates) is **deprecated** as of 2026-07-14 and
-scheduled for removal next release — it still works via `agency tier set lite` this
-release but prints a warning. See [docs/tiers.md](docs/tiers.md) for the sunset
-rationale and full historical comparison.
 
 ---
 

@@ -73,16 +73,10 @@ on ~300 defs to solve a problem ~21 of them have.
 **Two consequences worth stating, so they are not rediscovered as bugs:**
 
 1. `[1m]` attaches to `model:`, never to `modelTier:` (see above — `modelTier` is inert).
-2. Three orchestrator defs carry no `model:` key at all (`core/agents/PD.md`,
-   `core/agents/pd-coordinator-lite.md`, `core/agents/coord-lite.md`). They **inherit** the spawning session's
-   model and are intentionally left untouched — pinning a model on them is a separate
-   decision from adopting `[1m]`. If a `model:` key is ever added to one of them, this
+2. The orchestrator def `core/agents/PD.md` carries no `model:` key at all. It **inherits** the
+   spawning session's model and is intentionally left untouched — pinning a model on it is a
+   separate decision from adopting `[1m]`. If a `model:` key is ever added to it, this
    policy applies and it gets the suffix.
-
-LITE-variant orchestrators are in scope by role even though the lite tier exists to cut
-cost: the driver here is *runtime context accumulation*, not prompt size, and a tier switch
-should not silently change an orchestrator's context ceiling. They are excluded today only
-by consequence 2 above (no `model:` key), not by policy.
 
 **Status loop policy:** Automated recurring loops are DISABLED. Use on-demand status checks only. Dept heads request status when needed — do not automate periodic pings. This avoids the token explosion risk of naive 15-30 min loop implementations (10k-21k reports/week without aggregation). See § on status reporting.
 
