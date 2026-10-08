@@ -20,8 +20,7 @@ Any protocol listed here has passed cross-dept sign-off and is considered active
 
 | Protocol | Owner Dept | Participants | Version | Status | File Path |
 |---|---|---|---|---|---|
-| content-request | content-creation | marketing | v1.0 | active | `agents/content-creation/protocols/content-request.md` |
-| marketing-content-handoff | marketing | content-creation | v1.0 | active | `agents/marketing/protocols/marketing-content-handoff.md` |
+| content-request | content-creation | any requester | v1.0 | active | `agents/content-creation/protocols/content-request.md` |
 
 **Column definitions:**
 - **Protocol** — machine-readable slug, kebab-case, unique across the registry

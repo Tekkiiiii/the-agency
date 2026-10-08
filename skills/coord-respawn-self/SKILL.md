@@ -94,7 +94,7 @@ L3 task: {l3-task-description}
 - If you are an **execution Coord** (spawned by a PD, `reports_to: pd-coordinator`):
   → Send to "PD-{slug}" via SendMessage.
 - If you are a **Dept-Coord** (role: dept-coord, spawned by a dept lead):
-  → Send to your Dept Head (e.g. "engineering-lead", "marketing-lead") via SendMessage.
+  → Send to your Dept Head (e.g. "engineering-lead", "design-lead") via SendMessage.
 
 Message format (same in both cases — substitute the correct recipient):
 ```

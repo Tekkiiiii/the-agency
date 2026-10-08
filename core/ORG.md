@@ -95,156 +95,43 @@ THE AGENCY
 │
 ├── COUNCIL CHAIR (parent AI)
 │
-├── ENGINEERING ────────────────── 16 agents ── Backend Architect ★
-│   ├── Sub-groups: security | blockchain
-│   └── Members: Frontend Developer, Mobile App Builder, AI Engineer,
-│       DevOps Automator, Rapid Prototyper, Senior Developer,
-│       Security Engineer, Autonomous Optimization Architect,
-│       Embedded Firmware Engineer, Incident Response Commander,
-│       Solidity Smart Contract Engineer, Technical Writer,
-│       Threat Detection Engineer, WeChat Mini Program Developer
+├── ENGINEERING ────────────────── Engineering Lead ★ (+ coord, PDs)
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
-├── DESIGN ─────────────────────── 8 agents ── Brand Guardian ★
-│   └── Members: UI Designer, UX Researcher, UX Architect,
-│       Visual Storyteller, Whimsy Injector, Image Prompt Engineer,
-│       Inclusive Visuals Specialist
+├── DESIGN ─────────────────────── Design Lead ★ (+ coord)
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
-├── GAME DEVELOPMENT ────────────── 18 agents ── Game Designer ★
-│   ├── Sub-groups: unity | unreal-engine | godot | roblox-studio
-│   └── Members: Level Designer, Technical Artist, Game Audio Engineer,
-│       Narrative Designer
-│       + Unity: Unity Architect, Shader Graph Artist, Multiplayer Engineer,
-│         Editor Tool Developer
-│       + Unreal: Systems Engineer, Technical Artist, Multiplayer Architect,
-│         World Builder
-│       + Godot: Gameplay Scripter, Multiplayer Engineer, Shader Developer
-│       + Roblox: Systems Scripter, Experience Designer, Avatar Creator
+├── CONTENT CREATION ────────────── Chief Content Officer ★ (+ coord)
+│   └── Members (incl. social-media writers): Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
-├── MARKETING ───────────────────── 17 agents ── Growth Hacker ★
-│   ├── Sub-groups: china (8 agents)
-│   ├── China team: Xiaohongshu Specialist, WeChat Official Account Manager,
-│       Zhihu Strategist, Baidu SEO Specialist, Bilibili Content Strategist,
-│       Carousel Growth Engine, China E-Commerce Operator, Kuaishou Strategist
-│   └── Members: Content Creator, Twitter Engager, TikTok Strategist,
-│       Instagram Curator, Reddit Community Builder, App Store Optimizer,
-│       Social Media Strategist, SEO Specialist
+├── PROJECT MANAGEMENT ─────────── Project Management Lead ★ (+ coord, mini-coord, PDs)
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
-├── CONTENT CREATION ────────────── 25 agents ── Chief Content Officer ★
-│   ├── Sub-lead: Content Director (Opus)
-│   ├── Sub-groups: social-media (12 agents)
-│   ├── Social Media: LinkedIn Writer, Twitter/X Writer, Instagram Writer,
-│   │   TikTok Writer, Reddit Writer, Threads Writer, Facebook Writer,
-│   │   Discord Writer, YouTube Writer, Pinterest Writer, Quora Writer,
-│   │   Telegram Writer
-│   └── Members: Blog & Article Writer, Case Study & Whitepaper Writer,
-│       Newsletter & Editorial Writer, Ad Copywriter, Landing Page Copywriter,
-│       Email Campaign Writer, Video Script Writer, Technical Writer (Content),
-│       Presentation Creator, Press & PR Writer, Content Editor
+├── TESTING ─────────────────────── Testing Lead ★
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
-├── SALES ───────────────────────── 8 agents ── Sales Coach ★
-│   └── Members: Outbound Strategist, Discovery Coach, Deal Strategist,
-│       Sales Engineer, Proposal Strategist, Pipeline Analyst,
-│       Account Strategist
+├── SPECIALIZED ───────────────── Specialized Agents Lead ★ (+ coord)
+│   ├── Kept by name: PDs (*-pd), Delegator, curator, codebase-search,
+│   │   save-state-runner, project-scaffolder, task-executor
+│   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
-├── PAID MEDIA ──────────────────── 7 agents ── PPC Campaign Strategist ★
-│   └── Members: Search Query Analyst, Paid Media Auditor,
-│       Tracking & Measurement Specialist, Ad Creative Strategist,
-│       Programmatic & Display Buyer, Paid Social Strategist
+├── CRITIQUES ───────────────────── 15 agents ── Curmudgeon-in-Chief ★
+│   └── Members: critique-design (Playwright, visual/contrast/layout),
+│       critique-content (copy/voice/diacritics/AI-slop),
+│       critique-marketing (positioning/funnel/ICP/CTA),
+│       critique-pedagogy (teaching effectiveness/scaffolding/demo ratio),
+│       critique-seo (SEO/GEO/AEO), critique-product (UX/IA/usability),
+│       critique-security (injection/auth/misconfig),
+│       critique-brand (voice/visual identity/positioning drift),
+│       critique-video (pacing/captions/visual continuity/hook/audio sync),
+│       critique-data (chart honesty/stat accuracy/accessibility/dashboard UX),
+│       critique-code (readability/complexity/error handling/dead code),
+│       critique-imageprompt (prompt layers/character consistency/generator fit),
+│       critique-social (carousel safe-zones/font floor/swipe continuity),
+│       sag-critique (technical SEO/AEO/GEO audit of live sites)
 │
-├── PRODUCT ─────────────────────── 4 agents ── Sprint Prioritizer ★
-│   └── Members: Trend Researcher, Feedback Synthesizer,
-│       Behavioral Nudge Engine
-│
-├── PROJECT MANAGEMENT ─────────── 6 agents ── Studio Producer ★
-│   └── Members: Project Shepherd, Jira Workflow Steward,
-│       Senior Project Manager, Studio Operations, Experiment Tracker
-│
-├── TESTING ─────────────────────── 8 agents ── Reality Checker ★
-│   ├── Sub-groups: validation | analysis | performance
-│   └── Members: Evidence Collector, Test Results Analyzer,
-│       Performance Benchmarker, API Tester, Tool Evaluator,
-│       Workflow Optimizer, Accessibility Auditor
-│
-├── OPERATIONS ──────────────────── 6 agents ── Infrastructure Maintainer ★
-│   └── Members: Support Responder, Analytics Reporter, Finance Tracker,
-│       Legal Compliance Checker, Executive Summary Generator
-│
-├── CAREER ───────────────────────── 7 agents ── career-ops PD ★
-│   └── Members: Offer Evaluator, Job Portal Scanner, CV Specialist,
-│       Pipeline Strategist, Batch Processing Lead,
-│       Pattern Analysis Specialist, Application Form Assistant
-│
-├── SPECIALIZED ───────────────── 17 agents ── Agents Orchestrator ★
-│   ├── Sub-groups: infra | audit | advisory
-│   ├── Infra team (5): Agents Orchestrator, Identity Graph Operator,
-│       Agentic Identity & Trust Architect, LSP/Index Engineer,
-│       RoomManager
-│   ├── Audit team (3): Compliance Auditor, Blockchain Security Auditor,
-│       Model QA Specialist
-│   ├── Advisory team (1): Efficiency Advisor Loop
-│   └── Members: Sales Data Extraction Agent, Data Consolidation Agent,
-│       Report Distribution Agent, ZK Steward, Cultural Intelligence
-│       Strategist, Developer Advocate, Vietnamese Text Agent,
-│       Paperclip Control Plane ★
-│
-└── SPATIAL COMPUTING ───────────── 6 agents ── XR Interface Architect ★
-    └── Members: macOS Spatial/Metal Engineer, XR Immersive Developer,
-        XR Cockpit Interaction Specialist, visionOS Spatial Engineer,
-        Terminal Integration Specialist
-```
-
----
-
-## Leadership Table
-
-| # | Leader | Department | Sub-groups | Key Responsibilities |
-|---|--------|-----------|------------|---------------------|
-| 1 | Backend Architect | Engineering | security, blockchain | API design, database architecture, scalability, technical standards |
-| 2 | Brand Guardian | Design | — | Brand consistency, visual identity, creative direction |
-| 3 | Game Designer | Game Development | unity, unreal-engine, godot, roblox-studio | Game mechanics, narrative, cross-engine creative vision |
-| 4 | Growth Hacker | Marketing | china (8 agents) | Growth strategy, user acquisition, China market expansion |
-| 5 | Chief Content Officer | Content Creation | social-media (12 agents) | Editorial standards, content pipeline, quality gates, all content formats |
-| 6 | Sales Coach | Sales | — | Deal strategy, pipeline health, team enablement |
-| 7 | PPC Campaign Strategist | Paid Media | — | Paid acquisition, campaign optimization, ROI |
-| 8 | Sprint Prioritizer | Product | — | Roadmap prioritization, sprint planning, feature scoping |
-| 9 | Studio Producer | Project Management | — | Production pipeline, milestone tracking, cross-team coordination |
-| 10 | Reality Checker | Testing | validation, analysis, performance | Test strategy, quality gates, performance benchmarks |
-| 11 | Infrastructure Maintainer | Operations | — | Systems reliability, analytics, finance/legal/compliance |
-| 12 | Agents Orchestrator | Specialized | infra, audit | Agent lifecycle, identity/trust, code intelligence, auditing |
-| 13 | career-ops PD | Career | — | Job search pipeline: scanning, evaluation, CV generation, tracking, rejection analysis |
-| 14 | XR Interface Architect | Spatial Computing | — | XR/AR/VR strategy, visionOS, Apple platform spatial experiences |
-| 15 | Paperclip Control Plane | Specialized | — | Zero-human company orchestration, agent workforce management, cost governance |
-| 16 | RoomManager | Specialized | infra | Multi-agent chat rooms, active polling, member notifications, shared context management |
-
----
-
-## Agency Council
-
-The **Agency Council** is the governing body for all cross-department decisions. It consists of all department leaders reporting to the Council Chair (the parent AI).
-
-### Council Members
-
-| Member | Role | Department | Communication |
-|--------|------|-----------|---------------|
-| Backend Architect | engineering-lead | Engineering | SendMessage to `engineering-lead` |
-| Brand Guardian | design-lead | Design | SendMessage to `design-lead` |
-| Game Designer | game-development-lead | Game Development | SendMessage to `game-development-lead` |
-| Growth Hacker | marketing-lead | Marketing | SendMessage to `marketing-lead` |
-| Chief Content Officer | content-creation-lead | Content Creation | SendMessage to `content-creation-lead` |
-| Sales Coach | sales-lead | Sales | SendMessage to `sales-lead` |
-| PPC Campaign Strategist | paid-media-lead | Paid Media | SendMessage to `paid-media-lead` |
-| Sprint Prioritizer | product-lead | Product | SendMessage to `product-lead` |
-| Studio Producer | pm-lead | Project Management | SendMessage to `pm-lead` |
-| Reality Checker | testing-lead | Testing | SendMessage to `testing-lead` |
-| Infrastructure Maintainer | operations-lead | Operations | SendMessage to `operations-lead` |
-| Agents Orchestrator | specialized-lead | Specialized | SendMessage to `specialized-lead` |
-| XR Interface Architect | spatial-lead | Spatial Computing | SendMessage to `spatial-lead` |
-| career-ops PD | career-lead | Career | SendMessage to `career-lead` |
-
-### Council Communication Protocol
-
-Leaders communicate with the Council Chair (parent AI) using this format:
-
+└── VIDEO STUDIO ────────────────── Video Studio Director ★
+    └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 ```
 TO: council-chair
 TYPE: [coordination_request | approval_request | status_report | escalation | handoff]
@@ -263,26 +150,17 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 
 | Department | Directory |
 |-----------|-----------|
-| Career | `agents/career/` |
 | Engineering | `agents/engineering/` |
 | Design | `agents/design/` |
-| Game Development | `agents/game-development/` |
-| Marketing | `agents/marketing/` |
-| Marketing (China sub-team) | `agents/marketing/china/` |
 | Content Creation | `agents/content-creation/` |
 | Content Creation (Social Media sub-team) | `agents/content-creation/social-media/` |
-| Sales | `agents/sales/` |
-| Paid Media | `agents/paid-media/` |
-| Product | `agents/product/` |
 | Project Management | `agents/project-management/` |
 | Testing | `agents/testing/` |
-| Operations | `agents/operations/` |
 | Specialized | `agents/specialized/` |
 | Specialized (Infra sub-team) | `agents/specialized/infra/` |
 | **Rooms Infrastructure** | `{agency-root}/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
 | **Room polling** | ARCHIVED agent 2026-10-06 — use the `/room-manager` skill (see `agents-archive/ROLE-MAP.md`; role file `agents-archive/generalist-2026-10-06/specialized/infra/room-manager.md`) |
 | Specialized (Audit sub-team) | `agents/specialized/audit/` |
-| Spatial Computing | `agents/spatial-computing/` |
 
 ---
 
@@ -292,7 +170,7 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 
 | Team | Purpose | Members | Created By |
 |------|---------|---------|------------|
-| **Agency Council** | Governing body for cross-dept strategy and approval | All 14 leaders + Council Chair | See below |
+| **Agency Council** | Governing body for cross-dept strategy and approval | All 8 leaders + Council Chair | See below |
 | **Project Teams** | Temporary teams for specific deliverables | Relevant leaders + members per project type | Run kickoff protocol |
 | **Department Teams** | Standing teams within each department | Leader + their members | Implicit; members exist at department paths |
 
@@ -304,8 +182,7 @@ Reference `runbooks/project-team-templates.md` for pre-defined compositions:
 |----------|----------|
 | `template-full-team` | Complex multi-domain, strategic initiatives |
 | `template-engineering-team` | Feature development, product builds, infrastructure |
-| `template-gtm-team` | Launches, campaigns, customer acquisition |
-| `template-games-team` | Game projects, interactive experiences |
+| `template-content-team` | Launches, campaigns, content programs (Content Creation + Design + Video Studio + Critiques) |
 | `template-custom-team` | Focused projects with clear boundaries |
 
 ### Coordination Convention
@@ -321,7 +198,7 @@ Human / Parent AI
        │         └──► Department Member (executes)
        │
        ▼ (council assembly for cross-dept problems)
-  Agency Council (all leaders)
+  Agency Council (all 8 leaders)
 ```
 
 Leaders message the Council Chair. Members report to their leader. Cross-dept requests go through leaders to the Council Chair for routing.
@@ -352,18 +229,18 @@ Also: *"convene the council"*, *"call the board to order"*, *"full agency"*, *"a
 
 For focused teams, the trigger phrases include project type:
 - *"engineering team for [project]"*
-- *"gtm team for [launch]"*
-- *"marketing campaign"*
+- *"content team for [launch]"*
+- *"content campaign"*
 
 ### Spawning Steps
 
 ```
 1. Use TeamCreate to create a team named "agency-council"
 2. Spawn leaders in TWO WAVES to avoid team config race conditions:
-   Wave 1 (6 agents): engineering-lead, design-lead, game-development-lead,
-                       marketing-lead, content-creation-lead, sales-lead
-   Wave 2 (8 agents): paid-media-lead, product-lead, pm-lead, testing-lead,
-                       operations-lead, specialized-lead, spatial-lead, career-lead
+   Wave 1 (4 agents): engineering-lead, design-lead, content-creation-lead,
+                       pm-lead
+   Wave 2 (4 agents): testing-lead, specialized-lead, critiques-lead,
+                       video-studio-lead
    Wait for Wave 1 to join (~30s) before spawning Wave 2.
 3. Each spawn: Load the leader's agent definition file and instruct them to
    join "agency-council" and send their intro to "team-lead"

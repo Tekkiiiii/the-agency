@@ -1,6 +1,6 @@
 # Specialized Department
 
-**Call this department when you need something that doesn't fit elsewhere** — agent infrastructure (GitNexus, identity/trust, LSP indexing), financial and compliance audits (SOC 2, blockchain, ML models), data extraction from Excel, live sales dashboards, knowledge-base management (ZK/Zettelkasten), cultural intelligence, CLI harness engineering, and autonomous project expansion scanning.
+**Call this department when you need something that doesn't fit elsewhere** — agent infrastructure (GitNexus, identity/trust, LSP indexing), financial and compliance audits (SOC 2, ML models), data extraction from Excel, live sales dashboards, knowledge-base management (ZK/Zettelkasten), cultural intelligence, CLI harness engineering, and autonomous project expansion scanning.
 
 **Leader**: Specialized Agents Lead
 **Sub-teams**: infra | audit — see below
@@ -45,11 +45,7 @@ See [infra/INDEX.md](infra/INDEX.md) — agent lifecycle, identity/trust, code i
 
 ## Audit Sub-team
 
-See [audit/INDEX.md](audit/INDEX.md) — compliance, blockchain, ML model audits.
-
-| Agent | What it does |
-|---|---|
-| Blockchain Security Auditor | Smart contract vulnerabilities, formal verification |
+See [audit/INDEX.md](audit/INDEX.md) — compliance and ML model audits.
 
 ## Parent Directory
 

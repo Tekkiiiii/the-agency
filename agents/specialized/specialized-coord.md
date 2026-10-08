@@ -146,7 +146,6 @@ Members are archived roles. Spawn each as `general-purpose` with the listed skil
 - general-purpose (role file: agents-archive/generalist-2026-10-06/specialized/infra/lsp-index-engineer.md) — language server protocols, code indexing, editor tooling
 - general-purpose + /security, /legal-contract-review (role file: agents-archive/generalist-2026-10-06/specialized/audit/compliance-auditor.md) — regulatory compliance, policy enforcement, audit trails
 - general-purpose (role file: agents-archive/generalist-2026-10-06/specialized/audit/specialized-model-qa.md) — LLM evaluation, benchmark design, model quality assurance
-- Blockchain Security Auditor (registered agent) — smart contract security, DeFi risk assessment
 
 ---
 

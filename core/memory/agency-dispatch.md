@@ -14,7 +14,6 @@ Before matching agents or skills, check if an active protocol governs the task:
 | Task pattern | Protocol | File |
 |---|---|---|
 | Content production (blog, email, ad, social, video script) | content-request | `agents/content-creation/protocols/content-request.md` |
-| Marketing→Content handoff (strategic brief → artifact) | marketing-content-handoff | `agents/marketing/protocols/marketing-content-handoff.md` |
 | Quality gate for any creative or code deliverable | quality-loop | `runbooks/quality-loop-protocol.md` |
 | Cross-dept work not listed above | Check protocol-registry | `runbooks/protocol-registry.md` |
 | Escalation, conflict, authority dispute | escalation-protocol | `runbooks/escalation-protocol.md` |
@@ -34,22 +33,16 @@ Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, Cura
 
 | Task domain | Prefer this agent type |
 |---|---|
-| Research, analysis, investigation | `Explore`, `Trend Researcher`, `research-pd` |
+| Research, analysis, investigation | `Explore`, `research-pd` |
 | Frontend, UI, design | general-purpose + /frontend, /next-best-practices, /tailwind (role file: agents-archive/generalist-2026-10-06/engineering/engineering-frontend-developer.md); UI: general-purpose + /ui-ux-pro-max, /impeccable (role file: agents-archive/generalist-2026-10-06/design/design-ui-designer.md); `Design Lead` |
 | Backend, API, database | general-purpose + /backend, /postgresql-schema, /plan-eng-review (role file: agents-archive/generalist-2026-10-06/engineering/engineering-backend-architect.md); data: + /xlsx-toolkit (role file: agents-archive/generalist-2026-10-06/engineering/engineering-data-engineer.md) |
 | Full-stack / feature work, Laravel/PHP stack | general-purpose + /laravel-builder, /review (role file: agents-archive/generalist-2026-10-06/engineering/engineering-senior-developer.md), domain-specific PD |
 | Full-stack / feature work, non-Laravel stack (Node.js, Python, bash, docs, etc.) | `coord` (or general-purpose + stack-appropriate skills), domain-specific PD — do NOT use the Laravel/PHP-scoped senior-developer role file on other stacks |
-| Sales, pipeline, revenue | `Sales Lead`, `Deal Strategist`, `Account Strategist` |
 | Content creation, writing, copy, editorial, scripts, docs, decks | `Chief Content Officer`, `content-creation-lead` |
-| Marketing strategy, growth experiments, social media engagement, SEO, China market | `Marketing Lead`, `Growth Hacker` |
-| Operations, tracking, finance | `Operations Lead`, `Finance Tracker`, `Analytics Reporter` |
 | Security, compliance, legal | general-purpose + /security, /cso (role file: agents-archive/generalist-2026-10-06/engineering/engineering-security-engineer.md; review: `critique-security`); compliance: + /legal-contract-review (role file: agents-archive/generalist-2026-10-06/specialized/audit/compliance-auditor.md) |
-| Deployment, DevOps, infra | general-purpose + /pipeline-deploy, /vercel-deploy, /railway-deploy (role file: agents-archive/generalist-2026-10-06/engineering/engineering-devops-automator.md); `Infrastructure Maintainer` |
+| Deployment, DevOps, infra | general-purpose + /pipeline-deploy, /vercel-deploy, /railway-deploy (role file: agents-archive/generalist-2026-10-06/engineering/engineering-devops-automator.md) |
 | QA, testing, verification | `Testing Lead`, general-purpose + /qa-only, /browse, /webapp-testing (role file: agents-archive/generalist-2026-10-06/testing/testing-evidence-collector.md), `qa` skill |
 | Experiment design, A/B | general-purpose + /content-experimentation-best-practices, /project-status (role file: agents-archive/generalist-2026-10-06/project-management/project-management-experiment-tracker.md) |
-| Proposal, RFP, deal | `Proposal Strategist`, `Deal Strategist` |
-| Game dev | `Game Development Lead` |
-| Spatial/VR/AR | `Spatial Computing Lead` |
 | Knowledge retrieval, project context, history lookup | `curator` |
 | Task planning, decomposition, DAG structuring, sprint planning | general-purpose + /superpowers-writing-plans (role file: agents-archive/generalist-2026-10-06/specialized/task-planner.md) |
 | Voice cloning, TTS, voice generation, text-to-speech, dubbing, voice design | general-purpose (no skill; role file: agents-archive/generalist-2026-10-06/video-studio/vs-voice-director.md) via OmniVoice Studio (default tool) — MCP: `mcp__omnivoice__generate_speech` |

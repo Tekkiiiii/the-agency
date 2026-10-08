@@ -143,7 +143,6 @@ Members are archived roles. Spawn each as `general-purpose` with the listed skil
 - general-purpose + /security, /cso (role file: agents-archive/generalist-2026-10-06/engineering/engineering-security-engineer.md) — application security, penetration testing, hardening
 - general-purpose + /tech-writer, /document-release (role file: agents-archive/generalist-2026-10-06/engineering/engineering-technical-writer.md) — technical documentation, API docs, runbooks
 - general-purpose + /security, /cso (role file: agents-archive/generalist-2026-10-06/engineering/engineering-threat-detection-engineer.md) — security monitoring, SIEM, threat intelligence
-- Solidity Smart Contract Engineer (registered agent) — blockchain contracts, DeFi protocols
 
 ---
 

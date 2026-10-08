@@ -15,12 +15,8 @@ It is safe to run as a standalone cron or merged into the main RoomManager cycle
 | Dept | Head | Room |
 |---|---|---|
 | engineering | engineering-lead | engineering |
-| marketing | marketing-lead | marketing |
-| sales | sales-lead | sales |
 | specialized | specialized-lead | specialized |
-| operations | operations-lead | operations |
 | testing | testing-lead | testing |
-| product | product-lead | product |
 | project-management | project-management-lead | project-management |
 
 ---

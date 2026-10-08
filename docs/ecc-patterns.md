@@ -25,7 +25,7 @@ ECC auto-generates PreToolUse hook rules when the user corrects Claude's behavio
 
 Four independent agents (Architect, Skeptic, Pragmatist, Critic) receive ONLY the decision question — no shared context, no conversation history. Prevents anchoring bias. Synthesizer must surface strong dissent.
 
-**Our gap:** Agency Council is heavyweight (14 leaders, 2-wave spawn). No mid-weight decision protocol exists.
+**Our gap:** Agency Council is heavyweight (8 leaders, 2-wave spawn). No mid-weight decision protocol exists.
 
 **When to consult:** Complex architectural decisions or competing approaches. NOT for code review, planning, or factual questions.
 

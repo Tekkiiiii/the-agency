@@ -35,12 +35,8 @@ Have an idea for a specialized agent? Great! Here's how to add one:
 2. **Choose the appropriate category** (or propose a new one):
    - `engineering/` - Software development specialists
    - `design/` - UX/UI and creative specialists
-   - `marketing/` - Growth and marketing specialists
-   - `product/` - Product management specialists
    - `project-management/` - PM and coordination specialists
    - `testing/` - QA and testing specialists
-   - `operations/` - Operations and support specialists (was support/)
-   - `spatial-computing/` - AR/VR/XR specialists
    - `specialized/` - Unique specialists that don't fit elsewhere
 
 3. **Create your agent file** following the template below
@@ -238,35 +234,28 @@ quickstart guide wearing an agent costume does not.
 
 When adding a new agent, assign it to the correct department:
 
-- **engineering/** — Software development: backend, frontend, mobile, DevOps, AI/ML, security, firmware, blockchain, technical writing
+- **engineering/** — Software development: backend, frontend, mobile, DevOps, AI/ML, security, firmware, technical writing
 - **design/** — UX/UI, brand, visual storytelling, creative specialization
-- **game-development/** — Game development across all engines (unity/, unreal-engine/, godot/, roblox-studio/ subdirs for engine-specific; root for cross-engine)
-- **marketing/** — Content, social media, growth, SEO. China-market agents → `marketing/china/` subdir
-- **sales/** — Pre-sale and post-sale revenue activities
-- **paid-media/** — Paid advertising, programmatic, search, social ads, creative strategy
-- **product/** — Product management, prioritization, research, feedback
 - **project-management/** — PM, coordination, studio operations, experiment tracking
 - **testing/** — QA, validation, performance, accessibility testing
-- **operations/** — Analytics, finance, infrastructure, legal, executive support (was support/)
 - **specialized/** — Agents that don't fit other categories. Infra agents → `specialized/infra/`. Audit/compliance agents → `specialized/audit/`
-- **spatial-computing/** — AR/VR/XR, Apple platform, terminal integration
 
 ### When to Create Subdirectories
 
-Create a subdirectory within a department when at least 3 agents share a clear, focused sub-specialization (e.g., `engineering/security/`, `marketing/social-media/`).
+Create a subdirectory within a department when at least 3 agents share a clear, focused sub-specialization (e.g., `engineering/security/`, `content-creation/social-media/`).
 
 ### Naming New Agent Files
 
 Use the format `{dept}-{specialty}.md` for agent filenames. For example:
-- `marketing-seo-specialist.md`
+- `design-motion-specialist.md`
 - `engineering-security-researcher.md`
-- `product-roadmap-manager.md`
+- `testing-load-tester.md`
 
 ### Required Frontmatter Fields
 
 Every agent file must include these three frontmatter fields:
 
-- `department:` — the department directory (e.g., `engineering`, `marketing`)
+- `department:` — the department directory (e.g., `engineering`, `design`)
 - `role:` — the agent's role title (e.g., `Backend Developer`)
 - `reports_to:` — who or what the agent reports to (e.g., `engineering-lead`, `product-manager`, `chief-executive-officer`)
 
@@ -307,7 +296,7 @@ Every agent file must include these three frontmatter fields:
 ```markdown
 ## Agent Information
 **Agent Name**: [Name]
-**Category**: [engineering/design/marketing/etc.]
+**Category**: [engineering/design/testing/etc.]
 **Specialty**: [One-line description]
 
 ## Motivation
@@ -402,7 +391,6 @@ Contributors who make significant contributions will be:
 
 - [README.md](README.md) - Overview and agent catalog
 - [Example: Coord](specialized/specialized-coord.md) - Well-structured agent example (specialist roles are archived; see `{agency-root}/agents-archive/ROLE-MAP.md`)
-- [Example: Reddit Community Builder](marketing/marketing-reddit-community-builder.md) - Great personality example
 - [Example: Design Lead](design/design-lead.md) - Dept head example
 
 ### For Agent Design

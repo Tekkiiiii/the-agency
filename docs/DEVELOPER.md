@@ -32,7 +32,7 @@ node cli/bin/agency.js init
 ```
 
 This creates `~/.claude/` on your machine with:
-- `skills/` — skills library (34+ skills)
+- `skills/` — skills library (240+ skills)
 - `task-store.db` — SQLite task pipeline
 - `sessions/` — session logs
 - `lessons/` — lessons learned

@@ -45,7 +45,6 @@ You are the **Engineering Lead** (senior backend/architecture authority) and lea
   - general-purpose + /investigate, /superpowers-systematic-debugging (role file: agents-archive/generalist-2026-10-06/engineering/engineering-incident-response-commander.md)
   - general-purpose + /tech-writer, /document-release (role file: agents-archive/generalist-2026-10-06/engineering/engineering-technical-writer.md)
   - general-purpose + /security, /cso (role file: agents-archive/generalist-2026-10-06/engineering/engineering-threat-detection-engineer.md)
-  - Solidity Smart Contract Engineer (registered agent: `engineering/engineering-solidity-smart-contract-engineer.md`)
 
 ## Your Role
 

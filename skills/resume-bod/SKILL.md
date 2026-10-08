@@ -1,6 +1,6 @@
 ---
 name: resume-bod
-description: "Use on /resume-bod, /bod-resume, \"resume the board\", \"continue council workflow\", \"pick up where BOD left off\". Restores BOD/Agency Council context from memory and reassembles the 12-person council in two waves (max 6 per wave), or a focused sub-council, reusing an intact team."
+description: "Use on /resume-bod, /bod-resume, \"resume the board\", \"continue council workflow\", \"pick up where BOD left off\". Restores BOD/Agency Council context from memory and reassembles the 8-person council in two waves (max 6 per wave), or a focused sub-council, reusing an intact team."
 ---
 
 # Resume BOD — Continue Council Workflow in New Session
@@ -49,7 +49,7 @@ Do not re-explore the codebase unless PROJECT.md is stale or missing critical st
 After context summary, offer explicit next actions:
 
 - **Assemble full council now** (`BOD`, `assemble`, `the board`, `the council`)
-- **Assemble focused team** (engineering / gtm / marketing / custom)
+- **Assemble focused team** (engineering / content / custom)
 - **Skip assembly** and continue solo planning
 
 If user confirms assembly, proceed immediately.
@@ -66,23 +66,19 @@ For full council:
 Wave 1:
 - engineering-lead
 - design-lead
-- game-development-lead
-- marketing-lead
-- sales-lead
-- paid-media-lead
+- content-creation-lead
+- pm-lead
 
 Wave 2:
-- product-lead
-- pm-lead
 - testing-lead
-- operations-lead
 - specialized-lead
-- spatial-lead
+- critiques-lead
+- video-studio-lead
 
 3. Wait for wave 1 join acknowledgements before wave 2
-4. Send council kickoff brief after all 12 are online
+4. Send council kickoff brief after all 8 are online
 
-Never spawn all 12 in a single parallel burst — it can corrupt team config writes.
+Never spawn all 8 in a single parallel burst — it can corrupt team config writes.
 
 ---
 

@@ -1,6 +1,6 @@
 # Specialized — Audit Sub-team
 
-**Call this sub-team when you need a formal audit** — compliance readiness (SOC 2, ISO 27001, HIPAA, PCI-DSS), blockchain/smart contract security, or ML/statistical model quality, calibration, and interpretability.
+**Call this sub-team when you need a formal audit** — compliance readiness (SOC 2, ISO 27001, HIPAA, PCI-DSS), or ML/statistical model quality, calibration, and interpretability.
 
 **Sub-group of**: Specialized
 **Model tier**: Members = general-purpose (Sonnet)
@@ -12,7 +12,6 @@ Member roles are archived (2026-10-06). Spawn each as `general-purpose` + the li
 | Role | Spawn as | What it does |
 |---|---|---|
 | compliance auditor | general-purpose + /security, /legal-contract-review (role file: `agents-archive/generalist-2026-10-06/specialized/audit/compliance-auditor.md`) | SOC 2, ISO 27001, HIPAA, PCI-DSS — readiness through certification |
-| Blockchain Security Auditor | registered agent: `specialized/audit/blockchain-security-auditor.md` | Smart contract vulnerabilities, formal verification, exploit analysis |
 | model qa specialist | general-purpose (no skill; role file: `agents-archive/generalist-2026-10-06/specialized/audit/specialized-model-qa.md`) | End-to-end ML model audit — documentation, replication, calibration, interpretability |
 
 ## Parent Directory

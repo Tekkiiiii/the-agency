@@ -29,11 +29,11 @@ This is Claude Code, fixed: memory that survives sessions, agents that
 finish what they start, QA gates before "done", and token-lean routing.
 Here's what it gives you:
 
-  Agents    130+ agents across 16 departments (Engineering, Design,
-            Marketing, Content, Sales, Testing, Game Dev, and more).
+  Agents    45+ agents across 8 departments (Engineering, Design,
+            Content Creation, Testing, Critiques, Video Studio, and more).
             Each agent has a role, a model assignment, and a protocol.
 
-  Skills    280+ slash commands you can invoke right here. /save-state,
+  Skills    240+ slash commands you can invoke right here. /save-state,
             /recall, /pd-resume, /delegate, /swarm, /graphify, and more.
 
   Memory    Persistent project state that survives across sessions.

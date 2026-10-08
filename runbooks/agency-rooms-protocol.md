@@ -29,17 +29,17 @@ Rooms are managed by the **/room-manager** polling process (a skill, no longer a
 ```
 TO: room-manager
 ACTION: create_room
-ROOM_NAME: game-engine-sync
-DESCRIPTION: Weekly sync between Unity and Unreal leads on shared architecture
-MEMBERS: [unity-architect, unreal-systems-engineer, game-designer]
+ROOM_NAME: api-design-sync
+DESCRIPTION: Weekly sync between engineering and design leads on shared architecture
+MEMBERS: [engineering-lead, design-lead, testing-lead]
 ```
 
 **Send a message:**
 ```
 TO: room-manager
 ACTION: send_message
-ROOM: game-engine-sync
-MESSAGE: We've finalized the ECS approach. @unity-architect please review the benchmark results.
+ROOM: api-design-sync
+MESSAGE: We've finalized the API approach. @engineering-lead please review the benchmark results.
 ```
 
 **List all rooms:**
@@ -52,8 +52,8 @@ ACTION: list_rooms
 ```
 TO: room-manager
 ACTION: add_member
-ROOM: game-engine-sync
-MEMBER: godot-gameplay-scripter
+ROOM: api-design-sync
+MEMBER: critique-security
 ```
 
 ### For an Agent (via room-utils.sh)
@@ -115,8 +115,8 @@ room-utils.sh rooms-for my-agent
 
 ## Room Naming Conventions
 
-- **Format**: `kebab-case` — `game-engine-sync`, `marketing-campaign-q2`, `ux-research`
-- **Scope prefix** (optional): `dept-name/room-name` — `engineering/api-design`, `marketing/china-strategy`
+- **Format**: `kebab-case` — `api-design-sync`, `launch-plan-q2`, `ux-research`
+- **Scope prefix** (optional): `dept-name/room-name` — `engineering/api-design`, `design/brand-review`
 - **Avoid**: Spaces, special characters, names longer than 50 chars
 
 ---
@@ -140,7 +140,7 @@ Rooms track structured task handoffs between agents using the NEXUS handoff prot
 # Write a handoff (creates handoffs/{id}.md + logs to messages.mdl)
 room-utils.sh write-handoff <room> <handoff-id> <from> <to> <task> <content>
 # Example:
-room-utils.sh write-handoff website-pitch FE-impl-01 backend-architect frontend-developer "Implement API endpoint for contact form" "..."
+room-utils.sh write-handoff {project} FE-impl-01 backend-architect frontend-developer "Implement API endpoint for contact form" "..."
 
 # Read pending handoffs
 room-utils.sh read-handoffs <room> pending
@@ -162,8 +162,6 @@ room-utils.sh complete-handoff <room> <handoff-id>
 - Dependencies
 - What the recipient needs to know
 
-See `nexus-strategy.md` §11.1 for the full NEXUS handoff template.
-
 ---
 
 ## Shared Context Files
@@ -177,7 +175,7 @@ Each room has a `context/` subdirectory. Agents write shared documents there:
 
 Example — writing to shared context:
 ```bash
-room-utils.sh write-context my-room todos.md "# Open Items\n- [ ] Review ECS proposal (assigned: @unity-architect)\n- [ ] Security audit scheduled for Friday"
+room-utils.sh write-context my-room todos.md "# Open Items\n- [ ] Review API proposal (assigned: @engineering-lead)\n- [ ] Security audit scheduled for Friday"
 ```
 
 ---

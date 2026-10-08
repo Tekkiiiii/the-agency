@@ -126,8 +126,8 @@ Votes stored in `voting-state.json`:
       "votes": {
         "engineering-lead": "approve",
         "design-lead": "revise",
-        "product-lead": "approve",
-        "sales-lead": "approve",
+        "testing-lead": "approve",
+        "pm-lead": "approve",
         ...
       },
       "revision_notes": {

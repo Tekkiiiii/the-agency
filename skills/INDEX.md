@@ -1,6 +1,6 @@
 # Skills Index
 
-280 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+240+ reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 > **What discovery actually depends on — read before "fixing" missing frontmatter.**
 > A skill is discovered by its **location on disk**, not by its metadata: every code
@@ -187,8 +187,6 @@
 | `postgresql-schema` | PostgreSQL schemas: multi-tenant SaaS, reservations, CRM, e-commerce |
 | `supabase-sql` | SQL for Supabase PostgreSQL engine |
 | `supabase-postgres-best-practices` | Supabase PostgreSQL best practices |
-| `neon-postgres` | Neon Postgres patterns |
-| `claimable-postgres` | Claimable Postgres patterns |
 | `multi-role-auth` | Multi-role auth: NextAuth.js or Laravel Breeze with roles |
 | `laravel-builder` | Laravel 11 scaffold: Breeze, Filament, PostgreSQL, Sail/Docker |
 | `admin-shell-foundation` | Shared admin shell scaffold for domain skills |
@@ -261,7 +259,6 @@
 
 | Skill | Description |
 |-------|-------------|
-| `sandbox-sdk` | Build sandboxed applications for secure code execution |
 | `agents-sdk` | AI agents on Cloudflare Workers using Agents SDK |
 | `mcp-builder` | Build MCP servers |
 | `benchmark` | Performance benchmarking |
@@ -277,47 +274,11 @@
 | `vercel-deploy` | Deploy to Vercel |
 | `railway-deploy` | Deploy to Railway |
 | `supabase-deploy` | Deploy to Supabase |
-| `netlify-deploy` | Deploy to Netlify via CLI |
-| `netlify-cli-and-deploy` | Netlify CLI and deployment guide |
 
-## Cloud — Cloudflare
+## Cloud — IaC & FinOps
 
 | Skill | Description |
 |-------|-------------|
-| `cloudflare` | Cloudflare platform: Workers, Pages, KV, D1, R2, AI, networking |
-| `cloudflare-email-service` | Transactional email with Cloudflare Email Routing |
-| `workers-best-practices` | Cloudflare Workers production best practices |
-| `wrangler` | Cloudflare Workers CLI for deploying and managing Workers |
-| `durable-objects` | Cloudflare Durable Objects |
-
-## Cloud — Netlify
-
-| Skill | Description |
-|-------|-------------|
-| `netlify-config` | netlify.toml configuration reference |
-| `netlify-functions` | Serverless functions |
-| `netlify-edge-functions` | Edge functions |
-| `netlify-forms` | HTML form handling |
-| `netlify-blobs` | Object storage |
-| `netlify-db` | Managed Neon Postgres |
-| `netlify-caching` | CDN caching control |
-| `netlify-image-cdn` | Image optimization and transformation |
-| `netlify-frameworks` | Web framework deployment |
-| `netlify-ai-gateway` | AI model access gateway |
-
-## Cloud — Terraform / IaC
-
-| Skill | Description |
-|-------|-------------|
-| `terraform-style-guide` | HashiCorp official style conventions |
-| `terraform-test` | Writing and running Terraform tests |
-| `terraform-stacks` | HashiCorp Terraform Stacks guide |
-| `terraform-search-import` | Discover and bulk import existing cloud resources |
-| `new-terraform-provider` | Scaffold a new Terraform provider |
-| `provider-actions` | Terraform Provider actions (Plugin Framework) |
-| `provider-resources` | Terraform Provider resources and data sources |
-| `provider-test-patterns` | Provider acceptance test patterns |
-| `azure-verified-modules` | Azure Verified Modules (AVM) best practices |
 | `refactor-module` | Transform monolithic Terraform into reusable modules |
 | `finops` | Cloud financial operations |
 
@@ -381,14 +342,6 @@
 | `content-modeling-best-practices` | Content modeling and schema design |
 | `landing-report` | Landing page audit report — conversion, copy, UX analysis |
 
-## Domain — Payments & E-Commerce
-
-| Skill | Description |
-|-------|-------------|
-| `stripe-best-practices` | Stripe integration best practices |
-| `upgrade-stripe` | Upgrade Stripe API versions and SDKs |
-| `paymob-integrator` | Paymob payment gateway integration |
-
 ## Domain — Auth
 
 | Skill | Description |
@@ -397,24 +350,19 @@
 | `better-auth-organization` | Better Auth organization patterns |
 | `better-auth-two-factor` | Better Auth 2FA implementation |
 
-## Domain — Hospitality & Business
+## Domain — Business & Automation
 
 | Skill | Description |
 |-------|-------------|
-| `hotel-pms` | Hotel Property Management System in Laravel or Next.js |
-| `restaurant-pos` | Restaurant POS system — menu, tables, orders, KDS, tips |
-| `reservation-booking` | Reservation/booking system — slots, calendar, payments |
 | `n8n-automation` | n8n workflow JSON for common automation patterns |
 | `legal-contract-review` | Review NDAs, SaaS contracts, MSAs, DPAs — clause-by-clause |
 | `tech-stack` | Technology stack selection and architecture decisions |
-| `crm-onboarding` | Build a lead capture + nurture CRM — onboarding form, state machine, email drip, kanban dashboard |
 
 ## Domain — CMS
 
 | Skill | Description |
 |-------|-------------|
 | `sanity-best-practices` | Sanity CMS: schema, GROQ, TypeGen, Visual Editing |
-| `tinybird-best-practices` | Tinybird analytics best practices |
 
 ## Superpowers (gstack Workflow Skills)
 

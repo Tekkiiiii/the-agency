@@ -68,10 +68,6 @@ No code changes to the agent files. No API calls to write. The MCP tools handle 
 
 The archived backend-with-memory example (a standard backend agent with a Memory Integration section added) lives at `agents-archive/generalist-2026-10-06/integrations/mcp-memory/`; to use it, spawn general-purpose + /backend, /postgresql-schema and tell it to read that role file first.
 
-## Example: Memory-Powered Workflow
-
-See [../../examples/workflow-with-memory.md](../../examples/workflow-with-memory.md) for the Startup MVP workflow enhanced with persistent memory, showing how agents pass context through memory instead of copy-paste.
-
 ## Tips
 
 - **Tag consistently**: Use the agent name and project name as tags on every memory. This makes recall reliable.

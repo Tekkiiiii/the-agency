@@ -1,6 +1,6 @@
 # Content Request Protocol
 
-How content gets produced in The Agency. This protocol governs the handoff between any requester (PD, department lead, parent AI) and the Content Creation department, with Marketing providing the strategic layer.
+How content gets produced in The Agency. This protocol governs the handoff between any requester (PD, department lead, parent AI) and the Content Creation department, with a strategy owner providing the strategic layer.
 
 ## The Flow
 
@@ -8,7 +8,7 @@ How content gets produced in The Agency. This protocol governs the handoff betwe
 Requester (PD / Dept Lead / Parent AI)
        │
        ▼
-Marketing Lead (builds strategic brief)
+Strategy Owner (builds strategic brief)
        │
        ▼
 Chief Content Officer (receives brief, routes to writer)
@@ -22,23 +22,23 @@ Content Creation Dept-Coord (assigns writers, runs quality gates)
        │               └──► critique-content review
        │
        ▼
-CCO approves → delivers back to Marketing Lead
+CCO approves → delivers back to Strategy Owner
        │
        ▼
-Marketing Lead (publishes, distributes, measures)
+Strategy Owner (publishes, distributes, measures)
        │
        ▼
-Marketing feeds performance data back to CCO (optimization loop)
+Strategy Owner feeds performance data back to CCO (optimization loop)
 ```
 
 ## Step-by-Step
 
-### Step 1 — Requester Sends Resource Request to Marketing Lead
+### Step 1 — Requester Sends Resource Request to the Strategy Owner
 
-The requester does NOT go to Content Creation directly. Marketing owns the strategy layer, so the request starts there.
+The requester does NOT go to Content Creation directly. The Strategy Owner owns the strategy layer, so the request starts there. The Strategy Owner is the requester itself, or a `general-purpose` agent with /content-strategy and /copywriting that the requester spawns.
 
 ```
-TO: marketing-lead
+TO: strategy-owner
 TYPE: resource_request
 DEPARTMENT: [requester's project/dept]
 PRIORITY: [low | medium | high | critical]
@@ -46,13 +46,13 @@ PRIORITY: [low | medium | high | critical]
 [What content is needed, rough topic, target audience, and timeline]
 ```
 
-The request can be brief. Marketing will flesh it out into a full strategic brief.
+The request can be brief. The Strategy Owner will flesh it out into a full strategic brief.
 
-**Exception:** If the parent AI (council chair) is orchestrating directly, they can send the request to the CCO with a strategic brief already attached — bypassing Marketing only when the strategy is already defined.
+**Exception:** If the parent AI (council chair) is orchestrating directly, they can send the request to the CCO with a strategic brief already attached — bypassing the Strategy Owner only when the strategy is already defined.
 
-### Step 2 — Marketing Lead Builds the Strategic Brief
+### Step 2 — Strategy Owner Builds the Strategic Brief
 
-Marketing fills in the full strategic context. The brief must include all 6 fields:
+The Strategy Owner fills in the full strategic context. The brief must include all 6 fields:
 
 ```
 STRATEGIC BRIEF
@@ -92,12 +92,12 @@ BRAND CONTEXT:
 - Any specific constraints or requirements
 ```
 
-### Step 3 — Marketing Lead Sends Brief to CCO
+### Step 3 — Strategy Owner Sends Brief to CCO
 
 ```
 TO: content-creation-lead
 TYPE: coordination_request
-DEPARTMENT: marketing
+DEPARTMENT: [requester's project/dept]
 PRIORITY: [matches the original request priority]
 ---
 Strategic brief attached for [project] [content type].
@@ -134,7 +134,7 @@ The CCO (or the Content Creation Dept-Coord, if delegated) reads the brief and s
 | Press release, media kit | /content-creator, /content-polish |
 
 The CCO attaches:
-- The strategic brief from Marketing
+- The strategic brief from the Strategy Owner
 - The brand guidelines file path
 - Any additional editorial direction
 
@@ -169,10 +169,10 @@ The Content Creation Dept-Coord runs mandatory quality gates (editing passes via
 - **Standard content** (blog posts, social, email): a passing `critique-content` verdict plus Dept-Coord sign-off is sufficient. CCO reviews only if flagged.
 - **High-stakes content** (press releases, content with legal/financial/medical claims, crisis communications): CCO reviews personally before release.
 
-### Step 8 — CCO Delivers Back to Marketing Lead
+### Step 8 — CCO Delivers Back to Strategy Owner
 
 ```
-TO: marketing-lead
+TO: strategy-owner
 TYPE: status_report
 DEPARTMENT: content-creation
 PRIORITY: [matches original]
@@ -186,21 +186,21 @@ PRIORITY: [matches original]
 Ready for your distribution decision.
 ```
 
-### Step 9 — Marketing Lead Distributes
+### Step 9 — Strategy Owner Distributes
 
-Marketing owns publishing and distribution:
+The Strategy Owner owns publishing and distribution:
 1. Reviews the artifact for strategic alignment (does it match the brief?)
 2. Publishes to the target channel
 3. Optionally sends follow-up requests to Content Creation for repurposed versions on other platforms
 
-### Step 10 — Marketing Feeds Back Results
+### Step 10 — Strategy Owner Feeds Back Results
 
-After the measurement window (typically 7-14 days), Marketing shares performance data:
+After the measurement window (typically 7-14 days), the Strategy Owner shares performance data:
 
 ```
 TO: content-creation-lead
 TYPE: status_report
-DEPARTMENT: marketing
+DEPARTMENT: [requester's project/dept]
 ---
 Performance data for [content piece]:
 - [Key metrics: views, engagement, CTR, conversions, DMs, etc.]
@@ -226,13 +226,13 @@ The CCO uses this data to:
 | Press release | 1-2 days |
 | Slide deck | 2-3 days |
 
-These are production times after the strategic brief is received. Marketing's brief-building time is additional.
+These are production times after the strategic brief is received. The Strategy Owner's brief-building time is additional.
 
 ## Repurposing Requests
 
-When Marketing wants the same content adapted for multiple platforms, they send separate requests for each platform — not one request for "all platforms." Each platform writer needs their own brief because format, voice, and constraints differ.
+When the Strategy Owner wants the same content adapted for multiple platforms, they send separate requests for each platform — not one request for "all platforms." Each platform writer needs their own brief because format, voice, and constraints differ.
 
-Example: A blog post gets published. Marketing then sends:
+Example: A blog post gets published. The Strategy Owner then sends:
 - Brief to the LinkedIn writer (general-purpose + skills): "Adapt the blog's key insight into a thought leadership post"
 - Brief to the Twitter/X writer: "Create a thread summarizing the 3 points"
 - Brief to the TikTok writer: "Write hook + caption for a short video on point #1"
@@ -243,14 +243,14 @@ Each is a separate production cycle through the Dept-Coord's quality gate.
 
 | Situation | Escalation path |
 |---|---|
-| Writer disagrees with strategic brief | Writer → Dept-Coord → CCO → Marketing Lead |
+| Writer disagrees with strategic brief | Writer → Dept-Coord → CCO → Strategy Owner |
 | Quality gate fails 3+ times on same piece | Dept-Coord → CCO (may reassign to different writer) |
-| Marketing and Content Creation disagree on voice/approach | CCO → parent AI (council chair arbitrates) |
+| Strategy Owner and Content Creation disagree on voice/approach | CCO → parent AI (council chair arbitrates) |
 | Content involves legal/financial/medical claims | CCO → parent AI → human (Tier 3) |
 | Urgent request (same-day turnaround) | Requester marks PRIORITY: critical; CCO may assign directly, skip full gate |
 
 ## What This Protocol Does NOT Cover
 
-- **Content strategy creation** (editorial calendars, pillar planning) — that's Marketing's domain, handled internally
-- **Content distribution and engagement** — Marketing owns publishing, community management, and audience engagement
+- **Content strategy creation** (editorial calendars, pillar planning) — that's the Strategy Owner's domain, handled outside this protocol
+- **Content distribution and engagement** — the Strategy Owner owns publishing, community management, and audience engagement
 - **Visual content** (images, videos, design assets) — Design department handles visual production; Content Creation handles the written component only

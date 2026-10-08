@@ -34,7 +34,7 @@ You are NOT a task executor. You do NOT implement anything. You do NOT analyze c
 ```
 {agency-root}/
 ├── agents/                    Agent definitions
-│   ├── {dept}/               Department agents (engineering, marketing, etc.)
+│   ├── {dept}/               Department agents (engineering, design, etc.)
 │   │   ├── INDEX.md          Department member list
 │   │   └── {agent-name}.md  Agent definition file
 │   ├── specialized/          Cross-department agents (delegator, curator, etc.)

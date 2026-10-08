@@ -98,9 +98,6 @@ Load the relevant INDEX.md only when routing, not on every spawn.
 | UI design | design | `design/INDEX.md` |
 | Brand / visual | design | `design/INDEX.md` |
 | Content writing / copy / editorial | content-creation | `content-creation/INDEX.md` |
-| Content strategy / social / growth | marketing | `marketing/INDEX.md` |
-| China market | marketing/china | `marketing/china/INDEX.md` |
-| Sales strategy | sales | `sales/INDEX.md` |
 | Project scheduling | project-management | `project-management/INDEX.md` |
 | Data extraction | specialized | `specialized/INDEX.md` |
 | Cultural intelligence | specialized | `specialized/INDEX.md` |
@@ -130,8 +127,6 @@ PD: [pd-name]
 | Engineering | `@engineering-lead` |
 | Design | `@design-lead` |
 | Testing | `@testing-lead` |
-| Marketing | `@marketing-lead` |
-| Sales | `@sales-lead` |
 | Specialized | `@specialized-lead` |
 
 ## Active Priorities

@@ -51,7 +51,7 @@ Each line is a structured log entry:
 Example:
 ```
 [2026-04-16T09:00:00Z] @{project}-pd [brief]: Q from PD re: pricing page copy
-[2026-04-16T09:05:00Z] @sales-lead [reply]: Budget for landing page = $2k
+[2026-04-16T09:05:00Z] @design-lead [reply]: Budget for landing page = $2k
 [2026-04-16T09:07:00Z] @{project}-pd [action]: Spawning copywriting agent for pricing page
 ```
 

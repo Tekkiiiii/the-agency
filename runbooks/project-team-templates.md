@@ -13,16 +13,12 @@ Team: [project-name]-full
 Members:
   - engineering-lead
   - design-lead
-  - marketing-lead
-  - sales-lead
-  - paid-media-lead
-  - product-lead
+  - content-creation-lead
+  - video-studio-lead
   - pm-lead
   - testing-lead
-  - operations-lead
+  - critiques-lead
   - specialized-lead
-  - spatial-computing-lead
-  - game-development-lead
   - council-chair (me)
 ```
 
@@ -37,10 +33,9 @@ Team: [project-name]-engineering
 Members:
   - engineering-lead
   - design-lead (if UX/UI involved)
-  - product-lead
   - pm-lead
   - testing-lead
-  - operations-lead (if infra involved)
+  - specialized-lead (if infra or audit involved)
   - council-chair (me)
 ```
 
@@ -53,47 +48,27 @@ Members:
 
 ---
 
-## Template: Go-to-Market
+## Template: Content Launch
 
-**When**: Product launches, campaigns, customer acquisition initiatives
+**When**: Content campaigns, product launch assets, publishing programs
 
 ```
-Team: [project-name]-gtm
+Team: [project-name]-content
 Members:
-  - marketing-lead
-  - sales-lead
-  - paid-media-lead
-  - product-lead
+  - content-creation-lead
   - design-lead (if creative assets needed)
-  - operations-lead (if reporting/analytics needed)
+  - video-studio-lead (if video needed)
+  - critiques-lead
+  - pm-lead
   - council-chair (me)
 ```
 
 **Typical members added**:
-- `dept-growth` (Marketing)
-- `dept-content` (Marketing)
-- `dept-ppc` (Paid Media)
-- `dept-sales` (Sales)
-- `dept-analytics` (Operations)
+- `dept-content` (Content Creation)
+- `dept-social` (Content Creation)
+- `dept-seo` (Content Creation)
 
----
-
-## Template: Game Development
-
-**When**: Game projects, interactive experiences, spatial computing
-
-```
-Team: [project-name]-games
-Members:
-  - game-development-lead
-  - design-lead
-  - engineering-lead
-  - testing-lead
-  - spatial-computing-lead (if AR/VR involved)
-  - product-lead
-  - pm-lead
-  - council-chair (me)
-```
+Strategy, growth and sales work has no dedicated department; run it as `general-purpose` + skills (for example /content-strategy, /copywriting).
 
 ---
 
@@ -107,16 +82,12 @@ Build from the department roster:
 |------|--------|--------------|
 | Engineering | `engineering-lead` | `dept-frontend`, `dept-backend`, `dept-ai`, `dept-security`, `dept-mobile`, `dept-devops`, `dept-data` |
 | Design | `design-lead` | `dept-ui`, `dept-ux`, `dept-brand`, `dept-visual` |
-| Marketing | `marketing-lead` | `dept-content`, `dept-growth`, `dept-seo`, `dept-social`, `dept-china` |
-| Sales | `sales-lead` | `dept-deals`, `dept-pipeline`, `dept-outbound`, `dept-discovery` |
-| Paid Media | `paid-media-lead` | `dept-ppc`, `dept-tracking`, `dept-creative`, `dept-programmatic` |
-| Product | `product-lead` | `dept-trends`, `dept-feedback`, `dept-behavior` |
+| Content Creation | `content-creation-lead` | `dept-content`, `dept-seo`, `dept-social` |
+| Video Studio | `video-studio-lead` | See `agents/video-studio/INDEX.md` |
 | Project Management | `pm-lead` | `dept-shepherd`, `dept-studio-ops`, `dept-experiments` |
 | Testing | `testing-lead` | `dept-evidence`, `dept-benchmark`, `dept-accessibility`, `dept-api` |
-| Operations | `operations-lead` | `dept-finance`, `dept-compliance`, `dept-analytics` |
-| Specialized | `specialized-lead` | `dept-orchestrator`, `dept-audit`, `dept-infra`, `dept-sales-ops` |
-| Spatial Computing | `spatial-lead` | `dept-xr`, `dept-visionos`, `dept-apple-platform` |
-| Game Development | `game-lead` | Engine-specific leads and members |
+| Critiques | `critiques-lead` | `critique-*` agents (see `agents/critiques/INDEX.md`) |
+| Specialized | `specialized-lead` | `dept-orchestrator`, `dept-audit`, `dept-infra` |
 
 ---
 

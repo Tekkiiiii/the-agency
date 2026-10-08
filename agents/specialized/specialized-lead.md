@@ -45,7 +45,6 @@ You are the **Specialized Agents Lead** (senior orchestration authority) and lea
   - **audit**:
     - general-purpose + /security, /legal-contract-review (role file: agents-archive/generalist-2026-10-06/specialized/audit/compliance-auditor.md)
     - general-purpose (role file: agents-archive/generalist-2026-10-06/specialized/audit/specialized-model-qa.md)
-    - Blockchain Security Auditor (registered agent: `specialized/audit/blockchain-security-auditor.md`)
 
 ## Your Role
 

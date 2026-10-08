@@ -4,7 +4,7 @@ Skills are reusable workflows that agents invoke to handle common tasks. Each sk
 
 ## Overview
 
-280+ skills are installed to `{agency-root}/skills/` as `{name}/SKILL.md` directories. Invoke any skill with `/skill-name` in Claude Code.
+240+ skills are installed to `{agency-root}/skills/` as `{name}/SKILL.md` directories. Invoke any skill with `/skill-name` in Claude Code.
 
 ## Skill Categories
 
@@ -157,14 +157,11 @@ All critique skills:
 
 See `skills/INDEX.md` for the full engineering skills catalog, including:
 
-- **Backend**: `backend`, `security`, `webhook-security`, `postgresql-schema`, `supabase-sql`, `neon-postgres`
+- **Backend**: `backend`, `security`, `webhook-security`, `postgresql-schema`, `supabase-sql`
 - **Frontend**: `frontend`, `shadcn-ui`, `tailwind`, `next-best-practices`, `cult-ui`
 - **Design**: `ui-ux-pro-max`, `impeccable`, `design-consultation`, `high-end-visual-design`
-- **AI/ML**: `sandbox-sdk`, `agents-sdk`, `mcp-builder`, `graphify`
-- **Deployment**: `vercel-deploy`, `railway-deploy`, `netlify-deploy`, `github-deploy`
-- **Cloudflare**: `cloudflare`, `workers-best-practices`, `wrangler`, `durable-objects`
-- **Netlify**: `netlify-config`, `netlify-functions`, `netlify-edge-functions`, `netlify-db`
-- **Terraform**: `terraform-style-guide`, `terraform-stacks`, `new-terraform-provider`
+- **AI/ML**: `agents-sdk`, `mcp-builder`, `graphify`
+- **Deployment**: `vercel-deploy`, `railway-deploy`, `github-deploy`
 
 ## Installing Skills
 

@@ -66,7 +66,7 @@ See the [Multi-Tool Integrations](#-multi-tool-integrations) section below for f
 
 ## 🏛️ Org Structure
 
-The Agency operates as a three-layer organization: the **Agency Council** (all 12 department leaders coordinating strategy), **Project Teams** (relevant leaders + members executing projects), and **Department Members** (individual specialists). Each department is led by a senior authority who coordinates work, manages approvals, and escalates decisions.
+The Agency operates as a three-layer organization: the **Agency Council** (all 8 department leaders coordinating strategy), **Project Teams** (relevant leaders + members executing projects), and **Department Members** (individual specialists). Each department is led by a senior authority who coordinates work, manages approvals, and escalates decisions.
 
 See [ORG.md](ORG.md) for the full org chart, leadership table, agency council roster, and team spawning instructions.
 
@@ -80,79 +80,11 @@ Building the future, one commit at a time.
 
 > Specialist roles are archived; spawn general-purpose + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`.
 
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| ⛓️ [Solidity Smart Contract Engineer](engineering/engineering-solidity-smart-contract-engineer.md) | EVM contracts, gas optimization, DeFi | Secure, gas-optimized smart contracts and DeFi protocols |
-
 ### 🎨 Design Division
 
 Making it beautiful, usable, and delightful.
 
 > Specialist roles are archived; spawn general-purpose + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`.
-
-### 💰 Paid Media Division
-
-Turning ad spend into measurable business outcomes.
-
-| Agent | Specialty | When to Use |
-| --- | --- | --- |
-| 💰 [PPC Campaign Strategist](paid-media/paid-media-ppc-strategist.md) | Google/Microsoft/Amazon Ads, account architecture, bidding | Account buildouts, budget allocation, scaling, performance diagnosis |
-| 🔍 [Search Query Analyst](paid-media/paid-media-search-query-analyst.md) | Search term analysis, negative keywords, intent mapping | Query audits, wasted spend elimination, keyword discovery |
-| 📋 [Paid Media Auditor](paid-media/paid-media-auditor.md) | 200+ point account audits, competitive analysis | Account takeovers, quarterly reviews, competitive pitches |
-| 📡 [Tracking & Measurement Specialist](paid-media/paid-media-tracking-specialist.md) | GTM, GA4, conversion tracking, CAPI | New implementations, tracking audits, platform migrations |
-| ✍️ [Ad Creative Strategist](paid-media/paid-media-creative-strategist.md) | RSA copy, Meta creative, Performance Max assets | Creative launches, testing programs, ad fatigue refreshes |
-| 📺 [Programmatic & Display Buyer](paid-media/paid-media-programmatic-buyer.md) | GDN, DSPs, partner media, ABM display | Display planning, partner outreach, ABM programs |
-| 📱 [Paid Social Strategist](paid-media/paid-media-paid-social-strategist.md) | Meta, LinkedIn, TikTok, cross-platform social | Social ad programs, platform selection, audience strategy |
-
-### 💼 Sales Division
-
-Turning pipeline into revenue through craft, not CRM busywork.
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🎯 [Outbound Strategist](sales/sales-outbound-strategist.md) | Signal-based prospecting, multi-channel sequences, ICP targeting | Building pipeline through research-driven outreach, not volume |
-| 🔍 [Discovery Coach](sales/sales-discovery-coach.md) | SPIN, Gap Selling, Sandler — question design and call structure | Preparing for discovery calls, qualifying opportunities, coaching reps |
-| ♟️ [Deal Strategist](sales/sales-deal-strategist.md) | MEDDPICC qualification, competitive positioning, win planning | Scoring deals, exposing pipeline risk, building win strategies |
-| 🛠️ [Sales Engineer](sales/sales-engineer.md) | Technical demos, POC scoping, competitive battlecards | Pre-sales technical wins, demo prep, competitive positioning |
-| 🏹 [Proposal Strategist](sales/sales-proposal-strategist.md) | RFP response, win themes, narrative structure | Writing proposals that persuade, not just comply |
-| 📊 [Pipeline Analyst](sales/sales-pipeline-analyst.md) | Forecasting, pipeline health, deal velocity, RevOps | Pipeline reviews, forecast accuracy, revenue operations |
-| 🗺️ [Account Strategist](sales/sales-account-strategist.md) | Land-and-expand, QBRs, stakeholder mapping | Post-sale expansion, account planning, NRR growth |
-| 🏋️ [Sales Coach](sales/sales-coach.md) | Rep development, call coaching, pipeline review facilitation | Making every rep and every deal better through structured coaching |
-
-### 📢 Marketing Division
-
-Growing your audience, one authentic interaction at a time.
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🚀 [Growth Hacker](marketing/marketing-growth-hacker.md) | Rapid user acquisition, viral loops, experiments | Explosive growth, user acquisition, conversion optimization |
-| 📝 [Content Creator](marketing/marketing-content-creator.md) | Multi-platform content, editorial calendars | Content strategy, copywriting, brand storytelling |
-| 🐦 [Twitter Engager](marketing/marketing-twitter-engager.md) | Real-time engagement, thought leadership | Twitter strategy, LinkedIn campaigns, professional social |
-| 📱 [TikTok Strategist](marketing/marketing-tiktok-strategist.md) | Viral content, algorithm optimization | TikTok growth, viral content, Gen Z/Millennial audience |
-| 📸 [Instagram Curator](marketing/marketing-instagram-curator.md) | Visual storytelling, community building | Instagram strategy, aesthetic development, visual content |
-| 🤝 [Reddit Community Builder](marketing/marketing-reddit-community-builder.md) | Authentic engagement, value-driven content | Reddit strategy, community trust, authentic marketing |
-| 📱 [App Store Optimizer](marketing/marketing-app-store-optimizer.md) | ASO, conversion optimization, discoverability | App marketing, store optimization, app growth |
-| 🌐 [Social Media Strategist](marketing/marketing-social-media-strategist.md) | Cross-platform strategy, campaigns | Overall social strategy, multi-platform campaigns |
-| 📕 [Xiaohongshu Specialist](marketing/marketing-xiaohongshu-specialist.md) | Lifestyle content, trend-driven strategy | Xiaohongshu growth, aesthetic storytelling, Gen Z audience |
-| 💬 [WeChat Official Account Manager](marketing/marketing-wechat-official-account.md) | Subscriber engagement, content marketing | WeChat OA strategy, community building, conversion optimization |
-| 🧠 [Zhihu Strategist](marketing/marketing-zhihu-strategist.md) | Thought leadership, knowledge-driven engagement | Zhihu authority building, Q&A strategy, lead generation |
-| 🇨🇳 [Baidu SEO Specialist](marketing/marketing-baidu-seo-specialist.md) | Baidu optimization, China SEO, ICP compliance | Ranking in Baidu and reaching China's search market |
-| 🎬 [Bilibili Content Strategist](marketing/marketing-bilibili-content-strategist.md) | B站 algorithm, danmaku culture, UP主 growth | Building audiences on Bilibili with community-first content |
-| 🎠 [Carousel Growth Engine](marketing/marketing-carousel-growth-engine.md) | TikTok/Instagram carousels, autonomous publishing | Generating and publishing viral carousel content |
-| 🛒 [China E-Commerce Operator](marketing/marketing-china-ecommerce-operator.md) | Taobao, Tmall, Pinduoduo, live commerce | Running multi-platform e-commerce in China |
-| 🎥 [Kuaishou Strategist](marketing/marketing-kuaishou-strategist.md) | Kuaishou, 老铁 community, grassroots growth | Building authentic audiences in lower-tier markets |
-| 🔍 [SEO Specialist](marketing/marketing-seo-specialist.md) | Technical SEO, content strategy, link building | Driving sustainable organic search growth |
-
-### 📊 Product Division
-
-Building the right thing at the right time.
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🎯 [Sprint Prioritizer](product/product-sprint-prioritizer.md) | Agile planning, feature prioritization | Sprint planning, resource allocation, backlog management |
-| 🔍 [Trend Researcher](product/product-trend-researcher.md) | Market intelligence, competitive analysis | Market research, opportunity assessment, trend identification |
-| 💬 [Feedback Synthesizer](product/product-feedback-synthesizer.md) | User feedback analysis, insights extraction | Feedback analysis, user insights, product priorities |
-| 🧠 [Behavioral Nudge Engine](product/product-behavioral-nudge-engine.md) | Behavioral psychology, nudge design, engagement | Maximizing user motivation through behavioral science |
 
 ### 🎬 Project Management Division
 
@@ -166,89 +98,11 @@ Breaking things so users don't have to.
 
 > Specialist roles are archived; spawn general-purpose + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`.
 
-### 🏗️ Operations Division
-
-The backbone of the operation.
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 💬 [Support Responder](operations/support-responder.md) | Customer service, issue resolution | Customer support, user experience, support operations |
-| 📊 [Analytics Reporter](operations/analytics-reporter.md) | Data analysis, dashboards, insights | Business intelligence, KPI tracking, data visualization |
-| 💰 [Finance Tracker](operations/finance-tracker.md) | Financial planning, budget management | Financial analysis, cash flow, business performance |
-| 🏗️ [Infrastructure Maintainer](operations/infrastructure-maintainer.md) | System reliability, performance optimization | Infrastructure management, system operations, monitoring |
-| ⚖️ [Legal Compliance Checker](operations/legal-compliance-checker.md) | Compliance, regulations, legal review | Legal compliance, regulatory requirements, risk management |
-| 📑 [Executive Summary Generator](operations/executive-summary-generator.md) | C-suite communication, strategic summaries | Executive reporting, strategic communication, decision support |
-
-### 🥽 Spatial Computing Division
-
-Building the immersive future.
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🏗️ [XR Interface Architect](spatial-computing/xr-interface-architect.md) | Spatial interaction design, immersive UX | AR/VR/XR interface design, spatial computing UX |
-| 💻 [macOS Spatial/Metal Engineer](spatial-computing/macos-spatial-metal-engineer.md) | Swift, Metal, high-performance 3D | macOS spatial computing, Vision Pro native apps |
-| 🌐 [XR Immersive Developer](spatial-computing/xr-immersive-developer.md) | WebXR, browser-based AR/VR | Browser-based immersive experiences, WebXR apps |
-| 🎮 [XR Cockpit Interaction Specialist](spatial-computing/xr-cockpit-interaction-specialist.md) | Cockpit-based controls, immersive systems | Cockpit control systems, immersive control interfaces |
-| 🍎 [visionOS Spatial Engineer](spatial-computing/visionos-spatial-engineer.md) | Apple Vision Pro development | Vision Pro apps, spatial computing experiences |
-| 🔌 [Terminal Integration Specialist](spatial-computing/terminal-integration-specialist.md) | Terminal integration, command-line tools | CLI tools, terminal workflows, developer tools |
-
 ### 🎯 Specialized Division
 
 The unique specialists who don't fit in a box.
 
 > Specialist roles are archived; spawn general-purpose + skills — see `{agency-root}/agents-archive/ROLE-MAP.md`.
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🛡️ [Blockchain Security Auditor](specialized/audit/blockchain-security-auditor.md) | Smart contract audits, exploit analysis | Finding vulnerabilities in contracts before deployment |
-
-### 🎮 Game Development Division
-
-Building worlds, systems, and experiences across every major engine.
-
-#### Cross-Engine Agents (Engine-Agnostic)
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🎯 [Game Designer](game-development/game-designer.md) | Systems design, GDD authorship, economy balancing, gameplay loops | Designing game mechanics, progression systems, writing design documents |
-| 🗺️ [Level Designer](game-development/level-designer.md) | Layout theory, pacing, encounter design, environmental storytelling | Building levels, designing encounter flow, spatial narrative |
-| 🎨 [Technical Artist](game-development/technical-artist.md) | Shaders, VFX, LOD pipeline, art-to-engine optimization | Bridging art and engineering, shader authoring, performance-safe asset pipelines |
-| 🔊 [Game Audio Engineer](game-development/game-audio-engineer.md) | FMOD/Wwise, adaptive music, spatial audio, audio budgets | Interactive audio systems, dynamic music, audio performance |
-| 📖 [Narrative Designer](game-development/narrative-designer.md) | Story systems, branching dialogue, lore architecture | Writing branching narratives, implementing dialogue systems, world lore |
-
-#### Unity
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 🏗️ [Unity Architect](game-development/unity/unity-architect.md) | ScriptableObjects, data-driven modularity, DOTS/ECS | Large-scale Unity projects, data-driven system design, ECS performance work |
-| ✨ [Unity Shader Graph Artist](game-development/unity/unity-shader-graph-artist.md) | Shader Graph, HLSL, URP/HDRP, Renderer Features | Custom Unity materials, VFX shaders, post-processing passes |
-| 🌐 [Unity Multiplayer Engineer](game-development/unity/unity-multiplayer-engineer.md) | Netcode for GameObjects, Unity Relay/Lobby, server authority, prediction | Online Unity games, client prediction, Unity Gaming Services integration |
-| 🛠️ [Unity Editor Tool Developer](game-development/unity/unity-editor-tool-developer.md) | EditorWindows, AssetPostprocessors, PropertyDrawers, build validation | Custom Unity Editor tooling, pipeline automation, content validation |
-
-#### Unreal Engine
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| ⚙️ [Unreal Systems Engineer](game-development/unreal-engine/unreal-systems-engineer.md) | C++/Blueprint hybrid, GAS, Nanite constraints, memory management | Complex Unreal gameplay systems, Gameplay Ability System, engine-level C++ |
-| 🎨 [Unreal Technical Artist](game-development/unreal-engine/unreal-technical-artist.md) | Material Editor, Niagara, PCG, Substrate | Unreal materials, Niagara VFX, procedural content generation |
-| 🌐 [Unreal Multiplayer Architect](game-development/unreal-engine/unreal-multiplayer-architect.md) | Actor replication, GameMode/GameState hierarchy, dedicated server | Unreal online games, replication graphs, server authoritative Unreal |
-| 🗺️ [Unreal World Builder](game-development/unreal-engine/unreal-world-builder.md) | World Partition, Landscape, HLOD, LWC | Large open-world Unreal levels, streaming systems, terrain at scale |
-
-#### Godot
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| 📜 [Godot Gameplay Scripter](game-development/godot/godot-gameplay-scripter.md) | GDScript 2.0, signals, composition, static typing | Godot gameplay systems, scene composition, performance-conscious GDScript |
-| 🌐 [Godot Multiplayer Engineer](game-development/godot/godot-multiplayer-engineer.md) | MultiplayerAPI, ENet/WebRTC, RPCs, authority model | Online Godot games, scene replication, server-authoritative Godot |
-| ✨ [Godot Shader Developer](game-development/godot/godot-shader-developer.md) | Godot shading language, VisualShader, RenderingDevice | Custom Godot materials, 2D/3D effects, post-processing, compute shaders |
-
-#### Roblox Studio
-
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| ⚙️ [Roblox Systems Scripter](game-development/roblox-studio/roblox-systems-scripter.md) | Luau, RemoteEvents/Functions, DataStore, server-authoritative module architecture | Building secure Roblox game systems, client-server communication, data persistence |
-| 🎯 [Roblox Experience Designer](game-development/roblox-studio/roblox-experience-designer.md) | Engagement loops, monetization, D1/D7 retention, onboarding flow | Designing Roblox game loops, Game Passes, daily rewards, player retention |
-| 👗 [Roblox Avatar Creator](game-development/roblox-studio/roblox-avatar-creator.md) | UGC pipeline, accessory rigging, Creator Marketplace submission | Roblox UGC items, HumanoidDescription customization, in-experience avatar shops |
 
 ---
 
@@ -259,7 +113,7 @@ Building worlds, systems, and experiences across every major engine.
 **Your Team**:
 1. 🎨 **general-purpose + /frontend, /tailwind** - Build the React app
 2. 🏗️ **general-purpose + /backend, /postgresql-schema** - Design the API and database
-3. 🚀 **Growth Hacker** - Plan user acquisition
+3. 🚀 **general-purpose + /content-strategy, /copywriting** - Plan user acquisition
 4. ⚡ **general-purpose + /mattpocock-skills:prototype** - Fast iteration cycles
 5. 🔍 **Testing Lead** - Ensure quality before launch
 
@@ -270,11 +124,10 @@ Building worlds, systems, and experiences across every major engine.
 ### Scenario 2: Marketing Campaign Launch
 
 **Your Team**:
-1. 📝 **Content Creator** - Develop campaign content
-2. 🐦 **Twitter Engager** - Twitter strategy and execution
-3. 📸 **Instagram Curator** - Visual content and stories
-4. 🤝 **Reddit Community Builder** - Authentic community engagement
-5. 📊 **Analytics Reporter** - Track and optimize performance
+1. 📝 **Chief Content Officer** - Develop campaign content across formats
+2. 🎬 **Video Studio Director** - Short-form video and distribution
+3. 🔍 **Critiques Lead** - Route the output to brand, content, and SEO critics
+4. 📊 **general-purpose + /chart-viz** - Track and optimize performance
 
 **Result**: Multi-channel coordinated campaign with platform-specific expertise.
 
@@ -291,31 +144,6 @@ Building worlds, systems, and experiences across every major engine.
 6. 🔍 **Testing Lead** - Production readiness
 
 **Result**: Enterprise-grade delivery with quality gates and documentation.
-
----
-
-### Scenario 5: Paid Media Account Takeover
-
-**Your Team**:
-
-1. 📋 **Paid Media Auditor** - Comprehensive account assessment
-2. 📡 **Tracking & Measurement Specialist** - Verify conversion tracking accuracy
-3. 💰 **PPC Campaign Strategist** - Redesign account architecture
-4. 🔍 **Search Query Analyst** - Clean up wasted spend from search terms
-5. ✍️ **Ad Creative Strategist** - Refresh all ad copy and extensions
-6. 📊 **Analytics Reporter** (Operations Division) - Build reporting dashboards
-
-**Result**: Systematic account takeover with tracking verified, waste eliminated, structure optimized, and creative refreshed — all within the first 30 days.
-
----
-
-### Scenario 4: Full Agency Product Discovery
-
-**Your Team**: All 14 departments working in parallel on a single mission.
-
-See the **[Nexus Spatial Discovery Exercise](examples/nexus-spatial-discovery.md)** -- a complete example where 8 agents (Product Trend Researcher, backend, brand, growth, support, UX research, project management, and XR roles; the archived specialist roles now run as general-purpose + skills) were deployed simultaneously to evaluate a software opportunity and produce a unified product plan covering market validation, technical architecture, brand strategy, go-to-market, support systems, UX research, project execution, and spatial UI design.
-
-**Result**: Comprehensive, cross-functional product blueprint produced in a single session. [More examples](examples/).
 
 ---
 
@@ -383,10 +211,6 @@ Each agent is designed with:
 > "I don't just test your code - I default to finding 3-5 issues and require visual proof for everything."
 >
 > -- an archived Testing role (now /qa-only + /browse)
-
-> "You're not marketing on Reddit - you're becoming a valued community member who happens to represent a brand."
->
-> -- **Reddit Community Builder** (Marketing Division)
 
 > "Every playful element must serve a functional or emotional purpose. Design delight that enhances rather than distracts."
 >

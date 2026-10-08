@@ -27,13 +27,13 @@ Before assembling the council, establish:
 
 | Project Type | Required Depts |
 |-------------|---------------|
-| Feature development | Engineering, Product, Testing |
-| Full product build | Engineering, Design, Product, Testing, PM |
-| Go-to-market launch | Marketing, Sales, Paid Media, Product |
-| Customer-facing feature | Engineering, Design, Product, Support, Testing |
+| Feature development | Engineering, Testing |
+| Full product build | Engineering, Design, Testing, PM |
+| Content launch | Content Creation, Design, Video Studio, Critiques |
+| Customer-facing feature | Engineering, Design, Support, Testing |
 | Infrastructure | Engineering, PM, Testing |
-| Content/campaign | Marketing, Design, Sales |
-| Analysis/report | Product, Operations, Sales |
+| Content/campaign | Content Creation, Design, Video Studio |
+| Analysis/report | Specialized, PM |
 
 ---
 
@@ -140,15 +140,15 @@ Once the project team is formed and tasks are assigned:
 
 ### Full Agency (template-full-team)
 
-All 14 dept leads + members. Use for: complex multi-domain projects, strategic initiatives, company-wide changes.
+All 8 dept leads + members. Use for: complex multi-domain projects, strategic initiatives, company-wide changes.
 
 ### Engineering-Heavy (template-engineering-team)
 
-Engineering + Product + PM + Testing + Design leads + members. Use for: feature development, product builds, technical projects.
+Engineering + PM + Testing + Design leads + members. Use for: feature development, product builds, technical projects.
 
-### Go-to-Market (template-gtm-team)
+### Content Launch (template-content-team)
 
-Sales + Marketing + Paid Media + Product + Design leads + members. Use for: launches, campaigns, customer acquisition.
+Content Creation + Design + Video Studio + Critiques leads + members. Use for: launches, campaigns, content programs.
 
 ### Custom (template-custom-team)
 

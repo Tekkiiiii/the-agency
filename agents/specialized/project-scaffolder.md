@@ -308,11 +308,10 @@ When this PD is **spawned by another PD** (caller):
 | Task | Route to |
 |------|----------|
 | Technical implementation | `@engineering-lead` |
-| Product strategy | `@product-lead` |
 | QA testing | `@testing-lead` |
 | Cross-PD coordination | `@project-management-lead` |
 | Design, branding | `@design-lead` |
-| Marketing, content | `@marketing-lead` |
+| Content | `@content-creation-lead` |
 
 ## Approval Requests
 

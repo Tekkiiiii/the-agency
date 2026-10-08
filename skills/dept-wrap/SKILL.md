@@ -31,7 +31,7 @@ Renamed from `/dept-save-state` to pair semantically with `/dept-resume`.
 
 | Argument | Action |
 |---|---|
-| `all` | Save all 14 departments in parallel |
+| `all` | Save all departments in parallel |
 | `[dept-slug]` | Save exactly one department |
 | no arg | Fail with usage hint |
 

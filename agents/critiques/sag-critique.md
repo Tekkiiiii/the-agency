@@ -43,7 +43,7 @@ Prior lessons must inform the current critique. If the file doesn't exist yet, p
 
 Read the rendered HTML `<head>`, the DOM, and the asset references. For a live URL or JS-rendered page, use the `browse` skill or Playwright snapshot to capture the *rendered* head (not just static source). For a build, read the template/component source and any `robots.txt` / `sitemap.xml`. Identify page type (homepage, article, product, category, landing) — the required schema and tags differ by type.
 
-If a GTM container ID is provided in the task AND a dedicated GTM read-client is available (see "GTM Connection" appendix), use it to cross-check what tags/triggers/variables are actually deployed. **gws does NOT support Tag Manager — do not attempt `gws tagmanager:v2`.** You have NO write access — never attempt to create, update, publish, or delete GTM resources. Report tag gaps as findings; the human (or the Tracking & Measurement Specialist) applies them. If no read-client is present, SKIP the in-container block silently and run absence detection + all other checks.
+If a GTM container ID is provided in the task AND a dedicated GTM read-client is available (see "GTM Connection" appendix), use it to cross-check what tags/triggers/variables are actually deployed. **gws does NOT support Tag Manager — do not attempt `gws tagmanager:v2`.** You have NO write access — never attempt to create, update, publish, or delete GTM resources. Report tag gaps as findings; the human (or a `general-purpose` agent + skills) applies them. If no read-client is present, SKIP the in-container block silently and run absence detection + all other checks.
 
 Load `seo-aeo-best-practices/references/website-metadata-spec.md`, `technical-seo.md`, and `structured-data.md` as the canonical default standard to audit against.
 
@@ -86,7 +86,7 @@ Load `seo-aeo-best-practices/references/website-metadata-spec.md`, `technical-se
 
 **Tag Manager (GTM) — absence detection (always runs for production sites)**
 - If the audited page is a production site AND no GTM snippet (`googletagmanager.com/gtm.js`) AND no GA4/gtag script (`gtag/js` or `gtag('config'`) is detected in the rendered source: flag as HIGH severity — "production site shipping with zero analytics/tag management." Do not wait for a container ID to be provided.
-- Route the fix to the Tracking & Measurement Specialist (paid-media dept). Never write GTM resources — read-only only.
+- Route the fix to a `general-purpose` agent + 1-3 skills. Never write GTM resources — read-only only.
 
 **Tag Manager (GTM) — read-only container audit** (only if a container ID is provided and connection is live)
 - GTM container snippet present in page source (both `<head>` script and `<noscript>` iframe)?
@@ -94,7 +94,7 @@ Load `seo-aeo-best-practices/references/website-metadata-spec.md`, `technical-se
 - Required tags deployed in the container (GA4 config, conversion events, the page's expected event tags)?
 - Triggers fire on the right conditions; no tags left in Paused/Draft when they should be live?
 - No orphaned/duplicate tags (e.g. two GA4 configs double-counting)?
-- Report gaps as findings ONLY — applying them is out of scope (read-only). Route the fix to the Tracking & Measurement Specialist.
+- Report gaps as findings ONLY — applying them is out of scope (read-only). Route the fix to a `general-purpose` agent + skills.
 
 **AEO / GEO (AI answer-readiness)**
 - A direct, extractable answer block near the top (markup-supported, e.g. definition/summary)
@@ -146,7 +146,7 @@ Append only. Never delete or rewrite prior entries.
 - Every finding where score < 100 must include ISSUE / EVIDENCE / IMPROVEMENT
 - IMPROVEMENT must be the literal tag/filename/JSON-LD — executable verbatim, no re-interpretation
 - Stay in your lane: tags, assets, structured data, crawl plumbing. Copy quality → critique-seo
-- GTM access is READ-ONLY. Never create/update/publish/delete GTM resources. Tag fixes route to the Tracking & Measurement Specialist
+- GTM access is READ-ONLY. Never create/update/publish/delete GTM resources. Tag fixes route to a `general-purpose` agent + skills
 - Drop any finding flagged by reframe override
 - SCORE on first line, no exceptions
 - Audit against `seo-aeo-best-practices/references/website-metadata-spec.md` as the default standard

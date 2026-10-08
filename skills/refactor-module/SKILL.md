@@ -376,7 +376,7 @@ See [examples/](./examples/) directory for complete usage examples.
 
 ### 6. Testing
 
-Use skill terraform-test
+Validate with `terraform test`.
 
 **Test File**: A `.tftest.hcl` or `.tftest.json` file containing test configuration and run blocks that validate your Terraform configuration.
 

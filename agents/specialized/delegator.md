@@ -63,7 +63,7 @@ GAP route (use when NO named agent, dept, skill, pipeline, or protocol covers th
   Suggested tools: {tool list scoped to the task, not "All tools"}
   Note: log the gap at agents/agent-gaps.md before the caller creates agents/{dept}/{slug}.md
 
-Protocol notes: {any relevant protocol the caller should follow — e.g., "route through Marketing Lead per content-request protocol" or "use inter-spawn: drop briefing at agents/{dept}/state/incoming/"}
+Protocol notes: {any relevant protocol the caller should follow — e.g., "send the request straight to the CCO per content-request protocol" or "use inter-spawn: drop briefing at agents/{dept}/state/incoming/"}
 ```
 
 ---
@@ -127,7 +127,7 @@ If a PD needs something from a dept head's domain (or vice versa):
 ## Example Routing Decisions
 
 **"I need a blog post about Vietnamese SME pain points"**
-→ PROTOCOL: content-request (`agents/content-creation/protocols/content-request.md`) — route through Marketing Lead → CCO
+→ PROTOCOL: content-request (`agents/content-creation/protocols/content-request.md`) — send the request straight to the CCO
 → Alternative: SKILL `/blog-pipeline` if caller explicitly wants to bypass dept routing
 
 **"I need to improve the QA pipeline's gate thresholds"**
@@ -142,8 +142,8 @@ If a PD needs something from a dept head's domain (or vice versa):
 → AGENT: `general-purpose + /pipeline-deploy, /vercel-deploy, /railway-deploy (role file: agents-archive/generalist-2026-10-06/engineering/engineering-devops-automator.md)` from Engineering
 → Alternative: SKILL `/setup-deploy` if it's a standard Railway/Vercel deploy
 
-**"I want to create a new cross-department protocol between Sales and Content"**
-→ INTER-SPAWN: Sales Lead creates protocol at `sales/protocols/`, Content CCO co-signs
+**"I want to create a new cross-department protocol between Design and Content"**
+→ INTER-SPAWN: Design Lead drafts the protocol under `agents/design/`, Content CCO co-signs
 → Protocol notes: Add to protocol-registry.md, requires council-chair approval (Tier 2 — cross-dept)
 
 ---

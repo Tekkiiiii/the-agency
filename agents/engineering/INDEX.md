@@ -1,6 +1,6 @@
 # Engineering Department
 
-**Call this department when you need to write, review, or architect software systems** — backend services, APIs, databases, frontend UIs, mobile apps, DevOps pipelines, AI/ML integrations, security reviews, or firmware. Also for incidents, technical writing, and blockchain/smart contracts.
+**Call this department when you need to write, review, or architect software systems** — backend services, APIs, databases, frontend UIs, mobile apps, DevOps pipelines, AI/ML integrations, security reviews, or firmware. Also for incidents, and technical writing.
 
 **Leader**: Engineering Lead
 **Dept-Coord**: Engineering Dept-Coord
@@ -27,7 +27,6 @@ Member roles are archived (2026-10-06). Spawn each as `general-purpose` + the li
 | technical writer | general-purpose + /tech-writer, /document-release (role file: `agents-archive/generalist-2026-10-06/engineering/engineering-technical-writer.md`) | Dev docs, API references, README files |
 | threat detection engineer | general-purpose + /security, /cso (role file: `agents-archive/generalist-2026-10-06/engineering/engineering-threat-detection-engineer.md`) | SIEM rules, MITRE ATT&CK, detection-as-code pipelines |
 | laravel debugger | general-purpose + /laravel-builder, /investigate (role file: `agents-archive/generalist-2026-10-06/engineering/laravel-debugger.md`) | Laravel-specific debugging, error tracing, Telescope, Horizon, queue/job inspection |
-| solidity smart contract engineer | registered agent: `engineering/engineering-solidity-smart-contract-engineer.md` | EVM contracts, gas optimization, DeFi protocols |
 
 ## Skills
 

@@ -3,22 +3,17 @@ name: content-request-protocol
 version: 1.0
 status: active
 owner: content-creation-lead
-cross-dept:
-  - marketing
 last-updated: 2026-05-13
 ---
 
 # Content Request Protocol
 
-How content gets produced in The Agency. This protocol governs the handoff between any requester (PD, department lead, parent AI) and the Content Creation department, with Marketing providing the strategic layer.
+How content gets produced in The Agency. This protocol governs the handoff between any requester (PD, department lead, parent AI) and the Content Creation department, with the requester providing the strategic brief.
 
 ## The Flow
 
 ```
-Requester (PD / Dept Lead / Parent AI)
-       │
-       ▼
-Marketing Lead (builds strategic brief)
+Requester (PD / Dept Lead / Parent AI; builds strategic brief)
        │
        ▼
 Chief Content Officer (receives brief, routes to writer)
@@ -32,23 +27,23 @@ Content Creation Dept-Coord (assigns writers, runs quality gates)
        │               └──► critique-content review
        │
        ▼
-CCO approves → delivers back to Marketing Lead
+CCO approves → delivers back to Requester
        │
        ▼
-Marketing Lead (publishes, distributes, measures)
+Requester (publishes, distributes, measures)
        │
        ▼
-Marketing feeds performance data back to CCO (optimization loop)
+Requester feeds performance data back to CCO (optimization loop)
 ```
 
 ## Step-by-Step
 
-### Step 1 — Requester Sends Resource Request to Marketing Lead
+### Step 1 — Requester Sends Request to the CCO
 
-The requester does NOT go to Content Creation directly. Marketing owns the strategy layer, so the request starts there.
+The request goes straight to the Chief Content Officer. The requester owns the strategy layer and attaches a strategic brief (Step 2).
 
 ```
-TO: marketing-lead
+TO: content-creation-lead
 TYPE: resource_request
 DEPARTMENT: [requester's project/dept]
 PRIORITY: [low | medium | high | critical]
@@ -56,19 +51,17 @@ PRIORITY: [low | medium | high | critical]
 [What content is needed, rough topic, target audience, and timeline]
 ```
 
-The request can be brief. Marketing will flesh it out into a full strategic brief.
+The request can be brief. The requester (or general-purpose + /content-strategy on its behalf) fleshes it out into a full strategic brief.
 
-**Exception:** If the parent AI (council chair) is orchestrating directly, they can send the request to the CCO with a strategic brief already attached — bypassing Marketing only when the strategy is already defined.
-
-**SLA:** Marketing Lead acknowledges the request within 1 business cycle. Brief is delivered to CCO within:
+**SLA:** The CCO acknowledges the request within 1 business cycle. The strategic brief is delivered to the CCO within:
 - `low`: 2 days
 - `medium`: 1 day
 - `high`: same day
 - `critical`: within 2 hours
 
-### Step 2 — Marketing Lead Builds the Strategic Brief
+### Step 2 — Requester Builds the Strategic Brief
 
-Marketing fills in the full strategic context. The brief must include all 6 fields:
+The requester fills in the full strategic context. The brief must include all 6 fields:
 
 ```
 STRATEGIC BRIEF
@@ -108,12 +101,12 @@ BRAND CONTEXT:
 - Any specific constraints or requirements
 ```
 
-### Step 3 — Marketing Lead Sends Brief to CCO
+### Step 3 — Requester Sends Brief to CCO
 
 ```
 TO: content-creation-lead
 TYPE: coordination_request
-DEPARTMENT: marketing
+DEPARTMENT: [requester's project/dept]
 PRIORITY: [matches the original request priority]
 ---
 Strategic brief attached for [project] [content type].
@@ -150,7 +143,7 @@ The CCO (or the Content Creation Dept-Coord, if delegated) reads the brief and s
 | Press release, media kit | /content-creator, /content-polish |
 
 The CCO attaches:
-- The strategic brief from Marketing
+- The strategic brief from the requester
 - The brand guidelines file path
 - Any additional editorial direction
 
@@ -185,10 +178,10 @@ The Content Creation Dept-Coord runs mandatory quality gates (editing passes via
 - **Standard content** (blog posts, social, email): a passing `critique-content` verdict plus Dept-Coord sign-off is sufficient. CCO reviews only if flagged.
 - **High-stakes content** (press releases, content with legal/financial/medical claims, crisis communications): CCO reviews personally before release.
 
-### Step 8 — CCO Delivers Back to Marketing Lead
+### Step 8 — CCO Delivers Back to the Requester
 
 ```
-TO: marketing-lead
+TO: [requester]
 TYPE: status_report
 DEPARTMENT: content-creation
 PRIORITY: [matches original]
@@ -202,21 +195,21 @@ PRIORITY: [matches original]
 Ready for your distribution decision.
 ```
 
-### Step 9 — Marketing Lead Distributes
+### Step 9 — Requester Distributes
 
-Marketing owns publishing and distribution:
+The requester owns publishing and distribution:
 1. Reviews the artifact for strategic alignment (does it match the brief?)
 2. Publishes to the target channel
 3. Optionally sends follow-up requests to Content Creation for repurposed versions on other platforms
 
-### Step 10 — Marketing Feeds Back Results
+### Step 10 — Requester Feeds Back Results
 
-After the measurement window (typically 7–14 days), Marketing shares performance data:
+After the measurement window (typically 7–14 days), the requester shares performance data:
 
 ```
 TO: content-creation-lead
 TYPE: status_report
-DEPARTMENT: marketing
+DEPARTMENT: [requester's project/dept]
 ---
 Performance data for [content piece]:
 - [Key metrics: views, engagement, CTR, conversions, DMs, etc.]
@@ -249,9 +242,9 @@ SLAs are measured from the moment the CCO receives a **complete** brief.
 
 ## Repurposing Requests
 
-When Marketing wants the same content adapted for multiple platforms, they send separate requests for each platform — not one request for "all platforms." Each platform writer needs their own brief because format, voice, and constraints differ.
+When the requester wants the same content adapted for multiple platforms, they send separate requests for each platform — not one request for "all platforms." Each platform writer needs their own brief because format, voice, and constraints differ.
 
-Example: A blog post gets published. Marketing then sends:
+Example: A blog post gets published. The requester then sends:
 - Brief to the LinkedIn writer (general-purpose + skills): "Adapt the blog's key insight into a thought leadership post"
 - Brief to the Twitter/X writer: "Create a thread summarizing the 3 points"
 - Brief to the TikTok writer: "Write hook + caption for a short video on point #1"
@@ -262,23 +255,23 @@ Each is a separate production cycle through the Dept-Coord's quality gate.
 
 | Situation | Escalation path |
 |---|---|
-| Writer disagrees with strategic brief | Writer → Dept-Coord → CCO → Marketing Lead |
+| Writer disagrees with strategic brief | Writer → Dept-Coord → CCO → Requester |
 | Quality gate fails 3+ times on same piece | Dept-Coord → CCO (may reassign to different writer) |
-| Marketing and Content Creation disagree on voice/approach | CCO → parent AI (council chair arbitrates) |
+| Requester and Content Creation disagree on voice/approach | CCO → parent AI (council chair arbitrates) |
 | Content involves legal/financial/medical claims | CCO → parent AI → human (Tier 3) |
 | Urgent request (same-day turnaround) | Requester marks PRIORITY: critical; CCO may assign directly, skip full gate |
 
 ## What This Protocol Does NOT Cover
 
-- **Content strategy creation** (editorial calendars, pillar planning) — that's Marketing's domain, handled internally
-- **Content distribution and engagement** — Marketing owns publishing, community management, and audience engagement
+- **Content strategy creation** (editorial calendars, pillar planning) — that's the requester's domain, handled internally
+- **Content distribution and engagement** — the requester owns publishing, community management, and audience engagement
 - **Visual content** (images, videos, design assets) — Design department handles visual production; Content Creation handles the written component only
 
 ## Pipeline Improvement Loop
 
 Proposals to improve this protocol flow to:
 - `pipelines/content-production/proposals/` — for pipeline-level changes
-- Both CCO and Marketing Lead must approve cross-dept changes
+- Both CCO and the affected requesting dept lead must approve cross-dept changes
 - Approved changes increment the version in this file's YAML frontmatter and are logged in the version history below
 
 ## Version History
