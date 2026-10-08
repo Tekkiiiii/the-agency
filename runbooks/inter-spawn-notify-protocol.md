@@ -25,10 +25,10 @@ agent that spawns another agent to do work and needs to know when it is done.
 
 SendMessage is correct for:
 - A PD reporting a digest/status to `"team-lead"` (the user's active main session)
-- A Coord reporting to its spawning PD, when both are live in the same foreground session
-- Any two agents that are verifiably alive in the same session simultaneously
+- Any two agents that are verifiably alive in the same session simultaneously, addressed by the `agentId` returned at spawn (downward nudge only; the file stays authoritative)
 
 SendMessage is WRONG for:
+- Any child reporting upward to its parent by name (Coord to PD, Exec to Coord): the roster is flat and name-addressed upward sends misroute to main; use the final task result and the scratch `## Status` row
 - A background spawned PD notifying its background caller PD
 - Any handoff where the receiver's session may have already closed
 - Inter-spawn task completion notification of any kind

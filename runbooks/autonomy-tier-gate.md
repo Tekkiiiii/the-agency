@@ -25,7 +25,10 @@ Three tiers:
 2. Look it up in `action_tiers` in `core/memory/autonomy-tiers.json`.
 3. Not found → default `operator_gated` (safe-by-default fallback).
 4. Run the tier's gate: `auto_ack` → its named verifier; `agent_gated` →
-   critique agents must pass; `operator_gated` → wait for explicit human ACK.
+   critique agents must pass; `operator_gated` → STOP, escalate to the PD as
+   your final task result (ESCALATE report, no SendMessage), then end. Do NOT
+   execute; resume only via a parent re-spawn or the consent file at
+   `{project}/memory/tasks/revisions/acks/` (see `escalation-protocol.md`).
 5. If a gate's own check fails, fall back to the next-stricter tier
    (`safe_fallback` field on each tier definition) rather than proceeding.
 

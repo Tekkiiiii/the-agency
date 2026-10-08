@@ -3,7 +3,7 @@ name: Protocol Registry
 description: Cross-department protocol index. Single source of truth for all protocols that span two or more departments. Dept Heads reference this before creating or modifying any cross-dept protocol.
 type: runbook
 owner: agency-council
-lastUpdated: 2026-05-14
+lastUpdated: 2026-05-13
 ---
 
 # Protocol Registry
@@ -21,6 +21,7 @@ Any protocol listed here has passed cross-dept sign-off and is considered active
 | Protocol | Owner Dept | Participants | Version | Status | File Path |
 |---|---|---|---|---|---|
 | content-request | content-creation | any requester | v1.0 | active | `agents/content-creation/protocols/content-request.md` |
+| quality-loop | critiques | content-creation, design, engineering, video-studio | v1.0 | active | `runbooks/quality-loop-protocol.md` |
 
 **Column definitions:**
 - **Protocol** — machine-readable slug, kebab-case, unique across the registry
@@ -28,7 +29,7 @@ Any protocol listed here has passed cross-dept sign-off and is considered active
 - **Participants** — other departments that consume or implement the protocol
 - **Version** — semver, starts at v1.0 on first activation
 - **Status** — `proposed` | `testing` | `active` | `deprecated`
-- **File Path** — relative to `~/.agency/`, always the owner dept's `protocols/` directory
+- **File Path** — relative to `{agency-root}/`, always the owner dept's `protocols/` directory
 
 ---
 
@@ -65,7 +66,7 @@ proposed → testing → active → deprecated
 
 1. Create the protocol file in the owning dept's `protocols/` directory:
    ```
-   ~/.agency/agents/{owner-dept}/protocols/{protocol-slug}.md
+   {agency-root}/agents/{owner-dept}/protocols/{protocol-slug}.md
    ```
 
 2. Notify all participant dept heads via SendMessage with:
@@ -73,7 +74,7 @@ proposed → testing → active → deprecated
    TYPE: coordination_request
    SUBJECT: New cross-dept protocol — {protocol-slug}
    STATUS: proposed
-   FILE: ~/.agency/agents/{owner-dept}/protocols/{protocol-slug}.md
+   FILE: {agency-root}/agents/{owner-dept}/protocols/{protocol-slug}.md
    ---
    [Brief description and request for review]
    ```
@@ -129,6 +130,7 @@ The agency-council reviews this registry quarterly and deprecates protocols that
 
 ## References
 
-- Dept-Coord protocol: `core/runbooks/dept-coord-protocol.md`
-- Dept boot sequence: `core/runbooks/dept-boot-sequence.md`
-- Dept lead protocol: `core/runbooks/department-lead-protocol.md`
+- Dept-Coord protocol: `{agency-root}/runbooks/dept-coord-protocol.md`
+- Dept boot sequence: `{agency-root}/runbooks/dept-boot-sequence.md`
+- Dept lead protocol: `{agency-root}/runbooks/department-lead-protocol.md`
+- Content request protocol: `{agency-root}/agents/content-creation/protocols/content-request.md`

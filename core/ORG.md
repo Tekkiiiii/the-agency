@@ -1,8 +1,8 @@
 # The Agency — Organizational Structure
 
-<!-- load only when managing or onboarding agents -->
+> **GENERALIST SWITCH (2026-10-06):** all member-level specialist agents are ARCHIVED to `agents-archive/generalist-2026-10-06/`; spawn `general-purpose` + skills per `agents-archive/ROLE-MAP.md`. Dept heads, coords, PDs, critiques, and service agents stay registered.
 
-> **GENERALIST SWITCH (2026-10-06):** all member-level specialist agents are ARCHIVED to `agents-archive/generalist-2026-10-06/`; spawn `general-purpose` + skills per `agents-archive/ROLE-MAP.md`. Dept heads, coords, PDs, critiques, and service agents stay registered. Member names below that point to an archived role are historical.
+<!-- load only when managing or onboarding agents -->
 
 > **Canonical reference document.** This file defines the complete org chart, leadership, communication protocols, and team structure for The Agency. All other documentation (runbooks, READMEs, agent files) references this as the source of truth.
 
@@ -42,14 +42,13 @@ Dept Head (Opus) ◄──────────────► Project Direct
 
 **Status reporting:** On-demand only. Dept heads request status from members/projects as needed. No automated loops. This keeps parent AI context at O(departments + exceptions) rather than O(agents).
 
-**Model tiering:** Agents are tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
+**Model tiering:** All agents tagged with `modelTier` in frontmatter. Leaders = Opus. Members = Sonnet. Planning/thinking = Opus. Execution = Sonnet. Menial tasks (scraping, research) = Haiku.
 
-**`modelTier` vs `model` — which one actually does anything:** `model:` is the only
-frontmatter key Claude Code reads for model selection (`sonnet` / `opus` / `haiku` /
-`inherit`, or a full model-id string). `modelTier:` is an agency-internal documentation
-tag and is **inert** at spawn time — it selects nothing. A def carrying only `modelTier:`
-inherits the spawning session's model. Do not "fix" a spawn problem by editing
-`modelTier:`; see `core/memory/lessons/agent-workflows.md` for the verified finding.
+Standing exceptions to Members = Sonnet:
+- **All Project Directors → Opus** (2026-07-25).
+- **All content-creation agents → Opus** (2026-07-27), including the dept-coord (the social-media writers are archived 2026-10-06). Plus `critique-content`. Rationale: output quality *is* the deliverable in these roles.
+
+NOTE: `modelTier` is documentation only — nothing in the harness reads it (the sole consumer is `scripts/agent-tools-audit.py`, as an audit flag). The key the harness acts on is `model:`. Keep both present and in sync; setting `modelTier` alone changes nothing.
 
 ### 1M context window (`[1m]`) — SELECTIVE, closed decision
 
@@ -127,6 +126,47 @@ THE AGENCY
 └── VIDEO STUDIO ────────────────── Video Studio Director ★
     └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 ```
+
+---
+
+## Leadership Table
+
+| # | Leader | Department | Sub-groups | Key Responsibilities |
+|---|--------|-----------|------------|---------------------|
+| 1 | Engineering Lead | Engineering | — | API design, database architecture, scalability, technical standards |
+| 2 | Design Lead | Design | — | Brand consistency, visual identity, creative direction |
+| 3 | Chief Content Officer | Content Creation | social-media (12 agents) | Editorial standards, content pipeline, quality gates, all content formats |
+| 4 | Project Management Lead | Project Management | — | Production pipeline, milestone tracking, cross-team coordination |
+| 5 | Testing Lead | Testing | — | Test strategy, quality gates, performance benchmarks |
+| 6 | Specialized Agents Lead | Specialized | — | Agent lifecycle, identity/trust, code intelligence, auditing |
+| — | (Specialized members, archived 2026-10-06) | Specialized | see `agents-archive/ROLE-MAP.md` | — |
+| 7 | Video Studio Director | Video Studio | pre-production, production, post-production, distribution, qa | Video quality standards, production workflows, platform distribution, script-to-screen pipeline |
+| 8 | Curmudgeon-in-Chief | Critiques | — | Scored multi-axis critique of any deliverable; routes to specialist critics |
+
+---
+
+## Agency Council
+
+The **Agency Council** is the governing body for all cross-department decisions. It consists of all 8 department leaders reporting to the Council Chair (the parent AI).
+
+### Council Members
+
+| Member | Role | Department | Communication |
+|--------|------|-----------|---------------|
+| Engineering Lead | engineering-lead | Engineering | SendMessage to `engineering-lead` |
+| Design Lead | design-lead | Design | SendMessage to `design-lead` |
+| Chief Content Officer | content-creation-lead | Content Creation | SendMessage to `content-creation-lead` |
+| Project Management Lead | pm-lead | Project Management | SendMessage to `pm-lead` |
+| Testing Lead | testing-lead | Testing | SendMessage to `testing-lead` |
+| Specialized Agents Lead | specialized-lead | Specialized | SendMessage to `specialized-lead` |
+| Curmudgeon-in-Chief | critiques-lead | Critiques | SendMessage to `critiques-lead` |
+| Video Studio Director | video-studio-lead | Video Studio | SendMessage to `video-studio-lead` |
+
+### Council Communication Protocol
+
+Leaders communicate with the Council Chair (parent AI) using this format:
+
+```
 TO: council-chair
 TYPE: [coordination_request | approval_request | status_report | escalation | handoff]
 DEPARTMENT: [your department]
@@ -153,7 +193,7 @@ For full protocol details, see `runbooks/department-lead-protocol.md`.
 | Specialized | `agents/specialized/` |
 | Specialized (Infra sub-team) | `agents/specialized/infra/` |
 | **Rooms Infrastructure** | `{agency-root}/agency-rooms/` — persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
-| **Room polling** | ARCHIVED agent 2026-10-06 — use the `/room-manager` skill (see `agents-archive/ROLE-MAP.md`; role file `agents-archive/generalist-2026-10-06/specialized/infra/room-manager.md`) |
+| **Room polling** | ARCHIVED agent 2026-10-06 — use the `/room-manager` skill (see `agents-archive/ROLE-MAP.md`) |
 | Specialized (Audit sub-team) | `agents/specialized/audit/` |
 
 ---
@@ -211,6 +251,62 @@ Reference `runbooks/escalation-protocol.md` for the full detail.
 
 ---
 
+## Department Operations (Dept-Coord System)
+
+Each department has a persistent operational state at `{dept}/state/`, `{dept}/pipelines/`, `{dept}/protocols/`, and `{dept}/memory/`. This enables department heads to manage pipelines, improve protocols, and track member utilization across sessions.
+
+### Department Decomposition Levels (D-Levels)
+
+| Level | Owner | Ceiling | Example |
+|-------|-------|---------|---------|
+| D1 | Dept Head | — | "Improve content production pipeline" |
+| D2 | Dept Head | — | "Writer briefing", "Quality gate automation" |
+| D3 | Dept Head breaks, Dept-Coord takes | Hard stop for Dept Head | "Redesign writer briefing" |
+| D4-D5 | Dept-Coord | — | "Draft brief sections", "Create example" |
+| D6 | Dept-Coord assigns, Dept-Member executes | Hard stop for Dept-Coord | "Write the template — one file" |
+
+### Department State Structure
+
+```
+{dept}/
+├── state/
+│   ├── dept-state.md          # Live snapshot (max 20 lines) — read on every spawn
+│   ├── member-roster.md       # Utilization + skill tracking
+│   ├── active-coords.md       # Append-only DC status log
+│   └── incoming/              # Inter-spawn tasks from PDs
+├── pipelines/
+│   ├── INDEX.md               # Pipeline registry (name, version, status)
+│   └── {name}/pipeline.md     # Versioned pipeline definition
+├── protocols/
+│   ├── INDEX.md               # Protocol registry
+│   └── {name}.md              # Versioned protocol definition
+├── memory/
+│   ├── decisions.md           # Dept-level decisions (append-only)
+│   ├── lessons.md             # Dept-level lessons (append-only)
+│   └── retros/                # Monthly retrospective records
+└── scratch/
+    ├── dept-scratch.md        # Active session scratch
+    └── coords/                # DC-* scratch files
+```
+
+### Key Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/dept-resume [slug]` | Read dept-state.md, spawn dept head with lean briefing |
+| `/dept-wrap [slug]` | Write dept-state.md + member-roster.md at session end |
+| `/dept-status [slug]` | Read-only status digest (no spawns) |
+
+### Key Runbooks
+
+| Runbook | Purpose |
+|---------|---------|
+| `core/runbooks/dept-coord-protocol.md` | Full operational manual for the dept-coord system |
+| `core/runbooks/dept-boot-sequence.md` | Two-mode dept head startup (spawn + route) |
+| `core/runbooks/protocol-registry.md` | Cross-department protocol index |
+
+---
+
 ## How to Spawn the Agency Council
 
 ### Trigger Phrases
@@ -249,62 +345,6 @@ writes to the team config file, breaking late-joiners. Always use two waves.
 For a project-specific team, use the kickoff protocol in `runbooks/project-kickoff-protocol.md`.
 
 ---
-
----
-
-## Department Operations (Dept-Coord System)
-
-Each department has a persistent operational state at `{dept}/state/`, `{dept}/pipelines/`, `{dept}/protocols/`, and `{dept}/memory/`. This enables department heads to manage pipelines, improve protocols, and track member utilization across sessions.
-
-### Department Decomposition Levels (D-Levels)
-
-| Level | Owner | Ceiling | Example |
-|-------|-------|---------|---------|
-| D1 | Dept Head | — | "Improve content production pipeline" |
-| D2 | Dept Head | — | "Writer briefing", "Quality gate automation" |
-| D3 | Dept Head breaks, Dept-Coord takes | Hard stop for Dept Head | "Redesign writer briefing" |
-| D4-D5 | Dept-Coord | — | "Draft brief sections", "Create example" |
-| D6 | Dept-Coord assigns, Dept-Member executes | Hard stop for Dept-Coord | "Write the template — one file" |
-
-### Department State Structure
-
-```
-{dept}/
-├── state/
-│   ├── dept-state.md          # Live snapshot (max 20 lines) — read on every spawn
-│   ├── member-roster.md       # Utilization + skill tracking
-│   ├── active-coords.md       # DC status log
-│   └── incoming/              # Inter-spawn tasks from PDs
-├── pipelines/
-│   ├── INDEX.md               # Pipeline registry (name, version, status)
-│   └── {name}/pipeline.md     # Versioned pipeline definition
-├── protocols/
-│   ├── INDEX.md               # Protocol registry
-│   └── {name}.md              # Versioned protocol definition
-├── memory/
-│   ├── decisions.md           # Dept-level decisions (append-only)
-│   ├── lessons.md             # Dept-level lessons (append-only)
-│   └── retros/                # Monthly retrospective records
-└── scratch/
-    ├── dept-scratch.md        # Active session scratch
-    └── coords/                # DC-* scratch files
-```
-
-### Key Dept-Ops Skills
-
-| Skill | Purpose |
-|-------|---------|
-| `/dept-resume [dept]` | Read dept-state.md, spawn dept head with lean briefing |
-| `/dept-save-state [dept]` | Write dept-state.md + member-roster.md at session end |
-| `/dept-status [dept]` | Read-only status digest (no spawns) |
-
-### Key Runbooks
-
-| Runbook | Purpose |
-|---------|---------|
-| `core/runbooks/dept-coord-protocol.md` | Full operational manual for the dept-coord system |
-| `core/runbooks/dept-boot-sequence.md` | Two-mode dept head startup (spawn + route) |
-| `core/runbooks/protocol-registry.md` | Cross-department protocol index |
 
 ---
 
@@ -353,4 +393,4 @@ Each project directory follows this memory structure:
 
 ---
 
-*Last updated: 2026-05-14*
+*Last updated: 2026-05-02*

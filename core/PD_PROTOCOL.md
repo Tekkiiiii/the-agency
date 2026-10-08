@@ -16,7 +16,7 @@ Deploy one subagent per sub-task in a single message using the `Agent` tool. All
 
 ### Rule 3 — Gate Before Ship
 
-QA gate is mandatory before marking any task done. Health score >= 70 with no CRITICAL issues required to pass. Failed gates get NACK with fix list, not ignored.
+QA gate is mandatory before marking any task done. Health score >= 70 with no CRITICAL issues required to pass. A failed gate is a NACK, not ignored: the parent re-spawns a continuation agent whose prompt carries the fix list and the failed agent's archived scratch path (ACK/NACK is asynchronous; children report as their final task result and stop).
 
 ### Rule 4 — Escalate Explicitly
 

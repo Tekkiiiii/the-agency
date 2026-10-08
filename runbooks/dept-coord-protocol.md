@@ -138,8 +138,9 @@ LAZY-READ: load only when actively decomposing.
    ~/.claude/agents/{dept}/scratch/coords/dc-{name}-scratch.md
    — include ## Status and ## Children tables (see Section 7).
 
-2a. STATUS_UPDATE IN_PROGRESS: send to the Dept Head via SendMessage immediately
-    after scratch setup, before any decomposition.
+2a. STATUS_UPDATE IN_PROGRESS: write it into your scratch `## Status` row immediately
+    after scratch setup, before any decomposition. No SendMessage — upward name-addressed
+    SendMessage does not resolve (flat roster); the Dept Head reads your scratch file.
 
 2b. Read your scoped structure file (provided by Dept Head in spawn prompt):
     ~/.claude/agents/{dept}/state/coords/dc-{name}-structure.md
@@ -230,13 +231,19 @@ LAZY-READ: load only when actively decomposing.
       `APPROACH_UNREVIEWED` or `CHECKPOINT_UNREVIEWED` (see step 4/4c), do NOT fast-ACK
       on health score alone — actually review the output before deciding.
    b. IF health ≥ 70 AND no CRITICAL issues:
-        → Send ACK to member: "ACK — looks good, die quietly"
+        → ACK = do not re-spawn. The Member already delivered its report as its final
+          task result and stopped — there is no live agent left to message. Record the
+          ACK in your scratch `## Status`/`## Children` row and in the D3 digest.
         → Add to D3 digest
       ELSE:
-        → Send NACK to member: "NACK — fix: [list of issues]"
-        → Wait for member to fix → re-submit → back to step 5a
+        → NACK = spawn a CONTINUATION Member whose spawn prompt carries (a) the fix list,
+          (b) the archived scratch path of the original Member, (c) the same task scope.
+          The fix list travels in the new spawn prompt — never as a message to the
+          agent that already stopped.
+        → Wait for the continuation Member's report → back to step 5a
    c. PROGRESS REPORT TO DEPT HEAD (after each Member ACK):
-      Send to "{dept-head-name}" via SendMessage:
+      Interim, so it goes into your scratch `## Status` row (NOT a SendMessage, NOT a
+      final task result — that would terminate you mid-D3). Dept Head polls the file:
       ```
       DC-{name}: PROGRESS {completed}/{total} tasks
       ✓ {member-name}: {1-line what was done}
@@ -258,17 +265,21 @@ LAZY-READ: load only when actively decomposing.
         → Re-run QA gate. Must pass before reporting.
 
    Phase B — Cross-D3 Integration (run by Dept Head after ALL DCs complete):
-   Dept Head spawns an IntegrationTester after all DCs report Phase A health ≥ 70.
+   Dept Head spawns a general-purpose Exec (Skills: /qa-only, /run-acceptance-tests,
+   /webapp-testing; role file `agents-archive/generalist-2026-10-06/specialized/integration-tester.md`)
+   as the integration tester after all DCs report Phase A health ≥ 70.
    DC Phase A is per-track; Phase B verifies cross-track integration. DCs do not
    run Phase B themselves — they report clean and let Dept Head coordinate it.
 
-7. Send STATUS_UPDATE DONE to Dept Head (before the D3 COMPLETE report).
+7. Write STATUS_UPDATE DONE into your scratch `## Status` row (before the D3 COMPLETE report).
 
-8. Send D3 COMPLETE + QA report to Dept Head.
+8. Deliver D3 COMPLETE + QA report to the Dept Head AS YOUR FINAL TASK RESULT, then
+   STOP immediately. The Dept Head only receives it when you stop.
 
-9. WAIT FOR DEPT HEAD ACK/NACK — do not stop until Dept Head replies:
-   - ACK: "looks good, die quietly" → delete scratch, stop.
-   - NACK: "fix: [issues]" → fix → re-QA → re-report.
+9. ACK/NACK is asynchronous — do NOT wait for it in-session:
+   - ACK = Dept Head does not re-spawn you for this D3. Archive scratch (do not wait).
+   - NACK = Dept Head re-spawns a CONTINUATION Dept-Coord with the fix list and your
+     archived scratch path in the spawn prompt → fix → re-QA → re-report.
 ```
 
 ---
@@ -305,13 +316,15 @@ At ≥ 80% context: finish current APPROACH or CHECKPOINT gate exchange, then:
 Skill({ skill: "coord-respawn-self" })
 ```
 
-**DC MUST notify Dept Head before stopping.** Dept Head handles spawning a fresh DC continuation.
+**DC MUST notify Dept Head before stopping** — via your final task result / the respawn
+manifest file written by the skill (never SendMessage). Dept Head handles spawning a fresh DC continuation.
 
 Note: `/coord-respawn-self` was designed for PD-Coord use and notifies a PD. For DC use, the
 DC notifies its Dept Head (not a PD). The skill itself may emit a PD-notify call — if so, the DC
-overrides the recipient to its Dept Head name. **SKILL GAP FLAG:** If `/coord-respawn-self` is
-hardcoded to PD-only routing, the DC notifies Dept Head manually via SendMessage before calling
-the skill, so the Dept Head is always informed regardless of the skill's internal routing.
+overrides the recipient to its Dept Head. **SKILL GAP FLAG:** If `/coord-respawn-self` is
+hardcoded to PD-only routing, the DC records the notice in its respawn manifest file and in its
+final task result (upward name-addressed SendMessage does not resolve), so the Dept Head is
+always informed regardless of the skill's internal routing.
 
 ### Hard Limits
 
@@ -356,11 +369,14 @@ Blockers: ...
 
 Update `State` on every transition. Update `## Children` on every child STATUS_UPDATE. The `Updated` column uses HH:MM GMT+7.
 
-Scratch is deleted on D3 completion.
+Scratch is ARCHIVED (not deleted) on D3 completion to ~/.claude/agents/{dept}/scratch/coords/archive/dc-{name}-{YYYY-MM-DD}.md; a NACK continuation Dept-Coord receives that path.
 
 ---
 
 ## 8. Status Updates
+
+Status updates are written into the DC's own scratch `## Status` table (Dept Head reads the
+file); only the terminal state goes out, inside the final task result (Section 9).
 
 ### STATUS_UPDATE — IN_PROGRESS (fires at scratch setup)
 ```
@@ -396,9 +412,9 @@ Blockers: none
 
 ## 9. D3 Completion Report
 
-**Two-message sequence: STATUS_UPDATE DONE first, then D3 COMPLETE.**
+**Two-part sequence: write STATUS_UPDATE DONE into scratch first, then deliver D3 COMPLETE.**
 
-Send to the Dept Head via SendMessage:
+Deliver to the Dept Head AS YOUR FINAL TASK RESULT (not SendMessage), then stop:
 
 ```
 DC-{name}: D3 COMPLETE + QA GATE COMPLETE
@@ -407,8 +423,11 @@ Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
 Open CRITICAL/HIGH: {list with assigned owner}
 Report: ~/.claude/agents/{dept}/qa/qa-d3-{name}-{timestamp}.md
-Awaiting Dept Head ACK/NACK...
+Report delivered as final task result. Stopping.
 ```
+
+ACK/NACK is asynchronous: ACK = no re-spawn; NACK = Dept Head re-spawns a continuation
+Dept-Coord carrying the fix list and your archived scratch path.
 
 ---
 
@@ -424,7 +443,10 @@ Scope: {what it affects}
 Awaiting: {Dept Head name}
 ```
 
-Do NOT act. Do NOT retry. Wait for approval.
+Do NOT act. Do NOT retry. Deliver the ESCALATE as your final task result and stop. Resume only
+via a Dept Head re-spawn or the consent file at
+`{project}/memory/tasks/revisions/acks/{YYYY-MM-DD}-{task-id}.md`
+(see `~/.claude/runbooks/escalation-protocol.md` §Permission-Gated Action Consent Path).
 
 ### Dept scope exceeded (escalate to council-chair)
 If the initiative itself expands beyond what the department head can approve (cross-department protocol change, budget, shared infrastructure):
@@ -571,9 +593,10 @@ DC may also SendMessage you (via your `agentId`) as a wake-up nudge for either g
 never required for correctness; the checkpoint file is authoritative.
 
 Scratch file: {agency-root}/agents/{dept}/scratch/members/member-{id}-scratch.md
-Set it up now. Delete it when done.
+Set it up now. Archive it when done (a NACK continuation receives the archived path).
 
-When done (or blocked, or escalating), send a SendMessage to "DC-{name}" with:
+When done (or blocked, or escalating), deliver as your FINAL TASK RESULT (not SendMessage —
+upward name-addressed SendMessage does not resolve) to your spawner DC-{name}:
   - DONE: "[1-line summary] | Health: {0-100} | Issues: {n CRITICAL, n HIGH, n MED, n LOW}"
   - BLOCKED: "[reason] — [workaround attempted]"
   - ESCALATE: "[reason] — [specific action needed from DC]"

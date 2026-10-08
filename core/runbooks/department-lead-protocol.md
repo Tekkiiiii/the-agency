@@ -154,7 +154,7 @@ PROPOSED_RESOLUTION: [what I think should happen]
 
 Parent AI (me) resolves based on:
 - Task severity
-- Project financial importance
+- Project financial importance to the human
 - Long-term vs short-term tradeoffs
 
 ### Dept Head Cannot Override
@@ -170,7 +170,7 @@ Parent AI (me) resolves based on:
 ## Assistant Status Protocol
 
 ### Delta Summary (every 30 min)
-Written to `{project-root}/memory/status.json`, max 200 tokens/member:
+Written to `~/.claude/projects/{id}/status.json`, max 200 tokens/member:
 
 ```json
 {

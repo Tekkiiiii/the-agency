@@ -17,7 +17,7 @@ Agency Rooms are persistent, file-based chat spaces where agents communicate acr
     └── shared.md   # Auto-summarized shared context
 ```
 
-Rooms are managed by the **RoomManager** agent and powered by `room-utils.sh`.
+Rooms are managed by the **/room-manager** polling process (a skill, no longer a registered agent type) and powered by `room-utils.sh`.
 
 ---
 
@@ -30,7 +30,7 @@ Rooms are managed by the **RoomManager** agent and powered by `room-utils.sh`.
 TO: room-manager
 ACTION: create_room
 ROOM_NAME: api-design-sync
-DESCRIPTION: Weekly sync between engineering and design leads on shared architecture
+DESCRIPTION: Weekly sync between engineering and design leads on shared API architecture
 MEMBERS: [engineering-lead, design-lead, testing-lead]
 ```
 
@@ -39,7 +39,7 @@ MEMBERS: [engineering-lead, design-lead, testing-lead]
 TO: room-manager
 ACTION: send_message
 ROOM: api-design-sync
-MESSAGE: We've finalized the API approach. @engineering-lead please review the benchmark results.
+MESSAGE: We've finalized the schema approach. @engineering-lead please review the benchmark results.
 ```
 
 **List all rooms:**
@@ -53,7 +53,7 @@ ACTION: list_rooms
 TO: room-manager
 ACTION: add_member
 ROOM: api-design-sync
-MEMBER: critique-security
+MEMBER: specialized-lead
 ```
 
 ### For an Agent (via room-utils.sh)
@@ -115,8 +115,8 @@ room-utils.sh rooms-for my-agent
 
 ## Room Naming Conventions
 
-- **Format**: `kebab-case` — `api-design-sync`, `launch-plan-q2`, `ux-research`
-- **Scope prefix** (optional): `dept-name/room-name` — `engineering/api-design`, `design/brand-review`
+- **Format**: `kebab-case` — `api-design-sync`, `content-campaign-q2`, `ux-research`
+- **Scope prefix** (optional): `dept-name/room-name` — `engineering/api-design`, `content-creation/campaign-brief`
 - **Avoid**: Spaces, special characters, names longer than 50 chars
 
 ---
@@ -125,7 +125,7 @@ room-utils.sh rooms-for my-agent
 
 Agents can mention other agents in messages:
 ```
-@backend-architect @frontend-developer — ready for review
+@{from-agent} @{to-agent} — ready for review
 ```
 
 The RoomManager parses these and sends targeted notifications to mentioned agents.
@@ -140,7 +140,7 @@ Rooms track structured task handoffs between agents using the NEXUS handoff prot
 # Write a handoff (creates handoffs/{id}.md + logs to messages.mdl)
 room-utils.sh write-handoff <room> <handoff-id> <from> <to> <task> <content>
 # Example:
-room-utils.sh write-handoff {project} FE-impl-01 backend-architect frontend-developer "Implement API endpoint for contact form" "..."
+room-utils.sh write-handoff {project} FE-impl-01 {from-agent} {to-agent} "Implement API endpoint for contact form" "..."
 
 # Read pending handoffs
 room-utils.sh read-handoffs <room> pending
@@ -175,7 +175,7 @@ Each room has a `context/` subdirectory. Agents write shared documents there:
 
 Example — writing to shared context:
 ```bash
-room-utils.sh write-context my-room todos.md "# Open Items\n- [ ] Review API proposal (assigned: @engineering-lead)\n- [ ] Security audit scheduled for Friday"
+room-utils.sh write-context my-room todos.md "# Open Items\n- [ ] Review schema proposal (assigned: @engineering-lead)\n- [ ] Security audit scheduled for Friday"
 ```
 
 ---
@@ -187,7 +187,7 @@ These prefixes auto-populate `context/shared.md` and/or trigger routing actions:
 | Pattern | Example | Effect |
 |---------|---------|--------|
 | `DECIDED:`, `CONCLUSION:` | `DECIDED: Using REST with versioned paths` | → Key Decisions section |
-| `ACTION:` | `ACTION: @backend-architect review PR #42` | → Action Items section |
+| `ACTION:` | `ACTION: @{to-agent} review PR #42` | → Action Items section |
 | `TODO:` | `TODO: Document the auth flow` | → Action Items section |
 | `QUESTION:` | `QUESTION: Should we use JWT or sessions?` | → Open Questions section |
 | `UNRESOLVED:` | `UNRESOLVED: Database choice TBD` | → Open Questions section |
@@ -247,17 +247,16 @@ Rooms don't replace `SendMessage` — they complement it:
 
 ---
 
-## Spawning the RoomManager
+## Running the RoomManager
 
-The RoomManager is activated like any other agent:
+The RoomManager is no longer a registered agent type. Run it as the `/room-manager` skill, or spawn it as
+`general-purpose + /room-manager` (role file: `agents-archive/generalist-2026-10-06/specialized/infra/room-manager.md`):
 
 ```
-/spawn room-manager
+/room-manager
 ```
 
-Or via the parent AI spawning it with its definition file.
-
-To activate polling on first spawn, the RoomManager will `CronCreate` with:
+To activate polling on first run, the RoomManager will `CronCreate` with:
 ```
 cron: "*/15 * * * *"
 prompt: "Run RoomManager polling cycle"
@@ -289,4 +288,4 @@ durable: true
 
 **Messages not appearing** — Verify `room-utils.sh send` succeeded (should print `OK:`)
 
-**RoomManager not polling** — Re-spawn the RoomManager agent; it re-registers its cron on activation
+**RoomManager not polling** — Re-run `/room-manager` (or re-spawn general-purpose + /room-manager); it re-registers its cron on activation

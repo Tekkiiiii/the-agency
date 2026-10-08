@@ -34,8 +34,11 @@ PD spawns Coord-qa-Canary when all L3 Coords have been ACKed, before reporting t
 | Coord → PD | Coord sends L3 complete + QA | PD reviews Coord QA report | Health ≥ 85 (≥ 90 design/visual), no CRITICAL | Health < 85 (< 90 design/visual) OR CRITICAL/HIGH present |
 | PD → root | PD sends final digest + QA | root (the user) | Explicit ACK | Explicit NACK with fix list |
 
-**ACK** = "looks good, die quietly" → reporting agent deletes scratch and stops
-**NACK** = "fix: [list]" → reporter fixes → re-runs QA gate → re-reports
+**ACK/NACK are asynchronous** (all child→parent rows): the reporter delivers its report as its
+FINAL TASK RESULT and stops; it never waits in-session for a reply.
+**ACK** = the reviewer does not re-spawn; it records the ACK in its own scratch `## Status`/`## Children` row and digest. No message arrives.
+**NACK** = the reviewer spawns a CONTINUATION agent whose spawn prompt carries the fix list + the original agent's archived scratch path + the same scope → fix → re-run QA gate → re-report.
+**PD → root row only** (PD is spawned by the main session, so this channel is bidirectional): explicit ACK / NACK-with-fix-list arrives from root as a reply, and the PD waits for it.
 
 ## Domain-Specific Evidence Requirements
 

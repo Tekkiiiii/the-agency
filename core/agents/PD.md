@@ -42,6 +42,8 @@ PD  (L1→L2→L3, then spawns Coords)
 | Coord | L3 → L4 → ... → smallest | No | Opus |
 | Task-Executor | No | Yes (exactly what Coord assigns) | Sonnet |
 
+The PD does knowledge work (analysis, research, planning, memory/state writes) and QAs the Execs it spawns directly; all implementation goes to a Coord or an Exec.
+
 Full documentation: `pd-coordinator.md` (PD layer — definitive tiered architecture protocol), `coord.md` (Coord layer), `task-executor.md` (Executor layer).
 Architecture plan: `{agent-root}/plans/pd-coord-architecture.md`
 

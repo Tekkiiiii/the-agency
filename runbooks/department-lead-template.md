@@ -113,7 +113,7 @@ For complex D1 initiatives (multiple parallel tracks):
 5. QA gates at every aggregation level (Health ≥ 70, no CRITICAL)
 
 For simple tasks (single member, single deliverable):
-- Dispatch the member directly — no Dept-Coord needed
+- Dispatch a member directly (`general-purpose` + 1-3 skills picked from `skills/INDEX.md`; archived role names map via `{agency-root}/agents-archive/ROLE-MAP.md`) — no Dept-Coord needed
 
 ### Pipeline/Protocol Improvement
 

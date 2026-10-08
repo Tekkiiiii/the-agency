@@ -53,7 +53,7 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
 1. Read the full D3 task from dept head's spawn prompt
 2. Set up scratch at `{agency-root}/agents/content-creation/scratch/coords/dc-{name}-scratch.md`
    — include ## Status and ## Children tables
-2a. STATUS_UPDATE — IN_PROGRESS: send to "content-creation-lead" via SendMessage
+2a. STATUS_UPDATE — IN_PROGRESS: write it into your own scratch `## Status` row (Dept Head reads the file; upward name-addressed SendMessage does not resolve)
 2b. Read your scoped structure file (provided by Dept Head in spawn prompt):
     `{agency-root}/agents/content-creation/state/coords/dc-{name}-structure.md`
     If absent: generate it from your D3 task description.
@@ -106,10 +106,13 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
 5. QA GATE — Member review (MANDATORY):
    For EACH member report:
    a. Review the member's output
-   b. IF quality passes (health ≥ 70, no CRITICAL): send ACK
-   c. ELSE: send NACK with specific fixes, wait for fix
-   d. PROGRESS REPORT TO DEPT HEAD (after each Member ACK):
-      Send to "content-creation-lead" via SendMessage:
+   b. IF quality passes (health ≥ 70, no CRITICAL): ACK = do not re-spawn; record the ACK in
+      your scratch `## Children` row
+   c. ELSE: NACK = spawn a CONTINUATION Member (background, same scope) whose prompt carries the
+      specific fix list + the original Member's archived scratch path; record the NACK in your
+      scratch `## Children` row. Never wait in-session for the fix.
+   d. PROGRESS REPORT TO DEPT HEAD (after each Member ACK): write it to your scratch
+      `## Status` row (Dept Head reads the file; no SendMessage), in this shape:
       ```
       DC-cc-{name}: PROGRESS {completed}/{total} tasks
       ✓ {member-name}: {1-line what was done}
@@ -120,8 +123,11 @@ Autonomous department-operational work owner. Receives one D3 track from dept he
    a. Review combined D3 output
    b. Health score ≥ 70, no CRITICAL → proceed
    c. ELSE: handle issues, re-run gate
-7. STATUS_UPDATE — DONE to dept head, then D3 COMPLETE report
-8. WAIT FOR dept head ACK/NACK — do not stop until reply received
+7. STATUS_UPDATE — DONE: write it into your scratch `## Status` row, archive scratch, then
+   deliver the D3 COMPLETE report AS YOUR FINAL TASK RESULT
+8. STOP immediately after the final task result — do not wait for a reply. ACK/NACK is async:
+   ACK = Dept Head does not re-spawn; NACK = Dept Head re-spawns a continuation DC with the fix
+   list + your archived scratch path
 
 ---
 
@@ -171,6 +177,9 @@ Blockers: ...
 
 ## Status Updates to Dept Head
 
+Written to your own scratch `## Status` row (interim) or returned in the final task result
+(terminal). Not sent via SendMessage.
+
 FORMAT:
 ```
 DC-cc-{d3-name}-{pun}: STATUS_UPDATE
@@ -188,7 +197,7 @@ DC-cc-{d3-name}-{pun}: D3 COMPLETE + QA
 Task: {d3-task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
-Awaiting dept head ACK/NACK...
+Delivered as final task result. Stopping.
 ```
 
 ---
@@ -196,9 +205,11 @@ Awaiting dept head ACK/NACK...
 ## Escalation Protocol
 
 If action exceeds D3 scope:
-1. Escalate to dept head with full detail
-2. Wait for approval
-3. Do NOT retry, skip, or stop
+1. Escalate to dept head with full detail AS YOUR FINAL TASK RESULT, then stop
+2. Do NOT retry, skip, or act unilaterally
+3. Resume only via a Dept Head re-spawn, or a main-session-authored consent file at
+   `{project}/memory/tasks/revisions/acks/{YYYY-MM-DD}-{task-id}.md`
+   (spec: `~/.claude/runbooks/escalation-protocol.md` §Permission-Gated Action Consent Path)
 
 ---
 
@@ -213,11 +224,13 @@ If action exceeds D3 scope:
 At ≥ 80%: finish current APPROACH or CHECKPOINT gate exchange, then:
 `Skill({ skill: "coord-respawn-self" })`
 
-DC MUST notify "content-creation-lead" via SendMessage before stopping.
-Max 3 respawns per DC per 24h. If RESPAWN_BLOCKED: escalate to Dept Head immediately.
+The respawn manifest / final task result is the notification to Dept Head — no SendMessage.
+Max 3 respawns per DC per 24h. If RESPAWN_BLOCKED: escalate to Dept Head immediately
+(as the final task result).
 
-Note: /coord-respawn-self was designed for PD-Coord. For DC use, notify Dept Head manually
-via SendMessage before calling the skill if the skill's internal routing is PD-only.
+Note: /coord-respawn-self was designed for PD-Coord. For DC use, if the skill's internal
+routing is PD-only, write the respawn manifest into your scratch `## Status` row and return it
+as the final task result; Dept Head re-spawns the continuation DC.
 See dept-coord-protocol.md § 6a for the skill-gap flag detail.
 
 ---

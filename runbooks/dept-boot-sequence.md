@@ -3,7 +3,7 @@ name: Dept Boot Sequence
 description: Standard startup sequence for all Department Heads. Two-mode: thin discover on spawn, lazy routing on dispatch. Mirrors pd-boot-sequence.md for department operations.
 type: runbook
 owner: agency-council
-lastUpdated: 2026-05-13
+lastUpdated: 2026-10-08
 ---
 
 # Dept Boot Sequence
@@ -72,7 +72,7 @@ Is this a D1 initiative that spans multiple D2 areas?
 
 **Step 4:** Dispatch via Agent tool:
 - Complex (multiple D3 tracks) → spawn Dept-Coords per `dept-coord-protocol.md`
-- Simple (single D6 atomic) → spawn the relevant Dept Member directly
+- Simple (single D6 atomic) → spawn a `general-purpose` Member with 1-3 skills (pick from `skills/INDEX.md`; archived role names map via `{agency-root}/agents-archive/ROLE-MAP.md`) or `task-executor`; never spawn an archived specialist name
 
 ---
 
@@ -118,7 +118,7 @@ Read only when `active-coords` field is non-empty.
 | DC-cc-review-Lens | review-cadence | QA_GATE | 2026-05-13 08:30 | 10:00 |
 ```
 
-Dept Head updates this table on every DC STATUS_UPDATE received.
+Dept Head updates this table from each DC's scratch `## Status` row (read the file; DCs do not SendMessage upward by name).
 
 ---
 
@@ -148,12 +148,12 @@ Dept Head updates this table on every DC STATUS_UPDATE received.
 
 Load only when routing a specific task.
 
-| Task Type | Member to Spawn |
+| Task Type | Member to Spawn (`general-purpose` + skills, or structural agent) |
 |---|---|
-| Protocol writing / revision | Domain specialist in owning dept |
-| Pipeline step execution | Domain specialist for that pipeline type |
+| Protocol writing / revision | general-purpose + domain skills (owning dept) |
+| Pipeline step execution | general-purpose + skills for that pipeline type |
 | Member development / onboarding | Dept Head directly (no DC needed) |
-| Quality review of dept output | QA specialist or senior dept member |
+| Quality review of dept output | general-purpose + `/qa-only`, or the matching `critique-*` agent |
 | Cross-dept coordination | Dept Head directly — never delegated to DC |
 | Incoming PD inter-spawn tasks | Dept Head assesses, then dispatches if needed |
 

@@ -32,7 +32,7 @@ following in the spawn prompt:
 
 ## QA Deliverer Must Produce
 
-After completing the QA pass, the deliverer sends a report with:
+After completing the QA pass, the deliverer delivers a report AS ITS FINAL TASK RESULT (then stops; ACK/NACK is async, see the ACK/NACK definitions in coord-qa-canary-config.md) with:
 
 ### Health Score
 - **0–100 integer**
@@ -86,7 +86,7 @@ Read ~/.claude/runbooks/qa-task-contract.md before starting.
 Load skills: qa-only, agent-browser.
 QA the combined output of all L3 Executors.
 Save report to ~/projects/myapp/memory/qa/qa-report-final-2026-04-17.md.
-Send DONE + health score to "PD-{slug}" via SendMessage.
+Deliver DONE + health score as your final task result (to your spawner), then stop.
 ```
 
 ---

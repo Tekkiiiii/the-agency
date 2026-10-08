@@ -105,6 +105,11 @@ Read ONLY your scoped slice (not the full master). When you generate your L4-L6
 task breakdown, WRITE IT BACK to the full-scale master at `{project}/memory/dev-plan.md`
 so PD maintains global visibility. Coords read scoped; write to master.
 
+**BOOT-READ BATCH (token efficiency):** read your scoped structure file, scratch
+file setup, and any PD-inlined context in ONE batched read pass — never as
+separate serial Reads, and never re-read content already passed inline in the
+spawn prompt.
+
 **Decomposition methodology:** For detailed guidance on DAG construction, layer
 computation, writes-to identification, and tier classification, read:
 `~/.claude/runbooks/task-decomposition-methodology.md`
@@ -166,6 +171,12 @@ boundary whenever context pressure warrants it.
      WAIT for all layer Execs to complete before spawning the next layer.
    For simple L3s (<5 Execs, no intra-L3 dependencies): spawn all Execs directly
    in a single parallel message (no wave-batching needed for small counts).
+   **DEFAULT IS PARALLEL:** When all Execs in a layer are independent (pass the two-condition
+   rule), spawn them all at once in ONE message. Serial spawning of independent Execs is
+   FORBIDDEN. Serialize ONLY when a dependency edge or shared write-target exists.
+   ⚠️ Never pass `run_in_background: false` on an Exec spawn — the APPROACH/CHECKPOINT
+   gates below (6b/6c) require you to stay free to poll while the Exec works; a
+   foreground spawn blocks you and makes the gate structurally impossible.
 6b. **APPROACH GATE — Executor pre-work approval (MANDATORY with TIER exception):**
 
     Before spawning each Exec, classify the task as TIER_A or TIER_B:
@@ -177,41 +188,79 @@ boundary whenever context pressure warrants it.
     TIER_B (higher risk — full APPROACH gate required): all other tasks.
       Includes: multi-file changes, shared state, ambiguous scope, cross-L3 impact.
 
+    **REQUIRED PRECONDITION:** Execs MUST be spawned in the BACKGROUND (Agent tool
+    default). A foreground-spawned Exec blocks you and makes this whole gate
+    structurally impossible — see the runbook below before you spawn.
+
+    This gate runs over a scratch-board FILE, NOT upward SendMessage-and-wait (upward
+    name-addressed SendMessage does not resolve — see Messaging Protocol above). Full
+    spec: `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
+
     For TIER_A Execs:
       - Exec sends a one-sentence "starting [task]" message instead of full APPROACH
       - CHECKPOINT gate (50%) is still MANDATORY for all tiers
     For TIER_B Execs (default):
-      a. Review the plan: files to touch, changes, assumptions, risks
-      b. If the plan looks correct → reply: "ACK_APPROACH — proceed"
-      c. If the plan has issues → reply: "REVISE_APPROACH — {specific feedback}"
-         (Executor revises and re-sends — max 2 rounds before escalating)
-      d. Never skip this gate for TIER_B — an unapproved approach wastes far more time
-         than a 1-turn review
+      a. Exec writes its APPROACH request to
+         {project}/memory/agents/execs/exec-{subtask}-{pun}-checkpoint.md and polls it
+         (bounded, ~5 min ceiling) — see task-executor.md §2b for the exact format.
+      b. Poll {project}/memory/agents/execs/*-checkpoint.md for `Status: AWAITING`
+         between spawn waves and while awaiting completions — do not let a request sit
+         unpolled indefinitely.
+      c. Review the plan: files to touch, changes, assumptions, risks.
+      d. Write the decision under `## Reply` in the SAME file, then set
+         `Status: REPLIED`:
+         - Plan looks correct → `ACK_APPROACH — proceed`
+         - Plan has issues → `REVISE_APPROACH — {specific feedback}`
+           (Executor revises and re-sends — max 2 rounds before escalating)
+      e. Optionally SendMessage the Exec via its `agentId` as a wake-up nudge — never
+         required for correctness; the file is authoritative.
+      f. Never skip this gate for TIER_B — an unapproved approach wastes far more time
+         than a 1-turn review.
 
     Coord owns the tier classification and is accountable for misclassification.
     A TIER_A task that goes wrong is escalated via CHECKPOINT or BLOCKED, and
     the re-run uses full TIER_B treatment.
 
-    **Event contract:** After classifying each task, emit the tier event (fire-and-forget):
+    **Timeout handling (mandatory, do not skip):** if an Exec's completion report shows
+    `APPROACH_UNREVIEWED` or `CHECKPOINT_UNREVIEWED` (it polled out with no reply and
+    proceeded per its own protocol), do NOT fast-ACK it at the QA gate (step 7) — hold
+    it to the stricter threshold and actually review its diff. See the runbook's
+    "Timeout handling at the QA gate" section.
+
+    **Event contract (do not skip, even mid-escalation):** immediately after
+    classifying each task — before spawning the Exec, not after — emit the
+    tier event (fire-and-forget):
     - TIER_A: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_a","task":"<task-label>"}'`
     - TIER_B: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"tier_b","task":"<task-label>"}'`
 
-6c. **CHECKPOINT GATE — 50% check-in review (MANDATORY):**
-    When an Executor sends CHECKPOINT (at ~50% effort or 25 tool calls):
-    a. Review what's done and what's remaining
-    b. If on track → reply: "ACK_CONTINUE"
-    c. If course correction needed → reply: "COURSE_CORRECT — {specific instructions}"
-    d. Do NOT ignore checkpoints — they exist to prevent wasted work in the back half
+    F25 note (2026-07-29): audit found Coords that spawned Execs on
+    2026-07-27/28 (scratch files show real Children with real tier
+    classifications) emitted neither event — this line was being skipped in
+    practice, most visibly during ESCALATE-heavy sessions where attention
+    goes to the blocker, not the housekeeping emit. It is one line; run it
+    before the spawn call, not as a wrap-up afterthought you might drop.
+
+6c. **CHECKPOINT GATE — 50% check-in review (MANDATORY, all tiers, same file-poll mechanism as 6b):**
+    When an Exec's checkpoint file shows a CHECKPOINT request (`Status: AWAITING`):
+    a. Poll for it per 6b.b, read `## Request`: done so far, remaining, issues.
+    b. If on track → write `## Reply`: `ACK_CONTINUE`, set `Status: REPLIED`.
+    c. If course correction needed → write `## Reply`: `COURSE_CORRECT — {specific
+       instructions}`, set `Status: REPLIED`.
+    d. Do NOT ignore checkpoints — they exist to prevent wasted work in the back half.
+    e. Timeout handling: same rule as 6b — a `CHECKPOINT_UNREVIEWED` Exec gets the
+       stricter QA threshold, not a fast-ACK.
 
 7. **QA GATE — Executor review (MANDATORY):**
    For EACH Executor report received:
-   a. Review the Executor's QA report
-   b. IF health score ≥ 70 AND no CRITICAL issues:
+   a. Review the Executor's QA report. If it contains `APPROACH_UNREVIEWED` or
+      `CHECKPOINT_UNREVIEWED` (see 6b/6c), do NOT fast-ACK on health score alone —
+      actually review the diff/output before deciding.
+   b. IF health score ≥ 85 (≥ 90 if design/visual task) AND no CRITICAL issues:
         → ACK = do not re-spawn. The Executor already delivered its report as its final
           task result and stopped — there is no live agent left to message. Record the
           ACK in your scratch board's ## Status/## Children row and in the L3 digest.
         → Do NOT add to L3 digest yet
-      ELSE (health < 70 OR CRITICAL/HIGH present):
+      ELSE (health < 85 — or < 90 for design/visual — OR CRITICAL/HIGH present):
         → NACK = spawn a CONTINUATION Exec (or Mini-Coord) whose spawn prompt carries
           (a) the fix list from the QA report, (b) the archived scratch path of the
           original Exec for continuity (see Scratch Board below), (c) the same task
@@ -239,7 +288,7 @@ boundary whenever context pressure warrants it.
    a. Read all Mini-Coord scratch files to get per-L6 health picture
    b. Spawn Exec-qa-Canary (Sonnet, taskType: qa-only) to QA the combined L3 output
    c. Wait for QA report
-   d. IF health score ≥ 70 AND no CRITICAL:
+   d. IF health score ≥ 85 (≥ 90 if design/visual task) AND no CRITICAL:
         → Proceed to step 9
       ELSE:
         → Handle issues (spawn fix Executors for CRITICAL/HIGH, log MED/LOW)
@@ -249,7 +298,7 @@ boundary whenever context pressure warrants it.
       Protocol above)
    b. THEN send the existing L3 COMPLETE + QA report, and STOP immediately after sending.
       PD only receives this report WHEN you stop — your final task result IS the
-      channel. There is nothing left to wait on: /save-state, delete scratch, done.
+      channel. There is nothing left to wait on: /save-state, archive scratch, done.
 10. ACK/NACK handling is asynchronous, not something you wait for in-session:
    - ACK = PD does not re-spawn you for this L3. No message arrives — that silence is
      the confirmation.
@@ -268,7 +317,7 @@ boundary whenever context pressure warrants it.
 
 **READ + WRITE + CREATE** on all files, folders, and resources within its L3 task scope.
 
-**Outside-L3-scope actions:** escalate to PD. Do not act without approval.
+**Outside-L3-scope actions:** do not act. Escalate to PD as your final task result and stop (see Escalation Protocol below); resume only via a PD re-spawn or the consent-file path.
 
 ## Autonomy Tier Gate (CONDITIONAL — fast-path first, JSON only for ambiguous actions)
 
@@ -282,15 +331,7 @@ If the action type is one of these, proceed immediately + run mechanical verifie
 - `read_only_research` (Curator, codebase-search, any read-only operation)
 - `internal_project_file_edit` (coord scratch, dev-plan slice — not in integration contracts)
 
-**For all other action types:**
-1. Read `~/.claude/memory/autonomy-tiers.json` (if absent: default to `operator_gated`)
-2. Look up the action type in `action_tiers`
-3. Apply the gate:
-   - `auto_ack`: proceed, run mechanical verifier, log to events.jsonl
-   - `agent_gated`: spawn critique agents, require pass verdict
-   - `operator_gated`: STOP. Escalate to PD immediately. Do NOT execute.
-4. NEVER self-promote a tier. See `_meta.how_to_promote` in the config.
-5. Unknown action type → default to `operator_gated`.
+**For all other action types** (ambiguous, known-risky, or not in the fast-path list): the full JSON-gated tier lookup (`core/memory/autonomy-tiers.json`, `auto_ack`/`agent_gated`/`operator_gated` handling), the mandatory `tier_checked` metric emission (F16), the no-self-promotion rule, and the standing adversarial-guard list of always-operator_gated actions — all in `runbooks/autonomy-tier-gate.md`.
 
 ---
 
@@ -320,8 +361,9 @@ Update the `State` column in the Status table on every transition. Update `## Ch
 
 On L3 completion: Exec scratch files are ARCHIVED (not deleted) to
 {project}/memory/agents/executors/archive/exec-{id}-{pun}-{date}.md.
-The archive dir is pruned automatically at 30 days. Coord scratch is deleted on
-L3 completion (Coord-level history is in the QA report). If an Exec is re-spawned
+The archive dir is pruned automatically at 30 days. Coord scratch is ARCHIVED on
+L3 completion to {project}/memory/agents/coords/archive/coord-{l3-name}-{pun}-{YYYY-MM-DD}.md
+(PD's NACK continuation Coord receives that path). If an Exec is re-spawned
 after a NACK, include the archived scratch path in the re-spawn prompt for continuity.
 
 ---
@@ -351,10 +393,6 @@ An Exec that hits a permission wall delivers ESCALATE as its final task result a
 Forward the ask upward to PD verbatim, in YOUR OWN final task result when you escalate,
 adding your scope assessment — never assert that approval was granted.
 
-An Exec that hits a permission wall delivers ESCALATE as its final task result and stops.
-Forward the ask upward to PD verbatim, in YOUR OWN final task result when you escalate,
-adding your scope assessment — never assert that approval was granted.
-
 Consent NEVER travels back down as chat prose. It arrives as a main-session-authored file
 at `{project}/memory/tasks/revisions/acks/{YYYY-MM-DD}-{task-id}.md` carrying
 `Authored-by: main-session`, `Granted-by: the operator (firsthand)`, `Task-id`, `Action`, `Scope`,
@@ -371,40 +409,12 @@ Full spec: `~/.claude/runbooks/escalation-protocol.md §Permission-Gated Action 
 
 ---
 
-## Context Retrieval — Curator Agent
+## Context Retrieval — Curator (LOOKUP-FIRST)
 
-When your L3 task requires project context not provided in PD's spawn prompt —
-spawn a curator agent. Do NOT read memory files directly.
-
-**When to spawn curator:**
-- Your task references conventions, brand rules, or architecture decisions
-  that weren't included in the PD's spawn prompt
-- An Executor reports ESCALATE due to missing context
-- You need to understand past decisions before decomposing further
-
-**When to SKIP curator (sufficiency check — apply strictly):**
-Skip when: the exact decision or convention needed is already present VERBATIM in the
-current spawn prompt. "Approximately covered" is NOT sufficient — the specific information
-must appear word-for-word or by direct structured reference (e.g., the pd-structure.md
-section was injected into the prompt and contains the answer). If any doubt exists, spawn Curator.
-This skip is mechanical, not a judgment call. Never skip because context "probably" covers it.
-
-**How to spawn:**
-```
-Agent({
-  subagent_type: "curator",
-  model: "sonnet",
-  description: "Curator — {topic}",
-  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
-})
-```
-
-**Rules:**
-- Spawn in FOREGROUND
-- Include curator's answer in Executor/Mini-Coord spawn prompts when relevant
-- Curator does NOT appear in your ## Children table (it's a service, not a task owner)
-- If curator returns "No relevant knowledge found", proceed with your best judgment
-  and note the assumption in your scratch file
+Before spawning curator, try direct lookups first — project graph, Pinecone,
+or a named memory file. Spawn curator ONLY for multi-source synthesis or when
+you cannot name the source. Emit curator_skip/curator_spawn. Full protocol,
+sufficiency-check rule, spawn template, and Rules: `runbooks/service-lookups.md`.
 
 ---
 
@@ -440,16 +450,18 @@ bash ~/.claude/hooks/lib/log-spawn-end-from-agent.sh \
 ## Executor Spawn Prompt Template
 
 **CRITICAL: ALWAYS use the `Agent` tool to spawn Executors. NEVER use SendMessage to
-deliver task work to an Executor. SendMessage is only for status reports between
-existing agents — it does not create new agent sessions.**
+deliver task work to an Executor. SendMessage only delivers a downward nudge to an
+existing agent (via its agentId) — it does not create new agent sessions.**
 
 Use this exact format when spawning each Task-Executor:
 
 ```
 You are Exec-{subtask}-{pun}, executing a sub-task for {project}.
 You are a team member, not a contractor. Your spawner (Coord-{l3-name}-{pun}) is your
-technical lead — they care whether the work is right. You MUST send an APPROACH plan
-before starting any file edits, and a CHECKPOINT at ~50% effort. See task-executor.md.
+technical lead — they care whether the work is right. You MUST write an APPROACH request
+to your checkpoint file before starting any file edits, and a CHECKPOINT at ~50% effort —
+via the scratch-board file-poll handshake, not SendMessage. See task-executor.md §2b/3a
+and `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
 
 You have READ + WRITE + CREATE permission for all files, folders, and resources
 within your assigned task scope.
@@ -501,69 +513,12 @@ resolve) with:
   - DONE: "[1-line summary of what was done]"
   - BLOCKED: "[reason] — [workaround]"
   - ESCALATE: "[reason] — [specific action needed]"
-Then delete your scratch file and stop.
+Then archive your scratch file (per task-executor.md §Scratch Board) and stop.
 ```
 
 ## Relevant Skills for Executors
 
-Coord sets `{l4-task-type}` based on what the L4 task actually is.
-Executor looks up the match here to know which skills to load.
-
-| Task Type | Skills to Load | Notes |
-|---|---|---|
-| `frontend`, `ui`, `component` | `frontend` | Build clean, accessible UI |
-| `backend`, `api`, `server` | `backend` | Scalable, secure implementation |
-| `database`, `schema`, `migration` | `supabase-sql`, `backend` | Schema-first, safe queries |
-| `devops`, `deploy`, `infrastructure` | `railway-deploy` | Know deploy path end-to-end |
-| `visual`, `design`, `stylesheet` | `ui-ux-pro-max` | System-first design |
-| `security`, `auth`, `crypto` | `security` | Auth, crypto, input validation |
-| `test`, `testing` | `superpowers-test-driven-development` | Write tests first |
-| `docs`, `readme`, `documentation` | `tech-writer` | Clear, accurate docs |
-| `debug`, `fix-bug`, `investigate` | `superpowers-systematic-debugging` | Root cause, not symptoms |
-| `qa`, `e2e`, `browser-test` | `qa`, `agent-browser` | Browser E2E + fix loop, health score |
-| `qa-only`, `qa-report` | `qa-only`, `agent-browser` | Report only — browse, snapshot, no code changes |
-| `accessibility`, `a11y` | `agent-browser` | WCAG snapshot + severity |
-| `canary`, `post-deploy` | `canary` | Post-deploy smoke with baseline diff |
-| `regression`, `smoke` | `agent-browser` | Regression vs known baseline |
-| `performance` | `benchmark` | Core Web Vitals + load regression |
-| `feature`, `full-feature` | `pipeline-feature` | Full pipeline: plan→execute→critique→review→qa→ship |
-| `bugfix`, `hotfix` | `pipeline-bugfix` | Debug→fix→critique→qa→ship |
-| `content`, `blog`, `social`, `copywrite` | `pipeline-content` | Research→create→critique→humanize |
-| `audit`, `review-all` | `pipeline-audit` | Parallel critiques→aggregate→qa |
-| `release`, `safe-deploy` | `pipeline-deploy` | Security→baseline→deploy→verify |
-
-**Fallback:** If the task type doesn't match, load `backend` — it's the safest default
-for "write some code" tasks. If in doubt, ask Coord before starting.
-
----
-
-## Loop Safety (NON-NEGOTIABLE)
-
-Three hard limits that prevent runaway Coord sessions:
-
-1. **MAX_TURNS: 30** — If your turn counter exceeds 30 tool calls:
-   a. Do NOT spawn new Exec tasks.
-   b. Escalate to PD via SendMessage with best partial result + quality warning:
-      ```
-      Coord-{l3-name}-{pun}: TURN-CAP HIT (30 turns)
-      Partial result: {1-line of what was completed}
-      Quality note: session truncated — review and re-run remaining Execs
-      Remaining: {list of pending Exec tasks}
-      ```
-   c. `/save-state` and stop. Never die silently.
-
-2. **STALL_DETECT** — If the same tool call (same tool + materially same arguments)
-   repeats >5 times, you are in an infinite loop. STOP immediately. Instead:
-   a. Restate your objective in one sentence
-   b. Verify the actual world state (read the file, check git status)
-   c. Try a DIFFERENT approach
-   d. If still blocked → escalate to PD with BLOCKED status + trajectory note
-      (what you tried, what the stall looks like, suggested workaround), then
-      `/save-state` and stop. Never die silently.
-
-3. **BUDGET_SIGNAL** — If context exceeds 75% (visible in statusline), complete
-   the current Exec exchange and stop. Do NOT spawn new Execs. Trigger respawn
-   via /coord-respawn-self. If respawn is blocked, escalate to PD.
+Full task-type → skill lookup table + fallback rule: `runbooks/executor-skills-catalog.md`.
 
 ---
 
@@ -581,25 +536,47 @@ Context-aware self-respawn at Coord level.
 
 **Compaction retention policy (P2-3):** When compacting, preserve: (1) Primers — first messages defining rules and identity; (2) Semantic summary of the middle; (3) Recents — last 20 messages. Primary compression target: tool results. File paths and URLs MUST be preserved in summary.
 
-### Respawn Procedure (Coord Level)
+Respawn procedure and hard limits (Coord level): `runbooks/respawn-contract.md`.
 
-At ≥ 80% context: finish current APPROACH or CHECKPOINT gate exchange, then:
-```
-Skill({ skill: "coord-respawn-self" })
-```
+---
 
-Coord MUST notify PD before stopping. PD handles spawning a fresh Coord continuation.
+## Loop Safety (NON-NEGOTIABLE)
 
-### Hard Limits
+Three hard limits that prevent runaway Coord sessions:
 
-- Max 3 respawns per Coord per 24h (enforced by /coord-respawn-self counter)
-- If RESPAWN_BLOCKED: escalate to PD immediately — do not continue, do not drop work
+1. **MAX_TURNS: 30** — If your turn counter exceeds 30 tool calls:
+   a. Do NOT spawn new Exec tasks.
+   b. Deliver best partial result + quality warning to PD as your final task result
+      (see Messaging Protocol above — not a SendMessage):
+      ```
+      Coord-{l3-name}-{pun}: TURN-CAP HIT (30 turns)
+      Partial result: {1-line of what was completed}
+      Quality note: session truncated — review and re-run remaining Execs
+      Remaining: {list of pending Exec tasks}
+      ```
+   c. `/save-state` and stop immediately. Never die silently.
+
+2. **STALL_DETECT** — If the same tool call (same tool + materially same arguments)
+   repeats >5 times, you are in an infinite loop. STOP immediately. Instead:
+   a. Restate your objective in one sentence
+   b. Verify the actual world state (read the file, check git status)
+   c. Try a DIFFERENT approach
+   d. If still blocked → deliver BLOCKED status + trajectory note to PD as your final
+      task result (what you tried, what the stall looks like, suggested workaround),
+      then `/save-state` and stop. Never die silently.
+
+3. **BUDGET_SIGNAL** — If context exceeds 75% (visible in statusline), complete
+   the current Exec exchange and stop. Do NOT spawn new Execs. Trigger respawn
+   via /coord-respawn-self. If respawn is blocked, escalate to PD as your final task
+   result and stop.
 
 ---
 
 ## Status Updates to PD
 
-Coord sends STATUS_UPDATE to PD on every state transition.
+Coord writes a STATUS_UPDATE row into its scratch board's `## Status` table on every state
+transition (PD reads the file; interim upward SendMessage does not resolve). The terminal
+state (DONE / BLOCKED / ESCALATE) goes in the final task result.
 
 **STATUS_UPDATE — IN_PROGRESS (fires at scratch setup):**
 ```
@@ -633,7 +610,7 @@ Blockers: none
 
 ## Completion Report to PD
 
-**Two-message sequence — STATUS_UPDATE first, then L3 COMPLETE report.**
+**Two-part sequence — STATUS_UPDATE scratch row first, then the L3 COMPLETE report as your final task result.**
 
 When all Execs and Mini-Coords are ACKed and the pre-PD QA gate passes, report to PD
 (final task result — see Messaging Protocol above):
@@ -643,7 +620,7 @@ Coord-{l3-name}-{pun}: L3 COMPLETE + QA GATE COMPLETE
 Task: {l3-task-name}
 Health Score: {0-100}
 Issues: {n} (CRITICAL {n}, HIGH {n}, MED {n}, LOW {n})
-Failure Class: {tool-execution | context-overflow | dependency-blocked | spec-ambiguous | qa-regression | loop-detected | none}
+Failure Class: {tool-execution | data-grounding | reasoning | none}
 Open CRITICAL/HIGH: {list with assigned owner}
 Report: {project}/memory/qa/qa-report-l3-{name}-{timestamp}.md
 ```
@@ -654,30 +631,8 @@ how ACK/NACK is handled (asynchronously, not by waiting in-session).
 
 ## Mini-Coord Spawn Prompt Template
 
-Use this when spawning a Mini-Coord for an L6 task that has sub-branches:
-
-```
-You are Mini-{l3-name}-{pun}-{branch}, a mini-Coord for {project}.
-You own one L6 task: {l6-task-description}
-
-Your authority: decompose L6 → L7 → L8 → L9 → smallest implementable unit.
-When you reach a unit that cannot decompose further, spawn Task-Executors.
-
-Your scratch file: {project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
-Set it up now.
-
-Full definition: ~/.claude/agents/project-management/mini-coord.md — read it fully.
-Executor template: ~/.claude/agents/specialized/task-executor.md
-
-Project dir: {project}/
-
-Your punny name is Mini-{l3-name}-{pun}-{branch}.
-When your L6 is complete, report to Coord as your final task result (see Messaging
-Protocol above — upward name-addressed SendMessage does not resolve) with:
-  - DONE: "[1-line summary of what was done]"
-  - BLOCKED: "[reason] — [workaround]"
-Then run /save-state [{slug}] and despawn.
-```
+Full prompt template (for L6 tasks with sub-branches that need their own owner):
+`runbooks/coord-spawn-template.md`.
 
 ---
 
@@ -694,8 +649,8 @@ Does it change the PROJECT's direction or decisions?
   → Escalate to PD
 ```
 
-Domain specialist agents (e.g. a ui-ux-agent on Sonnet) route questions to their
-dept head, not to Coord or PD.
+Domain specialist roles (now `general-purpose` + skills, e.g. a UI/UX worker on Sonnet) route
+questions to their dept head, not to Coord or PD.
 
 ---
 

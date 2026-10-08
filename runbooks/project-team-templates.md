@@ -2,6 +2,17 @@
 
 Pre-defined team compositions for common project types. Use `TeamCreate` with these as reference.
 
+> **Note 2026-10-08 (doctrine sync):** Only these department leads resolve as agents today:
+> `engineering-lead`, `design-lead`, `content-creation-lead`, `critiques-lead`,
+> `project-management-lead`, `specialized-lead`, `testing-lead`, `video-studio-lead`.
+> `marketing-lead`, `sales-lead`, `paid-media-lead`, `product-lead`, `operations-lead` and
+> `pm-lead` are archived (see `{agency-root}/agents-archive/MANIFEST.md`); `dept-*` member names
+> (dept-frontend, dept-backend, ...) are not agents. Since the generalist switch (2026-10-06),
+> staff those roles as `general-purpose` + 1-3 skills picked from
+> `skills/INDEX.md`; old role names map to skills in
+> `{agency-root}/agents-archive/ROLE-MAP.md`. Templates below keep the original rosters as role
+> labels; read archived leads as roles to spawn that way.
+
 ---
 
 ## Template: Full Agency (All Departments)
@@ -14,10 +25,10 @@ Members:
   - engineering-lead
   - design-lead
   - content-creation-lead
-  - video-studio-lead
-  - pm-lead
-  - testing-lead
   - critiques-lead
+  - project-management-lead
+  - testing-lead
+  - video-studio-lead
   - specialized-lead
   - council-chair (me)
 ```
@@ -33,18 +44,17 @@ Team: [project-name]-engineering
 Members:
   - engineering-lead
   - design-lead (if UX/UI involved)
-  - pm-lead
+  - project-management-lead
   - testing-lead
-  - specialized-lead (if infra or audit involved)
   - council-chair (me)
 ```
 
-**Typical members added**:
-- `dept-frontend` (Engineering)
-- `dept-backend` (Engineering)
-- `dept-security` (Engineering)
-- `dept-pm` (Project Management)
-- `dept-qa` (Testing)
+**Typical members added** (general-purpose + skills, not named agents):
+- Frontend (Engineering): `/frontend`, `/tailwind`
+- Backend (Engineering): `/backend`
+- Security (Engineering): `/security`, `/cso`
+- Project Management: `/persona-project-manager`, `/project-status`
+- QA (Testing): `/qa-only`, `/benchmark`
 
 ---
 
@@ -57,16 +67,13 @@ Team: [project-name]-content
 Members:
   - content-creation-lead
   - design-lead (if creative assets needed)
-  - video-studio-lead (if video needed)
-  - critiques-lead
-  - pm-lead
+  - specialized-lead (if reporting/analytics needed)
   - council-chair (me)
 ```
 
-**Typical members added**:
-- `dept-content` (Content Creation)
-- `dept-social` (Content Creation)
-- `dept-seo` (Content Creation)
+**Typical members added** (general-purpose + skills, not named agents):
+- Growth / content: `/content-strategy`, `/copywriting`
+- Analytics: `/chart-viz`, `/xlsx-toolkit`
 
 Strategy, growth and sales work has no dedicated department; run it as `general-purpose` + skills (for example /content-strategy, /copywriting).
 
@@ -78,16 +85,18 @@ Strategy, growth and sales work has no dedicated department; run it as `general-
 
 Build from the department roster:
 
-| Dept | Leader | Common Members |
+| Dept | Leader | Common Members (general-purpose + skills) |
 |------|--------|--------------|
-| Engineering | `engineering-lead` | `dept-frontend`, `dept-backend`, `dept-ai`, `dept-security`, `dept-mobile`, `dept-devops`, `dept-data` |
-| Design | `design-lead` | `dept-ui`, `dept-ux`, `dept-brand`, `dept-visual` |
-| Content Creation | `content-creation-lead` | `dept-content`, `dept-seo`, `dept-social` |
-| Video Studio | `video-studio-lead` | See `agents/video-studio/INDEX.md` |
-| Project Management | `pm-lead` | `dept-shepherd`, `dept-studio-ops`, `dept-experiments` |
-| Testing | `testing-lead` | `dept-evidence`, `dept-benchmark`, `dept-accessibility`, `dept-api` |
-| Critiques | `critiques-lead` | `critique-*` agents (see `agents/critiques/INDEX.md`) |
-| Specialized | `specialized-lead` | `dept-orchestrator`, `dept-audit`, `dept-infra` |
+| Engineering | `engineering-lead` | frontend `/frontend`, backend `/backend`, AI `/claude-api`, security `/security`, devops `/github-deploy` |
+| Design | `design-lead` | `/design-router`, `/ui-ux-pro-max`, `/brandkit`, `/impeccable` |
+| Content Creation | `content-creation-lead` | `/content-creator`, `/copywriting`, `/seo-aeo-best-practices`, `/content-polish` |
+| Critiques | `critiques-lead` | named `critique-*` agents |
+| Project Management | `project-management-lead` | `/persona-project-manager`, `/project-status` |
+| Testing | `testing-lead` | `/qa-only`, `/benchmark`, `/webapp-testing` |
+| Video Studio | `video-studio-lead` | `/video-use`, `/ffmpeg`, `/hyperframes` |
+| Specialized | `specialized-lead` | `/xlsx-toolkit`, `/legal-contract-review`, `/security` |
+| Marketing, Sales, Paid Media, Product, Operations | archived | see `{agency-root}/agents-archive/MANIFEST.md` and ROLE-MAP.md |
+| Spatial Computing, Game Development | archived 2026-06-25 | see `{agency-root}/agents-archive/MANIFEST.md` |
 
 ---
 

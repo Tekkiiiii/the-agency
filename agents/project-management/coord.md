@@ -298,7 +298,7 @@ boundary whenever context pressure warrants it.
       Protocol above)
    b. THEN send the existing L3 COMPLETE + QA report, and STOP immediately after sending.
       PD only receives this report WHEN you stop — your final task result IS the
-      channel. There is nothing left to wait on: /save-state, delete scratch, done.
+      channel. There is nothing left to wait on: /save-state, archive scratch, done.
 10. ACK/NACK handling is asynchronous, not something you wait for in-session:
    - ACK = PD does not re-spawn you for this L3. No message arrives — that silence is
      the confirmation.
@@ -317,7 +317,7 @@ boundary whenever context pressure warrants it.
 
 **READ + WRITE + CREATE** on all files, folders, and resources within its L3 task scope.
 
-**Outside-L3-scope actions:** escalate to PD. Do not act without approval.
+**Outside-L3-scope actions:** do not act. Escalate to PD as your final task result and stop (see Escalation Protocol below); resume only via a PD re-spawn or the consent-file path.
 
 ## Autonomy Tier Gate (CONDITIONAL — fast-path first, JSON only for ambiguous actions)
 
@@ -361,8 +361,9 @@ Update the `State` column in the Status table on every transition. Update `## Ch
 
 On L3 completion: Exec scratch files are ARCHIVED (not deleted) to
 {project}/memory/agents/executors/archive/exec-{id}-{pun}-{date}.md.
-The archive dir is pruned automatically at 30 days. Coord scratch is deleted on
-L3 completion (Coord-level history is in the QA report). If an Exec is re-spawned
+The archive dir is pruned automatically at 30 days. Coord scratch is ARCHIVED on
+L3 completion to {project}/memory/agents/coords/archive/coord-{l3-name}-{pun}-{YYYY-MM-DD}.md
+(PD's NACK continuation Coord receives that path). If an Exec is re-spawned
 after a NACK, include the archived scratch path in the re-spawn prompt for continuity.
 
 ---
@@ -449,8 +450,8 @@ bash ~/.claude/hooks/lib/log-spawn-end-from-agent.sh \
 ## Executor Spawn Prompt Template
 
 **CRITICAL: ALWAYS use the `Agent` tool to spawn Executors. NEVER use SendMessage to
-deliver task work to an Executor. SendMessage is only for status reports between
-existing agents — it does not create new agent sessions.**
+deliver task work to an Executor. SendMessage only delivers a downward nudge to an
+existing agent (via its agentId) — it does not create new agent sessions.**
 
 Use this exact format when spawning each Task-Executor:
 
@@ -512,7 +513,7 @@ resolve) with:
   - DONE: "[1-line summary of what was done]"
   - BLOCKED: "[reason] — [workaround]"
   - ESCALATE: "[reason] — [specific action needed]"
-Then delete your scratch file and stop.
+Then archive your scratch file (per task-executor.md §Scratch Board) and stop.
 ```
 
 ## Relevant Skills for Executors
@@ -545,33 +546,37 @@ Three hard limits that prevent runaway Coord sessions:
 
 1. **MAX_TURNS: 30** — If your turn counter exceeds 30 tool calls:
    a. Do NOT spawn new Exec tasks.
-   b. Escalate to PD via SendMessage with best partial result + quality warning:
+   b. Deliver best partial result + quality warning to PD as your final task result
+      (see Messaging Protocol above — not a SendMessage):
       ```
       Coord-{l3-name}-{pun}: TURN-CAP HIT (30 turns)
       Partial result: {1-line of what was completed}
       Quality note: session truncated — review and re-run remaining Execs
       Remaining: {list of pending Exec tasks}
       ```
-   c. `/save-state` and stop. Never die silently.
+   c. `/save-state` and stop immediately. Never die silently.
 
 2. **STALL_DETECT** — If the same tool call (same tool + materially same arguments)
    repeats >5 times, you are in an infinite loop. STOP immediately. Instead:
    a. Restate your objective in one sentence
    b. Verify the actual world state (read the file, check git status)
    c. Try a DIFFERENT approach
-   d. If still blocked → escalate to PD with BLOCKED status + trajectory note
-      (what you tried, what the stall looks like, suggested workaround), then
-      `/save-state` and stop. Never die silently.
+   d. If still blocked → deliver BLOCKED status + trajectory note to PD as your final
+      task result (what you tried, what the stall looks like, suggested workaround),
+      then `/save-state` and stop. Never die silently.
 
 3. **BUDGET_SIGNAL** — If context exceeds 75% (visible in statusline), complete
    the current Exec exchange and stop. Do NOT spawn new Execs. Trigger respawn
-   via /coord-respawn-self. If respawn is blocked, escalate to PD.
+   via /coord-respawn-self. If respawn is blocked, escalate to PD as your final task
+   result and stop.
 
 ---
 
 ## Status Updates to PD
 
-Coord sends STATUS_UPDATE to PD on every state transition.
+Coord writes a STATUS_UPDATE row into its scratch board's `## Status` table on every state
+transition (PD reads the file; interim upward SendMessage does not resolve). The terminal
+state (DONE / BLOCKED / ESCALATE) goes in the final task result.
 
 **STATUS_UPDATE — IN_PROGRESS (fires at scratch setup):**
 ```
@@ -605,7 +610,7 @@ Blockers: none
 
 ## Completion Report to PD
 
-**Two-message sequence — STATUS_UPDATE first, then L3 COMPLETE report.**
+**Two-part sequence — STATUS_UPDATE scratch row first, then the L3 COMPLETE report as your final task result.**
 
 When all Execs and Mini-Coords are ACKed and the pre-PD QA gate passes, report to PD
 (final task result — see Messaging Protocol above):
@@ -644,8 +649,8 @@ Does it change the PROJECT's direction or decisions?
   → Escalate to PD
 ```
 
-Domain specialist agents (e.g. a ui-ux-agent on Sonnet) route questions to their
-dept head, not to Coord or PD.
+Domain specialist roles (now `general-purpose` + skills, e.g. a UI/UX worker on Sonnet) route
+questions to their dept head, not to Coord or PD.
 
 ---
 

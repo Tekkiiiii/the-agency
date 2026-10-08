@@ -3,7 +3,7 @@ name: Dept Boot Sequence
 description: Standard startup sequence for all Department Heads. Two-mode: thin discover on spawn, lazy routing on dispatch. Mirrors pd-boot-sequence.md for department operations.
 type: runbook
 owner: agency-council
-lastUpdated: 2026-05-14
+lastUpdated: 2026-10-08
 ---
 
 # Dept Boot Sequence
@@ -22,18 +22,18 @@ lastUpdated: 2026-05-14
 
 **Step 1:** Read dept-state from spawn prompt. `/dept-resume` passes dept-state.md content inline — no file read needed. If spawned manually without a briefing, read:
 ```
-~/.agency/agents/{dept}/state/dept-state.md
+{agency-root}/agents/{dept}/state/dept-state.md
 ```
 
 **Step 2:** If `active-coords` field is non-empty, read:
 ```
-~/.agency/agents/{dept}/state/active-coords.md
+{agency-root}/agents/{dept}/state/active-coords.md
 ```
 This gives you the current DC names, their D3 tracks, and last-known states. Skip if field is empty.
 
 **Step 3:** Check for incoming inter-spawn tasks from PDs:
 ```
-~/.agency/agents/{dept}/state/incoming/
+{agency-root}/agents/{dept}/state/incoming/
 ```
 If files exist, read each one. Prioritize by the `Priority` field. High-priority items become first-session actions before any other department work.
 
@@ -56,7 +56,7 @@ active-pipelines: [pipeline-name, ...]
 
 **Step 2:** If a matching pipeline exists, read:
 ```
-~/.agency/agents/{dept}/pipelines/{pipeline-name}.md
+{agency-root}/agents/{dept}/pipelines/{pipeline-name}.md
 ```
 Only load the pipeline you need. Not all pipelines.
 
@@ -72,13 +72,13 @@ Is this a D1 initiative that spans multiple D2 areas?
 
 **Step 4:** Dispatch via Agent tool:
 - Complex (multiple D3 tracks) → spawn Dept-Coords per `dept-coord-protocol.md`
-- Simple (single D6 atomic) → spawn the relevant Dept Member directly
+- Simple (single D6 atomic) → spawn a `general-purpose` Member with 1-3 skills (pick from `skills/INDEX.md`; archived role names map via `{agency-root}/agents-archive/ROLE-MAP.md`) or `task-executor`; never spawn an archived specialist name
 
 ---
 
 ## dept-state.md Format
 
-Path: `~/.agency/agents/{dept}/state/dept-state.md`
+Path: `{agency-root}/agents/{dept}/state/dept-state.md`
 
 This is the department's equivalent of `next-session.md`. Max 20 lines. Key:value format.
 
@@ -105,7 +105,7 @@ notes: {freeform, max 2 lines}
 
 ## active-coords.md Format
 
-Path: `~/.agency/agents/{dept}/state/active-coords.md`
+Path: `{agency-root}/agents/{dept}/state/active-coords.md`
 
 Read only when `active-coords` field is non-empty.
 
@@ -114,11 +114,11 @@ Read only when `active-coords` field is non-empty.
 
 | DC Name | D3 Track | State | Started | Last Update |
 |---|---|---|---|---|
-| DC-cc-pipeline-Conductor | content-pipeline-v2 | IN_PROGRESS | 2026-05-14 09:00 | 09:45 |
-| DC-cc-review-Lens | review-cadence | QA_GATE | 2026-05-14 08:30 | 10:00 |
+| DC-cc-pipeline-Conductor | content-pipeline-v2 | IN_PROGRESS | 2026-05-13 09:00 | 09:45 |
+| DC-cc-review-Lens | review-cadence | QA_GATE | 2026-05-13 08:30 | 10:00 |
 ```
 
-Dept Head updates this table on every DC STATUS_UPDATE received.
+Dept Head updates this table from each DC's scratch `## Status` row (read the file; DCs do not SendMessage upward by name).
 
 ---
 
@@ -148,12 +148,12 @@ Dept Head updates this table on every DC STATUS_UPDATE received.
 
 Load only when routing a specific task.
 
-| Task Type | Member to Spawn |
+| Task Type | Member to Spawn (`general-purpose` + skills, or structural agent) |
 |---|---|
-| Protocol writing / revision | Domain specialist in owning dept |
-| Pipeline step execution | Domain specialist for that pipeline type |
+| Protocol writing / revision | general-purpose + domain skills (owning dept) |
+| Pipeline step execution | general-purpose + skills for that pipeline type |
 | Member development / onboarding | Dept Head directly (no DC needed) |
-| Quality review of dept output | QA specialist or senior dept member |
+| Quality review of dept output | general-purpose + `/qa-only`, or the matching `critique-*` agent |
 | Cross-dept coordination | Dept Head directly — never delegated to DC |
 | Incoming PD inter-spawn tasks | Dept Head assesses, then dispatches if needed |
 
@@ -165,43 +165,26 @@ Write dept-state after:
 - Spawning or receiving completion from a DC
 - Processing an incoming task from a PD
 - Closing an open issue
-- End of session (via `/dept-save-state`)
+- End of session (via `/dept-wrap`)
 
-Never let dept-state go stale across sessions. The `/dept-save-state` skill handles the end-of-session write.
+Never let dept-state go stale across sessions. The `/dept-wrap` skill handles the end-of-session write.
 
 ---
 
-## Department State Structure
+## How to Apply to a New Dept Head
 
-Each department has a persistent state directory:
+1. Create `{agency-root}/agents/{dept}/state/dept-state.md` with the format above.
+2. Create `{agency-root}/agents/{dept}/state/incoming/` directory (empty, for PD inter-spawn tasks).
+3. Paste Mode 1 (Spawn) + Mode 2 (Route) reference into the Dept Head agent file.
+4. Paste Dispatch Priority as a reference block (no file reads on spawn).
 
-```
-{dept}/
-├── state/
-│   ├── dept-state.md          # Live snapshot (max 20 lines) — read on every spawn
-│   ├── member-roster.md       # Utilization + skill tracking
-│   ├── active-coords.md       # DC status log
-│   └── incoming/              # Inter-spawn tasks from PDs
-├── pipelines/
-│   ├── INDEX.md               # Pipeline registry (name, version, status)
-│   └── {name}/pipeline.md     # Versioned pipeline definition
-├── protocols/
-│   ├── INDEX.md               # Protocol registry
-│   └── {name}.md              # Versioned protocol definition
-├── memory/
-│   ├── decisions.md           # Dept-level decisions (append-only)
-│   ├── lessons.md             # Dept-level lessons (append-only)
-│   └── retros/                # Monthly retrospective records
-└── scratch/
-    ├── dept-scratch.md        # Active session scratch
-    └── coords/                # DC-* scratch files
-```
+Total added to Dept Head agent file: ~50 lines. Single file read on spawn (dept-state.md). Everything else is lazy-loaded.
 
 ---
 
 ## References
 
-- Dept-Coord lifecycle: `core/runbooks/dept-coord-protocol.md`
-- Dept lead protocol: `core/runbooks/department-lead-protocol.md`
-- PD boot sequence (mirror): `core/runbooks/pd-boot-sequence.md`
-- Protocol registry: `core/runbooks/protocol-registry.md`
+- Dept-Coord lifecycle: `{agency-root}/runbooks/dept-coord-protocol.md`
+- Dept lead protocol: `{agency-root}/runbooks/department-lead-protocol.md`
+- PD boot sequence (mirror): `{agency-root}/runbooks/pd-boot-sequence.md`
+- Protocol registry: `{agency-root}/runbooks/protocol-registry.md`

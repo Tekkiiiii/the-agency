@@ -23,7 +23,7 @@ When assigning work to another agent:
 4. Notify the receiving agent via session log
 
 ### Phase 2 — Work
-The specialist executes:
+The assigned worker executes:
 1. Read task description + context
 2. Update task to `in_progress`
 3. Work incrementally — write session log every significant step
@@ -41,7 +41,7 @@ When reviewing another's work:
 1. Read session log + task notes
 2. Check evidence against acceptance criteria
 3. Gate: `passed` or `failed`
-4. If `failed`: explain what's wrong, send back to specialist
+4. If `failed`: explain what's wrong, send back to the worker (spawn a continuation agent carrying the fix list)
 
 ### Phase 5 — Archive
 When a project or phase is complete:

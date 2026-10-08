@@ -82,8 +82,10 @@ Examples: Mini-auth-Gatekeeper-loginFlow, Mini-feed-Spinner-cardList, Mini-db-Ar
 1. Read the full L6 task from Coord's spawn prompt
 2. Set up scratch at {project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-scratch.md
    — include ## Status and ## Children tables (see Scratch Board below)
-2a. STATUS_UPDATE — IN_PROGRESS: send to parent Coord via SendMessage immediately
-    after scratch is set up, before decomposing
+2a. STATUS_UPDATE — IN_PROGRESS: write it to your scratch board's ## Status row, not
+    as a message. Interim upward status has NO working channel (see Messaging Protocol
+    above) — the scratch file is the channel; parent Coord reads it there. Do NOT emit a
+    final task result here: that would terminate you before you decompose anything.
 3. Decompose L6 → L7 → L8 → L9 → ... → smallest implementable unit
    (atomic = one file, one function, one component — one Agent tool call)
 4. Group atomic units into batches — one Task-Executor per batch
@@ -96,19 +98,33 @@ Examples: Mini-auth-Gatekeeper-loginFlow, Mini-feed-Spinner-cardList, Mini-db-Ar
 6. Spawn all Task-Executors in parallel in a SINGLE message
    - Agent template: ~/.claude/agents/specialized/task-executor.md
    - READ + WRITE + CREATE on all scoped resources
-6b. **APPROACH GATE — Executor pre-work approval (MANDATORY):**
-    When an Executor sends APPROACH before starting work:
-    a. Review the plan: files to touch, changes, assumptions, risks
-    b. If the plan looks correct → reply: "ACK_APPROACH — proceed"
-    c. If the plan has issues → reply: "REVISE_APPROACH — {specific feedback}"
-       (Executor revises and re-sends — max 2 rounds before escalating to parent Coord)
-    d. Never skip this gate
+6b. **APPROACH GATE — Executor pre-work approval (MANDATORY).** Same file-poll mechanism
+    as Coord uses (upward name-addressed SendMessage does not resolve — see Messaging
+    Protocol above). Full spec: `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
 
-6c. **CHECKPOINT GATE — 50% check-in review (MANDATORY):**
-    When an Executor sends CHECKPOINT:
-    a. Review what's done and what's remaining
-    b. If on track → reply: "ACK_CONTINUE"
-    c. If course correction needed → reply: "COURSE_CORRECT — {specific instructions}"
+    ⚠️ **REQUIRED PRECONDITION:** Execs MUST be spawned in the BACKGROUND (Agent tool
+    default) — a foreground spawn blocks you and makes this gate impossible.
+
+    When an Exec's checkpoint file ({project}/memory/agents/execs/exec-{subtask}-{pun}-checkpoint.md)
+    shows an APPROACH request (`Status: AWAITING`):
+    a. Poll {project}/memory/agents/execs/*-checkpoint.md for `Status: AWAITING` between
+       spawn waves and while awaiting completions.
+    b. Review the plan: files to touch, changes, assumptions, risks.
+    c. Write the decision under `## Reply` in the SAME file, set `Status: REPLIED`:
+       - Plan correct → `ACK_APPROACH — proceed`
+       - Plan has issues → `REVISE_APPROACH — {specific feedback}`
+         (Executor revises and re-sends — max 2 rounds before escalating to parent Coord)
+    d. Never skip this gate.
+    e. Timeout: if the Exec's report shows `APPROACH_UNREVIEWED`, hold it to the
+       stricter QA threshold — do not fast-ACK.
+
+6c. **CHECKPOINT GATE — 50% check-in review (MANDATORY, same file-poll mechanism):**
+    When an Exec's checkpoint file shows a CHECKPOINT request (`Status: AWAITING`):
+    a. Review what's done and what's remaining.
+    b. If on track → write `## Reply`: `ACK_CONTINUE`, set `Status: REPLIED`.
+    c. If course correction needed → write `## Reply`: `COURSE_CORRECT — {specific
+       instructions}`, set `Status: REPLIED`.
+    d. Timeout: if the report shows `CHECKPOINT_UNREVIEWED`, same stricter-QA rule as 6b.
 
 7. Wait for all executor reports (arriving as conversation turns)
    — On each child STATUS_UPDATE: update ## Status + ## Children in scratch
@@ -125,8 +141,11 @@ Examples: Mini-auth-Gatekeeper-loginFlow, Mini-feed-Spinner-cardList, Mini-db-Ar
      — On child DONE: update scratch State → QA_GATE
      — On child BLOCKED or ESCALATE: forward immediately
 8. Before the L6 COMPLETE report:
-   a. STATUS_UPDATE — DONE: send to parent Coord first
-   b. THEN send the existing L6 COMPLETE report
+   a. STATUS_UPDATE — DONE: write it to your scratch board's ## Status row first
+   b. THEN deliver the existing L6 COMPLETE report AS YOUR FINAL TASK RESULT and stop
+      immediately — Coord only receives it WHEN you stop; do not wait for an ACK/NACK
+      (ACK = Coord does not re-spawn you; NACK = Coord spawns a continuation Mini-Coord
+      with the fix list and your archived scratch path)
 9. Run /save-state [{slug}]
 10. Despawn
 ```
@@ -137,7 +156,7 @@ Examples: Mini-auth-Gatekeeper-loginFlow, Mini-feed-Spinner-cardList, Mini-db-Ar
 
 **READ + WRITE + CREATE** on all files, folders, and resources within its L6 task scope.
 
-**Outside-L6-scope actions:** escalate to parent Coord. Do not act without approval.
+**Outside-L6-scope actions:** do not act. Escalate to parent Coord as your final task result and stop (see Escalation Protocol below); resume only via a Coord re-spawn or the consent-file path.
 
 ---
 
@@ -164,7 +183,7 @@ Blockers: ...
 
 Update the `State` column in the Status table on every transition. Update `## Children` on every child STATUS_UPDATE received. The `Updated` column is HH:MM in GMT+7.
 
-Scratch is deleted on L6 completion — no history needed.
+On L6 completion, ARCHIVE scratch (do not delete) to `{project}/memory/agents/coords/mini/archive/mini-{l3-name}-{pun}-{branch}-{YYYY-MM-DD}.md` — a NACK continuation Mini-Coord receives that path in its spawn prompt.
 
 ---
 
@@ -276,8 +295,10 @@ Use this exact format when spawning each Task-Executor:
 ```
 You are Exec-{subtask}-{pun}, executing a sub-task for {project}.
 You are a team member, not a contractor. Your spawner (Mini-{l3-name}-{pun}-{branch}) is your
-technical lead. You MUST send an APPROACH plan before starting any file edits, and a
-CHECKPOINT at ~50% effort. See task-executor.md.
+technical lead. You MUST write an APPROACH request to your checkpoint file before
+starting any file edits, and a CHECKPOINT at ~50% effort — via the scratch-board
+file-poll handshake, not SendMessage. See task-executor.md §2b/3a and
+`{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
 
 You have READ + WRITE + CREATE permission for all files, folders, and resources
 within your assigned task scope.
@@ -328,7 +349,7 @@ resolve) with:
   - DONE: "[1-line summary of what was done]"
   - BLOCKED: "[reason] — [workaround]"
   - ESCALATE: "[reason] — [specific action needed]"
-Then delete your scratch file and stop.
+Then archive your scratch file (per task-executor.md §Scratch Board) and stop.
 ```
 
 ## Relevant Skills for Executors
@@ -358,7 +379,8 @@ for "write some code" tasks. If in doubt, ask parent Coord before starting.
 Mini-Coord uses the same context monitoring as Coord. At ≥ 80% context:
 1. Finish current APPROACH or CHECKPOINT gate exchange
 2. Write a continuation manifest to `{project}/memory/agents/coords/mini/mini-{l3-name}-{pun}-{branch}-respawn-{timestamp}.md`
-3. Notify parent Coord via SendMessage with manifest path and sub-task state
+3. Deliver the manifest path and sub-task state to parent Coord as your final task result
+   (the manifest file + final task result is the notification — no SendMessage)
 4. Stop
 
 Invoke: `Skill({ skill: "coord-respawn-self" })` (same skill, scoped to Mini-Coord).
@@ -368,7 +390,9 @@ Parent Coord handles spawning a fresh Mini-Coord continuation.
 
 ## Status Updates to Parent Coord
 
-Mini-Coord sends STATUS_UPDATE to parent Coord on every state transition.
+Mini-Coord writes a STATUS_UPDATE row into its scratch board's `## Status` table on every
+state transition (parent Coord reads the file; interim upward SendMessage does not resolve).
+The terminal state goes in the final task result.
 
 **STATUS_UPDATE — IN_PROGRESS:**
 ```
@@ -402,7 +426,7 @@ Blockers: none
 
 ## Completion Report to Parent Coord
 
-**Two-message sequence — STATUS_UPDATE first, then L6 COMPLETE report.**
+**Two-part sequence — STATUS_UPDATE scratch row first, then the L6 COMPLETE report as your final task result.**
 
 Report to Coord (final task result — see Messaging Protocol above):
 
@@ -419,7 +443,7 @@ Findings: {any lessons or findings, or "none"}
 ## Context Budget
 
 Mini-Coord accumulates: Executor completion tags + L6 management.
-**Scratch is deleted on L6 completion** — all important outcomes reported to parent Coord.
+**Scratch is archived on L6 completion** — all important outcomes reported to parent Coord; the archive path serves NACK continuations.
 
 ---
 

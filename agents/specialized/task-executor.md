@@ -82,7 +82,7 @@ not just whether it is done. You are expected to:
     `{agency-root}/runbooks/checkpoint-handshake-protocol.md`.
 
     IF TIER_A (low-risk task, explicitly marked in your spawn prompt):
-      Send a one-sentence start notification:
+      Record a one-sentence start note in your scratch `## Status` row (no SendMessage):
       "Exec-{subtask}-{pun}: starting {task-name} [TIER_A]"
       Do NOT wait for Coord approval — proceed immediately to step 3.
       CHECKPOINT gate (step 3a) is still MANDATORY.

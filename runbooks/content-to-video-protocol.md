@@ -76,14 +76,14 @@ VIDEO STUDIO DEPT
 
 | Required | Notes |
 |---|---|
-| Final approved script | Must be final. Draft scripts are rejected with NACK. |
+| Final approved script | Must be final. Draft scripts are rejected (NACK: requester spawns a continuation script writer with the fix list). |
 | Voice/tone direction | Casual / educational / formal. Delivery pace. |
 | Top 3 key messages | These must be visually reinforced |
 | CTA specification | Action + destination URL |
 | Target platforms | Required for format planning |
 | Brand asset pack | Logo (SVG/PNG), brand colors (hex), fonts |
 
-Missing any required item → Video Studio Director sends NACK to the video script writer role before production starts.
+Missing any required item → Video Studio Director rejects the handoff in its report before production starts (NACK; requester spawns a continuation general-purpose script writer with the fix list).
 
 ---
 
@@ -104,7 +104,7 @@ All videos pass through the `critique-video` agent before distribution.
 
 | Situation | Escalation Path |
 |---|---|
-| Script unclear / incomplete | NACK to the video script writer role |
+| Script unclear / incomplete | NACK: requester spawns a continuation script writer (general-purpose + skills) with the fix list |
 | Brand assets missing | Request from Design dept via inter-spawn |
 | AI video fails 3+ iterations | Escalate to the AI video role → video-studio-lead → human |
 | Platform API failure on upload | Log, retry x2, then escalate to user |
