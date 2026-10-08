@@ -258,6 +258,14 @@ jobs:
       - name: Assert the skill router is inert while disabled (no network, no key)
         run: python3 .github/scripts/check-skill-route-disabled.py
 
+      # Windows PowerShell 5.1 reads a BOM-less script as cp1252, where the em
+      # dash (E2 80 94) contains U+201D, a string terminator. One dash in a
+      # quoted string and the whole script fails to parse. The pwsh job below
+      # reads UTF-8 and never noticed. Any non-ASCII byte in a PowerShell/cmd
+      # source file fails here, on every OS.
+      - name: Assert PowerShell and cmd sources are ASCII-only
+        run: node .github/scripts/check-ps1-ascii.js
+
   install-ps1:
     name: install.ps1 (windows)
     runs-on: windows-latest
@@ -712,3 +720,91 @@ jobs:
       - name: Assert the skill router is inert while disabled (no network, no key)
         shell: bash
         run: python3 .github/scripts/check-skill-route-disabled.py
+
+      # ---- Windows PowerShell 5.1 (shell: powershell) ----------------------
+      # Every step above runs under pwsh (PowerShell 7), which defaults to UTF-8.
+      # Real Windows machines run install.ps1 and rescue.ps1 under Windows
+      # PowerShell 5.1, which does not. These steps close that gap. ASCII and
+      # parse checks are deterministic and blocking; the full runs are advisory
+      # until their first green run on windows-latest.
+      - name: Assert PowerShell and cmd sources are ASCII-only
+        run: node .github/scripts/check-ps1-ascii.js
+
+      - name: Assert every tracked *.ps1 parses under Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw "expected Windows PowerShell 5.x" }
+          $files = @(git ls-files '*.ps1')
+          if ($files.Count -eq 0) { throw "git ls-files found no *.ps1 files" }
+          $failed = 0
+          foreach ($f in $files) {
+            $errs = $null
+            $full = (Resolve-Path $f).Path
+            [System.Management.Automation.Language.Parser]::ParseFile($full, [ref]$null, [ref]$errs) | Out-Null
+            if ($errs -and $errs.Count -gt 0) {
+              $failed++
+              Write-Host "PARSE ERRORS in ${f}:"
+              $errs | ForEach-Object { Write-Host ("  line " + $_.Extent.StartLineNumber + ": " + $_.Message) }
+            } else {
+              Write-Host "parsed OK: $f"
+            }
+          }
+          if ($failed -gt 0) { throw "$failed file(s) do not parse under Windows PowerShell 5.1" }
+
+      - name: Run install.ps1 under Windows PowerShell 5.1 (advisory until first green run)
+        continue-on-error: true
+        shell: powershell
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-ps51
+        run: |
+          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
+          Remove-Item -Recurse -Force $env:AGENCY_HOME -ErrorAction SilentlyContinue
+          .\install.ps1
+          $repo = (Get-ChildItem skills -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') }).Count
+          $dest = Join-Path $env:AGENCY_HOME 'skills'
+          $got  = (Get-ChildItem $dest -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') }).Count
+          Write-Host "repo=$repo installed=$got"
+          if ($repo -le 0) { throw "repo reports 0 skills - check the layout assumption" }
+          if ($got -ne $repo) { throw "installed $got of $repo skills" }
+          if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'hooks\lib\resolve-root.sh'))) { throw "resolve-root.sh not deployed" }
+          $settings = Join-Path $env:AGENCY_HOME 'settings.json'
+          if (-not (Test-Path $settings)) { throw "install.ps1 did not create settings.json" }
+          $s = Get-Content $settings -Raw -Encoding UTF8 | ConvertFrom-Json
+          $cmds = @()
+          foreach ($ev in $s.hooks.PSObject.Properties) {
+            foreach ($g in $ev.Value) { foreach ($h in $g.hooks) { $cmds += $h.command } }
+          }
+          $m = Get-Content hooks\hooks.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          Write-Host "wired=$($cmds.Count) manifest=$($m.hooks.Count)"
+          if ($cmds.Count -ne $m.hooks.Count) { throw "expected $($m.hooks.Count) hook entries, got $($cmds.Count)" }
+          Write-Host "OK: install.ps1 ran under Windows PowerShell 5.1"
+
+      - name: Run rescue.ps1 under Windows PowerShell 5.1 (advisory until first green run)
+        continue-on-error: true
+        shell: powershell
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\rescue-root-ps51
+        run: |
+          $ErrorActionPreference = 'Continue'
+          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
+          # Same negative path as the pwsh step: no agency repo anywhere ->
+          # exit 1, names the resolved root, touches nothing. Run from a temp
+          # dir so the checkout is not adopted as the repo.
+          $sandbox = Join-Path $env:RUNNER_TEMP 'rescue-sandbox-ps51'
+          Remove-Item -Recurse -Force $sandbox -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
+          Copy-Item .\rescue.ps1 $sandbox
+          $fakeHome = Join-Path $env:RUNNER_TEMP 'rescue-home-ps51'
+          New-Item -ItemType Directory -Force -Path $fakeHome | Out-Null
+          Push-Location $sandbox
+          $env:USERPROFILE = $fakeHome
+          $out = & powershell -NoProfile -File (Join-Path $sandbox 'rescue.ps1') 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Pop-Location
+          Write-Host $out
+          if ($code -ne 1) { throw "expected exit 1 when no agency repo exists, got $code" }
+          if ($out -notmatch 'not found') { throw "expected a not-found message" }
+          if ($out -notmatch [regex]::Escape($env:AGENCY_HOME)) { throw "rescue.ps1 did not search AGENCY_HOME ($env:AGENCY_HOME)" }
+          # rescue.ps1 exited 1 on purpose; without this the step inherits it.
+          $global:LASTEXITCODE = 0

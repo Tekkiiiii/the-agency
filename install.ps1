@@ -1,9 +1,9 @@
-# The Agency — Install script for Windows (PowerShell)
+# The Agency - Install script for Windows (PowerShell)
 # Copies skills and agents into ~/.claude/ for Claude Code
 
 $ErrorActionPreference = "Stop"
 
-# Root precedence must match hooks/lib/resolve-root.sh exactly — otherwise the
+# Root precedence must match hooks/lib/resolve-root.sh exactly - otherwise the
 # installer writes to one directory and the deployed scripts read from another.
 $ClaudeHome = if ($env:AGENCY_HOME) { $env:AGENCY_HOME }
               elseif ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR }
@@ -18,7 +18,7 @@ $RootSource = if ($env:AGENCY_HOME) { "AGENCY_HOME" }
               else { "default" }
 $RootWarn = ($RootSource -eq "default") -and -not (Test-Path -LiteralPath (Join-Path $ClaudeHome "settings.json"))
 function Write-RootWarning {
-    Write-Host "  ⚠ No settings.json at $ClaudeHome, and neither AGENCY_HOME nor CLAUDE_CONFIG_DIR is set."
+    Write-Host "  [!] No settings.json at $ClaudeHome, and neither AGENCY_HOME nor CLAUDE_CONFIG_DIR is set."
     Write-Host "    If your Claude Code config lives elsewhere (e.g. D:\claude or a custom folder),"
     Write-Host "    set CLAUDE_CONFIG_DIR or AGENCY_HOME to that folder and re-run."
 }
@@ -49,9 +49,9 @@ $skillCount = 0
 
 if (Test-Path $SkillsSrc) {
     # Canonical skill layout is directory-only: skills/<name>/SKILL.md, plus any
-    # supporting assets alongside it. This loop previously globbed skills/*.md —
+    # supporting assets alongside it. This loop previously globbed skills/*.md -
     # the flat layout the repo abandoned and now fails CI on
-    # (scripts/check-flat-skills.js) — so install.ps1 silently installed ZERO
+    # (scripts/check-flat-skills.js) - so install.ps1 silently installed ZERO
     # skills while printing a success line. Copy whole skill directories.
     $skillDirs = Get-ChildItem -Path $SkillsSrc -Directory |
         Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }
@@ -75,17 +75,17 @@ if (Test-Path $SkillsSrc) {
         Copy-Item -Path $indexSrc -Destination (Join-Path $SkillsDest "INDEX.md") -Force
     }
 
-    Write-Host "  ✓ $skillCount skills installed"
+    Write-Host "  [OK] $skillCount skills installed"
 
-    # Loud mismatch check — a silent repo-vs-installed gap is exactly the
+    # Loud mismatch check - a silent repo-vs-installed gap is exactly the
     # failure mode that hid the flat-layout bug above for this long.
     $repoSkillCount = (Get-ChildItem -Path $SkillsSrc -Directory |
         Where-Object { Test-Path (Join-Path $_.FullName "SKILL.md") }).Count
     if ($skillCount -ne $repoSkillCount) {
-        Write-Host "  ⚠ Skill count mismatch: repo has $repoSkillCount, installed $skillCount"
+        Write-Host "  [!] Skill count mismatch: repo has $repoSkillCount, installed $skillCount"
     }
 } else {
-    Write-Host "  ⚠ No skills/ directory found"
+    Write-Host "  [!] No skills/ directory found"
 }
 
 # --- Agents ---
@@ -118,14 +118,14 @@ if (Test-Path $AgentsSrc) {
         New-Item -ItemType Directory -Path $AgentsDest -Force | Out-Null
     }
     Copy-AgentDir -Src $AgentsSrc -Dest $AgentsDest
-    Write-Host "  ✓ $agentCount agents installed"
+    Write-Host "  [OK] $agentCount agents installed"
 } else {
-    Write-Host "  ⚠ No agents/ directory found"
+    Write-Host "  [!] No agents/ directory found"
 }
 
 # --- Core docs ---
 # NOT a blind recursive copy. A few files under core/memory/ ship as empty
-# scaffolds that the running system appends rows to AT THEIR INSTALLED PATH —
+# scaffolds that the running system appends rows to AT THEIR INSTALLED PATH -
 # the project registry, the delegator route cache, the operator's quality
 # thresholds. Overwriting them destroyed those rows on every reinstall,
 # silently. core/.preserve lists them; the rule is skip-if-exists, so a fresh
@@ -162,7 +162,7 @@ if (Test-Path $CoreSrc) {
     # -Force so dotfiles (.preserve itself) are enumerated, matching the other
     # two installers, which both copy them.
     foreach ($CoreFile in (Get-ChildItem -Path $CoreSrc -Recurse -File -Force)) {
-        # Compare and match in forward-slash form — that is what .preserve uses.
+        # Compare and match in forward-slash form - that is what .preserve uses.
         $CoreRel = $CoreFile.FullName.Substring($CoreSrcRoot.Length).TrimStart('\', '/').Replace('\', '/')
         if ($CoreRel -eq '.DS_Store' -or $CoreRel -like '*/.DS_Store' -or
             $CoreRel -like '__pycache__/*' -or $CoreRel -like '*/__pycache__/*' -or
@@ -180,7 +180,7 @@ if (Test-Path $CoreSrc) {
         Copy-Item -Path $CoreFile.FullName -Destination $CoreTarget -Force
         $CoreSynced++
     }
-    Write-Host "  ✓ Core docs installed ($CoreSynced synced, $CorePreserved preserved)"
+    Write-Host "  [OK] Core docs installed ($CoreSynced synced, $CorePreserved preserved)"
 }
 
 # --- Hooks, runbooks, scripts, design-system, agents-archive ---
@@ -191,7 +191,7 @@ if (Test-Path $CoreSrc) {
 # never under agents/ so nothing registers).
 # install.ps1 previously shipped none of them, so every such reference dangled
 # on a Windows install. Keep this list in sync with install.sh and
-# cli/commands/init.js — see docs/INSTALL-LAYOUT.md.
+# cli/commands/init.js - see docs/INSTALL-LAYOUT.md.
 foreach ($tree in @("hooks", "runbooks", "scripts", "design-system", "agents-archive")) {
     $TreeSrc = Join-Path $ScriptDir $tree
     $TreeDest = Join-Path $ClaudeHome $tree
@@ -203,9 +203,9 @@ foreach ($tree in @("hooks", "runbooks", "scripts", "design-system", "agents-arc
         # Recursive: scripts\skill-route\ (and any future subdir) must not ship bytecode either.
         @(Get-ChildItem -Path $TreeDest -Directory -Recurse -Force -Filter "__pycache__" -ErrorAction SilentlyContinue) |
             ForEach-Object { Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
-        Write-Host "  ✓ $tree installed"
+        Write-Host "  [OK] $tree installed"
     } else {
-        Write-Host "  ⚠ No $tree/ directory found"
+        Write-Host "  [!] No $tree/ directory found"
     }
 }
 
@@ -257,20 +257,20 @@ if (Test-Path $CliSrc) {
 
     $ShimPath = Join-Path $ShimDir "agency.cmd"
     Set-Content -Path $ShimPath -Value "@node `"$CliSrc`" %*"
-    Write-Host "  ✓ CLI shim created → $ShimPath"
+    Write-Host "  [OK] CLI shim created -> $ShimPath"
 
     # Add to user PATH if not already there
     $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
     if ($UserPath -notlike "*$ShimDir*") {
         [Environment]::SetEnvironmentVariable("Path", "$ShimDir;$UserPath", "User")
         $env:Path = "$ShimDir;$env:Path"
-        Write-Host "  ✓ Added $ShimDir to user PATH"
+        Write-Host "  [OK] Added $ShimDir to user PATH"
         Write-Host "    (restart your terminal for PATH changes to take effect)"
     }
 }
 
 Write-Host ""
-Write-Host "✓ The Agency installed to $ClaudeHome"
+Write-Host "[OK] The Agency installed to $ClaudeHome"
 # One line: the optional skill router ships DISABLED. Read-only: enabled iff
 # AGENCY_SKILL_ROUTER is exactly "1" in this environment OR in the "env" block of
 # settings.json (where Claude Code users set it; a terminal does not inherit that).

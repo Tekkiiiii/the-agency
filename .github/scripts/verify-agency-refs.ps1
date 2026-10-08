@@ -1,9 +1,9 @@
-# verify-agency-refs.ps1 — Windows twin of verify-agency-refs.sh.
+# verify-agency-refs.ps1 - Windows twin of verify-agency-refs.sh.
 #
 # Asserts that every {agency-root}/<tree>/... reference emitted by a DEPLOYED
 # agency tree resolves to a real file in that install. install.ps1 shipped none
 # of hooks/, runbooks/ or scripts/ before Wave 12, which made every such
-# reference dangle on Windows — and nothing caught it, because the installer
+# reference dangle on Windows - and nothing caught it, because the installer
 # still printed success. This is what catches it now.
 
 param(
@@ -41,8 +41,8 @@ foreach ($tree in $trees) {
 
     # Extension alternation is ordered LONGEST-FIRST, and it must stay that way.
     # .NET regex alternation is leftmost-FIRST: with `js` ahead of `json`, the
-    # path `.../brands/neutral.json` matched `js` and captured `neutral.js` — a
-    # file that does not exist — so this guard reported a dangling reference for
+    # path `.../brands/neutral.json` matched `js` and captured `neutral.js` - a
+    # file that does not exist - so this guard reported a dangling reference for
     # a reference that was perfectly valid. Its twin, verify-agency-refs.sh, uses
     # POSIX ERE via `grep -E`, which is leftmost-LONGEST and matched `json`
     # correctly. So the two scripts silently disagreed: every `.json` reference
@@ -71,7 +71,7 @@ foreach ($tree in $trees) {
     $missingTotal += $miss
 }
 
-# The resolver itself must be deployed — every sourcing script silently falls
+# The resolver itself must be deployed - every sourcing script silently falls
 # back to a degraded root without it.
 if (-not (Test-Path (Join-Path $AgencyRoot "hooks\lib\resolve-root.sh"))) {
     Write-Host "FAIL: hooks/lib/resolve-root.sh not deployed"

@@ -1,4 +1,4 @@
-# The Agency — Rescue Script (Windows PowerShell)
+# The Agency - Rescue Script (Windows PowerShell)
 # Safely pulls the latest code when `agency upgrade` is broken.
 # Pure PowerShell + git. Zero Node dependency.
 
@@ -14,7 +14,7 @@ $AgencyRoot = if ($env:AGENCY_HOME) { $env:AGENCY_HOME }
               else { Join-Path $env:USERPROFILE ".claude" }
 
 Write-Host ""
-Write-Host "The Agency — Rescue"
+Write-Host "The Agency - Rescue"
 Write-Host "==================="
 Write-Host ""
 
@@ -31,7 +31,7 @@ function Test-AgencyRepo {
     return ($url -like "*Tekkiiiii/the-agency*") -or ($url -like "*the-agency/the-agency*")
 }
 
-# ─── Backups before anything destructive ─────────────────────────────────────
+# --- Backups before anything destructive -------------------------------------
 # Mirrors rescue.sh. Every `git reset --hard` below used to run unguarded: when
 # the stash failed it silently deleted local changes, and on a force-pushed
 # (rewritten) origin it silently dropped local COMMITS. Now nothing is reset
@@ -166,7 +166,7 @@ if (-not $RepoDir) {
 }
 
 # c) the resolved root first, then the legacy/alternate layouts rescue.sh also
-#    searches. Adopted only — never written to as a root.
+#    searches. Adopted only - never written to as a root.
 if (-not $RepoDir) {
     foreach ($loc in @($AgencyRoot,
                        (Join-Path $env:USERPROFILE ".claude"),
@@ -194,7 +194,7 @@ Set-Location $RepoDir
 
 # 2a. A stale .git\index.lock (crashed git process) blocks every index write.
 #     Older than 10 minutes: remove it. Younger: it may belong to a live git
-#     process or an editor — stop and say exactly how to remove it.
+#     process or an editor - stop and say exactly how to remove it.
 $LockPath = Join-Path $RepoDir ".git\index.lock"
 if (Test-Path -LiteralPath $LockPath) {
     $lockAge = (Get-Date) - (Get-Item -LiteralPath $LockPath).LastWriteTime
@@ -224,17 +224,17 @@ if ($Unmerged.Count -gt 0) {
 
 # 2c. Detect and clean up in-progress rebase/merge
 if ((Test-Path ".git/REBASE_HEAD") -or (Test-Path ".git/rebase-merge") -or (Test-Path ".git/rebase-apply")) {
-    Write-Host "  Detected rebase in progress — aborting it..."
+    Write-Host "  Detected rebase in progress - aborting it..."
     git rebase --abort 2>$null
 }
 
 if (Test-Path ".git/MERGE_HEAD") {
-    Write-Host "  Detected merge in progress — aborting it..."
+    Write-Host "  Detected merge in progress - aborting it..."
     git merge --abort 2>$null
 }
 
 if (Test-Path ".git/CHERRY_PICK_HEAD") {
-    Write-Host "  Detected cherry-pick in progress — aborting it..."
+    Write-Host "  Detected cherry-pick in progress - aborting it..."
     git cherry-pick --abort 2>$null
 }
 
