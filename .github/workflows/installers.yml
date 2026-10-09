@@ -27,7 +27,12 @@ jobs:
     name: install.sh (ubuntu)
     runs-on: ubuntu-latest
     steps:
+      # Full history: scripts/gen-retired-manifest.py --check and
+      # check-retired-install.sh (the "old install" is a worktree of 723a223) read
+      # git history, and both fail loudly on a shallow clone.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Run install.sh into a sandboxed AGENCY_HOME
         env:
@@ -242,6 +247,38 @@ jobs:
       - name: Assert hooks merge keeps user hooks and is idempotent
         run: node .github/scripts/check-hooks-merge.js
 
+      # The mods engine (cli/lib/mods-merge.js) wires mods/<name>/ into the user's
+      # settings.json env.CLAUDE_CODE_PLUGIN_DIRS. Unit test first, then the
+      # end-to-end guard: install.sh merges into a user's existing value (dedupe
+      # by plugin name, existing-mod skip), is idempotent, `mods-merge.js remove`
+      # undoes exactly that, Claude Code < 2.1.287 is skipped with one note, and
+      # `agency upgrade` (run from a scratch git clone) deploys the mods. CI has
+      # no claude CLI: the script sets AGENCY_CLAUDE_VERSION per case.
+      - name: Assert the mods engine merges, dedupes and removes safely
+        run: node .github/scripts/check-mods-merge.js
+
+      - name: Assert install.sh and agency upgrade wire the mods
+        run: bash .github/scripts/check-mods-install.sh
+
+      # Retired files: skills/agents/runbooks/core docs the repo deleted (the 6 dept
+      # skills, 15 dept agents, ...) stayed installed forever because every sync
+      # only adds. retired-manifest.json (generated from git history) lists them
+      # with the hash of every version ever shipped; cli/lib/retired-prune.js
+      # deletes an untouched one and archives one the user edited. First the
+      # manifest must match git history, then the engine's unit test, then the
+      # end-to-end guard: an old install (a worktree of 723a223) is pruned by
+      # install.sh and by `agency upgrade`, an edited file is archived (or deleted
+      # with --retired=delete), a user skill is untouched, a rerun is a no-op and a
+      # bad --retired value exits 2 before changing anything.
+      - name: Assert retired-manifest.json matches git history
+        run: python3 scripts/gen-retired-manifest.py --check
+
+      - name: Assert the retired-files prune engine keeps what the user edited
+        run: node .github/scripts/check-retired-prune.js
+
+      - name: Assert install.sh and agency upgrade prune retired files
+        run: bash .github/scripts/check-retired-install.sh
+
       # The PreToolUse guards (config-protection, secret-scanner, gate-guard,
       # spawn-gate) once printed a top-level permissionDecision, which Claude
       # Code ignores, so they never blocked or asked. This pins the nested
@@ -317,7 +354,11 @@ jobs:
       run:
         shell: pwsh
     steps:
+      # Full history: check-retired-install.ps1 builds its "old install" from a git
+      # worktree of 723a223.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Run install.ps1 into a sandboxed AGENCY_HOME
         env:
@@ -746,6 +787,28 @@ jobs:
         shell: bash
         run: node .github/scripts/check-hooks-merge.js
 
+      # Same mods checks as the ubuntu job. The unit test runs under Git Bash +
+      # Windows node (';' separator, C:\ paths, case-insensitive root match); the
+      # install check drives install.ps1 and `agency upgrade` natively (pwsh here,
+      # Windows PowerShell 5.1 further down). CI has no claude CLI: the script
+      # sets AGENCY_CLAUDE_VERSION per case.
+      - name: Assert the mods engine merges, dedupes and removes safely
+        shell: bash
+        run: node .github/scripts/check-mods-merge.js
+
+      - name: Assert install.ps1 and agency upgrade wire the mods (pwsh)
+        run: .\.github\scripts\check-mods-install.ps1
+
+      # Retired-files prune, same as the ubuntu job. The engine's unit test runs
+      # under Git Bash + Windows node; the install check drives install.ps1 and
+      # `agency upgrade` natively (pwsh here, Windows PowerShell 5.1 further down).
+      - name: Assert the retired-files prune engine keeps what the user edited
+        shell: bash
+        run: node .github/scripts/check-retired-prune.js
+
+      - name: Assert install.ps1 and agency upgrade prune retired files (pwsh)
+        run: .\.github\scripts\check-retired-install.ps1
+
       # Same two skill-router checks as the ubuntu job, on the Windows runner's
       # python3 under Git Bash (os.path paths, tempfile dirs, no shell-isms). The
       # router ships disabled; these prove the overlay still matches skills/ and
@@ -831,6 +894,20 @@ jobs:
           Write-Host "wired=$($cmds.Count) manifest=$($m.hooks.Count)"
           if ($cmds.Count -ne $m.hooks.Count) { throw "expected $($m.hooks.Count) hook entries, got $($cmds.Count)" }
           Write-Host "OK: install.ps1 ran under Windows PowerShell 5.1"
+
+      - name: Assert install.ps1 and agency upgrade wire the mods (Windows PowerShell 5.1)
+        shell: powershell
+        run: |
+          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw "expected Windows PowerShell 5.x" }
+          .\.github\scripts\check-mods-install.ps1
+
+      - name: Assert install.ps1 and agency upgrade prune retired files (Windows PowerShell 5.1)
+        shell: powershell
+        run: |
+          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw "expected Windows PowerShell 5.x" }
+          .\.github\scripts\check-retired-install.ps1
 
       - name: Run rescue.ps1 under Windows PowerShell 5.1
         shell: powershell

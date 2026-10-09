@@ -1,7 +1,49 @@
 # The Agency - Install script for Windows (PowerShell)
 # Copies skills and agents into ~/.claude/ for Claude Code
+#
+#   .\install.ps1 [-Retired archive|delete|ask]
+#
+# -Retired decides what happens to a retired file you EDITED (see "Retired files"
+# below). `--retired=delete` and `--retired delete` are accepted too, so the same
+# words work in install.sh, `agency upgrade` and here. Env AGENCY_RETIRED is the
+# fallback.
+param(
+    [Parameter(Position = 0)][string]$Retired = "",
+    [Parameter(ValueFromRemainingArguments = $true)][string[]]$Rest
+)
 
 $ErrorActionPreference = "Stop"
+
+# Normalise --retired=X / --retired X / -Retired X into $RetiredFlag. Done BEFORE
+# anything is created or changed: an invalid value exits 2 with nothing touched.
+$RetiredValue = $null
+$RetiredSeen = $false
+$RetiredWords = @()
+if ($PSBoundParameters.ContainsKey("Retired")) {
+    if ($Retired -match '^--?retired(=.*)?$') {
+        $RetiredWords += $Retired          # raw --retired=X or --retired X
+    } else {
+        $RetiredSeen = $true               # -Retired X (named) or a bare X
+        $RetiredValue = $Retired
+    }
+}
+if ($Rest) { $RetiredWords += $Rest }
+for ($i = 0; $i -lt $RetiredWords.Count; $i++) {
+    $w = [string]$RetiredWords[$i]
+    if ($w -match '^--?retired=(.*)$') { $RetiredSeen = $true; $RetiredValue = $Matches[1] }
+    elseif ($w -match '^--?retired$') {
+        $RetiredSeen = $true
+        if ($i + 1 -lt $RetiredWords.Count) { $i++; $RetiredValue = [string]$RetiredWords[$i] } else { $RetiredValue = "" }
+    }
+}
+$RetiredFlag = ""
+if ($RetiredSeen) {
+    if ($RetiredValue -notin @("archive", "delete", "ask")) {
+        Write-Host "install.ps1: invalid --retired value '$RetiredValue' (use archive, delete or ask). Nothing was changed."
+        exit 2
+    }
+    $RetiredFlag = "--retired=$RetiredValue"
+}
 
 # Root precedence must match hooks/lib/resolve-root.sh exactly - otherwise the
 # installer writes to one directory and the deployed scripts read from another.
@@ -263,6 +305,79 @@ if ($env:AGENCY_NO_HOOKS -and $env:AGENCY_NO_HOOKS -ne "0") {
     } catch {
         Write-Host "  Hooks: NOT wired: $($_.Exception.Message). To set them up, run:"
         Write-HooksManual
+    }
+}
+
+# --- Mods ---
+# mods\<name>\ are Claude Code mods (plugins of function hooks). The ONE helper
+# cli\lib\mods-merge.js copies each to <root>\mods\<name> and merges the copies
+# into settings.json env.CLAUDE_CODE_PLUGIN_DIRS (';' separated on Windows): after
+# every entry the user already had, deduped by plugin name, recorded in the hooks
+# state file so `agency mods remove` can undo exactly that. It needs Claude Code
+# 2.1.287+ (on older versions it prints a one-line skip note and writes nothing)
+# and never fails the install. No PowerShell copy of that logic lives here.
+# Opt out with AGENCY_NO_MODS=1.
+$ModsMerge = Join-Path $ScriptDir "cli\lib\mods-merge.js"
+function Write-ModsManual {
+    Write-Host "    agency mods sync"
+    Write-Host "  or, without the agency command:"
+    Write-Host "    node `"$ModsMerge`" sync --root `"$ClaudeHome`" --repo `"$ScriptDir`""
+    Write-Host "  Then: Restart Claude Code to load the mods."
+}
+if ($env:AGENCY_NO_MODS -and $env:AGENCY_NO_MODS -ne "0") {
+    Write-Host "  Mods: NOT wired: AGENCY_NO_MODS=1 is set. To set them up, run:"
+    Write-ModsManual
+} elseif (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Write-Host "  Mods: NOT wired: Node.js (node) was not found. Install Node.js, then run:"
+    Write-ModsManual
+} elseif (-not (Test-Path $ModsMerge)) {
+    Write-Host "  Mods: NOT wired: cli\lib\mods-merge.js is missing from $ScriptDir."
+} else {
+    try {
+        # stdout only, as in the hooks block above.
+        $ModsOut = & node $ModsMerge sync --root $ClaudeHome --repo $ScriptDir --auto
+        foreach ($line in $ModsOut) { Write-Host "  $line" }
+    } catch {
+        Write-Host "  Mods: NOT wired: $($_.Exception.Message). To set them up, run:"
+        Write-ModsManual
+    }
+}
+# --- Retired files ---
+# Files the repo RETIRED (a skill, agent, runbook or core doc it shipped once and
+# deleted since) stay installed because the copies above only add. The ONE helper
+# cli\lib\retired-prune.js reads retired-manifest.json: an untouched retired file
+# is deleted; one you EDITED is listed under "You changed these" and archived to
+# <root>\archive\agency-retired-<date>\ (or deleted with -Retired delete). On a
+# real console it runs directly, so "ask" prompts; when redirected its output is
+# captured and "ask" degrades to archive. Nothing outside the manifest is
+# touched, a git work-tree root is skipped, and it never fails the install.
+$RetiredPrune = Join-Path $ScriptDir "cli\lib\retired-prune.js"
+function Write-RetiredManual {
+    Write-Host "    agency prune"
+    Write-Host "  or, without the agency command:"
+    Write-Host "    node `"$RetiredPrune`" prune --root `"$ClaudeHome`" --repo `"$ScriptDir`""
+}
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Write-Host "  Retired files: NOT checked: Node.js (node) was not found. Install Node.js, then run:"
+    Write-RetiredManual
+} elseif (-not (Test-Path $RetiredPrune)) {
+    Write-Host "  Retired files: NOT checked: cli\lib\retired-prune.js is missing from $ScriptDir."
+    Write-RetiredManual
+} else {
+    try {
+        # stdout only, as in the hooks block above.
+        $RetiredArgs = @($RetiredPrune, "prune", "--root", $ClaudeHome, "--repo", $ScriptDir)
+        if ($RetiredFlag) { $RetiredArgs += $RetiredFlag }
+        if ([Environment]::UserInteractive -and -not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected) {
+            # Real console: no capture, so the helper sees a terminal and "ask" can prompt.
+            & node @RetiredArgs
+        } else {
+            $RetiredOut = & node @RetiredArgs
+            foreach ($line in $RetiredOut) { Write-Host "  $line" }
+        }
+    } catch {
+        Write-Host "  Retired files: NOT checked: $($_.Exception.Message). To do it later, run:"
+        Write-RetiredManual
     }
 }
 

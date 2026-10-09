@@ -29,7 +29,32 @@ function samePath(a, b) {
   }
 }
 
+// --retired=archive|delete|ask (or `--retired X`): what to do with a retired file
+// the user EDITED (see cli/lib/retired-prune.js). Returns { value } (undefined when
+// the flag is absent, so the engine falls back to AGENCY_RETIRED, then its default)
+// or { error } for a missing/invalid value, which the caller reports as exit 2
+// BEFORE touching anything.
+function parseRetiredFlag(args) {
+  let value;
+  const list = Array.isArray(args) ? args : [];
+  for (let i = 0; i < list.length; i++) {
+    const a = String(list[i]);
+    if (a === '--retired') { value = i + 1 < list.length ? String(list[++i]) : ''; }
+    else if (a.startsWith('--retired=')) { value = a.slice('--retired='.length); }
+  }
+  if (value !== undefined && !['archive', 'delete', 'ask'].includes(value)) {
+    return { error: `Invalid --retired value '${value}' (use archive, delete or ask). Nothing was changed.` };
+  }
+  return { value };
+}
+
 module.exports = async function init({ args, AGENCY_ROOT, console }) {
+  const retiredFlag = parseRetiredFlag(args);
+  if (retiredFlag.error) {
+    console.error(retiredFlag.error);
+    process.exitCode = 2;
+    return;
+  }
   const agencyRoot = AGENCY_ROOT;
   const repoRoot = path.resolve(__dirname, '../..');
 
@@ -79,6 +104,9 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   // ...and wire them into settings.json (same merge as install.sh and
   // `agency upgrade`; non-fatal, non-destructive, AGENCY_NO_HOOKS=1 skips it).
   require('../lib/hooks-merge.js').autoSync({ root: agencyRoot, repoDir: repoRoot, console, indent: '  ' });
+  // ...and the mods (mods/<name>/ -> env.CLAUDE_CODE_PLUGIN_DIRS), one shared
+  // helper; non-fatal, AGENCY_NO_MODS=1 skips it, Claude Code 2.1.287+ only.
+  require('../lib/mods-merge.js').autoSyncMods({ root: agencyRoot, repoDir: repoRoot, console, indent: '  ' });
 
   // 4d. Runbooks (protocol docs referenced as `{agency-root}/runbooks/...` by
   // deployed agents/ files). Never deployed by any installer before this.
@@ -105,6 +133,13 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const coreDest = path.join(agencyRoot, 'core');
   const core = syncCore(repoRoot, coreDest, console);
   console.log(`  ✓ ${core.updated} core docs installed, ${core.preserved} preserved`);
+
+  // 5b. Retired files (skills/agents/runbooks/core docs the repo deleted that an
+  // older install still has). Last of the syncs; same engine as install.sh and
+  // `agency upgrade`; --retired=archive|delete|ask. Never throws.
+  await require('../lib/retired-prune.js').autoPrune({
+    root: agencyRoot, repoDir: repoRoot, console, indent: '  ', retired: retiredFlag.value,
+  });
 
   // 6. SQLite task store
   const dbPath = path.join(agencyRoot, 'task-store.db');

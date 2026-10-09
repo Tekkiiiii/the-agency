@@ -543,7 +543,9 @@ section('11. deleted-hook opt-out, agency hooks disable|enable');
   // k. installer end to end keeps a deleted hook gone
   if (process.platform !== 'win32') {
     const T2 = sandbox();
-    const env2 = Object.assign({}, process.env, { HOME: path.join(T2, 'home'), AGENCY_HOME: path.join(T2, 'root'), AGENCY_NO_HOOKS: '' });
+    // AGENCY_NO_MODS=1: install.sh also wires the mods when the claude CLI is 2.1.287+;
+    // this check is about hooks, so its result must not depend on the machine's claude.
+    const env2 = Object.assign({}, process.env, { HOME: path.join(T2, 'home'), AGENCY_HOME: path.join(T2, 'root'), AGENCY_NO_HOOKS: '', AGENCY_NO_MODS: '1' });
     fs.mkdirSync(env2.HOME, { recursive: true });
     spawnSync('bash', [path.join(REPO, 'install.sh')], { encoding: 'utf8', env: env2, cwd: T2 });
     const S2 = path.join(env2.AGENCY_HOME, 'settings.json');
@@ -579,7 +581,8 @@ if (process.platform === 'win32') {
   console.log('  skip install.sh e2e on win32 (covered by the install.ps1 job)');
 } else {
   const T10 = sandbox();
-  const env10 = Object.assign({}, process.env, { HOME: path.join(T10, 'home'), AGENCY_HOME: path.join(T10, 'root'), AGENCY_NO_HOOKS: '' });
+  // AGENCY_NO_MODS=1: same reason as env2 above (hermetic w.r.t. the claude CLI).
+  const env10 = Object.assign({}, process.env, { HOME: path.join(T10, 'home'), AGENCY_HOME: path.join(T10, 'root'), AGENCY_NO_HOOKS: '', AGENCY_NO_MODS: '1' });
   fs.mkdirSync(env10.HOME, { recursive: true });
   const i1 = spawnSync('bash', [path.join(REPO, 'install.sh')], { encoding: 'utf8', env: env10, cwd: T10 });
   const S10 = path.join(env10.AGENCY_HOME, 'settings.json');

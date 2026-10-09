@@ -1,0 +1,2297 @@
+{
+ "version": 1,
+ "generated_from": "c74d0258a8039b028b1e6b0b9f99653e0d7a25b4",
+ "trees": [
+  "skills/",
+  "agents/",
+  "runbooks/",
+  "core/"
+ ],
+ "paths": {
+  "agents/career/career-application-form-assistant.md": [
+   "2ff9c31198cff95b7a456d54697de7bd5b2b1e201b0c7f1182577352d00a2f42",
+   "a0f58de182a70c0712f4d239eba215e184a9a24493fb7d8da78085d15d30b1e9"
+  ],
+  "agents/career/career-batch-processing-lead.md": [
+   "8cc391bf3ee6e98138a224931cdb31ac0bbcefe7c94e8619b520f5f37d8a49ce",
+   "b08de8344ca7cf519b16bf88d5e473b91e8d71e32be8ff766800547a8bd3c2a0",
+   "ce546637fa88bbca208074d2c311598d45e7d6f4908b309fd25e6d928d057f6b"
+  ],
+  "agents/career/career-coord.md": [
+   "1447bfc7df82ab6739f5cb79cfc99c62dd49d22186ade60e813eece31dc0c75e",
+   "3377ad4a869250a56fca372a63bdca28c6c340672b46260800c7ac140ff71094",
+   "c55058881e35914d95827f1fe82f951adb8ac762662bac969fb43775d0da28d3",
+   "f8b6f994a06a9273ee24cd3a14a6e751f2434b365e08b1fc90ad4147260189ad",
+   "ff21fc51c8c55dfcc9350675f5be5014d14396d3f68f43b9c899707a1adf3b34"
+  ],
+  "agents/career/career-cv-specialist.md": [
+   "57519c03450ead10a2c333a921b310d7b2fc03219f5fc9be7e64ae4bba8be33d",
+   "7da51f3b25b26f12e76799d1ec7064dc662c5081b42890066447ba47fa9587d4"
+  ],
+  "agents/career/career-job-portal-scanner.md": [
+   "79fc4559df9d78d4d5547ae53fa320ae91fcff988b339097f4b00bb7e8de0d8b",
+   "d28c301bc2dcc232cdff8fd1dc426166ee99054fa39644eaae42fc81d7cdeaef"
+  ],
+  "agents/career/career-offer-evaluator.md": [
+   "1cd04bd3378d87ee6fdd6101047513bade8e64c8af4ceeeec188580729228c44",
+   "5cbea41ad7703791c0abdbb403a276edd89272c59a0c3c986204eb953581d2dd"
+  ],
+  "agents/career/career-pattern-analysis-specialist.md": [
+   "d10922db8261e49e90a00f28df1a6f9bfd92275869167827331cc73aa96fc2d4",
+   "f5f4ca4c2a817750aa4af6c9b3b6a494729e1fa787d80434de4b8ee62ddb36c2"
+  ],
+  "agents/career/career-pipeline-strategist.md": [
+   "b130727f849a1ee0be4623221977bf8f51a782d3edf836087bd2976556a90555",
+   "d17a03f47dd3e573adcde7718e4a42e37b5f3d7b47780ea6646df6a5fa8bcd9d"
+  ],
+  "agents/content-creation/content-ad-copywriter.md": [
+   "05ca236ba3af3b05fe61c68ae2c62d1ed15a047ace1179b099ac6231ee9ea9b2",
+   "511219353cdae9accd0c632e0f044def526f50bef8a735ec77853cd5d8a96d85"
+  ],
+  "agents/content-creation/content-blog-writer.md": [
+   "34b9ef8cc63235800d9fb3c53660ec612892dc840b2d40d1fe1019249d58a179",
+   "bda14dbf94855c62fc054a96d15e7bb56a7bf8cc9302bec957d153f6a3720313"
+  ],
+  "agents/content-creation/content-case-study-writer.md": [
+   "07ac56be4f17406eff9a9f57a98563e2ebb181406f18ea07d34b434950947e37",
+   "34b9529e1d086fa9826495388c8aa2af60555f955a7c9785fca39aa589f0c0bc"
+  ],
+  "agents/content-creation/content-creation-coord.md": [
+   "1c621699ff27199d2b6b882435e9b37ce0301ceb367505017e9d53efe74d7425",
+   "2e8e2a5f5d808a77effcaab1013176b02b73da6d8f9ec62993e5d91daaa78126",
+   "3b3f3819be49b43468ba9651b2a7191440607eef153e507b954d6458036f5dd2",
+   "aac1954bf65d167bffee3f09d7401bd84e6ac89a202fecede13f7de4bb7a7ca5",
+   "ba86d6512710662e34387aa6123c696793d7167ddab9648c94010145eeaa6d85",
+   "d2d004f304773e94e1ef358c28b84eb439c1a518350075fd0d7e5a0a9198833a",
+   "f2b5a6cbb219059a5a91dda4f7b7e14ed2e9705c1c375f2a452c5e7c85b1de71",
+   "faca8c559b8ade4b186613baee3993e7fcb005720a44009cb1f62585549fd2fd"
+  ],
+  "agents/content-creation/content-creation-lead.md": [
+   "6705c88ac108fcec402f56340bbd8233ea3e49a5da276f517a2350fbabcd9cca",
+   "6ceee90b980050d2e4e5134ab690b1541012f88cef605db57d031229121b054a",
+   "74138fa526631331e58e579e6182613dcaef42624f0fad576abcf01c2e26031d",
+   "97230115e380ce608fd9e627c3dd8dcd1bbaa7721f9b4cabde24c2619916c2b1",
+   "a2fa1019118886c01460f8ef2146874e96a505387154e9eadc4cb5803b0bacf0",
+   "cc7f06cfb48b4d40fceb876591adcc6b745410df8fae39a688da218d2df67f56"
+  ],
+  "agents/content-creation/content-director.md": [
+   "43ff0569475fe7c2195400d43825c0e1dc22f25ac405a8be68e7c7ed5752da52",
+   "7429bb3383f6d749f51924f6fc3f22924dfcdf4acb071543d29a33f3bd8b9e7a"
+  ],
+  "agents/content-creation/content-editor.md": [
+   "20887117014922736c2d80ebd5f96b865c7e0691223599bb3c1069a60c23072d",
+   "e9390c702d4dc403b974b5725cc75150acad47cb938c71a5ff708baafc42cc0f"
+  ],
+  "agents/content-creation/content-email-writer.md": [
+   "57b3f6b8af51eba66792257764759a4c2d7426510c33a0ff1590cf5e8f1cb55e",
+   "b1cea749f771f16608850f976b4cddb7a22ab86789175e8e45805fe56a635988"
+  ],
+  "agents/content-creation/content-landing-page-copywriter.md": [
+   "60d4a885913487f2d6b9ecf9d66b6a861ca56d6b0b7cfa3ce8ad76b49acd533c",
+   "6c4baf0185dcb4992655dbefb019dc9f407726d42e819c94e1e799d222946e73"
+  ],
+  "agents/content-creation/content-newsletter-writer.md": [
+   "e29954916690af90426b2098d929f69c4dcfda70ac0b280b7ba30b2ff98dcbca",
+   "f917bcf41b4ba146339aa2090fa81033122b19532a58c5b2eba7fd769200055e"
+  ],
+  "agents/content-creation/content-presentation-creator.md": [
+   "32380324029fb1e3854d9f09df5d0b719a2983c6e30f97c0c6d92bc4644f23d7",
+   "b26b923026c52f047386a6f48b595dc00ce37ef1b762cc6134e2fa3c29b008f1"
+  ],
+  "agents/content-creation/content-press-writer.md": [
+   "ed4c1d106ca889a48270629d0440a7ab55368f4e399ea65ecd8d880d8d0f3898",
+   "fc80ba839af6f503a31d25195fe23e01b9e3d77a5e6b7b47e20831b8e039de55"
+  ],
+  "agents/content-creation/content-technical-writer.md": [
+   "3add05e936b292b75c77acfade57cfdb82a72f7ba6cba827d2c1fa36d949870d",
+   "70f7099a271599add6801a141915c8ab1288277d71dce75c52b4f4aaa531b453"
+  ],
+  "agents/content-creation/content-video-producer.md": [
+   "4e004b3a5506afb343b2293a4f2d36d58259a1bce1d7c6f0963a950565442b18",
+   "6757a12b7994ce3e2f22d20c266a8e6b2c38b7be5ea6da3d9f9ada4045215b4d"
+  ],
+  "agents/content-creation/content-video-script-writer.md": [
+   "62f33e1b51834e66781e80c761f4a58a30ee8b9232dd1126334b3686ae7f9ce4",
+   "67b90fb642259baaa0672c45139c636fdaa81cbdd7efa0c9440b4d490686d150"
+  ],
+  "agents/content-creation/protocols/INDEX.md": [
+   "1572e817b49bffb8e19ae81e6965d40a2f98514e0796dc9a95450e1013d47212"
+  ],
+  "agents/content-creation/protocols/content-request.md": [
+   "2cfa9dc20ee8898fc1d92fc54853fd3ac379df984109ecff22133458596fa459",
+   "a5d7ae4d78319827a70c5c01a9c26e9e6a0f470c32fae40ab3fdc1518aad233b",
+   "fc7763fa91b57b0d4899ff6256dc424dca8da8d701be91c9b5986a48ceb27632"
+  ],
+  "agents/content-creation/social-media/INDEX.md": [
+   "29e49a2c8f0fe28deb8ef77e6cab1d7fa4bde0b2a4905abb9473595139e6c87f",
+   "f3f52f901f391abdbb8196680fdfb08198d3fd5d2763ee10ac41be7671899fc6"
+  ],
+  "agents/content-creation/social-media/content-discord-writer.md": [
+   "e898ab7e698b0f3c6d0dcfa686e2f751bc076aeb04f635acacfaa927e49a95f8",
+   "f5ddf4bd8cba4164a975bc00ec5b89c083a65a9d9b5d0288567698e07d84619e"
+  ],
+  "agents/content-creation/social-media/content-facebook-writer.md": [
+   "0e2cdd46c1ac1ec2f9933abdc58051b45aaa13789e0c6c98674f1ba62e8903ff",
+   "d1facde6126711a3074b7b8ac50cba6ef1b8e5e704f1a439316f586a5dc686ef"
+  ],
+  "agents/content-creation/social-media/content-instagram-writer.md": [
+   "04d251236df4c11baf30986df193d61edda940c772436fd74024dbc88a61cef6",
+   "13b82b5e6dd2603fb2b2d9bee4d2a9eca98bebdfb8003703e5827771bf18f7d2"
+  ],
+  "agents/content-creation/social-media/content-linkedin-writer.md": [
+   "582b327169cc698b2fbd415ee0a537462c760589b3c5ea4eaf969fcd96fc144f",
+   "90d30b1d608be60c5f136dd33171944a9bd8e3d9b1a62a53068b413c4db3f2c3"
+  ],
+  "agents/content-creation/social-media/content-pinterest-writer.md": [
+   "29751a9c70a43b2f1c094d6e74808f584140ab29bc424e0e30a8a8b0fb91fe67",
+   "974ee4bae93761f8bab05c973c599fe45c28821b140eeba380bd6e9edec2df5e"
+  ],
+  "agents/content-creation/social-media/content-quora-writer.md": [
+   "3af182875ab17eabe14314ce17a121cbbebd019bbcf5c051b2e685d71a995b5c",
+   "7c763740a9b7a21225fa4a6c9062d4d19050dc47e9ed227986a6cc31cbbe8c26"
+  ],
+  "agents/content-creation/social-media/content-reddit-writer.md": [
+   "042ffa465733ed8d7a212667fd55e846b560745bf9b48ef578079422529cf50e",
+   "ec9990a973329835dbfee2b0da19a2de308a9b8b4e89678331bcf4eab743f97b"
+  ],
+  "agents/content-creation/social-media/content-telegram-writer.md": [
+   "164532a87075256ac4993f481e7c2478c0b429ba825440835edb7de4585ea273",
+   "a4fb9e28669b365c3fe74655ffba1df04427e8bcc3723233b8b8e17014c14ea6"
+  ],
+  "agents/content-creation/social-media/content-threads-writer.md": [
+   "2a2a83ba01a5e4a32d0620e7115daff3e6325c1a2da87e9d8939ba349f56d14e",
+   "f11c8ab1ffb09f0b75104fcee8b1b85dfeaf9ef74e5f4307f4451e298ac30982"
+  ],
+  "agents/content-creation/social-media/content-tiktok-writer.md": [
+   "6ca69ed06f86b5c5dae4779245ee6ac2ec4a80cd2a95f4a247c51603ed93f21b",
+   "b51b32a6c8249690b273eb05af3581a81aecd96f6f697d514948d23acd01b70e"
+  ],
+  "agents/content-creation/social-media/content-twitter-writer.md": [
+   "0286e4fee1da134367c0ecb602713a4c6276fb1d01ba358127a02c0b74cd500d",
+   "4333b11fa9f3c9334685f97bcb5290e56d4d51ac962a20a73e8cdb9dc98c614e"
+  ],
+  "agents/content-creation/social-media/content-youtube-writer.md": [
+   "45fca3d9d405fb71ab7ca0488306427c48180f6dbebdc8da32c56b31022a44c9",
+   "5f8f76a4a8121b6f6fb94dd8da51ff63f8afcdaa312ef45f3093da4d504e9dfc"
+  ],
+  "agents/critiques/critiques-lead.md": [
+   "54faf547463fc990ac7b27d727ecef56fe90c4d346855291dab7503e8f7c8f7b",
+   "8493e9cae6a41857af48aa830c82928c4e21c8ba5806c5ba865ca1375e768079",
+   "ee3388b376dcdd21d9fa5b1aa570b0e2ce9981b1c1de287292a56cb27069bbab"
+  ],
+  "agents/design/design-brand-guardian.md": [
+   "011e46e966bcd1744198305c2bbcbcd49da9fca3ac78aab2ed569abeeb4c5a92",
+   "190cd10f8171a03eb1cc9ae09ab807a2ca96214e7bf935780f622bb641f886ba",
+   "562471d46b9dc2c3e7191d4647de921bd75221ec6f97ed03d2b1b443100b649d",
+   "8249b89040c2fa7e35ee73a768fd7494a07e552a176f48336a100e1864c68d86",
+   "c334cba5fca3bf04637f441cbdfd9e7f31e9431563ebd9617be65e372a6c1f54"
+  ],
+  "agents/design/design-coord.md": [
+   "106cb3431a295d09fc93e96d76fe328b807996b027baf40945e3344c051ceb38",
+   "190867f387926037cfe6e13bbaa262da2a0f3f87d701dbdb8906c45339d0d478",
+   "20cb623aa2c1b80fa88390ff42ee14c8b76354b0d0606a8b02fc113dcf3f40f5",
+   "824a769d21ec2ed7563d90570ab8e447d36543802e07cf66335c2183f181ec9b",
+   "83d79fc603800d4852abba16f40cec4ecfa29006629271029edc54954ef043a0",
+   "9528b0193ca1ea83be5b63045fa2c12cfa673998ba4e81ec8cbb0fd9024f753b",
+   "d83982835392cdf5c499c6641af77856aac76f6dd727f90b7923e49b8a2a4dbc",
+   "e0afc7a79a41a1d1a5793d948ed57e70501743bddab25c0f68ceec8d4f8f9968",
+   "f59b804676fe7b7cc92d1c58566431445e4f47155e1beb7b4ef0c09ae5e41972"
+  ],
+  "agents/design/design-image-prompt-engineer.md": [
+   "46c05a532664f1e1ab51796d58d6bf6011340f35526652a01f9e01ee80de5d4d",
+   "e837fddd47091ceb20dd029d4b9f5f27fd13e9456566d7f319413514c27d85e8"
+  ],
+  "agents/design/design-inclusive-visuals-specialist.md": [
+   "112bcceb8adfb66de88193004c710fe7e225d34fbd3a2d12d526ea4250f0bccb",
+   "13d90d77289c9cbcab593befe1ed7e46fea4897c03e3c5cd0768f1ca26915385",
+   "5dc0a37e9a223a2bb9ee9c7da29edc98dd16910e10d460c49fc0317e23a9ef07",
+   "f8ed7465d31d3994dc1e2e8fb53ed38fb126a0b9ca8d2f01dbbcc988ae4abab1"
+  ],
+  "agents/design/design-lead.md": [
+   "1713e68b4438e3d54f070ac34f1516cb27b9c4a33da2ba39101fe15a1d831b5b",
+   "1e6eb5a06781c038292de89d785d7ba2bf76367e25a4264cd33a5b253dad45e7",
+   "52705441905fe0dc8f0c37fecc766a2a8253eb23c21c0538fe5b08b5cd9ee0c4",
+   "733c8d4fef6fbf00641431c7dac2236973aed10b7c4f335e211df02ebc753556",
+   "ad99ad8b7fcc7f8182ce5616cc1627922b3296763f6f383b1600f94f844b666f",
+   "c61495046bb190ec4b2412207416267203f96bd55c8b04e0dadb20cf4ffe6336",
+   "e074bbcd60182f3d203f09a42cea45c38f94c5e5c43e343b7730ccbc3e082222"
+  ],
+  "agents/design/design-ui-designer.md": [
+   "4e4c97c36801ebb91d6a6047eb4b8d350e57d2d4c6568fd56258dd3aa27a8570",
+   "4f52ff48966923e2970fbfbf3443e3dcb2b322aab3f9e93b40c6d8cb21508f24",
+   "6ed9da51aa5f7aafb39a87cf0d71a15df395edd1b861d49bd8f56bbff0016ca6",
+   "ec16cfeea5504ddf28cb616510a45df23138ae2d855c161bbf9ebed22e84501c"
+  ],
+  "agents/design/design-ux-architect.md": [
+   "0b160ddddcdd4280e6b9b095327643629fb684ad4fbb368247fde81c0783bf5a",
+   "1c0ddba4372d5313cb6d08220d34bf57e38464e6bc498d20fcc8532067df64ca"
+  ],
+  "agents/design/design-ux-researcher.md": [
+   "76953aa419b8ce5b129de96ececb63d5a6929386cf7b02011de07f9817850a73",
+   "8c2e60735e0912fcae61912ae8a2545beec24423a115b2e9617ea07415d19c60"
+  ],
+  "agents/design/design-visual-storyteller.md": [
+   "0eb241ebf55b08b7a30a01e1ac37eb8fa9acfc45adaf015c563aedaea724d94c",
+   "2ec349dc2c1845995133262c1aec36e90aa6fb9c8b8f9de5aebcd5558f53d4ff",
+   "3fd0753d47fb91d4585ae7d69c36a46159cd4481adb9f94853b5014fccfddd4e",
+   "c233ae464b1d4fc6e994051405f0730ecf25d2dbe00d310243a8a0d7d88b53a4"
+  ],
+  "agents/design/design-whimsy-injector.md": [
+   "9dcee76c76a085b37408dca8dc27d3a2a7994efb807343c8a1bd0cc23c9b8324",
+   "d516d2db7ee92ec7004df9fde1bf630a4c0ab791f37ffbbf09608cb50bf55e00"
+  ],
+  "agents/engineering/engineering-ai-engineer.md": [
+   "9666752db45640d8cca35df1096c331f6b1834db16508153cc81e382c63a16f5",
+   "dd17c06e57a7acb7aadc0e6a34a4f95ec684c4e2095b9d8dfe79640250539840"
+  ],
+  "agents/engineering/engineering-autonomous-optimization-architect.md": [
+   "382919a5af92ca1a8c45e594c17918af1fd8172d44a11393a3b981872275cc96",
+   "e576aad04e8fd71ebfb27c4da706f3c001cf8cc16e3ea9d485882cf0df00cfbd"
+  ],
+  "agents/engineering/engineering-backend-architect.md": [
+   "7639c0471f70d020ab9de10f21aca2a38d9b3eb7df8436e2e622f0bc11c941be",
+   "f019c8733a86d49879155c5c77df6ef7fc0c41587d07e3ba38c9d384152de31a"
+  ],
+  "agents/engineering/engineering-coord.md": [
+   "1f7d412f3fc8dcb483073432a0faf9078878a1b9e4bd3c11c3e771655f8c0591",
+   "3389e9edea40901ac696d93dcd79fe7a00ee567ac9c577d1a319529d318fd43d",
+   "3fcf741b4b444903b28404d1650bda581bc756b35dbe6a7342a59e5ae5f22f62",
+   "4253737495d7fb8b4b97d3038a5a45c6736e549a01cf39e3a3934ff58e9b9004",
+   "72bb1545d175c8247de56666987f655ef6eeb7f03aa1081bd31f5dac1268a2a5",
+   "8939b546bf4aa3b4c59135aa72b3ab67309e52de68a898ccf038abc6c142775a",
+   "9e08835531faecd0e5610943b910ec760cc76cb7770fdda2271b1a1ed224e64e",
+   "b2f5609d8039875e7816737e14dd34ffbdaa58131a38c3f775da895de974ff75",
+   "d4f88230d80a484397abdc9102b540415a38dd6c335ee0164fd2b04b3306a4e2",
+   "eadec695adf51546dd2de5ee14fd90f2997faf8c811bc4e237f44d18f97f85c7"
+  ],
+  "agents/engineering/engineering-data-engineer.md": [
+   "a87bc45afe6f721134b39108d1dadfe0861787e70a9a6b78713a6d8bc17dd657",
+   "ea7a315b577f5a4927d4351b749c532f97f738f06da88cdaa4860a811a587d18"
+  ],
+  "agents/engineering/engineering-devops-automator.md": [
+   "28e760dc88ada2518e81ede119580ccbc852444408d0e29197e036db85191f60",
+   "a2d3fd0545398f69a38300c0a4b4b9defbafd6eed94c2e31ccdb79fb23893dc5"
+  ],
+  "agents/engineering/engineering-embedded-firmware-engineer.md": [
+   "370fd0f4a34cb41e934c5d353f1f8c1c98c5eeaf8213b1f3ec91402b1406db1f",
+   "55853b8cc372a05a6f1773240f52f8067a7a2cccf7cc32cfc69c8eb51fe483a1"
+  ],
+  "agents/engineering/engineering-frontend-developer.md": [
+   "1407c8aade8ee48e87b9ff66a70924113819267c88364b9571b6c65d88a11e13",
+   "c73b745f9a5907af4d2944cc2ff10f0ec2e26184992d725c2c3c9975729b3dfb"
+  ],
+  "agents/engineering/engineering-incident-response-commander.md": [
+   "6a9ce1ac2557739fe35c06604e2cf3a62e53afea476c8252c7824192d8a2ac07",
+   "f146b307fd0d8538741af6006713915424131c14fd4c4076fddac094c8e97695"
+  ],
+  "agents/engineering/engineering-lead.md": [
+   "34487d7113e67541e7fd3f2616ce9d5ee13f6fa8565999b194c9839276357a75",
+   "5b07863958553fe2d4a270d209f8ee3733c04fb4a42196c26e97ec33d2c6e272",
+   "75ecabd4f41a8d95bd1457d5daec09bb854bbe228af0a4a8cc9663fb7e77aaa8",
+   "7f15d023556a898472bcf8d581d705cd4ede323aae13fa69c0a4f87128944d6a",
+   "a4c003d05a3764202ce3ffb40eac3a3cdbe9d7d5d234fb5fd0a968a568fa646e"
+  ],
+  "agents/engineering/engineering-mobile-app-builder.md": [
+   "2bb410929954a6bd35f58c033513ebcd644dfbf904f799128f06691db4a07a9b",
+   "49e09d2b918d6b5d343a3f2b4e6fd086b0a61a8958eae507e08def6fa5f25feb"
+  ],
+  "agents/engineering/engineering-rapid-prototyper.md": [
+   "57d69c2a98c2e2dd7a49d315f0aab5ad12397201209daecd965b3beeeecfbff5",
+   "93194d26432371cd18ce2be682d1e2f379d22cd2d7d0baf105029a0e52476378"
+  ],
+  "agents/engineering/engineering-security-engineer.md": [
+   "697bddf05706e982d5c001e2ec373ee153996fda0bc6db617ce6d4154ad47ccc",
+   "8f47ed251705ac976ebd9b21c02cad77bc1b65429f768cad179e8d9878127a7f"
+  ],
+  "agents/engineering/engineering-senior-developer.md": [
+   "9de5f287d0e6eb012d89634417f000bfbb6f0de0ba145d4444e5ccdc2b89855d",
+   "ad49f40d5bddf5333f0b35b5442e1b87501ff8343c3f35bd5351f9bc11ebf4ea",
+   "e05c5c846837a6e5bfb1bea3c8430455c0b55afce3c9263db6881eeaef777bb5"
+  ],
+  "agents/engineering/engineering-solidity-smart-contract-engineer.md": [
+   "2b93b8907a2ba7f9f816bd474c8eb9441b164bbdf7f72fdccc735dc7d1863d99",
+   "8d4731f0ee01082a2403551d237c27d2071aeb7a5303e509c7f0f01cec8c8929",
+   "d74d8512d53dfde347953102cc8762bfe50337277d8069a4746bc0db9ecf9010"
+  ],
+  "agents/engineering/engineering-technical-writer.md": [
+   "42d1957017cae880a43481c16b0a61f9437cf6f639751c424f1d61a273505ae7",
+   "a2ac4dbe547b064ae8b2ce5a5a5321739f0d2ee9ad491419d7bb047e5ed2ffa4"
+  ],
+  "agents/engineering/engineering-threat-detection-engineer.md": [
+   "1e44e01ff79b8ddd43aef5dac27c133d701525b33afae7fc552eeb3db0ae01f6",
+   "2f6506503e3e99202bc4e9dc2fcd43e06bca73411dfb0da5f703f17d26b99c08"
+  ],
+  "agents/engineering/laravel-debugger.md": [
+   "00c4c59b796e1aae162992b5bef1ba5acd71d2b34a6cbbc7b4be15235108aff4",
+   "320059af8316a0f0ceac8f21c3b9bc2f7072a740fd34cc1a22d8b3e9d3518ee7",
+   "a99875c6d6d7185e743996c909c5fe17e6177313d0c4f33c1521af42ce953319"
+  ],
+  "agents/engineering/laravel-feature-builder.md": [
+   "131219d0d1e999e708b4b16bdd7a1aefd23d50c9e122a976df7104d59aeae76b",
+   "1b2024a30d3c4e22c5390018ddc112c551b4126c081bc8c5f89edeb3f9bf58f7",
+   "3b2b870ab2b325fd00bdf0492d75b7e7f20a33b47c9de22dc81db49f4b5ad060"
+  ],
+  "agents/engineering/laravel-simplifier.md": [
+   "32f0c3544622fe06e98789ddecc8356a7a7cc5a2ec78674cfd2da9a430ed061b",
+   "bcbf3d7cd18b6cbfa2f0b87b785b0851342aca09727f8d784e904a87445b6c57",
+   "ff288f76eccc5d1265c9004c9fa717d4a11b390915133436b8215754726201fc"
+  ],
+  "agents/examples/README.md": [
+   "4337886744e068c62fe24795c60aed43e82f13c56526646445c48e02b3cab3f9"
+  ],
+  "agents/examples/nexus-spatial-discovery.md": [
+   "a908e0e1538cd037a3fd5fb9cf75aad872c3987a44ca5a916831ea98bb6d6515"
+  ],
+  "agents/examples/workflow-landing-page.md": [
+   "465942585a3b077c52983abbc2b73e5dcdfbca4fee7bda84513a687ef2573299"
+  ],
+  "agents/examples/workflow-startup-mvp.md": [
+   "ac9f1ba7be2bf3968a17acd515f363b4e89ac5dd4bc059760dd99042f6613ec2"
+  ],
+  "agents/examples/workflow-with-memory.md": [
+   "155898841b013d9c2d4daa24234c90a27e021ed4048415c551f51f7df850e590"
+  ],
+  "agents/game-development/INDEX.md": [
+   "cfef85013fae1c3dceb11aaa4d82849fac1b8368c35ec06381a10ca0f0da546c"
+  ],
+  "agents/game-development/game-audio-engineer.md": [
+   "4d32e12f74c198659958e2094623b18e038df65d8eb29217ba1fa2e6cd64224c",
+   "fcfe57a9ecbfc9ccda680ee7082c262b9f5c3aa3122917d875d82eae6e318ff4"
+  ],
+  "agents/game-development/game-designer.md": [
+   "2b762542d303daea6e24429200bd56c3dc020ad475da8b9239a8038b0ac7fd7a",
+   "6b1c8088ba2405f3a06062667040258e3d5d87fe7dc816be96e5f1a884a75ba8"
+  ],
+  "agents/game-development/game-development-coord.md": [
+   "35b1339ccbb824b2b19af269edd19375075f63aa86e9dfbb312a75489a408495",
+   "3b5c360cbc51311cd1c271759298cfb163dedd040a2235cae540cf2d96973f7a",
+   "56bcbf193465ff1c162144cd8b872e856bafa29c75da8ba52d8937cddf74d00a",
+   "609e3cd03ac0a2522972dc17037d36d775666fa9d72fc73cee22b47dfbc77709",
+   "a033a0f4ab129a47ecfacaface578a4d562447817a9799c005c40a6334f0d1cd"
+  ],
+  "agents/game-development/game-development-lead.md": [
+   "56c8126b90ea96eaf352b0201ad4e6a405f20a185080027436329709f3caf4b0",
+   "86dd96cf4ccda4b76c466b9ff066c7aa379af036132150f3447afd26b81413ad",
+   "a4c79de5a56a202ad7fc753cfe2655a474ba04a55e2690771f99965bbfb8099b",
+   "d7409b6110e6a92a33d22ff75b959bca54ac8d3c296a44d6c5a38b69c8e662d8"
+  ],
+  "agents/game-development/godot/godot-gameplay-scripter.md": [
+   "25548ec4c31617cbc3b6730f61c000e9345e005d40d4aa1309eddf0914837feb",
+   "69f9b8c886e3ff12ba74b7b22f0a58660cf6ff2b4663ad0de8a3d5f00ddae8e7"
+  ],
+  "agents/game-development/godot/godot-multiplayer-engineer.md": [
+   "41b605b7b40e91c49fd3afe8098410c39967536687a76a575f21f677d573068f",
+   "d07390a56d8a5144340cfc1cc66cb1e89b7ee93e56b1e572cb53f4a448d89ef9"
+  ],
+  "agents/game-development/godot/godot-shader-developer.md": [
+   "09c9d64712166c5358a8cab1f8b550a1011c4f3c4f553742f64b58e6d18cb163",
+   "f6c928e64da94e91bfe4dcdee47d3901da23354cef151f17e30271dd24b67c52"
+  ],
+  "agents/game-development/level-designer.md": [
+   "3872604ba445bee48cd6a1f3b8e261753f0859c450f00dc373a71116c46d15a7",
+   "766c0bad4433b17e9a1726a89ef0ace7b739e5cf9c163fb6cb69063a324061f8",
+   "c5f10d1bd58a18431f2b4dcfc21c30bdb5ee626db21af214c1fad0ab7a1a2009"
+  ],
+  "agents/game-development/narrative-designer.md": [
+   "1c9f395300e3d48f76e71990c4591fd7cde91752eebeb6dcbe24682c1e9c9d8d",
+   "39350fb04659cdc1aa8b4a53ea68d684118aac42d6a0efbed8ed5face86745ba"
+  ],
+  "agents/game-development/roblox-studio/roblox-avatar-creator.md": [
+   "099409e2e001af7ffe193223c8f8847e429b066edeaa69ef1f70525ff0804b31",
+   "4e169e0b66bddcfcfef22e8ebbf70f80c507628515f2ddf75cdbf67d24497372",
+   "e8cd375a631ce8646cd4df8a32422e3695f109bd67029a16fd55863930977968"
+  ],
+  "agents/game-development/roblox-studio/roblox-experience-designer.md": [
+   "25013aea90cd67c102ab25465d94e8dfb8838c238f1f9c90d361b19e4e74dad2",
+   "ff7253ac0ac5e9fc7252287095db21d96fc998ceb9b202401eefad9af56240da"
+  ],
+  "agents/game-development/roblox-studio/roblox-systems-scripter.md": [
+   "109c8d879a56f0cc60d1b9580a1db91d68699f63f03e92855c2f0ac381d1944b",
+   "5ea6019aaf33f4a69f825340ce8c664b0f2b0b52cdf82fa5fe8d16dcda7661c7"
+  ],
+  "agents/game-development/technical-artist.md": [
+   "4c051af4046cf71d24c00780774f6e953164ff1f9ddbceb043dcca9839eae7ad",
+   "7608b4caf5d861f4c439974c213ef3d9caa60bc1b60e3270c8b55e39f99e0154"
+  ],
+  "agents/game-development/unity/unity-architect.md": [
+   "58f459fcf19aee4dd65f0ac83a06bef207ab8b5cef43bf5a2eadd1d8edc4e875",
+   "62e09e8647727860ea1ff6756d8fb50c1569b141a2a0e3b7d8e511ed1dad5aa2"
+  ],
+  "agents/game-development/unity/unity-editor-tool-developer.md": [
+   "c5d152003ff6c52f082283739dec0ed6976a94fb7fe1603894c70dc75bf28b45",
+   "e99dea5a48efccca87a0bc378b6a8fdbf349160e1bd48c6caf6b33c0c13ba3d1"
+  ],
+  "agents/game-development/unity/unity-multiplayer-engineer.md": [
+   "87295e552bbcdcdb2b909c321baf8074e4f6d79a87372d35bd0cf157b86c950d",
+   "fed1520e64adbabb410988638b29b0c54d5f9df9dbe70a696bf8a27063e0c56d"
+  ],
+  "agents/game-development/unity/unity-shader-graph-artist.md": [
+   "a92683aa3784c0b1b301dc003753d97fad170db9a3555dc926a9f2b14e296329",
+   "ce3794897cbbfdf419ffeba42caa4fdab7f0bb3da6c4fe68e0a6958c03582e84"
+  ],
+  "agents/game-development/unreal-engine/unreal-multiplayer-architect.md": [
+   "572ec839996f1ee847442bbbc844283ad207a3921949e490ea40f379095c5554",
+   "91e6d9ac18d86285db2762d460b21b18709b5d5746aa4d4651c14ef410560113",
+   "939495074b6df2a11e4c5557dca969f180eb24452f915d8b765e9588f8445134"
+  ],
+  "agents/game-development/unreal-engine/unreal-systems-engineer.md": [
+   "904058e8d0f218e8f3554b84bf632fdf15be8a93d309d4df41e1d89d079dc0bf",
+   "af72cf7368f2a55d38250b5776a67d071af75dc29b4419e57efb8ed598dbbf84"
+  ],
+  "agents/game-development/unreal-engine/unreal-technical-artist.md": [
+   "68afb22d9a0ed13cb1dfbf4725c658327bad16f6a937e2a180013f3b9f4f9095",
+   "8dc72938fbc6943a8f9c77bd39959c4a2826909e04fa6ae74c2582d920080337"
+  ],
+  "agents/game-development/unreal-engine/unreal-world-builder.md": [
+   "01487a7c86efd04a793d8f6efa18e311fd32caa4d6eea70ad0f80a224ff16fba",
+   "9616d99561ea752b335d9b8cd3a816420eb5cdb5fdc8a02f424b1ee1fc941b0a",
+   "f296ae96b07e776f598478e146054ade706ae4fb446c2db7622f7640b60f27ee"
+  ],
+  "agents/integrations/mcp-memory/backend-architect-with-memory.md": [
+   "66effaaeb2fe015551b81a29cdd9dbfb781d98bc42b2dd7588437aaf2b747e25"
+  ],
+  "agents/marketing/INDEX.md": [
+   "84b27c908b06b51f3e229b5c9094b85f38cab905a52f950a2bf392b836700493",
+   "895c362c5cab7da1ecd6b50a1806c024ca579a0e7b21ee8de33f60f5ec1755ac",
+   "8b7ed4ee1dfab13128f66c26797538812dcad9c74665aaaf55a2aec7db25ee6e"
+  ],
+  "agents/marketing/marketing-app-store-optimizer.md": [
+   "067cd492122568c9e4cbea0e5307c3d445aec1a1c0c03d8879333ef38130c68e",
+   "139f79ca88210c991510c129f2f9eeb00ec207146c6da9c1e5089ab817db4648"
+  ],
+  "agents/marketing/marketing-carousel-growth-engine.md": [
+   "793e4ad386a7c06bf437e709d20a523bf64dc48a91de8c04f59121f73a60bd47",
+   "e6be718e840480388770a91063c2fc09d8adc28d62f5d075ae1417be2d4fbfb4"
+  ],
+  "agents/marketing/marketing-content-creator.md": [
+   "32744b0ae75326b8a0efeee225aa6fc64f7fec068f9c738447a2ce7687fc30ee",
+   "da71b9250989047e9abfcf8fe62784116ec5db665e753264c86d23b6b83cd26f"
+  ],
+  "agents/marketing/marketing-content-presentation.md": [
+   "a8c6c65aad5e6c0de6f62fa03135daf1a2efd5591aa117b77ca3181958642516",
+   "e6f7f200147a920ffdd5d5eec70017b11259e24d46860c2338a90d1d592f0cdb"
+  ],
+  "agents/marketing/marketing-coord.md": [
+   "72ee5414a330cc35249d4499de5a538422100e24701f8af23943a542352ff520",
+   "793f108010b0cf6b9748b5a3ce0490daa849988d3786f0a807af7206266dfca6",
+   "c067d50bf40f3239936a3ad5398331b5b29a06a25d86c4a226467c5682da3eba",
+   "c60b8dc2d73b62017f15c52430a4082c5478fddc9cb6eb5e4f12816156a69e09",
+   "ea976216289b05c46151a8222bc0f721cadc74d4ea52f92c6e54a7bddf0a7872"
+  ],
+  "agents/marketing/marketing-growth-hacker.md": [
+   "854c59190a5e2d95fd94a134cde509217697d23708e9d6c9f245500d05e141a8",
+   "c30a7560f0a6a1bfc1c79b06f15000e90ccfaaa8840217d383169392df81afbf"
+  ],
+  "agents/marketing/marketing-instagram-curator.md": [
+   "bb758af3fbbc51e898209a56461a1eb1cd9bff01c73b1abdfae105a05b244bd6",
+   "e82e25ed2d9e9abe35b60e56892075655791a7e1c743c1177e93ad88d10be533"
+  ],
+  "agents/marketing/marketing-lead.md": [
+   "4f9d397a712c1081266e4f4cade9711f1c80bc5a18af9f3d2c8d8429a841bea0",
+   "5f3d1a2c7827ca6fd80509ea89906abd40dae7e3ef63411f84a274340066b4dd",
+   "c930fc920e9223a674844d777916475da88570fbdb3d4145962e27796c41459d",
+   "d93ed18636e62d0c28842cf8240bd1fc90b5d0a2bfde77d8159cc13f40a85974"
+  ],
+  "agents/marketing/marketing-linkedin-content-creator.md": [
+   "5748a08d7da8a72b1e3d165959e53e047e6359117f19fbc2ae2a1a6da429006f",
+   "fedc24c06cf106c0203d5b867c3da15ea97ae0832c2442a451d3fafcba1c5d05"
+  ],
+  "agents/marketing/marketing-reddit-community-builder.md": [
+   "40c2f72b490e8cc4ec99f00f3a50007d17719658dac83cffecb5c54033c32442",
+   "79583b2cc63b581017cf114741a33127866172189a3c1658a8a659e32b0a75de"
+  ],
+  "agents/marketing/marketing-seo-specialist.md": [
+   "b8ceff3b3406c6da192ce2719906757d327af4b0dedf499c821b20661eae6e91",
+   "e76395eb11ca5ac456338b500508d0e2ee1f276d705bf82c7aa6969412bb5f26"
+  ],
+  "agents/marketing/marketing-social-media-strategist.md": [
+   "25185d9dd2ddf83a778722910f2e0e7c700d7bc2afb9a8588ca407aff15c3163",
+   "3f6f2964cc5c93c7a7bbb0d31f3ebaa57c8bdea9b2b404692e51227c50b2b787"
+  ],
+  "agents/marketing/marketing-tiktok-strategist.md": [
+   "57cfc2e25bca76c62286bcae5b5b0b43a88aafa764dd9775f30e8a7b6724c635",
+   "7a43d4c1f32247a31f679e6bdf145ba3c3cc3793e57ad19d05d59aca47057f93"
+  ],
+  "agents/marketing/marketing-twitter-engager.md": [
+   "5b52b5a8ef594399ee8295b80414a080303a94eceba88422b9cf6817edf8a97a",
+   "90330ff7994bc50d8069c40f8846147a63113c8adcc65fe41e80de6c5e715a1c"
+  ],
+  "agents/marketing/protocols/INDEX.md": [
+   "95277769e6f31f333465b2f6e559bfe5d846ae2a1aff555555d488587f222bd6"
+  ],
+  "agents/marketing/protocols/marketing-content-handoff.md": [
+   "35d8d3b85a6b717648f2c53afb0c612771925852a62babd10d400ca4f72edb3b"
+  ],
+  "agents/operations/INDEX.md": [
+   "3cf7614e58abdc4a1367fdf1fc38b15f568958f799b97afa39ea59e454f17009"
+  ],
+  "agents/operations/analytics-reporter.md": [
+   "00f98bd30a44402ea7761af28649488526fbce53b4f1c1b501b3f46eb892dba2",
+   "6ab64776d1f52736079fcd5c8748df7157f0d8f0cfa2bb6b951411df3d2a908d"
+  ],
+  "agents/operations/executive-summary-generator.md": [
+   "4d95a0c75e164af08a509be3b2835ddd25c3b4cf5cb07e1b89da441355b8378a",
+   "8b78df81211f1d4d883375527f9875b446aee854aba914fb2694f56f9d123fb1"
+  ],
+  "agents/operations/finance-tracker.md": [
+   "49858a940c9269ae2ef2199323df4d141ced5147ef29aabfee5e06d1b414b08e",
+   "693df8e14d62eeb352bc1f7304ede96fdf767c4fbba4bd15ac3bee9d83e49c9a"
+  ],
+  "agents/operations/infrastructure-maintainer.md": [
+   "1fee4c4653a15836894681bb8687cfe7726afff2c2ac017b9610d11aab9b327e",
+   "3360abf9c97ddbeef912ac251b909675a357a1ae1a89ca4d75539b77e2c52b55",
+   "64740d561baeb497a2f63522ed7c8aa4bdfd505d4503dd18af94b9c5454551c4"
+  ],
+  "agents/operations/legal-compliance-checker.md": [
+   "85383eecedbb395e2d8e8dc99f4a08c2737483e2c4cdaedfc0f085a56e3516f4",
+   "c1a9730fd422171c07f83cefdcac01bbec6f145eb7c386e438bedcc796d62a51"
+  ],
+  "agents/operations/operations-coord.md": [
+   "6d4d8324062c27b97b2968cec6ac971eef167f2f1a503e4ed6d9873f3568a1fd",
+   "9e5375271eaeb45027ada1469920f34a240e2e8da936fc6cc1b5cc7f3ac3f1f5",
+   "afdf0b8d6b21f2be09ed3f728c5be74e9ccbda8aaa344f12018fe058886c7989",
+   "cfa9c77ee30bd754f143e7f64bb9aedfd8e2d9eadb255ce59d1107d26ed5cd7b",
+   "f586f9f861bcf240d0af220e741a5b495fd4f0d02be5148def267b5bc437adf7"
+  ],
+  "agents/operations/operations-lead.md": [
+   "1e82603b9c88af0d2a88f96842b66d383377768ad692bdfe84d4319f2bcf97bb",
+   "67718d88d732fdfb93b1758fd0f44b9f8e06074583d4afa0a0832ec438aae3a8",
+   "c3912b600896d56eeeb29929679e9d3e9e44458680fbf3d9f5445e45ee2fae9e"
+  ],
+  "agents/operations/support-responder.md": [
+   "1984bb91112ce8f96028948864b1623fe0a738de0a04bf8fcd6ae1e48b6c6717",
+   "e8e3cb83c3f6dbd65bd6734f1bd8082f4193502e11b6bf15391023561c8cb3df"
+  ],
+  "agents/paid-media/INDEX.md": [
+   "ae12b2a6b177e03ff067565cc971f7aa9e5fd0e3efed3cd2a4dd8b7d8b9b0f5f"
+  ],
+  "agents/paid-media/paid-media-auditor.md": [
+   "3a72d6b00805cbea1824c018ef7092c1e067c78dd70bd5e29dd597f3b05a72b8",
+   "db50f87ebe19025dc2b96ae2450713dd3936ffe093c1fa4e5dcce1c86f73e03e"
+  ],
+  "agents/paid-media/paid-media-coord.md": [
+   "0473b0851889615e562c2487847d23af1d33d6d18b46c7459b982ac46b5918e6",
+   "15c28f322041bbfc3f4f89c9bc54daccc01b5143140c0de17353058619c9a785",
+   "6167841c264fc37e310869d8e39bd2857602132a778272dd2e3e16fc84e622e6",
+   "63a212c15534c8336def2f7c9fde4688fc7b5b91ea9ee22024924dc2d01cbee1",
+   "c30b2236c5d157f0e7212b8a9f4bbb28894cc0a3f4c2da6c963183869b86a167"
+  ],
+  "agents/paid-media/paid-media-creative-strategist.md": [
+   "491f1d24eaf64134ef5e5ba2a8fd02aaaf4285f2ce6ff453e5740bb7cf7acfc6",
+   "63c441dea03479aec1a70295e94638543550243dbcb4db1e288892a804010e96"
+  ],
+  "agents/paid-media/paid-media-lead.md": [
+   "2e7c5a5c5eb83fc37d31e35934ae5b6012afe30c0b745d918ac8d92c32dc36bb",
+   "71ee338101dffd31ab8e712c60f6d71ed077f4c79c23fb3a658ed670b82a48b9",
+   "a87efc81309f9da7b880764f44a537a0ce288f92f0811344ad29002db1cbb746",
+   "c011e802900fd0a78da1b2a5171a9e443a4fbdce232baae77b2b6ba1c8a65da4"
+  ],
+  "agents/paid-media/paid-media-paid-social-strategist.md": [
+   "c41a73b07975f9dac9b630c3820646cb0548dbee30aa450d3bb4f781796eaadb",
+   "e1458c03de8e0b47900770bbb17e432a215f272d0f941343d183a38acb0182e1"
+  ],
+  "agents/paid-media/paid-media-ppc-strategist.md": [
+   "e3ce9804e5eeed8cd7d03d74cb752b79f2ac3fb6cfb5a2cb11a9f014bdedb2ec",
+   "ef1a9b60eeefe1fa1976c28557e36d44a704d8cab21089141e6b0e2ec1dde3d6"
+  ],
+  "agents/paid-media/paid-media-programmatic-buyer.md": [
+   "07b2410a41e6ac3959318b81f9e7aa36783df3de3cecd4db3aa875eb6b84013f",
+   "c50c496ade045cb48cd3dfac35581467ec4c0910f9175528fdb9114aa1efa0f0"
+  ],
+  "agents/paid-media/paid-media-search-query-analyst.md": [
+   "2c8d39c9a7d9e02aa6c70c0b67e657361efded8e42836c25e31cdb2b43a712b9",
+   "a335b1e4de4edaf704cce999fefa1ec8a4b1543ce51efd0e6819b415ec4fc5e1"
+  ],
+  "agents/paid-media/paid-media-tracking-specialist.md": [
+   "15257813840af727fd454836f4533b7984e809c4a7abcb69a31d287b40527514",
+   "842c3cccd3e2e1f974b19b639a25b927262c77b80f0903dbb1ee6a066403c138"
+  ],
+  "agents/product/INDEX.md": [
+   "545751921a6694bca62c4bfc39868d59943ecb552cc59ff11a874152021e1e6c"
+  ],
+  "agents/product/product-behavioral-nudge-engine.md": [
+   "5d337168c75f441ab8fccab90325469f27a7e8573befdf7fd4960af059b38b0b",
+   "a4397afe34d6938f0af032d94becf8befe85498b603de7018cd1e9d780012c9d"
+  ],
+  "agents/product/product-coord.md": [
+   "036a6ed8a16a2cadaa90b51548939685bc0f4edd8bc3069cbea486becd93130e",
+   "07a458d3f097baf5cbf65fdb17bf1b504483b504e970a25b08cb89b5b30a14ea",
+   "33088abbfbfca43abc933d39e65c78cee561491f4f5e901278648b719c3fbee1",
+   "4ab405a4817fd058d1b634ec4e677dc9438ad1852178655fb77306ee8fe0c88c",
+   "b4bdbd6599a36d56749687fa1d743820c43d35f30c0713db5dcb0a0c29adfc8c"
+  ],
+  "agents/product/product-feedback-synthesizer.md": [
+   "438218fee0e9ce0bb07ff7dafca11763f85c7fbb7bfaa3f1609dbc8e5430c21a",
+   "5e3a38ef793351f40df5b2623308c5aeea48da442ec147e5c165407f4fd64be1"
+  ],
+  "agents/product/product-lead.md": [
+   "1e56b06535e723723acb7e229086626bdf37c6c6ff899fdff2fa60c702d46e2a",
+   "a5f050d4ec5e079b131f31c9ed2bdd01f2dad1db07e54013260638cfd93a81d9",
+   "b0135c4b4c3df53334996cb10931f42f32ad3c845ce48868a56a26124e0bc48e"
+  ],
+  "agents/product/product-sprint-prioritizer.md": [
+   "20d03151bdab80265189ecba027c2b552920c026c3017f45739274e4e09998cd",
+   "ddc946d4d216ae55cf721f95b4e32c8fafd8dce12a8aac1ac7a4d8c1e14eb579"
+  ],
+  "agents/product/product-trend-researcher.md": [
+   "089ab32350e73e90a5f245b59ad804a7053d642c3462360b691ab1e67c3ba210",
+   "473628e3180be2c1c089c9a8bac105544d2b891897f4fc5fbf65d24fd405d455"
+  ],
+  "agents/project-management/project-management-coord.md": [
+   "29717001a74b7c876da120bfdc80be1f3a9f528c6260f7d957b5dd6c4d98daae",
+   "2e0adce125c2e8f8c7f4a421b326ec7484d7dc3ac86e8b6907b5ea42f8a4d409",
+   "552a9634c9b6ab7fe6fa34bea5f68dacff9bc39ab027f52394d53f7c5e10d3f9",
+   "6ef1c69bb9786f7555d9c0d300ccc5c8b15e4fa395f36ea8e532a4a00dd470e3",
+   "70ff0eca649ea9d4a89c187927856a6ffb7cf6994232d0066e9c8fdd9e459252",
+   "8cb12c45050492c085eb0fbfb5ba253c10c1bfed772f34385422ce43b0e4088d",
+   "9e3122958a3e82856e142092f0838cc0d477797df05f73c1db2fddc3c24caf89",
+   "a0f90d8891ffab341095e2dc76d3e06eb1a8fb5a0841af41511de578dfdd12ba",
+   "b7fbc0d0faa6b2b84d21fb85ecb5d68fec08122b27e1507fa981211da09f303a"
+  ],
+  "agents/project-management/project-management-experiment-tracker.md": [
+   "1a348a68291a665282072605f57ff22f9fd06a0c41b252adfecae7293ed0193e",
+   "77283d67df9f2756cfa621c6cd604f4c83e8051b426f4f3ac3a7f00130745296"
+  ],
+  "agents/project-management/project-management-jira-workflow-steward.md": [
+   "14dbc6cbf0bd51b5bf3ccc7665e6f84c54d53f81fc21d8c0e338d811b07114e9",
+   "689b59627479255773996a0ecb26546feba5907e6c2f3a31bc69ae2d0cbd6b8a"
+  ],
+  "agents/project-management/project-management-lead.md": [
+   "3d1cc061c7ecd7d556c6b60752025133b3be5da61b5eadd96aa920a004eb96a7",
+   "4eb8b23d5674bd2656751be17d3c503ab669af56fc4a2b28e4e9112fac450cbc",
+   "b5c112b3f1f1807b68dafe980f1bb4d7b6db1b498f50d91e472d45cb1f60fd11",
+   "c15056f2473644cad22cf2653f78bd32df90298067bf846758d3098e06cc5c01"
+  ],
+  "agents/project-management/project-management-project-shepherd.md": [
+   "9b6b60bc76f26f1d014dc4f57f1c9d79feccf9dcfe5aacf89247b877e28dc961",
+   "b2e9af26696bff6c607d4d2eeb545ec3e98e88c282edb2c18b513540e5b1daae"
+  ],
+  "agents/project-management/project-management-studio-operations.md": [
+   "468edc45f0098036557abcb89182e5405b77309afe6bf4b2687b41ae06a429df",
+   "db4b2ed4b15de424276839a75ebd76031041157e5ba5fc15b3c3897ff3b447a7"
+  ],
+  "agents/project-management/project-management-studio-producer.md": [
+   "34ce5697e6de71aab9cf5faa2a61092d536dd22a52962781f9a470cb8b623d68",
+   "4b99ef992bb04bf3a7111f3a8e1f2a117d11886aabc4bfc4c6d4c0136a768778"
+  ],
+  "agents/project-management/project-manager-senior.md": [
+   "0a9256bb25fe9b07eb0d1b9553da1ea0d7d156795edbe64d0f6e82788cc232c5",
+   "b4f4b9ebc6b1027c36b575a97b3ba957dbeebc70573de91d2a69cbbb51ae7b38"
+  ],
+  "agents/runbooks/agency-rooms-protocol.md": [
+   "5daa22e257db16e355441da167935b06b24b077a3fedc48afc7e6c9837d57068",
+   "9c82395ccabe784a852d431002f8f62749e3c0d0fc9e5058dd2704507fb9b7a2"
+  ],
+  "agents/runbooks/content-request-protocol.md": [
+   "8b89519c4a3b282f6abce117109c5ed40d84ea5633ba1c9dea1525a575851bcd"
+  ],
+  "agents/runbooks/content-to-video-protocol.md": [
+   "7e71d277fff867bf85227d71e64ac0a7bc5259d65a5e8d1d99da5b6cff8e3ac9",
+   "deff935ae9002a6ea6defe3e96107e51e2a999bcf8b0183dab28b839e2151771"
+  ],
+  "agents/runbooks/department-lead-protocol.md": [
+   "0e1f080d84562009882bb1a0a697dbe0ff6d71a11907f7df8c578b3cec1a9083"
+  ],
+  "agents/runbooks/department-lead-template.md": [
+   "81d60e58a552c3e070d69ff8c7a9aae2077f6b7a7a7907afc5bc3dc073822a71",
+   "86a88df3148e3e4b292d4a1f50b6979538214eab58041099061b09a2a038b8b6",
+   "8e56ccca8c6d7eca712baa0894eb550827ed0679b525357170cdcafcd3404acb",
+   "9e47946fff29487bd1603c05b313247d37f66827bc72fef4565fd3bf1a484678"
+  ],
+  "agents/runbooks/dept-boot-sequence.md": [
+   "06f1ed25bee29cfa12d7fdf865d11c3e73ae3f03a745abfa92d44295da063243",
+   "4a5f322e672d5a682780b3a337cc7ac8246b5124e2407387abc93cd95f15356f",
+   "efe338ce087437217b118b52e3bb5e914a5a7b6f5691fc82ccbae718de9488d1"
+  ],
+  "agents/runbooks/dept-coord-protocol.md": [
+   "9cd26552bfb99febafbc00d492dd66c5f7bc1fb00dcb8e4c7d4fe8ac865544bb",
+   "dfb52f823d3eb675900b1a69867f80988450223e22a8de67ee6589837b923a6e"
+  ],
+  "agents/runbooks/escalation-protocol.md": [
+   "4037d211da38b3227e3b6fb8ec359db161e62aeb41361a8acee8e1e2d0b7bb08"
+  ],
+  "agents/runbooks/inter-spawn-notify-protocol.md": [
+   "a38c07a45c2b0f4a176c987ecf54f32ad8d2a01f98e68193800d7198b77452e5"
+  ],
+  "agents/runbooks/pd-boot-sequence.md": [
+   "31790ec7d68900b48d956c39d37644cdd0f98b8b3142f7feb3c6429ff80826a3",
+   "8e4628f21563df5979301fcfa108cb94f8b840f481051b4fee15708bb222f165",
+   "c4e7da22d828b288c561b75d1c29afb6aa7555e0bb487d8da5b645e9ba5c57fb"
+  ],
+  "agents/runbooks/project-kickoff-protocol.md": [
+   "fe5742f914aa826072527721d2e72622b44fede05406d1a2c8a765293f2e0367"
+  ],
+  "agents/runbooks/project-team-templates.md": [
+   "3a452cf7148bf18491474a40447ecb0ed818843f47ba7bbfa551f6dfc3d3c72e"
+  ],
+  "agents/runbooks/protocol-registry.md": [
+   "76defe711a1343c13357a62b4eba0b686d3b127d68fce7b31c6afd9f4e403e4c",
+   "f04934086366fe4fb09f35924d06233dfeeb143ccbef52478eb3779e6a07b4e5"
+  ],
+  "agents/runbooks/quality-loop-protocol.md": [
+   "ce83bf9d907179a574e3e41f8f7335b0116274eb49ce6f69e7b47e8953eaf983"
+  ],
+  "agents/runbooks/task-decomposition-methodology.md": [
+   "c3d6a8646abcbabea32df7c503540c59f06a4e5b7d9708f1f4b6666c488ddb7a"
+  ],
+  "agents/sales/INDEX.md": [
+   "11c688a6d5c5f819b86d25164cb6d2d6b451768cb07f51a2cbca3fb76661e0aa"
+  ],
+  "agents/sales/sales-account-strategist.md": [
+   "9d73becda5fdd99ecf390f44c03d970c7c01c67f0dc4a0cc824c27929ad63697",
+   "b20af1b20378235bc8b8eabf7896a080b96038be83688c42ba40502279294614"
+  ],
+  "agents/sales/sales-coach.md": [
+   "2e4971cede8a4a6a0975894815819200fe6efe997b335c2abfd7d17acd464f59",
+   "d54b87aa73b6358acf6fd0f5a53193efc7ccfea0c41ca940fc963996a9d504fd"
+  ],
+  "agents/sales/sales-coord.md": [
+   "30acd28fc492cb4a722917033d1935a0f9bc362ebf33d7ebd63825521d3e994c",
+   "5f5058446840089596fdd58a2ca01b35de7eff09b5b911bdc642f02d0df472b6",
+   "886bc125463134dfd73ed53a309bdc89496fafef8ec18bdc2b1a7824efb12df8",
+   "a3cf08e126ca07e553b1940bef064e316377838b77354d3f781899d763469c2d",
+   "c1d17d02e113d356cd818d87f22ebeb4269a35e2d9781d78f37c27094bcf939f"
+  ],
+  "agents/sales/sales-deal-strategist.md": [
+   "21154f84e597e77bb823a1f3b641a59a5c2591820bab971a08599fc69d785227",
+   "cc71bf2a98056e654c575f2e6dcfa5b37cb8979cd888955f40aca3018ab8e60f"
+  ],
+  "agents/sales/sales-discovery-coach.md": [
+   "1a083535d69e1512a371808ab46a1c2e7ed70317161bf407325bd50c53df6011",
+   "9185f5909d97f7e1c82df5323ac6f2f9e490c42154a96518d2476e36bb950978",
+   "af767288ff76300c40e23450fc1b6f8e68969e432e40b8ef0b8f9275c37ea984"
+  ],
+  "agents/sales/sales-engineer.md": [
+   "1491f6b4e9446f14a50011aafab96eac457ce2120bd1c37210e8ccd817d8dccf",
+   "2ea14d19e856c57eb5e36c60b4fa3a31be069c8561343be294c27ddc5e27712e"
+  ],
+  "agents/sales/sales-lead.md": [
+   "0319a19ea66dd5655cfee81bacac2f50f250268ba07c38d5c9e81aaedf78c398",
+   "13c901583774af37fd0998e9221bd8c2af94357ec53ee2a040fa48262938005c",
+   "150862d814e0874b046efc936885317ff1b1185c72f4ec8c5d0ca3c25bf2a75c",
+   "6468bfb7685682dca92f372a8c1d815936f9dd055e0b92e86ace9bde95a81845"
+  ],
+  "agents/sales/sales-outbound-strategist.md": [
+   "7084c1ddd8c9141875b73a7a016ece1ff743ff0dcb1f0ca02680d8382398ff7a",
+   "d79b4991d16fa5e4cd7d1f6ceb9882a4c280f9f97ae464da7133f4565ba0f771"
+  ],
+  "agents/sales/sales-pipeline-analyst.md": [
+   "0f371092ae0b86fa1d0da94f15a7dfbbc30682844b2b146bd6bc39fb4bfdc36b",
+   "6e04c17fe01960447ef9764dc166cd69e018bfb77dfa1683dd639bb307f09e1a"
+  ],
+  "agents/sales/sales-proposal-strategist.md": [
+   "357df1aa1b33fddbe3faf0c1a7d696599bd8affc9d4a59110a52ab3bc1f18b69",
+   "a6afa79ddb7ffad2f938f66532876fb7acba1b4427e9cd17e2e56c5efec03c59"
+  ],
+  "agents/spatial-computing/INDEX.md": [
+   "629a65db2280fca2e29bafb851b198001d122ae9fc08d6fa153a2d669585aead"
+  ],
+  "agents/spatial-computing/macos-spatial-metal-engineer.md": [
+   "6053b94dcbefa8a1c59eb687b84a2907331610a868f2a1c5370712a15136c620",
+   "74f314fc37ca2830b19118a733ff589ca6304de6506e703621d162b2f0e837c5"
+  ],
+  "agents/spatial-computing/spatial-computing-coord.md": [
+   "5ac859c71553d1a442e7e627ce934d4fb6a8b75ddd94c7f9185605fbad0faa39",
+   "7a3856237eba8e391483a8e25600963ab90d265a2664a487f5f0be12f707074a",
+   "91a4f847ca3ab91f76dfdc52a4c43b16fbdbc6f586fc517c747df160b9ea66ab",
+   "b565450ce16a46f71e509df226bfcc25ef2547ef940a1bed6d5033dd4f1f19d6",
+   "f6f04a441baec2a0102f592ea63785a047a562f5d49b4b04b8598922e3a8aff1"
+  ],
+  "agents/spatial-computing/spatial-computing-lead.md": [
+   "0f5d93c1a430e65ff296607be41fb20bd3650eb61e85ea1e51ff9a49ea13af91",
+   "47277d93e021649a4583f9519133275652a9b27d4a8d64b85e00da923f1e4f47",
+   "6fd258f7d56a7314516f453f9ba24e1792e12f2b9a66aa6a3037135af73b95e6",
+   "f31b7633de873cecb05901a0b45a487200465693a9e32b4521c57a5869f9b31f"
+  ],
+  "agents/spatial-computing/terminal-integration-specialist.md": [
+   "091ddf9075641a699b6895d352119071ddb3945c1d6071a20bb1bf09ac8dd84b",
+   "a8b7223b1327c30b63293e40572a80d5bf41111213c272a6c867289cc522a6f5"
+  ],
+  "agents/spatial-computing/visionos-spatial-engineer.md": [
+   "cff3bb58a3cd2f1182d993558472f6248bed7a085b11b8cafe0e7589aff48cb0",
+   "d0b4d30edbf0ca284f1ac647f0bfea814ba85c33da206d045dfb08317ea4a85b"
+  ],
+  "agents/spatial-computing/xr-cockpit-interaction-specialist.md": [
+   "03b61ed85aa8fd6b2047cdc8118610e368f82dd6a85365468d850e91a8fa218a",
+   "289b4ad0fb1e29c74960639fee26cd6b6c8349e78a102e635d0610b3ab84bd90",
+   "2d0a8239712d4e93d1c73f6496e93dced6676e7a653355c96a2f170403e3af1e"
+  ],
+  "agents/spatial-computing/xr-immersive-developer.md": [
+   "52cd37887a595b9b366902ec9de4794dd27b7cd18eba68611ad1bea7fc29f1c6",
+   "a20a50651a97e8a3bbe3f35637a6d2437ab7787d92c10ce9bb44acb0975a2630"
+  ],
+  "agents/spatial-computing/xr-interface-architect.md": [
+   "1518a7c5c50917ded01c5e4003cffc4f92e69ed6a79b743113ed8cc466160588",
+   "369fc4ee06aa9bfac01a95d39393929d4760e9686d49ac00422e2c2ea90420a6",
+   "913c49718d8d75c8ade3fb050153de60e825742fe1b6db77462e1a7876638baf"
+  ],
+  "agents/specialized/accounts-payable-agent.md": [
+   "4a72d2ca631229553f7e96d15209cf5b48678a7781d4e3c4f8006db308bc4f05",
+   "4cda5cff5d5537e1f15abd63547c69e31fd62035935d01d32aa59a610ec0e135"
+  ],
+  "agents/specialized/agency-shield-pd.md": [
+   "b16d5f91862eba2c862c836ad3c306fda9c0bae7a34c8b4dfbd46d148382bf47"
+  ],
+  "agents/specialized/ai-engineer-pd.md": [
+   "93ca36d62bfee8e82e35d2fb13c6eb068c2dd57ce3cfb3c5537b0c14a7bef73e"
+  ],
+  "agents/specialized/audit/INDEX.md": [
+   "0046a4b3b52ec506289f936222be0c968aeaed87f40d2c1981df960e5ecbfdc0",
+   "acde0e3b83a3bc1f7b76bddde3d568d51374ef7ca0376870455121f7b64ccec2",
+   "b18e5e732aadc115733e27713ec7074ba0087d681a672f2a637a0609f0838b20"
+  ],
+  "agents/specialized/audit/blockchain-security-auditor.md": [
+   "10f7b023447d5efaf197237c998785ac0d1263db7e229496e9c35b385414816c",
+   "4121330a16ad5d347590243d9f92e167f6572f1c6acdfd82c780acbc0c37fcd9",
+   "8cfcc3b3e6df23b315e2fb47e40540be24463dee0f03fbd90d9009ef10992546"
+  ],
+  "agents/specialized/audit/compliance-auditor.md": [
+   "6a35382738362d7b3fc0c9848cc8d7795e919c0a055f394331acd3e4e354b128",
+   "d2c3ab7c8cec82b5bd32321855b6ee1de070e2a68d8f344a30efb159f10c81dd"
+  ],
+  "agents/specialized/audit/specialized-model-qa.md": [
+   "b45e711ccef5ea1a349d7710df5610cf039a6995e72f2b7d6ab6faad4e2f30bb",
+   "d6af0d7ef1a82e5741d5e03ec349a02414fb1abbd82d36584ce5765b422cd7d2"
+  ],
+  "agents/specialized/cv-santiago-pd.md": [
+   "ac4d44e7041768ec2f78e12428ae0a223500681af6ef89d00b88aed3edb22944"
+  ],
+  "agents/specialized/data-consolidation-agent.md": [
+   "75e225a0c7aa16576f3994656662fec59ae3ae3a79ed26dc2fe2c73bf23a298a",
+   "b3aaca1d6d440f03dff548f2273b97feaceea9db2c4e66ee3558e01315b98bb6"
+  ],
+  "agents/specialized/efficiency-advisor-loop.md": [
+   "1119331567712862e0904f6b934142132f9b8cad47c2b48f5ae55acf4b1020a2",
+   "912afce392c07244344cd1629a194d9ae0cedaabed8e7ec37a7a9825bd4f0ce5",
+   "d6fc32204e62028fc25a0c9af7dc28d48bf4201e12c5c6be462e03c335788932"
+  ],
+  "agents/specialized/efficiency-advisor-loop/engine.py": [
+   "646c3c86fafb7b702ecd75af44b78c099fe05b157d1c78bf739204c1ed87d74c"
+  ],
+  "agents/specialized/infra/INDEX.md": [
+   "2393a283200be4c2731742f9fc10949f0ebada59f33361a13bcd3e81bb606926",
+   "c3a04b9c29422b365455b15cd68c53b16095d6960bf323ae3d96a0e8959a5d62"
+  ],
+  "agents/specialized/infra/agentic-identity-trust.md": [
+   "21cee54b58831b6381e80a46cd5a1bc4bc2c4557ef34ba734bbbbe60fd820835",
+   "7558490db1629cfc8b0a7b8df8ca426be5646ff56c0d42244d9f21b104fa2d37"
+  ],
+  "agents/specialized/infra/agents-orchestrator.md": [
+   "7381e4d2398d0c5572d9294d56164a3fca3de6d02a4b04ac47bad32132d0501c",
+   "bbd36d4c8c0f1b7e39bf93ff8c3fe528971dd7e4541d980568bd43a6b2ea712d"
+  ],
+  "agents/specialized/infra/identity-graph-operator.md": [
+   "1b1fe521bfac06f546702ac4f7448443680651b148c340cdd315c2f2654a9cf3",
+   "a08631c7df71c016e86e11cc1fdbe2a77ce01bfa771e752f8e83600f7bf23e21"
+  ],
+  "agents/specialized/infra/lsp-index-engineer.md": [
+   "0a8cff9086276c12ecc5a1165d95a45a0b420556e604099ab2487138f4417a85",
+   "73d3c600e73926ca9f7c0ba394d54d12ab2416ac3836c10040a4f8103043c695"
+  ],
+  "agents/specialized/infra/room-manager.md": [
+   "3a98fee94830bfbae7160979fc75b9e54b5396164ffb5e3144564acc879f197b",
+   "564283151d26812452fc82f63b945a0bb6d518ffe0701017744a1f04b6018334"
+  ],
+  "agents/specialized/integration-tester.md": [
+   "125c9a2495d986921a89aba5082558127e35a96954454e0955bf9290d942a66b",
+   "f18147eef456c5a9f0bd01ab496d49d9a29287acea2120d461d64466d7713fc5"
+  ],
+  "agents/specialized/ltv-pd.md": [
+   "655c496d28481557f5b6aea921da9d45b3eaa9ad0b511153cda4f9ac77547168"
+  ],
+  "agents/specialized/pd-status-loop.md": [
+   "2e5243cd49d939f52f48f476122897102f7f59b447c068c0e3fed6b7baf5e14f",
+   "d2fd6c14db3249e122ca7da69c1f014f1d2f786fdba9b2295682c10cc428ac54"
+  ],
+  "agents/specialized/pd-status-loop/daemon.sh": [
+   "33e9affcb33c9e0da68de81ff32f0610cda6f7c0db79fce9bb39b1b37c0d5f47"
+  ],
+  "agents/specialized/pd-status-loop/heartbeat.py": [
+   "e04c115943804cf0446a8a3004dd5fc2aeff6d62280d8a03999f59ec7acb0a69"
+  ],
+  "agents/specialized/project-expansion-scout.md": [
+   "577a037ef83763e452c4fa592b326059894fee83ab1691e2cac0f764586c0dad",
+   "b2020a61f1eeece7203816b7b83cd8c2f71d85a28f037eae3738b9774d234504"
+  ],
+  "agents/specialized/project-expansion-scout/run.py": [
+   "f0e7ff40a01def9999d78a290f7b23ad172faabb3ac661448973e7c90a180b81"
+  ],
+  "agents/specialized/report-distribution-agent.md": [
+   "6331a8e0d4cfca745ec4fe8c8692e5413e70537385e7c6330045bfd595b4e3df",
+   "eda854572bafadcc24713f952d8af224b64b340b85f27a87d984d899a91c9cca"
+  ],
+  "agents/specialized/sales-data-extraction-agent.md": [
+   "507b8778d81ad67277b28dc550eb7a83583b087a8608233d071c55d374b0ba16",
+   "794ccd60eb1411147d4181a49377f4ff4685818a4b82e4e1280c05240112f4e0"
+  ],
+  "agents/specialized/specialized-agent-ops-pd.md": [
+   "4662b85b2b8ec31d77f30785627f1ce9a8d8a82e26b20e6d908d8df2ae3c384f"
+  ],
+  "agents/specialized/specialized-career-ops-pd.md": [
+   "66f50e659cc39b056167747879781560a1fe220f6f454414661ead87542cf01b"
+  ],
+  "agents/specialized/specialized-cli-anything-agent.md": [
+   "1ec3dc0fc5e2b0d3206581bf6afdce343fb98050daf836e2194fa346e529cd14",
+   "9a9f558f3b80bce17b56aa72d7495b82ca762f1e1f56ef5a74d66002f2cf00ec"
+  ],
+  "agents/specialized/specialized-coord.md": [
+   "210283ad00cb74dcfec309a197e862278fbfe2d223737b801fb6fc6c98cae884",
+   "3c772fcdc0069e5ef5885783be114ce5e8ce0701bc4da5154150add2ed7ebfcd",
+   "459d791f59b7dee466224953bcb9f02f77b9d74add27bbfac71f53c6ff4b1690",
+   "54911fe103085cb6d68b3186c6d855ffcbb4d7a9b48625cb94f10044532191ac",
+   "7ef649539dc51d00494ba183c3f1593ede0c79c83db976bea5520647c9837dc9",
+   "9493a817e3928bcaba27aa49f32cdf4597fb0d604880f0c8ba80ebb830ad91ae",
+   "a6d0e96bd1414d75500c71124e6ccfea9735c2309a74811c574b3aa86b956b09",
+   "e47ec36929e5dfb58452f8c6852a7b84f67417ac650f434fe9b5efa67d44663f",
+   "e79cf7fc9615494db3f758f623775ef6f644066d7eb3857e1577a1af1325627d",
+   "f1235003cae0c17d39659851ec0402a4f257b0146856e06bfc8b2b5d681a408d"
+  ],
+  "agents/specialized/specialized-cultural-intelligence-strategist.md": [
+   "63acb676eed9f5a3e5933917d9a79e82a6448be40a246532f64006b58084714b",
+   "c50df51b7bc6b5f3a50e307a6a37cf612c686ccf8a206ebfc373a7c14289635a"
+  ],
+  "agents/specialized/specialized-developer-advocate.md": [
+   "7381bc3fe07dcc414885ea1df777cce02b6b12b6828f65ddc37575ff582bd4b0",
+   "932eb59aff797c358a4ea139618a10ceb1ae6c6d165f39751f34c837699753cd"
+  ],
+  "agents/specialized/specialized-lead.md": [
+   "22d14811fda75b52e60022596d7947addfa3b32fa03e61e3ea0423f0e3612fa9",
+   "252cd77c78c5d80f237b017bb430e2bf3b9451dec44612b6f63292a975507826",
+   "472358abf4384678e9564105527379f5ad938cd683757ad8f8015538ec223cf3",
+   "5b4925d6febef2985551707b7cc75cc638b8c3155a5303b3e6e7cc6c933b4dd1",
+   "f43699ee0d087a7a0471cd37dd0fe514524f5ed484e500671070b55e020da691",
+   "feb7df4c5742c60c72831437e916eb021eb95c95b9111a71f32aa2200dcaad83"
+  ],
+  "agents/specialized/specialized-linkedin-mcp-pd.md": [
+   "bd0d7af1f5e0da859e025dcd39eb621d84d87bc682f1794fbaacf8af2d9539d8"
+  ],
+  "agents/specialized/specialized-paperclip-control-plane.md": [
+   "9f3e5ab69edcb1dc72127fe9fc17bd903c06d731d359e50d01775b90236ffa06",
+   "da87bddb3ff0320d5418fa6d847d958da484501319418d1b650047c2d648b2ad",
+   "ee710f61e2c8000dc3d368a643fcd897cfac64e85f94d9efaba7965193e15706"
+  ],
+  "agents/specialized/specialized-research-pd.md": [
+   "163a7d81519acec4b2dd77ba69b4e8c29a91ae8767bb4f22577ac11524aa53ff",
+   "d339b3410a7865f3eb0ba77155026a5ec4699331fca19fd29a422389bc48c2ca",
+   "de1ca7a5594726c284afa884b1224e3f9dd43f3da299f2c0bd5d70d9afaaffb8"
+  ],
+  "agents/specialized/specialized-vietnamese-text-agent.md": [
+   "d3a9f1d6fb000297d871d5964f54d52d959c146d9d53a1afef74b4d4fc3db088",
+   "e6bedda873f1ab3de362683e270d4200f43d1fedf538bfc73553e0d84b3fe298"
+  ],
+  "agents/specialized/system-improvement-pd.md": [
+   "4bd00dd56719421e31e45aa6e1b48f5be974a58311cc7314cbd8641d6dfe16d4"
+  ],
+  "agents/specialized/task-executor.md": [
+   "6049a155594711af081422e7485272b5590d29eed049b165be03495fb7ce26d6",
+   "65d4094a9692e2d18d1cf9b7dfc60cc6b0ea3694bc3ea1ce73d02ade6ad95e18",
+   "9bd229a56851dfecfa03b8c8d82cd7850107d7e7763b7cac554b079e3d1b59c0",
+   "9cae3f73426ffe0b6f4762a03c29e2752d632825a33d56fcf382a4f3d58fd1c0",
+   "b29258a3d14b0395d8afa76b4a8903b9b2a04478686f8464e3464ae56d3a2dc0",
+   "b862b99455dce6ab42834c61492202dfe009080a16b01aaa4ae9de3b69edaec8",
+   "c68b8755306740f9b230ea7662c207de9416e41a549a372961f0af9e5bfb6969",
+   "c78d1fb94201a0c6a0b8c5e41784f775d10e090d61d09de2d24a54de3704e58c",
+   "d18561ef54b3f091e973170ba466c6f6d775d58f78735f90cdbc1b3bcbfa28e3",
+   "d9451a09639df112c5d1389298ad2f84264b6fc66e6d3f86687633206ab8f693",
+   "dadd07857acf0884b3486f50a4ba5ffe6f4b573353c7acc0e1222d5d28f22f09"
+  ],
+  "agents/specialized/task-planner.md": [
+   "161bad58718383e2814bc5d17e516cec7ed16b43019beae9c9d1a1a7f6ed6331",
+   "6bcf35c6dd7d7dd5e4334cc64bd1d7201310a04f14730a167c3514652a3d35b7",
+   "f695e1a94508d6957918f5fce8543cb3294aff95ce90bc1d6310d77e039868af"
+  ],
+  "agents/specialized/web-extraction-agent.md": [
+   "8d5d46c01e719fb1e28c5ecfbce89e6bdc0ed1757a35a9050135c841b8e20b28",
+   "acb5366072b9e12dd099bfe48fb56212cf74bdb67b0d59fb6ab6e39eeb480629"
+  ],
+  "agents/specialized/website-pitch-pd.md": [
+   "467bc30c9ae9c26b9462669c089a1da7f1dbb94654be9bc4a5f68652e718c229"
+  ],
+  "agents/specialized/zk-steward.md": [
+   "37f229e07a3dcb568ff83ad6c42132cc3ed2b2f83dae6e991b64479e3191708d",
+   "b2bc31d6ee1bf8dde03506d27925371995c3239bafb8cd850a13bc2460fd86d7",
+   "fde51c5dfd63cbea2d024ab2332196372826a0e5b09cd435a1d2d60bc60c6219"
+  ],
+  "agents/strategy/EXECUTIVE-BRIEF.md": [
+   "628907121b4fa6306ddb12efc1259a679309cea90c8c97383909a81c60b94952"
+  ],
+  "agents/strategy/QUICKSTART.md": [
+   "16933e6221370dc3bbf1b8662621e9f93887c14017a9e27af27753625b689640"
+  ],
+  "agents/strategy/coordination/agent-activation-prompts.md": [
+   "86cb729165c1924df33ff7005c3eab747de8628840bc4af3c8ac763df32f0d07"
+  ],
+  "agents/strategy/coordination/handoff-templates.md": [
+   "af412e95d9630426038967f07b019769cf0a3f8efaf0168f982876548f9fcfb6"
+  ],
+  "agents/strategy/nexus-strategy.md": [
+   "b7ec838a753b696393dea4a98ea1f8590c9c91dfbdc8e67451126d36b4152f63",
+   "fea689fea6500b558ddb01f2cc4c1a8b91de9f92809b58b4d4c512ef4ba3ff78"
+  ],
+  "agents/strategy/playbooks/phase-0-discovery.md": [
+   "8f57589c66195ed0aa0bc7ad38b067485d6317ed3ca1f65d604c2e48fed52ee2"
+  ],
+  "agents/strategy/playbooks/phase-1-strategy.md": [
+   "75b2a46f3273b701692ab7ae0cc125ebb0c8c829dd364c9e0f47339cf2504962"
+  ],
+  "agents/strategy/playbooks/phase-2-foundation.md": [
+   "e47768ea053c8e453f6bb16ec4320470dd1af4b7c76f200e32d94e0a8e945d6c"
+  ],
+  "agents/strategy/playbooks/phase-3-build.md": [
+   "05b3d0ccaebfff5f7e1f26d72ba1b7d76a064de9b028a67470b5ef16c09f26f7"
+  ],
+  "agents/strategy/playbooks/phase-4-hardening.md": [
+   "3eacb1b612b5e18bb6675a06a8199eaa18ea60eb83f3355c6bf13d3e71711b75"
+  ],
+  "agents/strategy/playbooks/phase-5-launch.md": [
+   "a27cf6f1bd391bdb4e0d5cc53309adb9f622a87249180b2029bb7e758fa6f830"
+  ],
+  "agents/strategy/playbooks/phase-6-operate.md": [
+   "899622cb63f14b843e5f74688d3db2b6de31ec803716eec3b036730ebadfb95e"
+  ],
+  "agents/strategy/runbooks/scenario-enterprise-feature.md": [
+   "40e20eac5c6eb54f4a5017b1f8d9f56bba44ae9afc82bfb2c678f971c7d5fb2b"
+  ],
+  "agents/strategy/runbooks/scenario-incident-response.md": [
+   "b08fe23eddcc6f5038a4a8e33930f7d40d67b6916144076667eb6d50ce604fff"
+  ],
+  "agents/strategy/runbooks/scenario-marketing-campaign.md": [
+   "979c985e5cbb6a42aae2bfbd02494712fac75f8fceac5d7f9ca704b071ef7f57"
+  ],
+  "agents/strategy/runbooks/scenario-startup-mvp.md": [
+   "90eb81f4338453ce3064d33434967cf028f6a3a668fccb436c64424d1e00ff26"
+  ],
+  "agents/testing/qa-task-contract.md": [
+   "a1beb03fdb1f0bd12043f64a04bd746ed8840dabb0005db2a306060ee88128a1",
+   "beff7f73c48856a9caea94d9038ca6c7765593de6fac1bde5a220f973fce7d7b"
+  ],
+  "agents/testing/testing-accessibility-auditor.md": [
+   "25221beda04917a6bd9aa0fe0026bfed21d09a4b072d1642e9ef724708fe51c5",
+   "ff793f73742830b4bc999880265a59a88a16fd762e303cc505c5f8bdee5b4c42"
+  ],
+  "agents/testing/testing-api-tester.md": [
+   "49ff523556049069ec8e7778d5ee77e7251e2ad27907780b3154d60854cf00c0",
+   "76aa0e48489ec7a753d107d04bbd1d5db233e93185fba0ffa35345236cad68d8"
+  ],
+  "agents/testing/testing-coord.md": [
+   "0422a2f319089b1533efb7bf85381e4c8ace830b79566a32f553a5b9bb76a606",
+   "056763e63e10665741d2c62e0def09115771d1d261f8ac20f832a560dde0fc25",
+   "074fc6f4f7493f00a78d417ad0a53d162d02c23e2fb6283b2c30b76446c0811b",
+   "4ca12591f60052fc090ccb89dbd59cb1edf68f6bbad16e327d757dfd8f0ff619",
+   "8be959aa4370278298761522f965c86d70b42e0f992848e9b099d1f610a0f8e5",
+   "9cf0c923630e4a80d5103597ed42e371ef95a119238aa7662230ebac3002d06c",
+   "ccb53c19f01bee5f70cc47f3ca9160ada6d91d5e1885a9fe65b2076c7b5e6215",
+   "de29276a30533296c86b8a4717d636b564cc1897ff0b7b19552b63daed5594d8",
+   "ed3fea65a9f6f6b48874e3092271647431b316ae70f28c43095b5e5a21e623d9"
+  ],
+  "agents/testing/testing-evidence-collector.md": [
+   "70d6cb445faabfe99a0d6f8a01cf1d670ce2c8a892d072f535a7fb55caa1b75a",
+   "a460f075c058ea4699f1cbd5eed9876d121f11d736d1737800bae5bda3cc3d44"
+  ],
+  "agents/testing/testing-lead.md": [
+   "285780221cf628c2a69fcff9d54bce3bfe4bcb0ecee7ca86a85c8e4bbdc81c69",
+   "2cc023b9a42c4332e5341d59f289e82e62013d0dcd69fec675603b2c3fa706eb",
+   "c2807553fc5b2584266cda6ca4aca3e86754141f03d71706b2816c399a690c11",
+   "d296822c6ab7e1c04178df96237a4918e1677d702fce61192e21e032c764c3fc",
+   "db42cd05fece463cfbee61db527aad538731fc4aa7bd551d008633990d5fff49",
+   "f0a9c271f7131bfcdd66b61f3a84e4d7bfda960924c7afb61e5b059c295c9157"
+  ],
+  "agents/testing/testing-performance-benchmarker.md": [
+   "33f381786f86e9d9e99c557fa1d939b0977a45781cee682e2cfecd00bb917a22",
+   "48b5ce56093f1a4d6104b4fcb97aee1873ac7c324cdf9dfd3879cf9f3c7833e4"
+  ],
+  "agents/testing/testing-reality-checker.md": [
+   "1a4451ac565d677ebed40dec0ceaa3253c5b851ddb673eb507de8cd3e0021300",
+   "81437df4ff20ad0b274439fed579eab375c188741932540c9950bc1b04a23f9f"
+  ],
+  "agents/testing/testing-test-results-analyzer.md": [
+   "2016c857583780f9d7cfa3b474c70c937b72440928b6cb29e8288714d284bfbb",
+   "893fd6691cb44154f068365b1f2198ad99dbb12c1ecf9cac193d66d74a596d95"
+  ],
+  "agents/testing/testing-tool-evaluator.md": [
+   "76700bd26b69061d5c23ea7d10f76a3606f12874d9f4e4646a2865058d548003",
+   "c4fc0b561cb06f0aef8bd5cb1882688853ffd09ec4c5f2cc7c8306c340d7da4a"
+  ],
+  "agents/testing/testing-workflow-optimizer.md": [
+   "2b8a522e7fb8a7b47b083337d20858174e567941a6fe93040901fd7d8b57c00f",
+   "72eedfffe0eb4e1ea558dd4873a1bf6abf09565044d2d8e85f76e9e0b223bad7"
+  ],
+  "agents/video-studio/video-studio-coord.md": [
+   "2f175534cfe2292ad94ac93da390366bb68b8300079c18c8356aea7b8f07151e",
+   "31209d1706015aeee879830d202174de83f582636613276912b44f26e16111f7",
+   "39661cef223eab9cf5b0635419b39ce35963b9f4f37dfe15052c4a1da63064ca",
+   "3b3d93d65692c3c04c39110c442262ba731997c40d4b2abe9bb8e11d637114f3",
+   "7d1e608af107e376a540a1f7132960e249e90e64024fe4ebb2e4bcb17a466671",
+   "b18cc3ecb169a62560a264680e6119e9802110ae12729e1e3f0d36f283edca9d",
+   "b988b30e7a54666eafdca41f08091ee554e196b0466146e835244258e48dd61b",
+   "bdf312745190798d58a5c412a0a094154baac428d694841bb7ed18daf15de64a"
+  ],
+  "agents/video-studio/video-studio-lead.md": [
+   "00f2d728ef80112e44c68bc6531b97ac06848938571297186ad652b946749712",
+   "2d4d875ca9c662c29089e88459c5068939368043caccd3494ef4e1c0012f5a21",
+   "8195389335cee5f1cb3599ae4a45ee865b5f728e94d08e8abe070378c0b71fe0",
+   "a88a018d023a9fbebf092b087a0dc4094aaae945b7279b3791bd2b83f0070162",
+   "c3c23b4259eb507322d296fe26d7f20bb025f45f515aa3c8ed955895cb8cd9eb",
+   "c6576dfc0e32f3b12452f449b287707a9e075ed2766c69dded6deb66ae1b401c"
+  ],
+  "agents/video-studio/vs-accessibility-auditor.md": [
+   "98b99b772de4b10467a5d3c1c61a39a4d1b7045387212a91da84e489ec854f73"
+  ],
+  "agents/video-studio/vs-ai-video-producer.md": [
+   "3e85b5f5be1cc7b5359437ba712ef4f4e243d2563b2391e63933854070e9a028"
+  ],
+  "agents/video-studio/vs-animation-director.md": [
+   "2e90572aa0e16935d9c8e369244a897f130e901f5810306a31790970ef3ebc24",
+   "4d586435860ef488351dddd8adef0ad43272a9fb27b6122a31f356a3de6c6d94",
+   "a08cd7ac6a50a3912aa14f8618d91d66ef1dc82bf44d7b6738d9022c668c7347"
+  ],
+  "agents/video-studio/vs-captioning-specialist.md": [
+   "599d976d805177c88307d7d645edf8daf85f2a044205f7797446ae91de28cbef",
+   "cc0a683f4f31646a86783b609abfaf3a6f50ab5aa08dbdd33f5ff0a42b103ef4"
+  ],
+  "agents/video-studio/vs-colorist-audio-engineer.md": [
+   "a31e6068bce2cf363d6b9ea24f1fb83eddecfa41aac3c454822d5a16ebedf742",
+   "b5dc5d5b9794c7792db46e19ff87a67404d09b164b5becc50acca48247ae22f0"
+  ],
+  "agents/video-studio/vs-platform-formatter.md": [
+   "58caa50c604a81078e7b758bb638ef269606359a14594e201499af3ae4cd3f5f"
+  ],
+  "agents/video-studio/vs-screen-recording-director.md": [
+   "631ad24fa796734e5454d9345b0d11ed5eeb12958b993e9dc4cbe80a18c2ad3d"
+  ],
+  "agents/video-studio/vs-shot-planner.md": [
+   "c701ca0fc8715ae9b10d66e7710592a2bb7078932360a78d49032a8d5dfa67b4"
+  ],
+  "agents/video-studio/vs-storyboard-artist.md": [
+   "9ecf152a9fe0a26ca756574149e171b0f719e12a3a5ef2b42a2437d97ee86cbe"
+  ],
+  "agents/video-studio/vs-thumbnail-designer.md": [
+   "faf3f0e7636b1d220226ddad3de5fbf48c3ec039e44cfd91a362253103904a54"
+  ],
+  "agents/video-studio/vs-upload-automator.md": [
+   "c7505b76f9fa951c8f66ba4f63fd4339d57f5073e2bbb1be0972a4353c7b4c5b"
+  ],
+  "agents/video-studio/vs-vfx-motion-designer.md": [
+   "969d53bd1b656a9a28c085e77c638cec940ab6c9382a3023c408fdcd8f434ee6"
+  ],
+  "agents/video-studio/vs-video-editor.md": [
+   "283b8c4a693f0d387cad50d194bf81445fe02d6e2bdfc22e7eca66190cf24e23"
+  ],
+  "agents/video-studio/vs-video-quality-reviewer.md": [
+   "64e5872c180b0d6e0c6f6bcfa8943a94fa56d9cf802f96f0c91ebf19810b7b48"
+  ],
+  "agents/video-studio/vs-video-seo-specialist.md": [
+   "0333169c96fb8911ae9d65af81eba5a8e5ff72a992c056e02079c5a940d79502"
+  ],
+  "agents/video-studio/vs-voice-director.md": [
+   "3b4c72a4505a99163ad76043e52d611bc66b44079e0fc445f16a6136940c7184",
+   "c1979ad3f14c285da54784034d4e5bdde38e87ef7545f4c0cacff3bc4b80b6a8",
+   "cfbaf91107a1ec806da0ddc08266bd1f8f3287e61dc1a0ee73d596bbc8c4c3aa",
+   "df35c7b32d33a6f9d5760c4f2a528880c611a9da32dfd661b781999424a25777"
+  ],
+  "core/agents/coord-lite.md": [
+   "114d5364ecb7af55d28f62f3cd4802fcb1bc3901a1c9ad73906d06182488bb96",
+   "26469f30c4d92cf5a72be0387569e5e1dca4a007f410c49115db9038d5d1c1f3",
+   "26a721c47610e0cc4f8798f2ca4a1daeb2df36e9526f50be776910546d446426",
+   "5b57c3eef58421716246e5b2de4b0ef250f199cba63b43f05b8f4a4d56b6b2b6",
+   "67323cd262168276ac2bba64fe3367482b248bcca07f4564ff269812bca9a522",
+   "7f598442fed145af86ad86e6ecf113457778b750003469aeac0c440146b96b51",
+   "f4ed5bed3c3430b76ec62bfd03f1ac1777f956a281ee4d3bb0f712ee17c1a6cd",
+   "f617028671e80d8bcdd077b01345c430dd8a47fc8061b2dea523a6d9858afdd2",
+   "f7995f1f740062ee030264a46a1606ca234cfa54f33183aaa8d8709768ae40c4",
+   "fa0aa0f339ea6d89a752d13279650df8eae6d660b85cea51d7249c56fa915063"
+  ],
+  "core/agents/pd-coordinator-lite.md": [
+   "05d006e71e4e357c530df1f444bead9ccf4cc84abfba9c24d9e08073b4f2b5cc",
+   "079e24c6fe76ba2ffbee112769e9542ce3488aee346b0442a507b6bc3641c268",
+   "6ab00aee3c8f847ac6663a3a683a35ccb92f8625282a56a05bc91e119e08419c",
+   "8d3d68aa532db35c6b0b2dc55e3d4ae5cee52c9d6b972753fc7afce305c62c0d",
+   "acdba588bd38c564eda4510865e29e9fedad08384ab48359c94fe38b8f68ec90",
+   "cb974c21b70641abc7d7e5550b14aac04dd804936a6d2d54f3c44ef87b650443",
+   "d38c49055dcff5fdd5e59bba7e789b57fa962d402fcfc9ff9d0ccdc9b406838f",
+   "d3e997637c93400a07916cd2cb03a47c3bdaf0d7efd492649318664291a55f23",
+   "d571d9383bb20904fc92de738ba3edd709fffa082b67e61f0cb1205e2168c640",
+   "e5b84013241b8c5d8d6e4c3b040c84e817311e3c9bb3398e4f806227ab5dbd3e",
+   "f2425a4056926ad3fc278861eb39b85f761534a25215f8423d90907f74f47bb2",
+   "fd5cc2747a7f748bf951f12d81b5515f30bf0ddc71f5930e038a7155379ef463",
+   "fdf9e7b43ead5a5cfa2964633a9fac78abbce14b09d62db68555b4654aca73ad"
+  ],
+  "core/agents/task-executor-lite.md": [
+   "013b33894a48b99032963abfba689d4bc4abae15d88f144ecfcef088865f3104",
+   "114ea2e7a78a89937a14da59574e9632d149cb28b21cb768f3d42cdf1902f443",
+   "46657b3b6db62de75ff868bafccdb507172c31a26e3ac14fe09421c7b822f211",
+   "6c5569cee3fce545b2e8955ec9ce823f59fe48767d8c381f6c00786d8811c044",
+   "76c6ececd412f314b3795398ef8e003109a49df0c0de1f8741c352fa182f4b32",
+   "a9e05d74a207a909764cfd5316e513c593213e4d9457ae3210d658cf525bea28",
+   "c1d0d8f9badfa5cf9a6d82f9ea992a0c1305af8f20f2256b64fe8365427045f3"
+  ],
+  "core/agents/task-executor.md": [
+   "3243f22e1f9638f1eff57af8bfb2e9dff3ba17ced3e5e5faf25c3eec7a752adf",
+   "874cd5c2e73d8834a218936c4e7b689cfc925d5847cd2fb269882ec375b47a30",
+   "939b0404aaf40787e794b46351f8748cb3d628b415f65c07963f8fa859369928",
+   "9bd229a56851dfecfa03b8c8d82cd7850107d7e7763b7cac554b079e3d1b59c0",
+   "9fa2379b466f7610b29751fdda5c700f0ba14742c4dcf2044c01bda65766fd60",
+   "a25409ccea4b4c0224a8b178f2534ab766663fa82e17d4f802919495502371cd",
+   "bd56eabb91de6c728059a1910fcd4c97965748ee7f09a59214732578350c6dbc",
+   "bfe3e641e90e6788770936504afad411622cbc70d678bbe72d2021c7ca7d8a70",
+   "bfeb3717f5014422136de34be432b7f69b8bf7516220a6de619ee6138c30146d",
+   "d18561ef54b3f091e973170ba466c6f6d775d58f78735f90cdbc1b3bcbfa28e3",
+   "dadd07857acf0884b3486f50a4ba5ffe6f4b573353c7acc0e1222d5d28f22f09"
+  ],
+  "core/agents/task-planner.md": [
+   "43a87ef313c075f89337c1e7e07b9c73855f11f66cd3c974080e44a70cddc789",
+   "6bcf35c6dd7d7dd5e4334cc64bd1d7201310a04f14730a167c3514652a3d35b7",
+   "f695e1a94508d6957918f5fce8543cb3294aff95ce90bc1d6310d77e039868af"
+  ],
+  "core/agents/testing/qa-task-contract.md": [
+   "beff7f73c48856a9caea94d9038ca6c7765593de6fac1bde5a220f973fce7d7b"
+  ],
+  "core/agents/testing/testing-lead.md": [
+   "0cbaee3d5d722f3f622f054fd54404a2653bd7b306a9111525b44f4c64d9486a"
+  ],
+  "core/runbooks/department-lead-protocol.md": [
+   "0e1f080d84562009882bb1a0a697dbe0ff6d71a11907f7df8c578b3cec1a9083",
+   "5c0e87d2c8480dbdc0d24ce98cb518fc31b67565b466302aaee2ad4e8adae906"
+  ],
+  "core/runbooks/department-lead-template.md": [
+   "43ce8019360de23258d9072b5b7245bf91e99bb65947810ca42aeeca3857ff6e",
+   "dca6c7a51edf26f82fb2c52b95a06326524cd8512547499f706958607657a0fe",
+   "f34ff9b932f9387df4b86b22f866e7588b22a9188420ddef629653b314d48190"
+  ],
+  "core/runbooks/dept-boot-sequence.md": [
+   "05f30fd16ef77eaca398c4ea916bfecba41ab48b4dd7f205c4f0cf83f440e70a",
+   "480dd849add5a0546651368048d5efd099f8ce4e20766fd16b76e9c144ed77f5"
+  ],
+  "core/runbooks/dept-coord-protocol.md": [
+   "00d59db8e149cb0bcdf9e42d481f71371d86723bc27cab5d408948eda9f348f2",
+   "33196e34200e1138c9aed350adb1ffd6b110f4c0d2ff8daccf8ef95393afb91e",
+   "69597c9bda0220666546fc0613c6a0cae6e731523c6aa034fb7db32f4e958671",
+   "7298ae3a23677c893d410ab5155832787f2b93f49f1d3d23e691700d40fa6180",
+   "7501eff76a9959b07ffc3d144fca4fca0adc6b1376c85b8c2acfd45d60587747",
+   "89d7a15fda5b7834bcd92922c855f7efe18edd3f7a39a5c4a957d608a2df3f44",
+   "c90af86bee98338fce934899476f776cf987fa2f2eaa5b8d2d5934e2c1ea746a",
+   "fd96697d63797cf6e8881b044ee6a983f39282a6453232e781ded9d2e6e09842"
+  ],
+  "core/runbooks/protocol-registry.md": [
+   "4049d1c979624871aa31a4cea9d4cceaa8ed3ad74931b7b3d68592c5343fc12e",
+   "7bdb938b1ac9ef2f37aa41f2a7d1e0818ec7ea67e4ad74d735a053ba23e3bbe6",
+   "7d0d4ef2cd7c4ac366a4aab89105f274b5b8acf1835f07ab0097f0c09d37f760",
+   "8af6c70f8e288d79b8624c8269b47823e62a53d7f2c7b4656e6fbb65c4ccd5cc"
+  ],
+  "runbooks/department-lead-protocol.md": [
+   "0e1f080d84562009882bb1a0a697dbe0ff6d71a11907f7df8c578b3cec1a9083"
+  ],
+  "runbooks/department-lead-template.md": [
+   "39c0ea3265bd6b06dfc38c7e79c3026daa2443e91a17cf6d0ae1218adb3c233b",
+   "86a88df3148e3e4b292d4a1f50b6979538214eab58041099061b09a2a038b8b6",
+   "f34ff9b932f9387df4b86b22f866e7588b22a9188420ddef629653b314d48190"
+  ],
+  "runbooks/dept-boot-sequence.md": [
+   "05f30fd16ef77eaca398c4ea916bfecba41ab48b4dd7f205c4f0cf83f440e70a",
+   "25df85b844a8f12f830135169fad205c9d541c6374200b33909d3c495f1354be"
+  ],
+  "runbooks/dept-coord-protocol.md": [
+   "00d59db8e149cb0bcdf9e42d481f71371d86723bc27cab5d408948eda9f348f2",
+   "3173346eda990e01a8a37003f823c292dbcf8723dce257f5045bbc2910f0da15",
+   "89d7a15fda5b7834bcd92922c855f7efe18edd3f7a39a5c4a957d608a2df3f44",
+   "c90af86bee98338fce934899476f776cf987fa2f2eaa5b8d2d5934e2c1ea746a",
+   "f964de3681c41df140c935d250a91b0d56a9fb1fc7fbae4e6d9ca2cb8147cd8b",
+   "fd96697d63797cf6e8881b044ee6a983f39282a6453232e781ded9d2e6e09842"
+  ],
+  "runbooks/protocol-registry.md": [
+   "4049d1c979624871aa31a4cea9d4cceaa8ed3ad74931b7b3d68592c5343fc12e",
+   "8af6c70f8e288d79b8624c8269b47823e62a53d7f2c7b4656e6fbb65c4ccd5cc",
+   "f70ac1306b455811750c763f98f14b63e1989cfc1b3aa874d10ae7083357303c"
+  ],
+  "skills/admin-shell-foundation.md": [
+   "52e72fea6e49c22175d333c0ea623f1ae32dca65c813aebb3a7c1b55d3dfcd1c"
+  ],
+  "skills/agent-browser.md": [
+   "9a52ba4b4d3b24e363663978f887dcaa116601c5d235816e858951896a0f55d0"
+  ],
+  "skills/agents-sdk.md": [
+   "3446194cba05446b8f545ca68528e9c424b1f814060764733c30629c02c37555"
+  ],
+  "skills/animejs.md": [
+   "1ca46135880d2475c7149d5e54fc41ce3d85d63809fddfdb4f4ded649120f8de"
+  ],
+  "skills/auto-researcher.md": [
+   "92ed09cfb1c834f12f9c5829022e3e21b37bcbcdf80a7eea97c6e63b9bdfeb91"
+  ],
+  "skills/autoplan.md": [
+   "334d2e28adf35e0bdc886be0fc7372f2e18eb2cc70e1992574c55937a97d5b82",
+   "fa0f2b4f7a3d75e70e6e67344025f3e69ec3bce1d3a11a3be074c2287398fbee"
+  ],
+  "skills/awesome-design-md.md": [
+   "21d5d260f2b64d23fac55b01acc9b7391b5ec2a1cd93a3e2c878f514a36fd505",
+   "6c84d195dafbe64559adc2ad775124e5e71b874f518bfb5b487f8b674265c6ef"
+  ],
+  "skills/azure-verified-modules.md": [
+   "9f0a8796cbaeac020ba8b0614b64b04a8e31d47a7c43a60b3e001a97fb18ea26"
+  ],
+  "skills/azure-verified-modules/SKILL.md": [
+   "9f0a8796cbaeac020ba8b0614b64b04a8e31d47a7c43a60b3e001a97fb18ea26"
+  ],
+  "skills/backend-critique.md": [
+   "2cc3b92089edaa5c4f8a19c1597a78f9947450bd82258fcd97803f6ea558f31f"
+  ],
+  "skills/backend.md": [
+   "0f4f1840b434e68bf714ceaeae7c24966a9ba8206a86a6ea466911a89051ab6d",
+   "9aa6457bf7a41341c4ddae49be2dc11465c7a12527182c4fffe4ece5ad111350"
+  ],
+  "skills/benchmark-models.md": [
+   "df12335f8ab5771c2c21842bb6be6da4c894a9a6eac1e273f84ee1b977deac3a"
+  ],
+  "skills/benchmark.md": [
+   "43a5c3f3d8b4834dd5965a545d276e2e3339c1c0754b37b466bc35eb53352298"
+  ],
+  "skills/better-auth-best-practices.md": [
+   "19dd42c2595deb2bd7eb60ab7b627b5ad3aae40f201aa4ef77e8f8f2bfe4d30b"
+  ],
+  "skills/better-auth-organization.md": [
+   "9b673aecf09066f4604deafda864d53fc974923bd99f00d440cb46922393be67"
+  ],
+  "skills/better-auth-two-factor.md": [
+   "48a8ba8a4e306e06334a91b1f423b1103ae80ffb4939f0fd62fe4d02c249e648"
+  ],
+  "skills/brandkit.md": [
+   "b0c4837e1bd140ca816ae54948754ddd2ac1e2a4d3619363777a80caf00b2ede"
+  ],
+  "skills/browse.md": [
+   "5a34f9dbe168ad27539a2f2c8b02c07ddf54477cfe9df636e37375df36acb3e3"
+  ],
+  "skills/canary.md": [
+   "52deb0023f146ec16387b34bb3ad80251d8f8384a3813dd5f93b4f8157ceaead",
+   "69e6992cb42577fcff6c7a1de3a524ce4c6495fd532357d25c0243ef89f1e461"
+  ],
+  "skills/careful.md": [
+   "56d7fd86d73051e469092ce62a96b0954b6178c0ee2489a49f2d687b5a14a9d2"
+  ],
+  "skills/claimable-postgres.md": [
+   "253f9583db362217bf459e3b5d8850d734de27c6cd9006e37141b95a1dcea436"
+  ],
+  "skills/claimable-postgres/SKILL.md": [
+   "253f9583db362217bf459e3b5d8850d734de27c6cd9006e37141b95a1dcea436"
+  ],
+  "skills/cli-anything.md": [
+   "819195a51faaa7d8e5942ddf70e29282d6f7e08ff017136743d250ec431459ef",
+   "a1def1c207d0934aee6f8391446ad034dc7bdec25ef5d21f5611936ba3f4ff52"
+  ],
+  "skills/cloudflare-email-service.md": [
+   "8672c7601733f1819b11c8dd084598d9c0baf219cf1a6b94ab61b97ff7a713a9"
+  ],
+  "skills/cloudflare-email-service/SKILL.md": [
+   "8672c7601733f1819b11c8dd084598d9c0baf219cf1a6b94ab61b97ff7a713a9"
+  ],
+  "skills/cloudflare.md": [
+   "ebeea49aa9bc2c5eb15e1eaf8e94bbf91662f3aa5adac3584c01b0ed33452856"
+  ],
+  "skills/cloudflare/SKILL.md": [
+   "ebeea49aa9bc2c5eb15e1eaf8e94bbf91662f3aa5adac3584c01b0ed33452856"
+  ],
+  "skills/codex.md": [
+   "06b94b57b666a4d73f69303303b66c705b0fa34b9be269f74f7ca7b5b7794056",
+   "8667d3fccc7113316883a833afe348b2ea28fce687e16d8a2078ff074b85b873"
+  ],
+  "skills/compile/SKILL.md": [
+   "25f1c7fd4954396bfea6680c7cc7e046b4af33ed5456a10f993a7f062265596b",
+   "29555e1bcc4b3a261e977f5a7ff99bb7494a04dd228787221b193681fd23c0c3"
+  ],
+  "skills/connect-chrome.md": [
+   "d16489f65a14d24deec882de74364b8faf49fe50e0f0dd04eeb2e64210c5759b"
+  ],
+  "skills/content-creator.md": [
+   "1fe129acf4f178e49b29118363b54c4e62b05158aacf5614d4b250bd86c6b443"
+  ],
+  "skills/content-critique.md": [
+   "a14c997d71f8c72bf74e442d876197eb8a7c60ed4b683918a38ad09a22d8601b"
+  ],
+  "skills/content-experimentation-best-practices.md": [
+   "a36112f84f97efb522ea6f63a9571b34e97af44e810404e771ade4c59c7a6a63"
+  ],
+  "skills/content-modeling-best-practices.md": [
+   "0fb99e724267ddfa767442f4756ccc44aeaad91ee4eb914ec4558379062971f8"
+  ],
+  "skills/content-polish.md": [
+   "172f73208e2fa31ed07fd49ab3910e48ea3be9a23e1a8f21e07611096c7b6d56"
+  ],
+  "skills/content-strategy.md": [
+   "9dc784ae716516644b2c4ff77207e38680abe93a140cd58b674ffd8ea8eace4e"
+  ],
+  "skills/context-mode.md": [
+   "7fc7d1e85432e67167dd3f72880111012225d4400a651632513c47e4f2761a02"
+  ],
+  "skills/context-restore.md": [
+   "c16fc82f851f625be476dac293192c3ec15d6e7e4fa405a7159756dc86c33d7a"
+  ],
+  "skills/context-save.md": [
+   "39154272a0b326c34af40c333eab6cc27db14298d5b4ce456abd006749cf5f3b"
+  ],
+  "skills/copywriting.md": [
+   "61ace115953e3b5e150589cb5dad5cabe7b7aa2a4fe9a7c6361379b23a4ba9df"
+  ],
+  "skills/crm-onboarding/SKILL.md": [
+   "c80c1a30dc1f930095d1497ee20ffde0183620c831fb0ad72f95000fc6e9c20d"
+  ],
+  "skills/cso.md": [
+   "954072fb420721deddbafb2ff0be6411c7aa9adb37dfd0b9994a49f21dad3b00",
+   "e3a6091fc021d7f473444a1623cb4d912c6ad2b3271eacd1bf66de928921f7f4"
+  ],
+  "skills/css-animations.md": [
+   "a8239c96ac9400e40b806ad0b14a059cf643c58fcef4bfdc630723fa130f93ef"
+  ],
+  "skills/cult-ui.md": [
+   "488bfbc18ed9aec0bdbbb8c4483c637d5e977a1ae40842074ef23154bd72712f"
+  ],
+  "skills/delegate.md": [
+   "132c847e3e2ae4cea5b8e265503d3634813daf2d1d01f4e83e5149e1a24e70b1",
+   "5a65a2ecca62747a38f818e5109bcba04c1a96150d15522608b963543805ef0e"
+  ],
+  "skills/dept-resume.md": [
+   "538cd1d1d62eb679091dcb563c8b60fb28217f6fb98120958ec15f7d4d802bd4",
+   "799ee66288e962022fb0f6c99891a9d88f3ff2fb8a66a889a86a3da73d270bdf"
+  ],
+  "skills/dept-resume/SKILL.md": [
+   "ec812cdaa3c7a993d94703aa7d673a71f26ef58a7388df2bd2a4bf594f00b0c1",
+   "f351211ad1ec5bfc646d6607576a9ac3a4a976855507da419b7e85dffdec9b8b"
+  ],
+  "skills/dept-save-state.md": [
+   "b7cc4ce3d32832b31ced84ee7fc41668dc75b1347d5239a7533fc29fcaa46e6c"
+  ],
+  "skills/dept-save-state/SKILL.md": [
+   "490e0a14fc44567221535ee51b9f3997e99e55c814c328f74f8d47ad5aab69f8",
+   "88e0a60ec985935dda0af1084f7688c331d41d3347198af5dfa7d5e68c8862ff",
+   "b7cc4ce3d32832b31ced84ee7fc41668dc75b1347d5239a7533fc29fcaa46e6c"
+  ],
+  "skills/dept-status.md": [
+   "a0c7cc153a8756b06c6d34623c4dc60c101f3c28fbacb87e8d5d6a9155dc6255"
+  ],
+  "skills/dept-status/SKILL.md": [
+   "a0c7cc153a8756b06c6d34623c4dc60c101f3c28fbacb87e8d5d6a9155dc6255",
+   "fcb9a361f6d1ec6cebde2db58f08756e9a3f7eacf91851f4d77880c445b77ee5"
+  ],
+  "skills/dept-wrap.md": [
+   "8def87b0edba8e4873b266d2b00ecd580ed11490961bd8b480e5f0fbd3423159"
+  ],
+  "skills/dept-wrap/SKILL.md": [
+   "48651eb83b21e4db9316f31cc70314b686afb4ebb3efc08fc2a1c3cd2d8f7be7",
+   "8def87b0edba8e4873b266d2b00ecd580ed11490961bd8b480e5f0fbd3423159",
+   "d739aa7a27ca9ab0b7198d9af9dfd585daf9df3ac4fe71f05761540f940c302a"
+  ],
+  "skills/design-consultation.md": [
+   "994028cee078b477bbb7f0d5a4bdabcbd74af0010b15304106feb40a970f4eb0"
+  ],
+  "skills/design-critique.md": [
+   "3b807075f063225d72c510f91e58da32af716dda5940de15420d56bb4252fb2d"
+  ],
+  "skills/design-html.md": [
+   "b9492720885fe4a786ded09a62569be6ec6b65b8aa1476c3839504574cdd27dd"
+  ],
+  "skills/design-review.md": [
+   "3577e7bba275d04ed12b2a9e12fd3b00bb9b29f2aba3be87a27f6d04be3d76b6",
+   "3bf77e83f146d9691d8b9527ac29955b66d1878a4a5a85db3b36a004fd67479b"
+  ],
+  "skills/design-shotgun.md": [
+   "5a4d365d7d3590bbd3bba8a49cba8beffd12679df34d6153abe846be255703e6"
+  ],
+  "skills/design-taste-frontend.md": [
+   "a23a9e4e74a87e3f458d53cbff60adbc666e7a1e8633d43f9e213111e48f69b0"
+  ],
+  "skills/devex-review.md": [
+   "eb9cf4381471022005a845d27e97fc8633d136606e1a603e96296b2849d2ecba"
+  ],
+  "skills/document-release.md": [
+   "295bef4c8eda5c22af375c2622bdca32647abb8f0fb902a16b070a6f481331b2",
+   "feca027b5a63936281be20fe72ff5f6ba458f22f2c498b915cfda7dd0fe69a94"
+  ],
+  "skills/durable-objects.md": [
+   "d0817b2b929197470d4cb1184f515dfa5cfa709a254c3272752abbbd73624150"
+  ],
+  "skills/durable-objects/SKILL.md": [
+   "d0817b2b929197470d4cb1184f515dfa5cfa709a254c3272752abbbd73624150"
+  ],
+  "skills/emil-design-eng.md": [
+   "433b5a239cda18e0576e4e558532e7e53512e21fafe5b85db4894c28ec399b72"
+  ],
+  "skills/excalidraw-diagram.md": [
+   "f737a9720455fddca9532fbaeb148e49e2746fd37250fa4cf54aa48a807ce1a5"
+  ],
+  "skills/extract-design.md": [
+   "0523d33cadab98ad082d52b68effe0e35103d5453e98b301891f52cae63b5640"
+  ],
+  "skills/ffmpeg.md": [
+   "ded9c5c119bcdab8b05d33a21816973f81b06346ce6966e29ec321ab380c6fa1"
+  ],
+  "skills/figma-ui-ux-consistency.md": [
+   "2548b75a8d0f135273e99947327e2721112727f3ce9f1677eef4f00732a325d9",
+   "50cd74bc102dda5f1821e4a8986198b8f5145d8c03a897e840d88e6caa9145ea"
+  ],
+  "skills/finops.md": [
+   "8e5b975692a1f3928319c6b313758b9a326385df2fe063cec5feab7580e426e6"
+  ],
+  "skills/firecrawl-agent.md": [
+   "282fc90e312da78ce22673981477822e799e3b4cb7f69f00195fec8cbb1895a7"
+  ],
+  "skills/firecrawl-crawl.md": [
+   "6589016aa705da924f3aca3183d2a7804d89922c626a6db13308cbd3e7823f97"
+  ],
+  "skills/firecrawl-scrape.md": [
+   "46ec37bd3445035d89a545369250976058de006855403cef372f28bb5800e399"
+  ],
+  "skills/freeze.md": [
+   "5c994e3c49f2c5e18e3c41ed86885d0a490b5fe28bb29d531594c3f6ab65f98e"
+  ],
+  "skills/frontend.md": [
+   "4daf2b468278ce0146689be407cc860b3aa28f3cffb8c473f3d60f14b3bde16d",
+   "745b5dab05a8b864f6ec5bfd60fef2798fec1f7a9a3aa94d45d0c245e6d0b1a3"
+  ],
+  "skills/full-output-enforcement.md": [
+   "e5bf48b1ae561511439cf71672209a10a88cee0968cc925909ff861dfa0a96a7"
+  ],
+  "skills/github-deploy.md": [
+   "2ada4a25fd7f3214d30e074f1da45f9016560878279cb37425dfbf2ca060f0a1",
+   "3d9ccec34a8c8e6929c2ae28664710de4bf2e6026f499bcb91b50c2a05e7ab16"
+  ],
+  "skills/gpt-image-prompts.md": [
+   "c22835972b20e7b91c15c2dfcf5351d55429a26a7ebd1127d09229adc5be8a82"
+  ],
+  "skills/gpt-taste.md": [
+   "2e64c269953f2656c21bf5a0fa6b4568e82fe0c72b36e8f84758e090349966a5"
+  ],
+  "skills/graphify.md": [
+   "a409ac780502c88031cd7e53d97d9df987ced6267bffd50592ebc4332877ba1d"
+  ],
+  "skills/gsap.md": [
+   "d65cfadd0040f3b72377b43e5ccc088925a1397f19fcd258abcf4ed72100aa16"
+  ],
+  "skills/guard.md": [
+   "a9e97c9eb1c92b1e201fe303a889b02cfcab375445df23b839cfe2eb71dcbb71",
+   "f5fcf1221a1422af57189a043c38a70f7999f7af0c08cc9c094eb4772c753fd4"
+  ],
+  "skills/gws-chat.md": [
+   "f0a6f5d6681beea92e8e8c9fab7c2689d142d6b5dfc08abcf06434728689e75a"
+  ],
+  "skills/gws-forms.md": [
+   "51678b564d518bf507913856e56b7e0c20c8a27b83210a1de59c02f42791703c"
+  ],
+  "skills/gws-slides.md": [
+   "3305d9996c59feeb7e40756239d92d1796348aacf83607334974508f8b43cb82"
+  ],
+  "skills/gws-tasks.md": [
+   "2af4860a5410b7b5f49412467610c4f45d7ffd124214c8bc7377f66773f7d226"
+  ],
+  "skills/gws.md": [
+   "031f68f939e60f41f5a87c7115c1e7332f30338029e4b77d771da6dcbe74cd5c"
+  ],
+  "skills/health.md": [
+   "b5bacceacd5d1481d806108babbed162ca5f2494819a41629eb4b1a60f935336"
+  ],
+  "skills/high-end-visual-design.md": [
+   "e1e32f5e2d420872c6c7332b53d5ff7721946766b78c4822b424c2d512c8fdbc"
+  ],
+  "skills/hotel-pms.md": [
+   "79046ee8b887aea3b4474b30a1ceb55167c3e9f64b553deb7a09c7b676f96c30"
+  ],
+  "skills/hotel-pms/SKILL.md": [
+   "79046ee8b887aea3b4474b30a1ceb55167c3e9f64b553deb7a09c7b676f96c30"
+  ],
+  "skills/hotel-pms/references/refund-policy-engine.md": [
+   "bd17bf61d61596ce5f1748848bddc6286574545b2f562444e9599c155444d58f"
+  ],
+  "skills/huashu-design.md": [
+   "de8a88885d6dfaa3dc60da2759326c1b9c472159149cf6a847572bf3af3677c6"
+  ],
+  "skills/humanizer.md": [
+   "ef76a364072e8f2ee987df64f12b654a5e7da25a07ca3e504dc51bf65a6a3a15"
+  ],
+  "skills/hyperframes-cli.md": [
+   "c25e02d8c3bc8b821cd8b3add547cb7e24dafab19546530e224e4900e7bb3863"
+  ],
+  "skills/hyperframes-media.md": [
+   "964e75458c1962677a5a0b36489f675b486c8723aa6b9b5fac6a7e1549da06db"
+  ],
+  "skills/hyperframes-registry.md": [
+   "0248bfb9968d53ea8f9e4b5f7f5a8eb9e72f21108022580f7eba2fba7e26b234"
+  ],
+  "skills/hyperframes.md": [
+   "f13c6f1777eddb25e6457f6688dd0a6158c942f930f8b6af0c03cfb100bb19ef"
+  ],
+  "skills/image-to-code.md": [
+   "4c060a8064a8b13380bc2ef3d6e6a1d0b1e316aa093cd9807d0ce9e4eeb037fa"
+  ],
+  "skills/imagegen-frontend-mobile.md": [
+   "8a33389979f3074fa0926678e266ad2eb9234624472254469fc1ad916b9caa24"
+  ],
+  "skills/imagegen-frontend-web.md": [
+   "6b5c2256522fdba1e3313eafa3d743b960a7b13ec029d3e6586e04b23327c1f8"
+  ],
+  "skills/impeccable.md": [
+   "1a68d470b103c6d7dbdae040cbbc8820c5e49ad80eb901ceeaa61f5332fe3e51"
+  ],
+  "skills/inbound-sales.md": [
+   "451b57b9813390ae79e47e061d29d1e156ef111a5be0c84c0ea4af90dda6ac34"
+  ],
+  "skills/industrial-brutalist-ui.md": [
+   "fffbaac8597f07679e9d87145533567658aedba3b5eca6f16a7075a333048caa"
+  ],
+  "skills/investigate.md": [
+   "0d67e4e4269b50dd4985bf73b7999a2cba0fa448de05dbf4b4d1ad526416ba20",
+   "89a76e2c0d6038c44ffe2f5144c02b2f3651b710ee7ac02a8535bfe2a2dd560a"
+  ],
+  "skills/land-and-deploy.md": [
+   "622b7cc09cc7ef5fd21e5357a688e3c3d14b2fb10d3b4c0247316a904a1830a2",
+   "9e8e109c53b6023aaed5bbf5050ef456b9f6ea01872262ee80a0be58585bb1c8"
+  ],
+  "skills/laravel-builder.md": [
+   "45cdc436d57f0506f39aa61a9a73b537c2c60ac9d3559c94d2fafb0a2f942f20"
+  ],
+  "skills/learn.md": [
+   "e38cb1b86ded82b435ec044ef3c3f0e18a735d692a01e9b5bd079a2880d97813"
+  ],
+  "skills/legal-contract-review.md": [
+   "eed4ff0908d8d78fa1cd9bacb2deac9e7fd67c97dc11f437938e6a5ad74ce116"
+  ],
+  "skills/lightpanda.md": [
+   "0ab72af23fd6f6cffa79609ec043e65198288fa086e54fccacc9b230d021954e"
+  ],
+  "skills/lottie.md": [
+   "35551db7646402f60c9622d64534b59a9a4aeaecf63253142bb295b4f6f34d94"
+  ],
+  "skills/make-pdf.md": [
+   "8c9c4be19f3e9b1614fed402eb944cced9ec17a9a1beb3f6f4bcc5b7730e4e36"
+  ],
+  "skills/marketing-critique.md": [
+   "09cfaf1a00e4acab6926592980a162c133eae00d4a5ab6da2b69734337805544"
+  ],
+  "skills/markitdown.md": [
+   "57ff706834a27759989a7af29e637a6a94bcddc3cf037ae093988f3b2b4784c5"
+  ],
+  "skills/marp.md": [
+   "ab07cd03b7c5eab525de7ea63067728ab3a24193cf50a94b42d732ab73cd1450"
+  ],
+  "skills/mcp-builder.md": [
+   "ebb383d06f424f774c6c4025c8b748ca6b943687d54097b3ed7bdcaa7dded3fb"
+  ],
+  "skills/minimalist-ui.md": [
+   "36bc7328f085405f43b476938e62460fa573bf7e984e949e072bcf014831a44c"
+  ],
+  "skills/multi-role-auth.md": [
+   "1725d42e43700fd503bd6b29878f5d6c50bb21f546039ca5be821496e65217fd"
+  ],
+  "skills/n8n-automation.md": [
+   "fdd572a4c36a56ce9ff06e15eaf907456d1560397bac3f844530ef27d160b150"
+  ],
+  "skills/neon-postgres.md": [
+   "c62fdb2c59044fda336a9be2385397671fd9b431d008c203099d4009d478c5d0"
+  ],
+  "skills/neon-postgres/SKILL.md": [
+   "c62fdb2c59044fda336a9be2385397671fd9b431d008c203099d4009d478c5d0"
+  ],
+  "skills/netlify-ai-gateway.md": [
+   "ff7c49d812a6b968b7c87ffa51472a0a946f0ae86f5a3636ff2109f42b07936c"
+  ],
+  "skills/netlify-ai-gateway/SKILL.md": [
+   "ff7c49d812a6b968b7c87ffa51472a0a946f0ae86f5a3636ff2109f42b07936c"
+  ],
+  "skills/netlify-blobs.md": [
+   "d415c6851a630f50891ba44aab817f75b3f1d1d734864ffd86bab50175448069"
+  ],
+  "skills/netlify-blobs/SKILL.md": [
+   "d415c6851a630f50891ba44aab817f75b3f1d1d734864ffd86bab50175448069"
+  ],
+  "skills/netlify-caching.md": [
+   "056fb0b336a83ea83ccdb45b7ed0454a3dad734c816493a44527b2e79e9ae421"
+  ],
+  "skills/netlify-caching/SKILL.md": [
+   "056fb0b336a83ea83ccdb45b7ed0454a3dad734c816493a44527b2e79e9ae421"
+  ],
+  "skills/netlify-cli-and-deploy.md": [
+   "7eb7d611894b8c4ea92d2a444afbced3118e0f8895140000cd4dbfccca2aea9d"
+  ],
+  "skills/netlify-cli-and-deploy/SKILL.md": [
+   "7eb7d611894b8c4ea92d2a444afbced3118e0f8895140000cd4dbfccca2aea9d"
+  ],
+  "skills/netlify-config.md": [
+   "875c32c7d5fa6cbee69ca22cfdd515208a61dc603916e4935305ac6c242bde0c"
+  ],
+  "skills/netlify-config/SKILL.md": [
+   "875c32c7d5fa6cbee69ca22cfdd515208a61dc603916e4935305ac6c242bde0c"
+  ],
+  "skills/netlify-db.md": [
+   "f406f54d99e1a0ba968fa7a5a0e692b65857abe1c0b95f8389eb35d321b48f2d"
+  ],
+  "skills/netlify-db/SKILL.md": [
+   "f406f54d99e1a0ba968fa7a5a0e692b65857abe1c0b95f8389eb35d321b48f2d"
+  ],
+  "skills/netlify-deploy.md": [
+   "6a4af8b0d3a127242651b88d1110bac4abc4f43a514e19c40f7aed4dd2db555a"
+  ],
+  "skills/netlify-deploy/SKILL.md": [
+   "6a4af8b0d3a127242651b88d1110bac4abc4f43a514e19c40f7aed4dd2db555a"
+  ],
+  "skills/netlify-edge-functions.md": [
+   "afba0e4aac1f9f7f309203dba5a54537955e0b3e23c5c0fe920d4a8f7015068b"
+  ],
+  "skills/netlify-edge-functions/SKILL.md": [
+   "afba0e4aac1f9f7f309203dba5a54537955e0b3e23c5c0fe920d4a8f7015068b"
+  ],
+  "skills/netlify-forms.md": [
+   "60f7208da9bf888c1da527b7227721e67523a75f4cbe981821cd1cc3cf0aff99"
+  ],
+  "skills/netlify-forms/SKILL.md": [
+   "60f7208da9bf888c1da527b7227721e67523a75f4cbe981821cd1cc3cf0aff99"
+  ],
+  "skills/netlify-frameworks.md": [
+   "ec50a0a52d346db03d1857328a3cb598e63ef84b596f2d001a6dd3edbf522892"
+  ],
+  "skills/netlify-frameworks/SKILL.md": [
+   "ec50a0a52d346db03d1857328a3cb598e63ef84b596f2d001a6dd3edbf522892"
+  ],
+  "skills/netlify-functions.md": [
+   "69ad8db96ac749071bcb6dd0c5005b5dd7d01e2b1de87513e9dc59913fe99a8c"
+  ],
+  "skills/netlify-functions/SKILL.md": [
+   "69ad8db96ac749071bcb6dd0c5005b5dd7d01e2b1de87513e9dc59913fe99a8c"
+  ],
+  "skills/netlify-image-cdn.md": [
+   "e511077f5e20ff38ea71c802402febce9c14a5f9e7a855bc64e890956021be0b"
+  ],
+  "skills/netlify-image-cdn/SKILL.md": [
+   "e511077f5e20ff38ea71c802402febce9c14a5f9e7a855bc64e890956021be0b"
+  ],
+  "skills/new-terraform-provider.md": [
+   "f6c3b7d3494f9a78cb4034c6a18d87b389ae33d7b03822802ab963364b2ce18d"
+  ],
+  "skills/new-terraform-provider/SKILL.md": [
+   "f6c3b7d3494f9a78cb4034c6a18d87b389ae33d7b03822802ab963364b2ce18d"
+  ],
+  "skills/next-best-practices.md": [
+   "4e89728dd5b06e4a50d7bac779d2a08080fc17fab6a9503207e37a134c0326eb"
+  ],
+  "skills/next-cache-components.md": [
+   "b78878c30f910cf154b44796bf6022c58bf6c41a3acc8ee9b2deabc89fabf9fd"
+  ],
+  "skills/nexus-gatekeeper.md": [
+   "f75444eb73acb560c4cc0723db2f71a380296aaed78df748fc10d97b527af6f5"
+  ],
+  "skills/office-hours.md": [
+   "17a2d2639083fa0ebaa727c26c311e1f097c95bfab6e8ba0a9619a2930e9bf62",
+   "1ad75471fe95b3da3e182a3a084b69abd8c9277c8ef279fa89b5e7fc25d63495"
+  ],
+  "skills/omnivoice-studio.md": [
+   "18a16862d04a6085106c1b888487c3f5b58d40889c945517c5e6d29594c3ecff"
+  ],
+  "skills/onboard.md": [
+   "8a8687f6556a057cffd9bb1932bfc9d902d73cd2de0555a7bf59cafa90fa9362"
+  ],
+  "skills/openspec-apply-change.md": [
+   "679533b52454c3ee7a105a542243f232ec9bc0c041814b67cc4c874f0776899a"
+  ],
+  "skills/openspec-archive-change.md": [
+   "e111d71216167eea10cec26abe8f6e15d925efeef2fd9925ffa219f55145acce"
+  ],
+  "skills/openspec-explore.md": [
+   "2185e88065c00f69fab63e8e9680a97be51c1e7bcfc260b0631c5418666fcba8"
+  ],
+  "skills/openspec-propose.md": [
+   "88ad070e30256107d8989c2bf4b0ff9e4ee1c8976dd32829675c88f00618dad6"
+  ],
+  "skills/operations-critique.md": [
+   "f796cd04f53feaab72adaf7b3e84f10c7e895869ae1e4e37556fe18b0c225848"
+  ],
+  "skills/pair-agent.md": [
+   "a10544980ff0407cce7b8a2d176ffe83a53902b9698cdd3c8688cdc9077e0e63"
+  ],
+  "skills/paymob-integrator/SKILL.md": [
+   "f0e5feda806687527da9f02b7c9390e56f95836c305f65a5b694f9618f02d9e6"
+  ],
+  "skills/pd-resume.md": [
+   "087d19e65e474fdc9111d0949b2a038c1da315c45a90d91d6cac409bdb109ed9",
+   "8fc04943be7cc95522b8b7e4ebb300b35d8af61b4e6c1358cac31753ab54f20e",
+   "97cba60ff7d54c26e3a4dfcd3c148995860b54d7aeea60592fd484dba4e8cbff"
+  ],
+  "skills/pd-spawn.md": [
+   "f0ca4c505313b25acccae70a9e85f6ca69409340669fb67f6a7aee9c9e8c467a"
+  ],
+  "skills/pinecone_upsert.py": [
+   "89385b00c534e1811396b8ad8f18dad876495922a99872e0c5838bf487d66bae"
+  ],
+  "skills/pipeline-audit.md": [
+   "39cdfe5e099355568130685b1965e19d57b4b67e7a6711424d7754fc27ca5388"
+  ],
+  "skills/pipeline-bugfix.md": [
+   "80d878611db5ec54a45c1dfdb4d4a8257306f18ea7b11818585776ad15c2880d"
+  ],
+  "skills/pipeline-content.md": [
+   "8292a98a43ae74288660d20d0c2a7e6f70aa779dcef9268aee02b2b7779625ad"
+  ],
+  "skills/pipeline-deploy.md": [
+   "8234741476e6e72315729062a742f1e2503d9ffac40b0e85fcd29aae84c3b779"
+  ],
+  "skills/pipeline-feature.md": [
+   "6180b84aeff2822386ba2f2faa084f7ac4c65af25c594e5320fd68d2fd322465"
+  ],
+  "skills/pipeline-seo-geo-aeo.md": [
+   "b98c9cad0e7e1947512e2336801bd78f60eadd9c9d97ec18c6683eeb591921ec"
+  ],
+  "skills/plan-ceo-review.md": [
+   "0d2758a19d0b0087559d2f552ac87d584f34086214646cfd1095903e6c6644db",
+   "3297801068111936e2d6fc7bf7c5543212b25f906e20cd7e80b18b3e23b0ed82"
+  ],
+  "skills/plan-design-review.md": [
+   "1bcf152a9a0ebcd6403174667455b8abe343f66b02e829615eae0660eeafb348",
+   "44bf40da64667659b4eb3b5a04866f2257fae2134eb66e6a5d320735c351d7cb"
+  ],
+  "skills/plan-devex-review.md": [
+   "ca47088316d6315a998e8d009390f58989b3b653ec0b9959f389c107b1a975b7"
+  ],
+  "skills/plan-eng-review.md": [
+   "79112b813cd0549b7a84db4256dfbe8401c3c83d4e4e4fdf914440ea713ed250",
+   "de94e5e29c557e66fc5ef4b1b066e91a5de7e8897910002fdd737f1409d8c488"
+  ],
+  "skills/plan-tune.md": [
+   "f33dc3d382cfa7f25861bd1ea06a37bb76805e4ff38de25807c0d4e8f0345b80"
+  ],
+  "skills/postgresql-schema.md": [
+   "a77f7c472c9868ce4a1cbc0d347db22bd4af9696373987a883acf4e2ac876033"
+  ],
+  "skills/product-critique.md": [
+   "bede9ddc0101e87eaf16ff6c15a205bc101fab5494e9f484cc680dd55ec74956"
+  ],
+  "skills/project-expansion-scout.md": [
+   "7a9e2fdb9fa1a2047bae30483a5fbd0fc7890606eea01d9b9753153fa498a3bd"
+  ],
+  "skills/project-status.md": [
+   "f43e310f736ea243b2071de532d93d6808919238fe48732c301210b92fc61f7d",
+   "f5774b41c89de153478e4578e3e31ec89ad8c8411f8c58572f939183c893c945"
+  ],
+  "skills/promt-engineering.md": [
+   "86e4da5dc4b30abd746a064d5ec287a6baff95887d8d9093683299904c578633"
+  ],
+  "skills/proofreader.md": [
+   "fbb12f8d472ffdacba6db0212afe27372904fc96687cfc0b5bea92f912dc87cf"
+  ],
+  "skills/provider-actions.md": [
+   "c0a9e60d9d3e34c09b591c528791c5ae51a75dd22440a36aeb9d1d43b7329169"
+  ],
+  "skills/provider-actions/SKILL.md": [
+   "c0a9e60d9d3e34c09b591c528791c5ae51a75dd22440a36aeb9d1d43b7329169"
+  ],
+  "skills/provider-resources.md": [
+   "d9c474bffa64ab27f5e9a38eefdc71f0553594b69da66396e73fcc8dc86771f1"
+  ],
+  "skills/provider-resources/SKILL.md": [
+   "d9c474bffa64ab27f5e9a38eefdc71f0553594b69da66396e73fcc8dc86771f1"
+  ],
+  "skills/provider-test-patterns.md": [
+   "d5792a37279096cc9337d310e227af3ec2b4781aaafad79fc42a165c213467d9"
+  ],
+  "skills/provider-test-patterns/SKILL.md": [
+   "d5792a37279096cc9337d310e227af3ec2b4781aaafad79fc42a165c213467d9"
+  ],
+  "skills/qa-only.md": [
+   "977e7f284dbaf50ad35e7a8d40d0ae763d1151f3506374da5916ce228dfedd87",
+   "efe657ad820aa04649fd07d9d01b0ebfa8df06259ce8b7021dd7cce611b6b74a"
+  ],
+  "skills/qa.md": [
+   "00801af57aefc7c81f4b35db05959b8ec2442507b80d521bcd8ac2c00324bc39",
+   "cda990d18b36b47668e9163ef199553a6cb830eb94dd285e2fa53a1055dd4a0d"
+  ],
+  "skills/railway-deploy.md": [
+   "32b88192dc477bc75f6544007a82657a33f53d9a216bea85f6d37580d67496b8",
+   "4c8223d2f5e8b3588784d552232a16fb59a2ab120f196cc71b32f634335439ef"
+  ],
+  "skills/recall.md": [
+   "d937d0fdf7031c1ddf77ada98e2c142b1830ac17896ba525a7f4cbf806cb2546",
+   "de271a3b1c67e72918fc88b48c02bdcfa0955cf1d1acbabcd2f727f66725b526"
+  ],
+  "skills/redesign-existing-projects.md": [
+   "98ad3e5b051bfb71b2795f7e8a6aa0d32b51ee095606c098a4b2822ac07926c9"
+  ],
+  "skills/refactor-module.md": [
+   "6113377a6c3a5fa4591a7855de80488ab196f9a16cb9d576e1750b7513adbb83"
+  ],
+  "skills/remotion-best-practices.md": [
+   "c802b22ed3193ee0c0a452a43abd93ed039f5f564118d7d2afb905feae779dde"
+  ],
+  "skills/remotion-to-hyperframes.md": [
+   "41671e202412d995bee667622b1a947a7bf1676c2c978b5be01ccccbb0fd45c2"
+  ],
+  "skills/reservation-booking.md": [
+   "2e5609e647f586fa5e382ae54b4c3a7527a5809dabe3d7bdf35738c5bc22490e"
+  ],
+  "skills/reservation-booking/SKILL.md": [
+   "2e5609e647f586fa5e382ae54b4c3a7527a5809dabe3d7bdf35738c5bc22490e"
+  ],
+  "skills/reservation-booking/references/calendar-slot-picker.md": [
+   "bdd7b6c09a48b2003f9a5927f9a456a056742fea5dc9efe78fb64f3f5e1ef3b3"
+  ],
+  "skills/restaurant-pos.md": [
+   "51bbda1eb279fa9740823cc9ccc762047915ffe5bdfa0201c8d5dc8434e0a5a3"
+  ],
+  "skills/restaurant-pos/SKILL.md": [
+   "51bbda1eb279fa9740823cc9ccc762047915ffe5bdfa0201c8d5dc8434e0a5a3"
+  ],
+  "skills/restaurant-pos/references/kds-design-pattern.md": [
+   "fb78a013dbd77b1e3a4c173ef71e2321290d64e459c50b5ff926782be1e2d084"
+  ],
+  "skills/retro.md": [
+   "465252525a91b7af26ffe37fda0140266db96e8ae25c2877ab3f3139114d62b6",
+   "4e537ef8e349c49a5c3a1fb35a2a069f57355704de1585c0104fb913a5ccc8b5"
+  ],
+  "skills/review.md": [
+   "106949efe8a3a29e3102d26abf36460f6df8f868dde74e7fecab8dd4f628145d"
+  ],
+  "skills/room-manager-digest.md": [
+   "be2c2c01c3fdbd53eefcc4858b6fbbe5620143e964de0fb7d51242f56943d4a6"
+  ],
+  "skills/room-manager-digest/SKILL.md": [
+   "7af75025a79343827048ab82b080210f1f08e0dc56bf6df4629a62831245c90c",
+   "be2c2c01c3fdbd53eefcc4858b6fbbe5620143e964de0fb7d51242f56943d4a6",
+   "daa444196f2f75620548a431be35f20196d2faea5e210168261cf6a798e499c4"
+  ],
+  "skills/room-manager.md": [
+   "2d13c2ba6c4d4f7a662bc5dd4d07557fda441fccd1c54974c1b2eef628aa3d43",
+   "c95e55fa198064fe5041fccbe0f244c55bbc6461f2f3e3face1e6da915230d67"
+  ],
+  "skills/room-manager/SKILL.md": [
+   "2d13c2ba6c4d4f7a662bc5dd4d07557fda441fccd1c54974c1b2eef628aa3d43",
+   "4af61526f31fbdfc4d96e7427d3a42a543b4315732fe35ed332745cdb9279c05"
+  ],
+  "skills/run-acceptance-tests.md": [
+   "a467329d4170d74a2e9b5002260b62e8221144da155f9a9f39fc342a130a1da7"
+  ],
+  "skills/sandbox-sdk.md": [
+   "c68d056f9d22a8db0e70dfb01ee3aaef17a3bbeceddcb6a65b641ef193d1333f"
+  ],
+  "skills/sandbox-sdk/SKILL.md": [
+   "c68d056f9d22a8db0e70dfb01ee3aaef17a3bbeceddcb6a65b641ef193d1333f"
+  ],
+  "skills/sanity-best-practices.md": [
+   "020d410615052c04cb141b910d2aa3bece939a2ba551431c3c5225c4b6b5d048"
+  ],
+  "skills/save-state.md": [
+   "1dc2a5db18bce9a94d4e4b47fe464d08f6c43d473e0798ba1f6e69437316039d",
+   "c0eb1322aca989dc665bdbdd8f44956bf942474cd74f23577068c68be10b2c9f",
+   "c15913d79babca413111d3bf6dae03ea7e4e025609f89948f4cd1c6d5c38bdb5"
+  ],
+  "skills/scrape.md": [
+   "6216caead56b2edc63f2ebe85c3921f831170901bd423711fe6d0bb7c54b3cbb"
+  ],
+  "skills/security-critique.md": [
+   "7daa7f5a7135810e4539ba2984de570d765fd142dd4e536fb31e3c49f688e5f8"
+  ],
+  "skills/security.md": [
+   "b2808cb4fddec33224c9c7ea4f82f66050513adfb1bb11da0832d5f128655f0d"
+  ],
+  "skills/seed.md": [
+   "7f957947d4998c6ad359ab08826be16d2800a46aeeedc7f0c15df32914365f25"
+  ],
+  "skills/self-healing.md": [
+   "d1fd8a6828270f71d9ea959d22a0963d9883e080f5230a03dcaebe5df592f5b6",
+   "f5fd2b40d21bed5d98ea199869d2de2d42937f44d2acfb1d6cdd6d29f5382668"
+  ],
+  "skills/seo-aeo-best-practices.md": [
+   "13b974c170318db16ffe80c325722c366ced1909a2cd6e9640aff56ba2c26b33"
+  ],
+  "skills/setup-deploy.md": [
+   "1b7cbb51c305559b755c7b286d3772aa1fce40199f310617ccc931833e43bf7f",
+   "405b407160434a1d54f4f8d982bd0e9a17c2a84c3f7882276f4158e42eae5af5"
+  ],
+  "skills/shadcn-ui.md": [
+   "d95c0aa2357a6b23714a3a54bc83ba2fa1a683c4bf9e3794326a85cbe8fdef53"
+  ],
+  "skills/ship.md": [
+   "217ec77c74a9b2f5f6d97048c4f020f1724e1a267da4bcb65e2ae03914087162",
+   "99f88982c26cd48519d27f0de70a3791cf6f67884c0df13e1a0ffeb1f8d22ceb"
+  ],
+  "skills/skill-creator.md": [
+   "c1c48338c84e7a7465eab8a6f7948fa01f46ef6087b562a57730e3931bd4fcf4"
+  ],
+  "skills/skill-import.md": [
+   "7e28893bfaf1af3993637a824923b23a3ec8a42c4b52f67929c21b6e409ebeb5"
+  ],
+  "skills/skill-quality.md": [
+   "4f8393cd66f51db9f74942385181ecad09a24080772f156da8ab9e411c3c523b",
+   "e17d7b82fe92c7db511fa07237d6f1d2bb3aad43eebf71bdf1006cbc69088b50"
+  ],
+  "skills/skillify.md": [
+   "b2c86f348d9ef714d6e4df0ee229cbd8ba1ac9e7b47b35ddb9eb1344d96ba99a"
+  ],
+  "skills/stitch-design-taste.md": [
+   "1cd55cf8643f3828bc9a3aaadb5da97ee28f98f745b7071d7e217ffeab92fd2a"
+  ],
+  "skills/stop-slop.md": [
+   "a4297ec7d22fb7a63fc01445d58b87f413489dd405c56a7276eafd019179f76e"
+  ],
+  "skills/stripe-best-practices.md": [
+   "2a1616037f71b75b1c897c0f79494348675af0c9defa22acab04891e1ec71699"
+  ],
+  "skills/stripe-best-practices/SKILL.md": [
+   "2a1616037f71b75b1c897c0f79494348675af0c9defa22acab04891e1ec71699"
+  ],
+  "skills/supabase-deploy.md": [
+   "bb24fd9fdeb9231668966a23d92edbef2ea127f33d29529fc10a51fb3101ad1f",
+   "ddbc4ced7ce829666f1ef960f6e93dc701c9ed8c8f58ae25eaf7e173cad6a2a5"
+  ],
+  "skills/supabase-postgres-best-practices.md": [
+   "3d8b9db562d8ed7c3abe86180f956269c4570fd346c9f5520f9e363365ef315f"
+  ],
+  "skills/supabase-sql.md": [
+   "f16f09541e95f7d0553ec98a7a26ea72fd8eb508e6201ee7d22cf6eb05388109"
+  ],
+  "skills/superpowers-autoplan.md": [
+   "9e30caf499a965a61ab0d081569a3182db92e925bdc2e5d4e9f958dbcbe6674d"
+  ],
+  "skills/superpowers-autoplan/SKILL.md": [
+   "9e30caf499a965a61ab0d081569a3182db92e925bdc2e5d4e9f958dbcbe6674d"
+  ],
+  "skills/superpowers-brainstorming.md": [
+   "b45a6e9b3e1434561b5155ee9f69a6361fe1c4665629aabf8e29b99e9826b68b"
+  ],
+  "skills/superpowers-canary.md": [
+   "2fe47375ebd87ba0718a1e67e578e75e9d127769088bc6a60c27c3f1eb020e2a"
+  ],
+  "skills/superpowers-canary/SKILL.md": [
+   "2fe47375ebd87ba0718a1e67e578e75e9d127769088bc6a60c27c3f1eb020e2a"
+  ],
+  "skills/superpowers-codex.md": [
+   "d233eecbc3e0bc50cdd87b4f011eacfc6dadb72359818b469132b3467f53fbd5"
+  ],
+  "skills/superpowers-codex/SKILL.md": [
+   "d233eecbc3e0bc50cdd87b4f011eacfc6dadb72359818b469132b3467f53fbd5"
+  ],
+  "skills/superpowers-cso.md": [
+   "57f0252e3c775c3a91a167848440b3e83a1a79aae60ba101f426bf8a04925847"
+  ],
+  "skills/superpowers-cso/SKILL.md": [
+   "57f0252e3c775c3a91a167848440b3e83a1a79aae60ba101f426bf8a04925847"
+  ],
+  "skills/superpowers-design-review.md": [
+   "6291f41d680c5d7658bdbc88d30785d0ac2fb393c792610a4e325b6a74b590a4"
+  ],
+  "skills/superpowers-design-review/SKILL.md": [
+   "6291f41d680c5d7658bdbc88d30785d0ac2fb393c792610a4e325b6a74b590a4"
+  ],
+  "skills/superpowers-dispatching-parallel-agents.md": [
+   "3b29a7a9a50e66db43cadd1944681d87b8963a80362d93d1668c0092bb21d787"
+  ],
+  "skills/superpowers-document-release.md": [
+   "4620a4d903660415b9afcad275699c56f2ffc185384e3c1217b58492f7462327"
+  ],
+  "skills/superpowers-document-release/SKILL.md": [
+   "4620a4d903660415b9afcad275699c56f2ffc185384e3c1217b58492f7462327"
+  ],
+  "skills/superpowers-executing-plans.md": [
+   "2d3ac6151a543a96977ff86d0c94f5bad340472aa4c95659a228bcbf78e7c211"
+  ],
+  "skills/superpowers-finishing-a-development-branch.md": [
+   "1ca362fb4ffca55879cb3ccca40a460c346d9b359e9cc72218ccabf104658bdf"
+  ],
+  "skills/superpowers-guard.md": [
+   "c2a08c5b45dc377460b4cdb45ba47dd435de2094b2cff128943f648a4894f614"
+  ],
+  "skills/superpowers-guard/SKILL.md": [
+   "c2a08c5b45dc377460b4cdb45ba47dd435de2094b2cff128943f648a4894f614"
+  ],
+  "skills/superpowers-land-and-deploy.md": [
+   "c3f2a2791fc43d0c07dea0ace1d2fb41d0bf1099c925c67828fb16dd6713cd17"
+  ],
+  "skills/superpowers-land-and-deploy/SKILL.md": [
+   "c3f2a2791fc43d0c07dea0ace1d2fb41d0bf1099c925c67828fb16dd6713cd17"
+  ],
+  "skills/superpowers-office-hours.md": [
+   "ef30652319f437d1db1571864351903982f3bc8ad91f022ba5eed944bdd28819"
+  ],
+  "skills/superpowers-office-hours/SKILL.md": [
+   "ef30652319f437d1db1571864351903982f3bc8ad91f022ba5eed944bdd28819"
+  ],
+  "skills/superpowers-plan-ceo-review.md": [
+   "be8ddb142025d855ecfdf661b480d7500872c6788ddab20b8ae2223fc74bc551"
+  ],
+  "skills/superpowers-plan-ceo-review/SKILL.md": [
+   "be8ddb142025d855ecfdf661b480d7500872c6788ddab20b8ae2223fc74bc551"
+  ],
+  "skills/superpowers-plan-design-review.md": [
+   "380960da2194d9fbfb45793cf148d34d093bd8687868fba661764be8648b22b5"
+  ],
+  "skills/superpowers-plan-design-review/SKILL.md": [
+   "380960da2194d9fbfb45793cf148d34d093bd8687868fba661764be8648b22b5"
+  ],
+  "skills/superpowers-plan-eng-review.md": [
+   "7162612aef1efe1e0210f1a13ee1c6a11ff249b99c22aa42ad46f82f66cc248d"
+  ],
+  "skills/superpowers-plan-eng-review/SKILL.md": [
+   "7162612aef1efe1e0210f1a13ee1c6a11ff249b99c22aa42ad46f82f66cc248d"
+  ],
+  "skills/superpowers-qa-only.md": [
+   "5ff17a64088e6ce96d9cccf05f6637ac57caabcb7b534167ff9d548591523509"
+  ],
+  "skills/superpowers-qa-only/SKILL.md": [
+   "5ff17a64088e6ce96d9cccf05f6637ac57caabcb7b534167ff9d548591523509"
+  ],
+  "skills/superpowers-receiving-code-review.md": [
+   "f64fbf5c51b99aaa0edea8b7083fc85aece10e6b67041cae06a0b224849020f2"
+  ],
+  "skills/superpowers-requesting-code-review.md": [
+   "87d1198ea4e18ef9b793796351406919f793569a69996ccd7dbf790ab669906c"
+  ],
+  "skills/superpowers-retro.md": [
+   "ffaec9e41a0852d4338ae6b6270a8ef63e4ddac229fab4b070fa24c6298fb37b"
+  ],
+  "skills/superpowers-retro/SKILL.md": [
+   "ffaec9e41a0852d4338ae6b6270a8ef63e4ddac229fab4b070fa24c6298fb37b"
+  ],
+  "skills/superpowers-subagent-driven-development.md": [
+   "c64d98b342b90f12fad03c3ab39b0ce0eb8bd127e4e245462abf42eae9ee89d0"
+  ],
+  "skills/superpowers-systematic-debugging.md": [
+   "6a935f93ace2d48c7e5dd24bf2a223902150f139de4271818d56e5ab06df6688"
+  ],
+  "skills/superpowers-test-driven-development.md": [
+   "3a0484bf4d7f04eb6804c06195ee3ed6f928c2fcfbef4ce0a4b7ec6990f7d2db"
+  ],
+  "skills/superpowers-unbundle.md": [
+   "7ecedaf199b077a3d9115829d868062ecd66707f7ca810a6b0c7d9e816263299"
+  ],
+  "skills/superpowers-using-git-worktrees.md": [
+   "12e9dc33762795cb8f417045d996d255f234a9a75d57b99871f7f497a0b9aee6"
+  ],
+  "skills/superpowers-using-superpowers.md": [
+   "2d16a0a3b7454811bc3b54317df36a3a266b3e8d75520f440d741be38cf47be6"
+  ],
+  "skills/superpowers-verification-before-completion.md": [
+   "bab4448362ac5416d5106a5cfb0732e54ae8c297ffda0d0deebe337404581ef5"
+  ],
+  "skills/superpowers-verification-before-completion/SKILL.md": [
+   "bab4448362ac5416d5106a5cfb0732e54ae8c297ffda0d0deebe337404581ef5"
+  ],
+  "skills/superpowers-writing-plans.md": [
+   "1b6e3b76a83c37d559564e3b7c01a2d02554d7d617fb90563ed53de221d7b370"
+  ],
+  "skills/superpowers-writing-skills.md": [
+   "481cc1f815fe14cf1477194e36af22730c0d361b0c2bac9191fc4d9308f1e8d5"
+  ],
+  "skills/svgl.md": [
+   "633b08e8a4adee32669589382c6986a199cdb7da1748b805105a880755bd46bb"
+  ],
+  "skills/swarm.md": [
+   "075fc80eb5e4ed0e45a912ca8b5fc66fc3b0107585a8de0b901a94b8da43c5ea",
+   "f24b0e3d2144e529694844e3a0e22c94d98692a4e13ec9eb6b2eda0da5a966e6"
+  ],
+  "skills/sync-md-json.md": [
+   "980cfe495ac15455c773540b072e73d8215ab148255f2cc3edcea8bcad9b80cb"
+  ],
+  "skills/tailwind.md": [
+   "a19824a7bedeeafe1639144cc986fdc9ddc9e26c3626bbfb34de67d61a53bc38"
+  ],
+  "skills/task-handoff.md": [
+   "8287ae84a1a9bd73a9c3901f50e60f2681ed235c351fd39877eae3bfc0cfd8c9"
+  ],
+  "skills/task-store.md": [
+   "a6f615ca2267e3884b0b7253acf3ecc0e733edbc9708a8c668c10fdbe61ac2fa"
+  ],
+  "skills/tech-stack.md": [
+   "bcd9bcfc9b23cb9eb1436987c7eb849f258173ea309065fa187ae29ec0fa7928"
+  ],
+  "skills/tech-writer.md": [
+   "6867aa621bf1ad430cba639d72cba840516f44603de733963efd9fe17433f5d4",
+   "8990f31d7aa00bc4c17579abfc90b52815065d4f2841007e5731155e2722f43f"
+  ],
+  "skills/terraform-search-import.md": [
+   "7285111204e8ab16ab2868e5dbe7c14db15d6b81b98e07e92fad2748ecf52682"
+  ],
+  "skills/terraform-search-import/SKILL.md": [
+   "7285111204e8ab16ab2868e5dbe7c14db15d6b81b98e07e92fad2748ecf52682"
+  ],
+  "skills/terraform-stacks.md": [
+   "cdd2afed090b9da1e0b6d20557fb593fa2e43b0db8b9fed9f509aa0682c6d8e8"
+  ],
+  "skills/terraform-stacks/SKILL.md": [
+   "cdd2afed090b9da1e0b6d20557fb593fa2e43b0db8b9fed9f509aa0682c6d8e8"
+  ],
+  "skills/terraform-style-guide.md": [
+   "4996440d7d0e23a45b5d5f429236ef8c7bf2570523803df72c3b6be9d0fa9783"
+  ],
+  "skills/terraform-style-guide/SKILL.md": [
+   "4996440d7d0e23a45b5d5f429236ef8c7bf2570523803df72c3b6be9d0fa9783"
+  ],
+  "skills/terraform-test.md": [
+   "57559b5f79df2a2a79cd0ec860c496acb207a9d46115e928cac920908dcdc9ea"
+  ],
+  "skills/terraform-test/SKILL.md": [
+   "57559b5f79df2a2a79cd0ec860c496acb207a9d46115e928cac920908dcdc9ea"
+  ],
+  "skills/three.md": [
+   "12dd949a36e878fae99aedee3b22de2fe11be32598970166c7c171a223a8fde1"
+  ],
+  "skills/tinybird-best-practices.md": [
+   "af4679defe3e7bba3b04449a094046531a1037c0e144a8f7e863e25bb573c799"
+  ],
+  "skills/tinybird-best-practices/SKILL.md": [
+   "af4679defe3e7bba3b04449a094046531a1037c0e144a8f7e863e25bb573c799"
+  ],
+  "skills/ui-ux-pro-max.md": [
+   "4566428d38c8ecabcd1e4fd480004704e6ff9c484a465b98956401d218dfeaa7"
+  ],
+  "skills/unfreeze.md": [
+   "9f7266672619f3bf0fdd1bfd87f0470111b3f352bdc8944ba1712e62499031ea"
+  ],
+  "skills/unwrap.md": [
+   "9b15e28c1c1deba8f00286da79ea27afa115f2ac4d70e8f49df3ea117f9b4d08"
+  ],
+  "skills/upgrade-stripe.md": [
+   "187011ea92e5953934784a5d4f5cd7cb8dfe2506e41603103a24cc2eeb83b8c8"
+  ],
+  "skills/upgrade-stripe/SKILL.md": [
+   "187011ea92e5953934784a5d4f5cd7cb8dfe2506e41603103a24cc2eeb83b8c8"
+  ],
+  "skills/vercel-deploy.md": [
+   "8dae8c1512c29db8d07d1c047651ad23e1cda098cc65cfe9d3783de3f3d33ad2",
+   "966fdf9a1f08defa10f5fb8573c46cfa27cfaccabee0591383767e1e2d0d6254"
+  ],
+  "skills/video-use.md": [
+   "37b24f7ec55473996c3eecd5ffb4d62ee4021f2c9bc947da49483cc5c65fe4eb",
+   "fdf46b2c55ab967d9c124ef2210036bd50cac7e24f0e447a245dd0d3ef420794"
+  ],
+  "skills/vietnamese-language.md": [
+   "d3067d31a87454af090433c9a6d18922cbef3ccf28fc4997a9bcfc6fd3cac008"
+  ],
+  "skills/waapi.md": [
+   "e465beaf82a4f2de0fc40c705bdddddf59d851fc96ebb339c931ed9458d30cfb"
+  ],
+  "skills/web-perf.md": [
+   "072db8a40b49aee92603cb68087b752527ea5ad38e4f9285583561607f179737"
+  ],
+  "skills/webapp-testing.md": [
+   "b4f19ce3a48dc1d330007448b61c36b9d349af82b78410a98884311a0e3b402c"
+  ],
+  "skills/webhook-security.md": [
+   "20aad44b7834cd7af67c42d732076a33547ea516b26e30007b2a4c12f341d306"
+  ],
+  "skills/website-to-hyperframes.md": [
+   "3647372fc20cf2809cb4026f0c8ba4b115ff60168715ff44e8dc602b81b0b2be"
+  ],
+  "skills/workers-best-practices.md": [
+   "d6f5b2d587f54cb105f62c25c0f40f1f220ae04da1338b849c9a9e8c9e080912"
+  ],
+  "skills/workers-best-practices/SKILL.md": [
+   "d6f5b2d587f54cb105f62c25c0f40f1f220ae04da1338b849c9a9e8c9e080912"
+  ],
+  "skills/workflow-critique.md": [
+   "a5f430181b3490aa269fd374f39da4e998433c40b0dd052ccbb00132cbbda282"
+  ],
+  "skills/wrangler.md": [
+   "ec32ce98c734c3c2be9dbf6088bdd778c216a776105b7d2b8fdfe681e038bd20"
+  ],
+  "skills/wrangler/SKILL.md": [
+   "ec32ce98c734c3c2be9dbf6088bdd778c216a776105b7d2b8fdfe681e038bd20"
+  ],
+  "skills/wrap.md": [
+   "b5ff4c05545a3469594ef2f599f8ebdbf7b3f5cbd4872d77da7ad4078dce3961"
+  ],
+  "skills/xlsx-toolkit.md": [
+   "a1a8e172f1722acdaccb9cad4e3f6a7b97a43c098c54c884e3019ba2b7da1940"
+  ]
+ }
+}

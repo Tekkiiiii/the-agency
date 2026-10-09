@@ -37,6 +37,9 @@ fi
 export HOME="$W/home"
 export AGENCY_HOME="$W/agency-home"
 unset CLAUDE_CONFIG_DIR AGENCY_UPGRADE_REEXEC AGENCY_UPGRADE_HEAD_BEFORE 2>/dev/null || true
+# This check is about git recovery, not mods: the mods step depends on whether the machine
+# has a claude CLI (2.1.287+), so switch it off to keep the result machine-independent.
+export AGENCY_NO_MODS=1
 mkdir -p "$HOME" "$AGENCY_HOME"
 # node's os.homedir() reads USERPROFILE on Windows, not HOME.
 if command -v cygpath >/dev/null 2>&1; then

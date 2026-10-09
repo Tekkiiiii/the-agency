@@ -9,6 +9,37 @@ set -euo pipefail
 CLAUDE_HOME="${AGENCY_HOME:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# --retired=archive|delete|ask decides what happens to a retired file the user
+# EDITED (see "Retired files" below). Parsed FIRST: an invalid value exits 2
+# before anything is created or changed. Env AGENCY_RETIRED is the fallback and is
+# read by the engine itself (an unknown value there falls back to the default).
+RETIRED_FLAG=""
+RETIRED_ARG=""
+RETIRED_EXPECT=false
+for arg in "$@"; do
+    if [ "$RETIRED_EXPECT" = true ]; then
+        RETIRED_ARG="$arg"; RETIRED_EXPECT=false; continue
+    fi
+    case "$arg" in
+        --retired=*) RETIRED_ARG="${arg#--retired=}"; RETIRED_FLAG="set" ;;
+        --retired)   RETIRED_EXPECT=true; RETIRED_FLAG="set" ;;
+        *) ;;
+    esac
+done
+if [ "$RETIRED_EXPECT" = true ]; then
+    echo "install.sh: --retired needs a value: archive, delete or ask." >&2
+    exit 2
+fi
+if [ -n "$RETIRED_FLAG" ]; then
+    case "$RETIRED_ARG" in
+        archive|delete|ask) RETIRED_FLAG="--retired=$RETIRED_ARG" ;;
+        *)
+            echo "install.sh: invalid --retired value '$RETIRED_ARG' (use archive, delete or ask). Nothing was changed." >&2
+            exit 2
+            ;;
+    esac
+fi
+
 # Which rung of the ladder above resolved the root (same `:-` emptiness test),
 # and whether settings.json existed BEFORE this script runs — it may create one
 # below, which would hide the "config lives elsewhere" case on the next run.
@@ -135,6 +166,10 @@ if [ -d "$HOOKS_SRC" ]; then
     if [ -d "$HOOKS_SRC/lib" ]; then
         mkdir -p "$HOOKS_DEST/lib"
         cp "$HOOKS_SRC"/lib/*.sh "$HOOKS_DEST/lib/" 2>/dev/null || true
+        # Python helpers + data the mods call (model-pin.py, claude_pricing.py,
+        # exec-model-map.json). Top-level lib/ files only: never __pycache__.
+        cp "$HOOKS_SRC"/lib/*.py "$HOOKS_DEST/lib/" 2>/dev/null || true
+        cp "$HOOKS_SRC"/lib/*.json "$HOOKS_DEST/lib/" 2>/dev/null || true
         chmod +x "$HOOKS_DEST"/lib/*.sh 2>/dev/null || true
     fi
 
@@ -179,6 +214,68 @@ elif [ ! -f "$HOOKS_MERGE" ] || [ ! -f "$HOOKS_SRC/hooks.json" ]; then
     echo "  Hooks: NOT wired: cli/lib/hooks-merge.js or hooks/hooks.json is missing from $SCRIPT_DIR."
 else
     node "$HOOKS_MERGE" sync --root "$CLAUDE_HOME" --auto 2>&1 | sed 's/^/  /' || true
+fi
+
+# --- Mods ---
+# mods/<name>/ are Claude Code mods (plugins of function hooks). The ONE helper
+# cli/lib/mods-merge.js copies each to $CLAUDE_HOME/mods/<name> and merges the
+# copies into settings.json env.CLAUDE_CODE_PLUGIN_DIRS: after every entry the
+# user already had, deduped by plugin name, recorded in the hooks state file so
+# `agency mods remove` can undo exactly that. It needs Claude Code 2.1.287+ (on
+# older versions it prints a one-line skip note and writes nothing) and never
+# fails the install: when skipped or on error, the command to finish is printed.
+# Opt out with AGENCY_NO_MODS=1 (same test as mods-merge.js: set and not 0).
+MODS_MERGE="$SCRIPT_DIR/cli/lib/mods-merge.js"
+mods_manual() {
+    echo "    agency mods sync"
+    echo "  or, without the agency command:"
+    echo "    node \"$MODS_MERGE\" sync --root \"$CLAUDE_HOME\" --repo \"$SCRIPT_DIR\""
+    echo "  Then: Restart Claude Code to load the mods."
+}
+if [ -n "${AGENCY_NO_MODS:-}" ] && [ "${AGENCY_NO_MODS}" != 0 ]; then
+    echo "  Mods: NOT wired: AGENCY_NO_MODS=1 is set. To set them up, run:"
+    mods_manual
+elif ! command -v node >/dev/null 2>&1; then
+    echo "  Mods: NOT wired: Node.js (node) was not found. Install Node.js, then run:"
+    mods_manual
+elif [ ! -f "$MODS_MERGE" ]; then
+    echo "  Mods: NOT wired: cli/lib/mods-merge.js is missing from $SCRIPT_DIR."
+else
+    node "$MODS_MERGE" sync --root "$CLAUDE_HOME" --repo "$SCRIPT_DIR" --auto 2>&1 | sed 's/^/  /' || true
+fi
+# --- Retired files ---
+# Files the repo RETIRED (a skill, agent, runbook or core doc it shipped once and
+# deleted since) stay installed forever because the copies above only add. The ONE
+# helper cli/lib/retired-prune.js reads retired-manifest.json: an untouched
+# retired file is deleted; one you EDITED is listed under "You changed these" and
+# archived to <root>/archive/agency-retired-<date>/ (or deleted with
+# --retired=delete). On a real terminal it runs directly, so "ask" prompts; when
+# piped (CI, `curl | bash`) "ask" degrades to archive. Nothing outside the
+# manifest is touched, a git work-tree root is skipped, and it never fails the
+# install: when skipped or on error, the command to finish is printed.
+RETIRED_PRUNE="$SCRIPT_DIR/cli/lib/retired-prune.js"
+retired_manual() {
+    echo "    agency prune"
+    echo "  or, without the agency command:"
+    echo "    node \"$RETIRED_PRUNE\" prune --root \"$CLAUDE_HOME\" --repo \"$SCRIPT_DIR\""
+}
+if ! command -v node >/dev/null 2>&1; then
+    echo "  Retired files: NOT checked: Node.js (node) was not found. Install Node.js, then run:"
+    retired_manual
+elif [ ! -f "$RETIRED_PRUNE" ]; then
+    echo "  Retired files: NOT checked: cli/lib/retired-prune.js is missing from $SCRIPT_DIR."
+    retired_manual
+else
+    # RETIRED_FLAG is empty or one --retired=X word; unquoted on purpose.
+    # shellcheck disable=SC2086
+    # On a real terminal (stdin AND stdout are ttys) run the engine directly so
+    # process.stdout.isTTY is true and "ask" can prompt; otherwise pipe it (indent)
+    # and "ask" degrades to archive.
+    if [ -t 0 ] && [ -t 1 ]; then
+        node "$RETIRED_PRUNE" prune --root "$CLAUDE_HOME" --repo "$SCRIPT_DIR" ${RETIRED_FLAG} || true
+    else
+        node "$RETIRED_PRUNE" prune --root "$CLAUDE_HOME" --repo "$SCRIPT_DIR" ${RETIRED_FLAG} 2>&1 | sed 's/^/  /' || true
+    fi
 fi
 
 # --- Core docs ---

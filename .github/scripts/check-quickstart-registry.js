@@ -31,7 +31,9 @@ const installer = process.argv[2] === '--installer' ? process.argv[3] : 'sh';
 const ROOT = process.env.AGENCY_HOME || path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'quickstart-')), 'h');
 const REG = path.join(ROOT, 'memory', 'medium-term.md');
 const LEGACY = path.join(ROOT, 'core', 'memory', 'medium-term.md');
-const env = Object.assign({}, process.env, { AGENCY_HOME: ROOT });
+// AGENCY_NO_MODS=1: this check is about the project registry; the installer's mods step
+// depends on whether the machine has a claude CLI, so keep it out of the result.
+const env = Object.assign({}, process.env, { AGENCY_HOME: ROOT, AGENCY_NO_MODS: '1' });
 delete env.CLAUDE_CONFIG_DIR;
 
 let failures = 0;

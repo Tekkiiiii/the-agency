@@ -151,6 +151,10 @@ cd ~/the-agency
 
 The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. The installer prints it as `Sync root: <path> (from <source>)` and warns when it fell back to the default and found no `settings.json` there, so you notice a config folder that lives elsewhere. Skills, agents and memory the agency does not ship are left alone, and the agency hooks are merged into `settings.json` without touching hooks you already have (a backup is written next to it).
 
+**Mods.** The five Claude Code mods in `mods/` are installed too (Claude Code 2.1.287+): each is copied to `{root}/mods/<name>/` and added to `env.CLAUDE_CODE_PLUGIN_DIRS` in your user `settings.json`, after your own value, skipping any mod you already provide. Older Claude Code: one `Mods: skipped` line. Opt out with `AGENCY_NO_MODS=1`; undo with `agency mods remove`. See [Mods](#mods-optional-claude-code-21287) below.
+
+**Retired files.** `install` and `agency upgrade` also remove files the repo has since deleted (old skills, agents, runbooks, core docs), using `retired-manifest.json`. An untouched leftover is deleted. One you edited is archived to `{root}/archive/agency-retired-<date>/` (or deleted if you ask), never silently lost: choose with `--retired=archive|delete|ask` (`install.ps1`: `-Retired`; env `AGENCY_RETIRED`), default `ask` on a terminal and `archive` otherwise. Files the manifest does not list, such as your own skills, are never touched. Preview with `agency prune --dry-run`.
+
 **What gets installed:**
 
 ```
@@ -172,6 +176,8 @@ The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. 
 │   ├── fable-on-opus.sh # UserPromptSubmit: inject Fable reasoning discipline on Opus
 │   ├── fable/           # Fable playbook modules read by fable-on-opus.sh
 │   └── ...
+├── mods/                ← Claude Code mods, wired into settings.json (Claude Code 2.1.287+)
+├── archive/             ← retired files you had edited, moved here by install/upgrade
 ├── projects/            ← per-project state (created by `agency new`)
 ├── sessions/            ← session logs (created by `/save-state`)
 ├── memory/              ← persistent memory layer
@@ -819,7 +825,7 @@ Full reference: [`docs/HOOKS.md`](docs/HOOKS.md)
 
 ### Mods (optional, Claude Code 2.1.287+)
 
-Five plugins in `mods/`, loaded by hand (the installer does not set them up yet):
+Five plugins in `mods/`. `install.sh`, `install.ps1`, `agency init` and `agency upgrade` copy them to `{root}/mods/` and wire them into your user `settings.json` (`env.CLAUDE_CODE_PLUGIN_DIRS`) for you:
 
 - `context-band`: Claude Code shows no context, cache or usage-window figures above the prompt -> a band with context %, cost, cache countdown and 5h/7d reset timers.
 - `agent-ctx`: an agent does not notice its context filling up -> it is told at 70% and 80%.
@@ -827,7 +833,16 @@ Five plugins in `mods/`, loaded by hand (the installer does not set them up yet)
 - `spawn-ledger`: subagent spawns leave no record and nothing pins their model or caps parallel Execs -> a JSONL spawn ledger, model pin, Exec cap and artifact check.
 - `voice-compact`: the CAVEMAN / PONYTAIL startup injections cost tokens every session -> compact ~150-token rules.
 
-How to load them, what overlaps with the shell hooks, and what each one reads: [mods/README.md](mods/README.md).
+Your own `CLAUDE_CODE_PLUGIN_DIRS` value is kept, and a mod you already provide under the same name wins. Claude Code older than 2.1.287 (or none found) skips the step with one line; run `agency mods sync` after updating. Restart Claude Code after a change.
+
+```bash
+AGENCY_NO_MODS=1 bash install.sh   # opt out of the automatic step
+agency mods status                 # what is wired
+agency mods sync                   # wire them now
+agency mods remove                 # remove exactly our entries and copies; your value is restored
+```
+
+The shell hooks `loop-detector` and `artifact-verify` stay wired next to the mods for now, so you may see duplicate warnings. Loading by hand, what overlaps with the shell hooks, and what each mod reads: [mods/README.md](mods/README.md).
 
 ### Model Routing Table
 

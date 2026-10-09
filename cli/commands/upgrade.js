@@ -5,6 +5,7 @@ const os = require('os');
 const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncAgentsArchive, syncDesignSystem, syncCore } = require('./sync-assets.js');
 const { printSyncRoot, printNoSettingsWarning } = require('../lib/root.js');
 const hooksMerge = require('../lib/hooks-merge.js');
+const modsMerge = require('../lib/mods-merge.js');
 const { routerLine } = require('../lib/skill-router.js');
 const {
   createBackup, checkIndexLock, rescueUnmerged, changedPaths,
@@ -166,7 +167,32 @@ function printChangelogSince(repoDir, headBefore, console) {
   return true;
 }
 
+// --retired=archive|delete|ask (or `--retired X`): what to do with a retired file
+// the user EDITED (see cli/lib/retired-prune.js). Returns { value } (undefined when
+// the flag is absent, so the engine falls back to AGENCY_RETIRED, then its default)
+// or { error } for a missing/invalid value, which the caller reports as exit 2
+// BEFORE touching anything.
+function parseRetiredFlag(args) {
+  let value;
+  const list = Array.isArray(args) ? args : [];
+  for (let i = 0; i < list.length; i++) {
+    const a = String(list[i]);
+    if (a === '--retired') { value = i + 1 < list.length ? String(list[++i]) : ''; }
+    else if (a.startsWith('--retired=')) { value = a.slice('--retired='.length); }
+  }
+  if (value !== undefined && !['archive', 'delete', 'ask'].includes(value)) {
+    return { error: `Invalid --retired value '${value}' (use archive, delete or ask). Nothing was changed.` };
+  }
+  return { value };
+}
+
 module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
+  const retiredFlag = parseRetiredFlag(args);
+  if (retiredFlag.error) {
+    console.error(retiredFlag.error);
+    process.exitCode = 2;
+    return;
+  }
   const repoDir = findRepoRoot();
   if (!repoDir) {
     console.error('Could not find .git directory. Is this installed from a git repo?');
@@ -520,7 +546,11 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   // FILES only, so an existing user never got a hook registered. Non-fatal and
   // non-destructive (see cli/lib/hooks-merge.js); AGENCY_NO_HOOKS=1 skips it.
   const hooksWiring = hooksMerge.autoSync({ root: agencyRoot, repoDir, console });
-
+  // Mods (mods/<name>/) wired into env.CLAUDE_CODE_PLUGIN_DIRS by the same shared
+  // helper install.sh/install.ps1 use. Upgrade never did this, so an existing
+  // user never got a mod. Non-fatal, never throws; AGENCY_NO_MODS=1 skips it;
+  // needs Claude Code 2.1.287+ (older: one skip line, nothing written).
+  const modsWiring = modsMerge.autoSyncMods({ root: agencyRoot, repoDir, console });
   const runbooksDest = join(agencyRoot, 'runbooks');
   const runbooks = syncRunbooks(repoDir, runbooksDest, console);
   console.log(`Runbooks: ${runbooks.updated} updated, ${runbooks.preserved} preserved`);
@@ -541,6 +571,15 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const coreDest = join(agencyRoot, 'core');
   const core = syncCore(repoDir, coreDest, console);
   console.log(`Core: ${core.updated} updated, ${core.preserved} preserved`);
+
+  // Retired files: skills/agents/runbooks/core docs the repo deleted since they were
+  // installed. The syncs above only add, so they stay forever. Runs LAST, after
+  // every sync, through the one shared engine (cli/lib/retired-prune.js): an
+  // untouched retired file is deleted, an edited one is archived (or deleted/asked
+  // per --retired=archive|delete|ask). Never throws; a git work-tree root is skipped.
+  await require('../lib/retired-prune.js').autoPrune({
+    root: agencyRoot, repoDir, console, retired: retiredFlag.value,
+  });
 
   // Re-link CLI binary to ensure symlink points into the repo being upgraded.
   // Critical: if the symlink pointed to a different/older clone, re-link it now
@@ -604,6 +643,11 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   if (hooksWiring.status === 'changed') {
     console.log('');
     console.log(`Hooks changed (see "Hooks:" above). ${hooksMerge.RESTART_LINE}`);
+  }
+
+  if (modsWiring.status === 'changed') {
+    console.log('');
+    console.log('Mods changed (see "Mods:" above). Restart Claude Code to load the mods.');
   }
 
   // One line, always: the optional skill router ships disabled (see cli/lib/skill-router.js).

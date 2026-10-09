@@ -377,6 +377,8 @@ function planSync(data, manifest, state, ctx) {
       newState.hooks[h.id] = { event: h.event, matcher: h.matcher, command: h.command };
     }
   }
+  // mods-merge.js records its ownership under state.mods: not ours to touch.
+  if (state.mods !== undefined) newState.mods = state.mods;
   return { added, updated, removed, newState, wired, skipped };
 }
 
@@ -676,6 +678,7 @@ function disableHook(opts = {}) {
   const disabled = Object.assign({}, state.disabled, { [id]: wasDisabled ? state.disabled[id] : plan.entry });
   for (const k of Object.keys(disabled)) if (!manifest.hooks.some(h => h.id === k)) delete disabled[k];
   newState.disabled = disabled;
+  if (state.mods !== undefined) newState.mods = state.mods; // mods-merge.js ownership
   try {
     if (plan.removedEntries > 0 && settings.exists) commitSettings(res, settings, settings.data, opts);
     writeStateIfChanged(ctx.root, newState);
@@ -704,7 +707,12 @@ function removeHooks(opts = {}) {
   res.removed = plan.removed;
   try {
     if (plan.removed.length > 0 && settings.exists) commitSettings(res, settings, settings.data, opts);
-    if (fs.existsSync(statePath(ctx.root))) fs.unlinkSync(statePath(ctx.root));
+    if (state.mods !== undefined) {
+      // mods-merge.js still owns entries recorded here: keep only its part.
+      writeStateIfChanged(ctx.root, { version: 1, hooks: {}, mods: state.mods });
+    } else if (fs.existsSync(statePath(ctx.root))) {
+      fs.unlinkSync(statePath(ctx.root));
+    }
   } catch (e) {
     return Object.assign(res, { status: 'error', reason: 'write-failed', error: e.message });
   }
@@ -902,6 +910,13 @@ module.exports = {
   normaliseCommand,
   loadManifest,
   readSettings,
+  isPlainObject,
+  statePath,
+  readState,
+  atomicWrite,
+  writeBackup,
+  commitSettings,
+  writeStateIfChanged,
   planSync,
   planRemove,
   syncHooks,

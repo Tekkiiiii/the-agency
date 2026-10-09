@@ -53,11 +53,24 @@ resolve.
 | `skills/` | ✓ | ✓ | ✓ | ✓ | directory layout `skills/<name>/SKILL.md` + sibling assets |
 | `agents/` | ✓ | ✓ | ✓ | ✓ | `.md` only in the CLI path |
 | `core/` | ✓ | ✓ | ✓ | ✓ | **skip-if-exists** for the paths in `core/.preserve`; everything else overwritten as normal — see below |
-| `hooks/` | ✓ | ✓ | ✓ | ✓ | incl. `hooks/lib/` (carries `resolve-root.sh`) and `hooks/fable/`; `+x` on `.sh` |
+| `hooks/` | ✓ | ✓ | ✓ | ✓ | incl. `hooks/lib/` (carries `resolve-root.sh`, plus the top-level `*.py` and `*.json` the `spawn-ledger` mod calls: `model-pin.py`, `exec-model-map.json`, `claude_pricing.py`) and `hooks/fable/`; `+x` on `.sh` |
+| `mods/` | ✓ | ✓ | ✓ | ✓ | copied to `{agency-root}/mods/<name>/` and wired into `settings.json` `env.CLAUDE_CODE_PLUGIN_DIRS` by one engine, `cli/lib/mods-merge.js`; Claude Code 2.1.287+ only; opt out with `AGENCY_NO_MODS=1` (see below) |
 | `runbooks/` | ✓ | ✓ | ✓ | ✓ | docs only |
 | `scripts/` | ✓ | ✓ | ✓ | ✓ | `+x` on `.sh`/`.py`/`.js`; `__pycache__` excluded at any depth; includes `scripts/skill-route/` (the optional, disabled-by-default skill router's overlay and `README.md`) |
 | `agents-archive/` | ✓ | ✓ | ✓ | ✓ | role files + `ROLE-MAP.md` read by spawners at runtime; plain copy to `{agency-root}/agents-archive/`, **never under `agents/`** so nothing registers as an agent type |
 | `design-system/` | ✓ | ✓ | ✓ | ✓ | brand-token SSOT; `+x` on `.js`; skills resolve `{agency-root}/design-system/brands/{name}.json` at generation time |
+
+### What the installers create outside the repo trees
+
+| Path under `{agency-root}` | Written by | What it is |
+|---|---|---|
+| `mods/<name>/` | installers, `agency init`, `agency upgrade`, `agency mods sync` | the copy of each shipped mod that `CLAUDE_CODE_PLUGIN_DIRS` points at. Removed by `agency mods remove`. A `mods/<name>/` that already exists and is not ours is skipped and never touched |
+| `hooks/lib/*.py`, `hooks/lib/*.json` | the installers | `model-pin.py`, `exec-model-map.json`, `claude_pricing.py`; the `spawn-ledger` mod calls them |
+| `hooks/.agency-hooks-state.json` | hooks merge and mods merge | ownership record: the `hooks` part (what the last hook sync wired, opt-outs) and the `mods` part (`installed` names and the `entries` paths added to `CLAUDE_CODE_PLUGIN_DIRS`) |
+| `archive/agency-retired-<YYYY-MM-DD>/` | the retired-files prune | files the repo retired that you had edited, moved here (same relative path as before) instead of deleted. Only created when there is something to archive |
+| `logs/agency-retired.log` | the retired-files prune | the note listing "You changed these" (kind, name, path) and what was done with each |
+
+Retired files are pruned by `cli/lib/retired-prune.js` (`install.sh`, `install.ps1`, `agency init`, `agency upgrade`, `agency prune`) against `retired-manifest.json`. It only touches paths listed there, under `skills/`, `agents/`, `runbooks/` and `core/`; it refuses the repo checkout itself and skips a root that is a git work tree unless you run `agency prune --force`. `retired-manifest.json` is generated from git history by `scripts/gen-retired-manifest.py`; CI fails when a deleted path is missing from it.
 
 Not deployed by design: `docs/`, `evals/`, `plans/`, `openspec/`, `memory/`,
 `cli/` (the CLI is symlinked, not copied).
@@ -153,6 +166,8 @@ missing tree, which a bare `ls` will not:
 bash .github/scripts/verify-agency-refs.sh /tmp/agency-verify
 bash .github/scripts/check-hardcoded-root.sh
 node .github/scripts/check-core-preserve.js
+node .github/scripts/check-mods-merge.js
+node .github/scripts/check-retired-prune.js
 ```
 
 `verify-agency-refs.sh` scans the deployed `agents/`, `core/`, `skills/` and

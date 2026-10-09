@@ -33,6 +33,39 @@ it). Keep the clone: `agency upgrade` pulls it and re-syncs.
 
 No bash or PowerShell? `node cli/bin/agency.js init` does the same sync from Node.
 
+### Mods
+
+After the sync, the installer wires the five Claude Code mods in `mods/` (context band, agent context alerts, loop guard, spawn ledger, voice compact). It copies each to `{root}/mods/<name>/` and adds it to `env.CLAUDE_CODE_PLUGIN_DIRS` in your user `settings.json`, after whatever value you already had. A mod whose name one of your entries already provides is skipped (yours wins), and so is a `{root}/mods/<name>/` that exists and is not ours. Mods need Claude Code 2.1.287 or newer; with an older version, or no `claude` command, the step is skipped with one line (`Mods: skipped (needs Claude Code 2.1.287+, found <v|none>). After updating: agency mods sync`). `install.sh` also installs `hooks/lib/*.py` and `*.json` (`model-pin.py`, `exec-model-map.json`, `claude_pricing.py`), which the `spawn-ledger` mod calls. Restart Claude Code afterwards.
+
+- Opt out of the automatic step: `AGENCY_NO_MODS=1 bash install.sh` (same variable for `install.ps1`, `agency init` and `agency upgrade`).
+- `agency mods sync` wires them later (ignores `AGENCY_NO_MODS`), `agency mods status` shows what is wired, `agency mods remove` removes exactly our entries and the folders we copied and restores your own value.
+- The shell hooks `loop-detector` and `artifact-verify` stay wired next to the `loop-guard` and `spawn-ledger` mods for now, so you can see duplicate warnings; [mods/README.md](../mods/README.md) explains how to run one of each pair.
+
+### Retired files
+
+The sync only adds and updates files, so a skill, agent, runbook or core doc that the repo later deleted would stay on your disk forever. The installers, `agency init` and `agency upgrade` therefore also prune them, using `retired-manifest.json` (every path the repo once shipped and removed, with the checksum of every version it shipped):
+
+- An installed retired file that is byte-for-byte a shipped version is deleted, and its folder if that leaves it empty.
+- A retired file you edited is listed under "You changed these". Then it is archived to `{root}/archive/agency-retired-<YYYY-MM-DD>/` or deleted, per `--retired=archive|delete|ask` (`install.ps1`: `-Retired`; or the `AGENCY_RETIRED` environment variable). The default is `ask` on a terminal and `archive` without one (`curl | bash`, CI, an agent), so an edited file is never deleted unless you say `delete`. The note is also written to `{root}/logs/agency-retired.log`.
+- A path that is not in the manifest is never touched, so your own skills and agents are safe.
+- It refuses the repo checkout itself and skips a root that is a git work tree; `agency prune --force` applies it there anyway.
+
+The summary line reads `Retired files: N removed, M archived (modified)`. Preview or run it on demand:
+
+```bash
+agency prune --dry-run                 # show what would be removed or archived
+agency prune --retired=delete          # also delete edited files, no prompt
+agency prune --force                   # apply to a root that is a git work tree
+```
+
+### Upgrade
+
+```bash
+agency upgrade
+```
+
+Pulls the clone, then repeats the sync, the hooks merge, the mods step and the retired-files prune above. The same opt-outs apply: `AGENCY_NO_MODS=1` and `--retired=` / `AGENCY_RETIRED`.
+
 ## 3. Get oriented (optional)
 
 ```bash
