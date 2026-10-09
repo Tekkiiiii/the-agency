@@ -124,6 +124,16 @@ function pathApi(platform) {
   return platform === 'win32' ? path.win32 : path.posix;
 }
 
+// Is `dir` an absolute entry Claude Code would load? Judged by the target platform's
+// rules, OR by the host's rules when the path also exists on this host: an injected
+// Unix platform on a Windows runner still sees real C:\\... dirs, which posix
+// isAbsolute() calls relative. A genuine Linux host still rejects C:\\x (not absolute
+// there, so Claude Code skips it).
+function isUsableAbsolute(dir, platform, { hostIsAbsolute = path.isAbsolute, exists = fs.existsSync } = {}) {
+  if (pathApi(platform).isAbsolute(dir)) return true;
+  return Boolean(hostIsAbsolute(dir) && exists(dir));
+}
+
 function lastSegment(p) {
   const parts = String(p).split(/[\\/]+/).filter(Boolean);
   return parts.length ? parts[parts.length - 1] : '';
@@ -178,7 +188,8 @@ function readManifestName(dir, platform) {
 // immediate subfolder that is a plugin, or (no manifest anywhere) the basename.
 function providedNames(entry, ctx) {
   const dir = expandHome(entry, ctx.home);
-  if (!pathApi(ctx.platform).isAbsolute(dir)) return []; // Claude Code skips relative entries
+  // Claude Code skips relative entries. ctx.hostIsAbsolute / ctx.exists are test seams.
+  if (!isUsableAbsolute(dir, ctx.platform, { hostIsAbsolute: ctx.hostIsAbsolute, exists: ctx.exists })) return [];
   const own = readManifestName(dir, ctx.platform);
   if (own) return [own];
   const names = [];
@@ -593,6 +604,8 @@ module.exports = {
   formatResult,
   runCli,
   splitValue,
+  isUsableAbsolute,
+  providedNames,
 };
 
 if (require.main === module) {

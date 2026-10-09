@@ -558,6 +558,25 @@ const OWNED = root => ['alpha', 'beta-dir', 'gamma'].map(d => modEntry(root, d))
   eq('w4 remove restores the value exactly', [rm.status, readJson(path.join(root, 'settings.json')).env.CLAUDE_CODE_PLUGIN_DIRS], ['changed', original]);
 }
 
+{
+  // user-entry detection must not judge a host path by an injected platform's rules (Windows runner + injected Unix platform)
+  const U = 'C:\\Users\\x\\plug';
+  const usable = (d, plat, inj) => (typeof lib.isUsableAbsolute === 'function' ? lib.isUsableAbsolute(d, plat, inj) : 'isUsableAbsolute not exported');
+  const winHost = exists => ({ hostIsAbsolute: path.win32.isAbsolute, exists });
+  eq('p1 win host path that exists is usable under an injected linux platform', usable(U, 'linux', winHost(() => true)), true);
+  eq('p2 win host path that does not exist is not usable', usable(U, 'linux', winHost(() => false)), false);
+  eq('p3 real linux host rejects C:\\x', usable('C:\\x', 'linux', { hostIsAbsolute: path.posix.isAbsolute, exists: () => true }), false);
+  eq('p4 win32 platform: C:\\x absolute, rel\\x not', [usable('C:\\x', 'win32'), usable('rel\\x', 'win32')], [true, false]);
+  eq('p5 posix absolute path is usable on a linux platform with no fs probe', usable('/u/plug', 'linux', { hostIsAbsolute: () => false, exists: () => false }), true);
+  const pn = (entry, exists) => (typeof lib.providedNames === 'function'
+    ? lib.providedNames(entry, Object.assign({ platform: 'linux', home: 'C:\\Users\\x' }, winHost(exists)))
+    : 'providedNames not exported');
+  eq('p6 providedNames: existing C:\\ user dir under injected linux platform provides its basename', pn(U, () => true), ['plug']);
+  eq('p7 providedNames: ~/ entry expanded onto a Windows home provides its basename', pn('~/plugs/alpha-user', () => true), ['alpha-user']);
+  eq('p8 providedNames: C:\\ dir that does not exist provides nothing', pn(U, () => false), []);
+  eq('p9 providedNames: relative entry still provides nothing', pn('rel/plug', () => true), []);
+}
+
 for (const d of cleanup) {
   try { fs.rmSync(d, { recursive: true, force: true }); } catch (_) {}
 }
