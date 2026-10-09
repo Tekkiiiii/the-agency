@@ -115,7 +115,7 @@ if (-not (Test-Path (Join-Path $Repo 'install.ps1'))) { Write-Host "  FAIL no in
 # -- the pre-sunset tree ------------------------------------------------------
 & git -C $Repo cat-file -e "$OldRev^{commit}" 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "  FAIL commit $OldRev is not in $Repo: this check needs the full git history (actions/checkout fetch-depth: 0)"
+    Write-Host "  FAIL commit $OldRev is not in ${Repo}: this check needs the full git history (actions/checkout fetch-depth: 0)"
     Remove-Item -Recurse -Force $W -ErrorAction SilentlyContinue
     exit 1
 }
