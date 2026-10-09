@@ -204,7 +204,8 @@ foreach ($rel in $files) {
 }
 & git -c init.defaultBranch=main init -q $Seed 2>&1 | Out-Null
 & git -C $Seed checkout -q -b main 2>&1 | Out-Null
-& git -C $Seed -c core.autocrlf=false add -A 2>&1 | Out-Null
+# Seed blobs must be LF like real history; a CRLF working-tree copy (actions/checkout autocrlf=true) would make every file look rewritten upstream.
+& git -C $Seed -c core.autocrlf=input add -A 2>&1 | Out-Null
 & git -C $Seed -c core.autocrlf=false commit -q -m 'seed: code under test' 2>&1 | Out-Null
 & git init -q --bare $Origin 2>&1 | Out-Null
 & git -C $Origin symbolic-ref HEAD refs/heads/main 2>&1 | Out-Null
@@ -317,7 +318,8 @@ foreach ($item in @(Get-ChildItem -LiteralPath $LaSeed -Force | Where-Object { $
 foreach ($item in @(Get-ChildItem -LiteralPath $Seed -Force | Where-Object { $_.Name -ne '.git' })) {
     Copy-Item -LiteralPath $item.FullName -Destination $LaSeed -Recurse -Force
 }
-& git -C $LaSeed -c core.autocrlf=false add -A 2>&1 | Out-Null
+# Seed blobs must be LF like real history; a CRLF working-tree copy (actions/checkout autocrlf=true) would make every file look rewritten upstream.
+& git -C $LaSeed -c core.autocrlf=input add -A 2>&1 | Out-Null
 & git -C $LaSeed -c core.autocrlf=false commit -q -m 'seed: code under test' 2>&1 | Out-Null
 & git init -q --bare $LaOrigin 2>&1 | Out-Null
 & git -C $LaOrigin symbolic-ref HEAD refs/heads/main 2>&1 | Out-Null
