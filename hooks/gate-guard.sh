@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 # gate-guard.sh — PreToolUse hook for Edit and Write
-# Gates writes to sensitive system files. Profile-aware.
-# Returns {"permissionDecision":"ask","message":"..."} or {}
+# Flags writes to sensitive system files. Profile-aware.
+#   standard : WARN ONLY. Emits {"hookSpecificOutput":{"hookEventName":"PreToolUse",
+#              "additionalContext":"[gateguard] ..."}} with NO permissionDecision, so the
+#              write goes ahead and the model sees the warning. Never asks.
+#   strict   : DENY. Emits {"hookSpecificOutput":{"hookEventName":"PreToolUse",
+#              "permissionDecision":"deny","permissionDecisionReason":"[gateguard] ..."}}.
+#   minimal  : off ({}).
+# No match -> {}. A top-level permissionDecision/message is silently ignored by Claude Code.
 set -euo pipefail
 
 . "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
@@ -28,10 +34,8 @@ if [ -z "$FILE_PATH" ]; then
   exit 0
 fi
 
-DECISION="ask"
-if [ "$PROFILE" = "strict" ]; then
-  DECISION="deny"
-fi
+# Install-root prefix for the path patterns below (no trailing slash).
+ROOT="${AGENCY_ROOT%/}"
 
 WARN=""
 
@@ -43,7 +47,10 @@ esac
 
 if [ -z "$WARN" ]; then
   case "$FILE_PATH" in
-    */.claude/agents/*.md|*/agents/*.md)
+    # Agent-definition dirs of the install root only. A bare */agents/*.md also matched
+    # PD/Coord scratch files (projects/<slug>/memory/agents/x.md). `*` matches `/`, so
+    # subdirs such as agents/specialized/ are covered.
+    "$ROOT"/agents/*.md|"$ROOT"/core/agents/*.md)
       WARN="Writing to agent definition: $(basename "$FILE_PATH"). Verify: modelTier matches role, skills list is accurate."
       ;;
   esac
@@ -51,7 +58,7 @@ fi
 
 if [ -z "$WARN" ]; then
   case "$FILE_PATH" in
-    */.claude/hooks/*.sh)
+    "$ROOT"/hooks/*.sh|*/.claude/hooks/*.sh)
       WARN="Writing to hook script: $(basename "$FILE_PATH"). Hook scripts run on every matching tool call — verify no side effects on allowed operations."
       ;;
   esac
@@ -73,8 +80,11 @@ if [ -z "$WARN" ] && [ -n "$CONTENT" ]; then
 fi
 
 if [ -n "$WARN" ]; then
-  WARN_ESCAPED=$(printf '%s' "$WARN" | sed 's/"/\\"/g')
-  printf '{"permissionDecision":"%s","message":"[gateguard] %s"}\n' "$DECISION" "$WARN_ESCAPED"
+  if [ "$PROFILE" = "strict" ]; then
+    python3 -c 'import json,sys; print(json.dumps({"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"[gateguard] "+sys.argv[1]}}))' "$WARN"
+  else
+    python3 -c 'import json,sys; print(json.dumps({"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"[gateguard] "+sys.argv[1]}}))' "$WARN"
+  fi
 else
   echo '{}'
 fi

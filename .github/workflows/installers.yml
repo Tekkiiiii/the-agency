@@ -242,6 +242,13 @@ jobs:
       - name: Assert hooks merge keeps user hooks and is idempotent
         run: node .github/scripts/check-hooks-merge.js
 
+      # The PreToolUse guards (config-protection, secret-scanner, gate-guard,
+      # spawn-gate) once printed a top-level permissionDecision, which Claude
+      # Code ignores, so they never blocked or asked. This pins the nested
+      # hookSpecificOutput shape (and gate-guard's warn-only/strict-deny split).
+      - name: Assert PreToolUse guards emit the nested hookSpecificOutput shape
+        run: bash hooks/tests/test_pretooluse_output_schema.sh
+
       # The skill router ships DISABLED, but its menu builder fails loudly on any
       # shipped skill without an entry in scripts/skill-route/overlay.json. A skill
       # added to skills/ without an overlay entry would break the router for every

@@ -5,7 +5,8 @@
 # archived; their role -> skills table is {agency-root}/agents-archive/ROLE-MAP.md.
 # Kept structural types pass too. Only an unknown type with no routing marker is
 # interrupted (an ask, never a block), so a typo or a stale archived name is caught.
-# Returns {} (pass) or {"permissionDecision":"ask","message":"..."} (interrupt)
+# Returns {} (pass) or {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask",
+# "permissionDecisionReason":"..."}} (interrupt). Top-level permissionDecision/message is ignored.
 set -euo pipefail
 
 . "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
@@ -34,7 +35,7 @@ PROMPT=$(printf '%s' "$INPUT" | python3 -c \
 case "$SUBAGENT_TYPE" in
   general-purpose|claude|"" \
   | pd-coordinator|coord|mini-coord|curator|codebase-search|Delegator|save-state-runner|project-scaffolder \
-  | *-pd|critique-*|*-critique \
+  | *-pd|critique-*|*-critique|council-* \
   | architecture-analyzer|article-analyzer|assemble-reviewer|domain-analyzer|file-analyzer|graph-reviewer|knowledge-graph-guide|project-scanner|tour-builder \
   | Explore|Plan|statusline-setup|claude-code-guide|fork|caveman:*)
     echo '{}'
@@ -54,6 +55,12 @@ if printf '%s' "$PROMPT" | grep -qE 'DELEGATOR ROUTING|HARDCODED ROUTING:|SKILL 
   exit 0
 fi
 
+# Emit a PreToolUse decision in the shape Claude Code honours. A top-level
+# {"permissionDecision":..,"message":..} is silently ignored. json.dumps keeps quotes/newlines valid.
+emit_decision() { # $1=deny|ask $2=reason
+  python3 -c 'import json,sys; print(json.dumps({"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":sys.argv[1],"permissionDecisionReason":sys.argv[2]}}))' "$1" "$2"
+}
+
 # --- Unknown type: ask (catches typos and archived specialist names) ---
 MSG="[spawn-gate] Unknown subagent_type=\"${SUBAGENT_TYPE}\".
 
@@ -62,6 +69,4 @@ If this was a specialist name, it is archived: see ${AGENCY_ROOT}/agents-archive
 for its skills and role file, and spawn general-purpose instead.
 To keep this type anyway, add 'HARDCODED ROUTING: {task-type} -> {agent}' to the prompt."
 
-MSG_ESCAPED=$(printf '%s' "$MSG" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '%s' "$MSG" | sed 's/"/\\"/g; s/$/\\n/' | tr -d '\n')
-
-printf '{"permissionDecision":"ask","message":%s}\n' "$MSG_ESCAPED"
+emit_decision ask "$MSG"

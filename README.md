@@ -797,8 +797,8 @@ Bash scripts across 5 lifecycle events, copied to `{root}/hooks` (root = `$AGENC
 | `startup-sync.sh` | SessionStart | Auto-pull `~/.claude` from GitHub — every session starts fresh |
 | `check-settings-secrets.sh` | SessionStart | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | Detect unclean prior exit (crash/Ctrl+C) |
-| `gate-guard.sh` | PreToolUse (Edit/Write) | Gate writes to settings, agents, hooks, and SKILL.md files |
-| `secret-scanner.sh` | PreToolUse (Bash) | Block shell commands containing JWTs, API keys, GitHub tokens |
+| `gate-guard.sh` | PreToolUse (Edit/Write) | Warn on writes to settings, agents, hooks, and SKILL.md files (deny under `strict`) |
+| `secret-scanner.sh` | PreToolUse (Bash) | Ask (deny under `strict`) on shell commands containing JWTs, API keys, GitHub tokens |
 | `config-protection.sh` | PreToolUse (Edit/Write) | Block modification of existing linter/formatter configs |
 | `track-edits.sh` | PostToolUse (Edit/Write) | Buffer edited file paths for session-end batch check |
 | `session-end.sh` | Stop | Mark session cleanly ended; `check-session-state.sh` reads this |
@@ -806,8 +806,8 @@ Bash scripts across 5 lifecycle events, copied to `{root}/hooks` (root = `$AGENC
 | `cost-tracker.sh` | Stop | Compute session token usage and estimated USD cost |
 
 **Profile system** — hooks read `~/.claude/.hook-profile` at runtime:
-- `standard` — warnings on gate-guard and secret-scanner matches (`permissionDecision: ask`)
-- `strict` — block on any match (`permissionDecision: deny`)
+- `standard` — gate-guard warns only (`additionalContext`, the write goes ahead); secret-scanner asks (`hookSpecificOutput.permissionDecision: "ask"`)
+- `strict` — block on any match (`hookSpecificOutput.permissionDecision: "deny"`)
 - `minimal` — all safety hooks disabled (useful inside CI or trusted automation)
 
 ```bash

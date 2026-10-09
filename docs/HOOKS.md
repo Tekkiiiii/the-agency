@@ -193,9 +193,11 @@ Each hook reads `~/.claude/.hook-profile` at runtime. The profile controls behav
 
 | Profile | Behavior |
 |---------|----------|
-| `standard` (default) | Gate-guard and secret-scanner issue warnings (`"permissionDecision":"ask"`) |
-| `strict` | Gate-guard and secret-scanner block writes (`"permissionDecision":"deny"`) |
+| `standard` (default) | Gate-guard only warns (`additionalContext`, no `permissionDecision`, the write goes ahead and never asks); secret-scanner asks (`hookSpecificOutput.permissionDecision: "ask"`) |
+| `strict` | Gate-guard and secret-scanner block (`hookSpecificOutput.permissionDecision: "deny"`) |
 | `minimal` | Gate-guard, secret-scanner, config-protection, and batch-check are all disabled |
+
+Config-protection denies an existing linter config under `standard` and `strict` alike (it has no ask or warn mode), and spawn-gate asks on an unknown type under both.
 
 To switch profiles:
 
@@ -268,11 +270,14 @@ Reads `~/.claude/session-state.json`. If `was_clean` is `false`, the prior sessi
 
 Checks the target file path against four categories:
 - `settings.json` / `settings.local.json`
-- Agent definitions (`agents/*.md`)
+- Agent definitions: `{agency-root}/agents/*.md` and `{agency-root}/core/agents/*.md` only. Scratch files such as `projects/<slug>/memory/agents/*.md` are not agent definitions and pass.
 - Hook scripts (`hooks/*.sh`)
 - Skill entry points (`SKILL.md`)
 
-Also scans write content for JWT/API key patterns. Returns `permissionDecision: ask` (standard) or `deny` (strict) with a message. Returns `{}` (pass-through) if no match.
+Also scans write content for JWT/API key patterns. Output by profile:
+- `standard`: warns only. It returns `{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"[gateguard] ..."}}` with no `permissionDecision`, so the write goes ahead and the model sees the warning. It never asks.
+- `strict`: denies with `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"[gateguard] ..."}}`.
+- No match, or `minimal`: `{}` (pass-through).
 
 ### spawn-gate.sh (PreToolUse: Agent)
 
@@ -284,7 +289,7 @@ Since the generalist switch (2026-10-06), `general-purpose` plus 1-3 named skill
 
 - `general-purpose`, `claude`, and an empty `subagent_type`
 - Structural types: `pd-coordinator`, `coord`, `mini-coord`, `curator`, `codebase-search`, `Delegator`, `save-state-runner`, `project-scaffolder`
-- Any `*-pd` project director, `critique-*`, and `*-critique`
+- Any `*-pd` project director, `critique-*`, `*-critique`, and `council-*` (the read-only Agency Council seats)
 - The knowledge-graph analyzers (`architecture-analyzer`, `article-analyzer`, `assemble-reviewer`, `domain-analyzer`, `file-analyzer`, `graph-reviewer`, `knowledge-graph-guide`, `project-scanner`, `tour-builder`)
 - Built-in Claude Code types: `Explore`, `Plan`, `statusline-setup`, `claude-code-guide`, `fork`, and `caveman:*`
 
@@ -294,7 +299,7 @@ Since the generalist switch (2026-10-06), `general-purpose` plus 1-3 named skill
 - A prompt with an explicit routing marker: `DELEGATOR ROUTING`, `HARDCODED ROUTING:`, or `SKILL SPAWN:`.
 - A prompt that matches a skill-owned spawn pattern: `You own the save-state ritual`, `You own the cc-loop ritual`, `You are {name}, resuming work`, or `You are resuming work on inbox task`.
 
-**Unknown type:** anything else receives `permissionDecision: ask`. The message names the unknown type, says the default is `general-purpose` + 1-3 skills, points to `{agency-root}/agents-archive/ROLE-MAP.md` for archived names, and says how to keep the type anyway (`HARDCODED ROUTING: {task-type} -> {agent}` in the prompt).
+**Unknown type:** anything else receives `hookSpecificOutput.permissionDecision: "ask"`. The `permissionDecisionReason` names the unknown type, says the default is `general-purpose` + 1-3 skills, points to `{agency-root}/agents-archive/ROLE-MAP.md` for archived names, and says how to keep the type anyway (`HARDCODED ROUTING: {task-type} -> {agent}` in the prompt).
 
 The hook emits no metric.
 
@@ -310,11 +315,11 @@ Respects the `.hook-profile` system: in `minimal` profile, exits immediately wit
 
 ### secret-scanner.sh (PreToolUse: Bash)
 
-Scans the bash command string for known credential patterns: JWTs, GitHub tokens, Slack tokens, Google OAuth tokens, AWS access keys, and inline `API_KEY=…` assignments. Returns `ask` or `deny` with a tagged message.
+Scans the bash command string for known credential patterns: JWTs, GitHub tokens, Slack tokens, Google OAuth tokens, AWS access keys, and inline `API_KEY=…` assignments. Returns `hookSpecificOutput.permissionDecision` `ask` (standard) or `deny` (strict) with a tagged `permissionDecisionReason`.
 
 ### config-protection.sh (PreToolUse: Edit, Write)
 
-If the target file is an existing linter/formatter config (ESLint, Prettier, Biome, Ruff, Shellcheck, Stylelint, Markdownlint), returns `deny`. Creation of new config files is allowed. The rule: fix the code, not the linter.
+If the target file is an existing linter/formatter config (ESLint, Prettier, Biome, Ruff, Shellcheck, Stylelint, Markdownlint), returns `hookSpecificOutput.permissionDecision: "deny"`. Creation of new config files is allowed. The rule: fix the code, not the linter.
 
 ### track-edits.sh (PostToolUse: Edit, Write)
 
@@ -471,6 +476,10 @@ To add a new hook:
    PROFILE=$(cat "$HOME/.claude/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
    if [ "$PROFILE" = "minimal" ]; then echo '{}'; exit 0; fi
    ```
-4. Return `{}` for pass-through, or a JSON object with `permissionDecision` and `message` for PreToolUse hooks
+4. Return `{}` for pass-through. A PreToolUse hook has two valid non-empty outputs, both nested under `hookSpecificOutput` (Claude Code silently ignores a top-level `permissionDecision` or `message`, so the hook would never block or ask):
+   - a decision: `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny|ask|allow|defer","permissionDecisionReason":"..."}}` (the reason is required for `deny` and `ask`)
+   - a warning only, the tool call goes ahead: `{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"..."}}` with no `permissionDecision`
+
+   Build the JSON with `python3 -c 'import json,sys; print(json.dumps({...}))' "$arg"`, never by interpolating text into a `printf` template. `hooks/tests/test_pretooluse_output_schema.sh` pins the shape for the shipped guards.
 
 To disable a single hook without removing it from settings, use the `minimal` profile or comment out the command in `settings.json`.

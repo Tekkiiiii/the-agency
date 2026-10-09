@@ -74,7 +74,8 @@ again. To remove it, run `/unfreeze` or end the session."
 
 The hook reads `file_path` from the Edit/Write tool input JSON, then checks
 whether the path starts with the freeze directory. If not, it returns
-`permissionDecision: "deny"` to block the operation.
+`hookSpecificOutput.permissionDecision: "deny"` (with a `permissionDecisionReason`)
+to block the operation.
 
 The freeze boundary persists for the session via the state file. The hook
 script reads it on every Edit/Write invocation.

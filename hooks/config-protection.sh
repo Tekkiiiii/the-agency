@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # config-protection.sh — PreToolUse hook for Edit and Write
 # Blocks modification of existing linter/formatter configs. Allows first-time creation.
+# Returns {} (pass) or {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny",
+# "permissionDecisionReason":"..."}}. A top-level permissionDecision/message is silently ignored.
 set -euo pipefail
 
 . "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
@@ -39,8 +41,14 @@ if [ "$PROTECTED" = "false" ]; then
   exit 0
 fi
 
+# Emit a PreToolUse decision in the shape Claude Code honours. A top-level
+# {"permissionDecision":..,"message":..} is silently ignored. json.dumps keeps quotes/newlines valid.
+emit_decision() { # $1=deny|ask $2=reason
+  python3 -c 'import json,sys; print(json.dumps({"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":sys.argv[1],"permissionDecisionReason":sys.argv[2]}}))' "$1" "$2"
+}
+
 if [ -f "$FILE_PATH" ]; then
-  printf '{"permissionDecision":"deny","message":"[config-protection] %s already exists. Fix the source code to satisfy the linter, not the config to ignore the violation."}\n' "$BASENAME"
+  emit_decision deny "[config-protection] $BASENAME already exists. Fix the source code to satisfy the linter, not the config to ignore the violation."
 else
   echo '{}'
 fi
