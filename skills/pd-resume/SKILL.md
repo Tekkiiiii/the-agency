@@ -247,21 +247,5 @@ PD RESUME — {n} projects ({s} spawned, {b} blocked)
 {ELSE:} No PDs spawned. All targets blocked on operator — review the blocked-on items above.
 ```
 
-Then arm the parent-side loop (background spawns only — skip if showcase_on, nothing spawned,
-or the operator has a `/goal` active: wakeup OR `/goal`, never both). Subagents cannot
-ScheduleWakeup/CronCreate (verified 2026-09-03); this is the unattended floor that picks up a
-stranded PD or unread RESPAWN_REQUEST. Cost rules + eval criteria:
-`~/.claude/runbooks/goal-wakeup-contract.md`.
-
-```
-ScheduleWakeup(delaySeconds: 1800, noop: false,
-  reason: "PD fallback: drain respawn-queue + collect GOAL_CHECK for {slugs}",
-  prompt: "PD loop tick for {slugs}: (1) ls ~/.claude/state/respawn-queue/ → /pd-resume each slug, rm its flag;
-           (2) for each PD whose task-notification arrived: bg-agent completion gate once, then
-           grep -h '^verdict:' its report — never re-read full reports on later ticks;
-           (3) emit pd_wakeup_tick (template in goal-wakeup-contract.md);
-           (4) PD still running or verdict UNMET → re-arm: 1800s if something changed this tick,
-           3600s + noop:true if nothing did; all MET/BLOCKED → ScheduleWakeup(stop:true), report verdicts.")
-```
-
-Task-notifications remain the primary wake signal; do not poll manually between ticks.
+No automatic tick (killed 2026-10-08). Task-notifications are the wake signal; the operator runs `/goal` when they want a check-in.
+Stranded PDs are picked up at the respawn-queue drain points (`{agency-root}/runbooks/respawn-contract.md`; contract: `{agency-root}/runbooks/goal-wakeup-contract.md`).

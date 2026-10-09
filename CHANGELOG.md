@@ -8,6 +8,19 @@ All notable changes to The Agency are documented here, grouped by release wave (
 
 ### Tiếng Việt
 
+**Đợt 2026-10-09 — gỡ agent `task-executor`: Exec là `general-purpose` + 1-3 skill; Coord chạy Sonnet; trần 5 Exec cho mỗi cây PD; bỏ tick đánh thức tự động.** Tầng Exec không còn là một agent đặt tên riêng. Hợp đồng Exec (một việc, không tự sinh agent con, báo `DONE`/`BLOCKED`/`ESCALATE` kèm bằng chứng) nằm trong mục "Exec spawn message" của `coord.md`, dùng chung cho Coord, Mini-Coord và PD khi spawn Exec trực tiếp.
+
+#### Removed (2026-10-09)
+- **Agent `task-executor`** được lưu trữ: `agents/specialized/task-executor.md` -> `agents-archive/retired-2026-10-08/task-executor.md`, bản sao `core/agents/task-executor.md` -> `agents-archive/retired-2026-10-08/core-task-executor.md`. `agents-archive/MANIFEST.md` và `ROLE-MAP.md` được ghi thêm (chỉ nối thêm). `task-executor` bị bỏ khỏi `hooks/spawn-gate.sh`, `scripts/agent-tools-audit.py`, `scripts/core-mirror-check.py` (cặp mirror), danh sách agent kết cấu và các INDEX/ORG.
+- **Tick đánh thức do cha arm và khối `GOAL_CHECK`**: `pd-resume` không còn arm `ScheduleWakeup` sau mỗi đợt spawn; `runbooks/goal-wakeup-contract.md` viết lại ("không có tick tự động"; người dùng tự chạy `/goal` khi cần check-in); `runbooks/respawn-contract.md` còn 3 điểm xả hàng đợi thay vì 4.
+- Công cụ `TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet` bị bỏ khỏi `tools:` của `pd-coordinator`, `coord`, `mini-coord`.
+
+#### Changed (2026-10-09)
+- **`coord.md` và `mini-coord.md` được rút gọn** (chỉ còn quy trình làm việc; bỏ phần nạp đôi "đọc toàn bộ định nghĩa"). Coord chuyển `opus[1m]` -> `sonnet[1m]` (giữ `effort: high` vì Coord sở hữu cổng QA).
+- **Trần Exec: tối đa 5 Exec chạy đồng thời cho mỗi cây PD** (gồm Coord, Mini-Coord và Exec PD tự spawn), không phải 5 mỗi Coord. PD chia suất cho từng Coord (`Exec slots allotted: N`); `runbooks/coord-spawn-template.md` mang dòng này. Khi mod spawn-ledger được cài, hook spawn từ chối Exec thứ 6; nếu không thì đây là quy tắc phải tự giữ.
+- `runbooks/checkpoint-handshake-protocol.md` v1.2.0: thêm mục "Exec/Member gate rules" (bậc TIER_A/TIER_B, cách trả lời, ngưỡng ngữ cảnh) và đổi tham chiếu sang "Exec spawn message".
+- `README.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPER.md`, `docs/HOOKS.md`, `agents/ORG.md`, `skills/agent-dispatch`, `skills/pd-routing`: tầng Exec ghi là "general-purpose + Skills"; Coord ghi là Sonnet.
+
 **Đợt 2026-10-08 — cài mới chạy được từ đầu đến cuối: clone ra chỗ khác rồi chạy installer, một registry dự án duy nhất, lint và kiểm tra drift chạy trong CI, bản repo sạch thông tin riêng (phần E).** Ca thật: người đã dùng Claude Code làm theo README, `git clone ... ~/.claude` lỗi vì thư mục đã tồn tại; ai vượt qua được thì `agency new` tạo dự án nhưng `/recall` báo `PROJECT NOT FOUND` vì registry bị tách đôi giữa hai đường dẫn. Cùng đợt, các kiểm tra trong CI từng "advisory" được chuyển thành chặn merge, và các tài liệu còn lệch so với agent đang đăng ký được đồng bộ lại.
 
 #### Fixed (2026-10-08, phần E)
@@ -221,6 +234,19 @@ Mục tiêu: catalog ship ra khớp đúng hệ thống live, không giữ thêm
 - **1M context (`[1m]`) áp dụng CHỌN LỌC, không áp dụng toàn fleet.** Hậu tố `[1m]` chỉ gắn cho các role điều phối — PD, Coord, Mini-Coord, Dept-Coord (21 file) — vì đây là những role duy nhất có context phình theo *khối lượng công việc* chứ không theo độ dài brief của chính nó. Toàn bộ agent còn lại giữ nguyên. Quyết định này đã chốt, không mở lại. Chính sách đầy đủ ở `core/ORG.md` § Model tiering. Kèm theo đó: `modelTier:` chỉ là tag tài liệu và hoàn toàn trơ khi spawn — `model:` mới là key Claude Code thực sự đọc, và là nơi `[1m]` được gắn vào.
 
 ### English
+
+**Wave 2026-10-09 — the `task-executor` agent is retired: an Exec is `general-purpose` + 1-3 skills; Coord runs on Sonnet; 5-Exec cap per PD tree; no automatic wake-up tick.** The Exec tier is no longer a separately named agent. The Exec contract (one task, no sub-spawn, report `DONE`/`BLOCKED`/`ESCALATE` with evidence) lives in the "Exec spawn message" section of `coord.md`, shared by Coord, Mini-Coord and a PD spawning Execs directly.
+
+#### Removed (2026-10-09)
+- **The `task-executor` agent** is archived: `agents/specialized/task-executor.md` -> `agents-archive/retired-2026-10-08/task-executor.md`, its `core/agents/task-executor.md` copy -> `agents-archive/retired-2026-10-08/core-task-executor.md`. `agents-archive/MANIFEST.md` and `ROLE-MAP.md` are appended to (append-only). `task-executor` is dropped from `hooks/spawn-gate.sh`, `scripts/agent-tools-audit.py`, the `scripts/core-mirror-check.py` pair map, the structural-agent lists and the INDEX/ORG files.
+- **The parent-armed wake-up tick and the `GOAL_CHECK` block**: `pd-resume` no longer arms a `ScheduleWakeup` after a spawn wave; `runbooks/goal-wakeup-contract.md` is rewritten ("no automatic tick"; the operator runs `/goal` when they want a check-in); `runbooks/respawn-contract.md` drains the queue at 3 points instead of 4.
+- `TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet` are dropped from the `tools:` of `pd-coordinator`, `coord` and `mini-coord`.
+
+#### Changed (2026-10-09)
+- **`coord.md` and `mini-coord.md` are trimmed** to workflow only (the "read your definition fully" double-load preamble is gone). Coord moves `opus[1m]` -> `sonnet[1m]` (`effort: high` kept, since Coord owns the QA gate).
+- **Exec cap: at most 5 Execs running at once per PD tree** (counting Coords, Mini-Coords and the Execs a PD spawns itself), not 5 per Coord. The PD splits slots across Coords (`Exec slots allotted: N`); `runbooks/coord-spawn-template.md` carries that line. When the spawn-ledger mod is installed its spawn hook denies the 6th Exec; without it the cap is a rule you follow.
+- `runbooks/checkpoint-handshake-protocol.md` v1.2.0: adds an "Exec/Member gate rules" section (TIER_A/TIER_B, replies, context thresholds) and points at the "Exec spawn message".
+- `README.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPER.md`, `docs/HOOKS.md`, `agents/ORG.md`, `skills/agent-dispatch`, `skills/pd-routing`: the Exec tier reads "general-purpose + Skills"; Coord reads Sonnet.
 
 **Wave 2026-10-08 — a fresh install works end to end: clone elsewhere and run the installer, one project registry, lint and drift checks in CI, and a repo free of private details (part E).** Real case: someone already using Claude Code followed the README and `git clone ... ~/.claude` failed because the directory exists; anyone who got past that ran `agency new`, then `/recall` answered `PROJECT NOT FOUND` because the registry was split across two paths. In the same wave, CI steps that had been "advisory" became blocking, and docs that had drifted from the registered agents were synced.
 

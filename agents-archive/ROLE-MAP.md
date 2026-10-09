@@ -121,3 +121,5 @@ Skills with a namespace prefix (for example `design:user-research`) come from Cl
 | Identity Graph Operator | backend | `agents-archive/generalist-2026-10-06/specialized/infra/identity-graph-operator.md` |
 | LSP/Index Engineer | (no skill; role file only) | `agents-archive/generalist-2026-10-06/specialized/infra/lsp-index-engineer.md` |
 | RoomManager | room-manager | `agents-archive/generalist-2026-10-06/specialized/infra/room-manager.md` |
+
+| task-executor (retired 2026-10-08) | general-purpose + Skills of the task; spawn template coord.md "Exec spawn message" |

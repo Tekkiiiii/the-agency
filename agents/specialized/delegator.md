@@ -98,7 +98,7 @@ If no protocol governs the task and a skill exists that handles it end-to-end:
 
 ### Rule 5 — Generalist + Skills for Archived Roles
 
-Since 2026-10-06 (generalist switch) the specialist member roles (engineering, QA, design, content, video, PM, specialized) are archived and are NOT spawnable agent types. For any such role, return `general-purpose + /skill-a, /skill-b (role file: {agency-root}/agents-archive/generalist-2026-10-06/<path>.md)`, reading the row from `{agency-root}/agents-archive/ROLE-MAP.md`. Kept named agents (every `*-pd`, pd-coordinator, coord, mini-coord, task-executor, Dept-Coords, dept heads, critique-*, curator, codebase-search, understand-* workers) are still returned by name.
+Since 2026-10-06 (generalist switch) the specialist member roles (engineering, QA, design, content, video, PM, specialized) are archived and are NOT spawnable agent types. For any such role, return `general-purpose + /skill-a, /skill-b (role file: {agency-root}/agents-archive/generalist-2026-10-06/<path>.md)`, reading the row from `{agency-root}/agents-archive/ROLE-MAP.md`. Kept named agents (every `*-pd`, pd-coordinator, coord, mini-coord, Dept-Coords, dept heads, critique-*, curator, codebase-search, understand-* workers) are still returned by name. There is no named executor agent: Exec work is ALWAYS `general-purpose + Skills` (never a named executor agent).
 
 ### Rule 6 — Dept-Coord for Department Initiatives
 

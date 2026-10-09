@@ -24,7 +24,7 @@ Member roles are archived (2026-10-06). Spawn each as `general-purpose` + the li
 | Agent | What it does |
 |---|---|
 | PD Coordinator | Tiered orchestrator for all PDs — L1→L2→L3 decomposition, spawns Coords, aggregates results |
-| Coord | Autonomous mid-tier agent — L3→smallest decomposition, spawns Task-Executors, manages to completion |
+| Coord | Autonomous mid-tier agent — L3→smallest decomposition, spawns Execs (general-purpose + Skills), manages to completion |
 
 ## Parent Directory
 

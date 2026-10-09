@@ -89,15 +89,15 @@ The system has two parallel execution chains: project delivery (PD-Coord) and de
 PD  (L1→L3 decomposition, spawns Coords)
  └── Coord × N  (L3→L4→L5→L6, spawns Exec or Mini-Coord, autonomous)
       └── Mini-Coord × M  (L6→L7→L8→L9, spawned for complex L6 tasks, reports to parent Coord)
-           └── Task-Executor × K  (executes exactly one atomic unit, reports to spawner)
+           └── Exec × K  (general-purpose + Skills; executes exactly one atomic unit, reports to spawner)
 ```
 
 | Layer | Agent | Decomposes | Spawns | Model |
 |-------|-------|-----------|--------|-------|
 | L1–L3 | PD | L1 → L2 → L3 | Coord | Opus |
-| L3–L6 | Coord | L3 → L4 → L5 → L6 | Exec or Mini-Coord | Opus |
+| L3–L6 | Coord | L3 → L4 → L5 → L6 | Exec or Mini-Coord | Sonnet |
 | L6+ | Mini-Coord | L6 → L7 → L8 → L9... | Exec | Opus |
-| Atomic | Task-Executor | No | — | Sonnet |
+| Atomic | Exec (general-purpose + Skills) | No | — | Sonnet |
 
 ### Department Operations Chain (Dept-Coord)
 
@@ -133,7 +133,7 @@ See `core/runbooks/dept-coord-protocol.md` for the full operational manual.
 | L1 | PD | L3 |
 | L3 | Coord | L6 |
 | L6 | Mini-Coord | Smallest implementable unit |
-| Atomic | Task-Executor | — |
+| Atomic | Exec (general-purpose + Skills) | — |
 
 ### PD Standard Protocol
 

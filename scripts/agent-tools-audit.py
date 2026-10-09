@@ -81,7 +81,7 @@ ROLE_MAP = {
     "project-director": "pd", "project_director": "pd",
     "dept-coord": "dept-coord",
     "coord": "coord", "mini-coord": "coord", "leader": "coord",
-    "task-executor": "executor", "executor": "executor",
+    "executor": "executor",
     "specialist": "specialist", "member": "specialist", "contract": "specialist",
     "delegator": "specialist", "protocol": "specialist",
 }

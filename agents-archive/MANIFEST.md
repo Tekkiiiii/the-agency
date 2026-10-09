@@ -37,3 +37,6 @@ not an agent: it is now `runbooks/qa-task-contract.md`.
 **Restore all:** `cd {agency-root} && for d in agents-archive/generalist-2026-10-06/*/; do mv "$d"* "agents/$(basename "$d")/"; done`
 Then re-point the rows that `ROLE-MAP.md` lists back to the agent name. New
 registration takes effect next session.
+
+## retired-2026-10-08
+- task-executor.md (+ core-task-executor.md mirror copy): retired (REV004 D5). Execs = general-purpose + Skills; spawn template = agents/project-management/coord.md "Exec spawn message". Not spawnable.

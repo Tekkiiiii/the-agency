@@ -62,7 +62,7 @@ hours of cross-L3 conflict resolution later.
    YES → use it
    NO  → step 2
 
-2. Is it a structural role ({slug}-pd, pd-coordinator, coord, mini-coord, task-executor,
+2. Is it a structural role ({slug}-pd, pd-coordinator, coord, mini-coord,
    dept head / dept-coord, critique-* critic, Delegator, curator, codebase-search,
    save-state-runner, project-scaffolder)?
    YES → spawn that agent by name

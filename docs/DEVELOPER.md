@@ -5,7 +5,7 @@
 ```
 the-agency/
 ├── core/                # Core system files
-│   ├── agents/         # Agent templates (PD, Coord, Mini-Coord, Task-Executor)
+│   ├── agents/         # Agent templates (PD, Coord, Mini-Coord; Execs are general-purpose + Skills)
 │   ├── memory/         # Memory system documentation
 │   ├── tasks/          # Task store schema and patterns
 │   ├── nexus/          # Coordination protocol
@@ -169,7 +169,7 @@ The PD → Coord → Mini-Coord → Executor chain:
 PD  (decomposes L1 → L3, spawns Coords)
  └── Coord  (decomposes L3 → L6, spawns Exec or Mini-Coord)
       └── Mini-Coord  (decomposes L6 → L7+, spawns Exec)
-           └── Task-Executor  (executes one atomic unit)
+           └── Exec  (general-purpose + Skills; executes one atomic unit)
 ```
 
 See `docs/ARCHITECTURE.md` for the full protocol including ACK/NACK QA gates.

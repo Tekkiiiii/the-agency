@@ -3,8 +3,8 @@ name: Checkpoint Handshake Protocol
 description: Scratch-board poll handshake for the Exec/Member-facing APPROACH and CHECKPOINT gates. Replaces the old upward-SendMessage-and-wait pattern, which can deadlock because upward name-addressed SendMessage does not resolve.
 type: runbook
 owner: agency-council
-lastUpdated: 2026-08-14
-version: 1.1.0
+lastUpdated: 2026-10-08
+version: 1.2.0
 ---
 
 # Checkpoint Handshake Protocol
@@ -124,6 +124,19 @@ than needing to detect whether content exists under a heading.
    arrives before you finish polling, still read the `## Reply` block before acting (the
    message is a nudge, not the reply content).
 
+### Exec/Member gate rules (tier, trigger, replies, context)
+
+- TIER_B (default; any task not marked TIER_A in the spawn prompt): MUST write an APPROACH request (Format above) BEFORE any edit, then poll.
+- TIER_A (explicit in spawn prompt): NEVER write an APPROACH request. Record a one-sentence start note instead ("Exec-{subtask}-{pun}: starting {task-name} [TIER_A]") in your scratch/status row, proceed at once. No SendMessage.
+- CHECKPOINT at ~50% effort OR after 25 tool calls (whichever first): MANDATORY for ALL tiers (TIER_A included). Overwrite `## Request`/`## Reply` in the SAME file (`Type: CHECKPOINT`, `Status: AWAITING`), poll with the same bounded loop.
+- APPROACH replies: `ACK_APPROACH — proceed` -> go. `REVISE_APPROACH — {feedback}` -> update plan, rewrite request (`Status: AWAITING`), poll again; max 2 revision rounds, then ESCALATE.
+- CHECKPOINT replies: `ACK_CONTINUE` -> go. `COURSE_CORRECT — {instructions}` -> adjust and continue; no new APPROACH needed.
+- Timeout: APPROACH -> `APPROACH_UNREVIEWED`; CHECKPOINT -> `CHECKPOINT_UNREVIEWED`; both MUST appear in the final report.
+- Context >=70%: finish the current atomic unit, write a CHECKPOINT with `Issues: Context at {PCT}% — may need continuation`, poll as above (timeout -> proceed, `CHECKPOINT_UNREVIEWED`).
+- Context >=80%: stop; final report `ESCALATE — context at {PCT}%, cannot continue safely` with `Needed: spawner to spawn a continuation Exec for the remaining work` and `Scope: {what is left}`. Delivered as the final task result, never SendMessage.
+- Interim state (IN_PROGRESS, QA_GATE) goes in the scratch `## Status` table or this file; upward SendMessage NEVER used.
+- Stop immediately after delivering the final report; the spawner reads it only when you stop. A NACK arrives as a fresh spawn.
+
 ## Spawner side (Coord / Mini-Coord / Dept-Coord / PD spawning direct Execs)
 
 **Governing rule:** the checkpoint contract is owned by the DIRECT SPAWNER, whoever that
@@ -179,10 +192,11 @@ If an Exec/Member's completion report includes `APPROACH_UNREVIEWED` or
 ## Failure record
 
 the-agency Wave 20 (2026-08-14): two Execs were spawned DIRECTLY BY THE PD (Coord layer
-bypassed via the pd-coordinator.md §2.6 PARALLEL DIRECT-EXEC fast path). Both opened
-APPROACH gates, wrote checkpoint files, and polled the full 5-minute ceiling — nobody
-upstream was polling, because this runbook's reply-side section was titled "Coord/
-Dept-Coord side," and a PD acting as a direct spawner was not covered by its own text.
+bypassed via the pd-coordinator.md §2.6 direct-Exec path, then named PARALLEL DIRECT-EXEC,
+now the §2.6 Delegation test). Both opened APPROACH gates, wrote checkpoint files, and
+polled the full 5-minute ceiling — nobody upstream was polling, because this runbook's
+reply-side section was titled "Coord/Dept-Coord side," and a PD acting as a direct spawner
+was not covered by its own text.
 Both Execs correctly proceeded per the timeout branch and marked `APPROACH_UNREVIEWED` in
 their completion reports, but the unattended gates also generated escalation spam to
 main. This is not a one-off: as of this writing, 13 checkpoint files under
@@ -197,6 +211,6 @@ rather than assuming a Coord is always present.
 
 - Coord: `{agency-root}/agents/project-management/coord.md` §6b/6c
 - Mini-Coord: `{agency-root}/agents/project-management/mini-coord.md` §6b/6c
-- Task-Executor: `{agency-root}/agents/specialized/task-executor.md` §2b/3a
+- Exec spawn message: `{agency-root}/agents/project-management/coord.md` (Exec side = this runbook "Exec/Member side")
 - Dept-Coord Protocol: `{agency-root}/runbooks/dept-coord-protocol.md` §4/§4c
 - PD direct-spawn polling duty: `{agency-root}/agents/project-management/pd-coordinator.md` §Checkpoint Polling Duty

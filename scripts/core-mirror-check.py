@@ -14,7 +14,7 @@ Root: --root, else $AGENCY_HOME, else $CLAUDE_CONFIG_DIR, else <home>/.claude.
 A root is a checkout of this repo or an installed agency tree: both have core/, agents/, runbooks/.
 
 Mirror map (dest <- source, both under the root):
-  core/agents/{coord,mini-coord,pd-coordinator,task-executor,curator,delegator}.md <- agents/ tree
+  core/agents/{coord,mini-coord,pd-coordinator,curator,delegator}.md <- agents/ tree
   core/ORG.md <- agents/ORG.md
   core/runbooks/<every file> <- runbooks/<same name>
 Everything else under core/ is standalone (no source) and is not checked. No git operations.
@@ -39,7 +39,6 @@ AGENT_SRC = {
     "coord.md": "agents/project-management/coord.md",
     "mini-coord.md": "agents/project-management/mini-coord.md",
     "pd-coordinator.md": "agents/project-management/pd-coordinator.md",
-    "task-executor.md": "agents/specialized/task-executor.md",
     "curator.md": "agents/specialized/curator.md",
     "delegator.md": "agents/specialized/delegator.md",
 }

@@ -100,7 +100,7 @@ PD:   Dashboard complete. Billing ready to start.
 
 You didn't explain anything the second day. The agent remembered.
 
-- **4-tier autonomous chain**: PD → Coord → Mini-Coord → Task-Executor decomposes any project to atomic units. Mini-Coords keep drilling L6→L7→L8 without escalating to PD.
+- **4-tier autonomous chain**: PD → Coord → Mini-Coord → Exec (general-purpose + Skills) decomposes any project to atomic units. Mini-Coords keep drilling L6→L7→L8 without escalating to PD.
 - **QA gates on every handoff**: No work gets ACK'd without a health-score pass. Gate: score ≥ 70 + zero CRITICALs. Example: 70 = tests pass but docs missing; 90+ = ship-ready.
 - **Explicit ACK/NACK protocol**: An agent's report lands when it stops. If it is not re-spawned, that is the ACK. A NACK spawns a fresh continuation agent with the fix list, and the rework loops back through QA. Consent for a permission-gated action is a file the main session writes under `{project}/memory/tasks/revisions/acks/`, never chat prose.
 - **Hook lifecycle system**: shell scripts across 5 lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop, UserPromptSubmit) — security gating, secret scanning, config protection, crash detection, cost tracking, plus an opt-in Fable-on-Opus hook (ships unwired) that injects Fable-style reasoning discipline (`hooks/fable/`) whenever the active model is Opus-line. Profile-aware (`standard` / `strict` / `minimal`). See `docs/HOOKS.md`.
@@ -291,7 +291,7 @@ PD-saas-app: Understood. Decomposing into 3 workstreams:
 Spawning now. I'll report back when all three complete.
 ```
 
-The three Coords run in parallel. Each decomposes further and spawns Task-Executors. You see output as each unit completes:
+The three Coords run in parallel. Each decomposes further and spawns Execs. You see output as each unit completes:
 
 ```
 Auth Coord: JWT middleware complete. Health score 89. ACKed.
@@ -621,15 +621,15 @@ Everything above describes what the system does. This section describes how it w
 PD  (L1→L3 decomposition, spawns Coords)
  └── Coord × N  (L3→L4→L5→L6, spawns Exec or Mini-Coord, autonomous)
       └── Mini-Coord × M  (L6→L7→L8→L9, spawned for complex L6 tasks)
-           └── Task-Executor × K  (executes exactly one atomic unit)
+           └── Exec × K  (general-purpose + Skills; executes exactly one atomic unit)
 ```
 
 | Layer | Agent | Decomposes | Spawns | Model |
 |-------|-------|-----------|--------|-------|
 | L1–L3 | PD | L1 → L2 → L3 | Coord | Opus |
-| L3–L6 | Coord | L3 → L4 → L5 → L6 | Exec or Mini-Coord | Opus |
+| L3–L6 | Coord | L3 → L4 → L5 → L6 | Exec or Mini-Coord | Sonnet |
 | L6+ | Mini-Coord | L6 → L7 → L8 → L9 | Exec | Opus |
-| Atomic | Task-Executor | — | — | Sonnet |
+| Atomic | Exec (general-purpose + Skills) | — | — | Sonnet |
 
 **Naming convention:**
 - PD: `PD-{slug}` (e.g., `PD-my-saas-app`)
@@ -823,7 +823,7 @@ All agents carry a `modelTier` tag in their frontmatter. Routing is automatic.
 | Model | Role | Used for |
 |-------|------|---------|
 | Opus | Leadership, orchestration | PDs, Coords, Mini-Coords, dept heads, planning |
-| Sonnet | Execution, synthesis | Task-Executors, assistants, QA agents |
+| Sonnet | Execution, synthesis | Execs, assistants, QA agents |
 | Haiku | Menial, high-volume | Scraping, research, data extraction |
 
 **1M context (`[1m]`) is selective, not fleet-wide.** Only orchestrator roles —

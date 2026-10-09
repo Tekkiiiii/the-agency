@@ -13,7 +13,6 @@ Specialist roles are archived; spawn general-purpose + skills — see {agency-ro
 | Agent | What it does |
 |---|---|
 | Example Project PD | Project Director for a specific product/app — one PD is spawned per active project via `/new-project` (see Project Scaffolder) |
-| Task-Executor | Leaf implementation agent — executes exactly what Coord assigns, no decomposition authority, Sonnet model |
 | Project Scaffolder | Autonomous project + PD scaffolding agent — creates all files and registries for /new-project |
 | Codebase Search | Fast read-only file/symbol search across {agency-root}/, projects, and skill library — replaces Explore for system searches |
 | Overseer PD | Meta-overseer PD — monitors all other PDs, reads heartbeat/next-session/dept-state files, flags STALE (>3 days) and BLOCKED, ships daily digest. Reports only — no auto-poke. |

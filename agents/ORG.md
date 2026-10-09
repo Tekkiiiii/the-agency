@@ -14,7 +14,7 @@ The Agency operates on a **5-level matrix model** with three parallel authority 
 
 1. **Parent AI (Level 1 — Opus)** — Central orchestrator. Resolves matrix conflicts, allocates resources, and approves cross-project/shared-infra decisions. Weighted by task severity and project financial importance.
 2. **Dept Heads + Project Directors (Level 2 — Opus)** — Parallel authority lines. Dept Heads own skill quality + department operations. Project Directors own project delivery.
-3. **Dept-Coords + Coords (Level 3 — Sonnet/Opus)** — Autonomous work owners. Dept-Coords (Sonnet) own D3 department-operational tracks. Coords (Opus) own L3 project delivery tracks.
+3. **Dept-Coords + Coords (Level 3 — Sonnet)** — Autonomous work owners. Dept-Coords (Sonnet) own D3 department-operational tracks. Coords (Sonnet[1m], moved from Opus 2026-10-08) own L3 project delivery tracks.
 4. **Assistants (Level 3b — Sonnet)** — Context synthesizers. One per Dept Head (capacity tracking) or per active project (status synthesis). NOT relays.
 5. **Members (Level 4 — Sonnet)** — Task execution. Belong to departments, work on projects under PD direction or department initiatives under Dept-Coord direction.
 
@@ -25,7 +25,7 @@ VERTICAL (Functional Track)          HORIZONTAL (Project Track)          DEPT-OP
 ─────────────────────────────────    ─────────────────────────────────    ─────────────────────────
 Dept Head (Opus) ◄──────────────► Project Director (Opus)                Dept Head (Opus)
      │                                    │                                    │
-  Assistant                          Coord (Opus)                       Dept-Coord (Sonnet)
+  Assistant                          Coord (Sonnet)                     Dept-Coord (Sonnet)
      │                                    │                                    │
   Member                            Exec (Sonnet)                       Dept-Member (Sonnet)
 ```
@@ -78,7 +78,7 @@ THE AGENCY
 │
 ├── SPECIALIZED ───────────────── Specialized Agents Lead ★ (+ coord)
 │   ├── Kept by name: PDs (*-pd), Delegator, curator, codebase-search,
-│   │   save-state-runner, project-scaffolder, task-executor
+│   │   save-state-runner, project-scaffolder (task-executor retired 2026-10-08; Execs = general-purpose + Skills)
 │   └── Members: Specialist roles are archived; spawn general-purpose + skills — see {agency-root}/agents-archive/ROLE-MAP.md
 │
 ├── CRITIQUES ───────────────────── 15 agents ── Curmudgeon-in-Chief ★

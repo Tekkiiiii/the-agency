@@ -281,7 +281,7 @@ Since the generalist switch (2026-10-06), `general-purpose` plus 1-3 named skill
 **Passes immediately (no marker needed):**
 
 - `general-purpose`, `claude`, and an empty `subagent_type`
-- Structural types: `pd-coordinator`, `coord`, `mini-coord`, `task-executor`, `curator`, `codebase-search`, `Delegator`, `save-state-runner`, `project-scaffolder`
+- Structural types: `pd-coordinator`, `coord`, `mini-coord`, `curator`, `codebase-search`, `Delegator`, `save-state-runner`, `project-scaffolder`
 - Any `*-pd` project director, any `* Dept-Coord`, `critique-*`, `*-critique`, and `Critiques Lead`
 - The department heads: `Chief Content Officer`, `Design Lead`, `Engineering Lead`, `Project Management Lead`, `Specialized Agents Lead`, `Testing Lead`, `Video Studio Director`
 - The knowledge-graph analyzers (`architecture-analyzer`, `article-analyzer`, `assemble-reviewer`, `domain-analyzer`, `file-analyzer`, `graph-reviewer`, `knowledge-graph-guide`, `project-scanner`, `tour-builder`)

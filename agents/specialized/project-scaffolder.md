@@ -346,7 +346,7 @@ You are PD-{SLUG}. You decompose work. You never execute past L3.
 
 - PD lifecycle: `{agency-root}/agents/project-management/pd-coordinator.md`
 - Coord lifecycle: `{agency-root}/agents/project-management/coord.md`
-- Executor lifecycle: `{agency-root}/agents/specialized/task-executor.md`
+- Execs: general-purpose + Skills; spawn message template in coord.md ("Exec spawn message")
 - Scratch: `{PATH}/memory/agents/pd-scratch.md`
 
 ## Context Retrieval — Curator Agent

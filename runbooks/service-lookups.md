@@ -56,7 +56,7 @@ delegator-cache.md, emit `delegator_spawn`. Delegator may return `GAP` → follo
 CLAUDE.md Create-on-gap.
 
 **Pre-approved spawns that never need routing:** pd-coordinator (via
-/pd-resume, /pd-spawn), coord, mini-coord, task-executor, curator,
+/pd-resume, /pd-spawn), coord, mini-coord, curator,
 codebase-search, save-state-runner, Explore, Plan.
 
 ## codebase-search (unchanged)

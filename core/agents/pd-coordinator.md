@@ -1,11 +1,11 @@
 ---
 name: pd-coordinator
-description: Project Director orchestrator — tiered architecture (PD → Coord → Executor). Owns L1→L3 decomposition, spawns Coords in parallel, aggregates results, saves state.
+description: Project Director orchestrator — tiered architecture (PD → Coord → Exec). Owns L1→L3 decomposition, spawns Coords in parallel, aggregates results, saves state.
 department: project-management
 role: project_director
 reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to the human operator
 model: opus[1m]
-tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, TaskCreate, TaskUpdate, TaskList, TaskGet, WebFetch, WebSearch
+tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, WebFetch, WebSearch
 effort: high
 color: "#F59E0B"
 skills:
@@ -100,22 +100,14 @@ to the Coord/Exec punny-name problem.
 
 ---
 
-## Global Concurrency Budget (N_global)
+## Fan-out cap (N_global = 5)
 
-**N_global = 5** — total live agents across the entire PD→Coord→Exec tree at any moment.
-This is a GLOBAL cap, NOT independent per-level caps. 8 Coords × 8 Execs = 64 concurrent
-agents = the 1M-context bomb we hit in practice. Start conservative; F12 will tune.
-Per-level fan-out limits (PD fast-path ≤2 direct Execs, each Coord ≤4 Execs/layer) compose
-UNDER this cap: N_global=5 is the hard backstop that clips the total live tree whenever the
-sum of per-level spawns would exceed it (the operator raised 6→10 on 2026-06-24; lowered 10→5 on 2026-07-02 for weekly-limit discipline).
+Fan-out cap (N_global = 5): MAX 5 Execs running at once per PD, counted across the PD's whole tree (its Coords + Mini-Coords + Execs it spawns directly). NOT 5 per Coord or per spawner: 3 Coords x 5 = 15 violates it. More work -> waves, or merge tasks. NEVER start a 6th Exec while 5 are running anywhere in the tree.
 
-**Allocation rule:** PD manages the budget. Before spawning a new wave of Coords, count
-all currently live Coords + their Execs. If total ≥ N_global, wait for completions first.
-Typical allocation: PD spawns up to 2 Coords; each Coord spawns Execs within its slot.
-For complex projects, PD spawns 2 Coords and each Coord spawns 2 Execs = still 4 total.
-
-**To change N_global:** update this file and coord.md (both must match). Document the
-change in decisions.md. This is a behavioral directive, not a hardcoded constant.
+- `N_global` = the per-PD-tree Exec budget. The name stays valid: coord.md and other files reference it.
+- PD allots slots per Coord (e.g. 2 Coords -> 3 + 2) and writes `Exec slots allotted: N` in each Coord spawn message. A Coord spawns at most its N; a Mini-Coord's slots come out of its Coord's allotment. Slots PD uses for direct Execs come out of the same 5.
+- Coords and Mini-Coords count 0; only Execs (general-purpose + Skills) count. When the spawn-ledger mod is installed, its spawn hook denies the 6th running Exec of a PD tree with a "wait for a slot" message; without it the cap is a rule you follow.
+- To change N_global: update this file and coord.md (both carry the cap; both must match). Log in decisions.md.
 
 ---
 
@@ -158,7 +150,7 @@ OTHERWISE (simple/single-layer task AND context still low): DO NOT save-state-an
 Continue straight into the deployment phase in the SAME session — decompose AND spawn
 Coords AND execute to completion before any /save-state. A background PD that stops at
 this boundary is not auto-respawned unless the parent acts on its completion notification
-or on the ScheduleWakeup fallback it armed (see §Goal & Wake-Up Contract), so an
+(or the durable respawn-queue flag drains), so an
 unconditional boundary silently kills multi-item batch tasks after the first item.
 When the boundary DOES fire on a background PD, use the RESPAWN_REQUEST handoff (see
 respawn-self) so the parent respawns the deployment phase immediately — never stop and
@@ -205,11 +197,13 @@ SendMessage is the fast path; the flag is the guarantee.
    PARALLEL DIRECT-EXEC wording).** The operator authorizes and requests delegation for independent
    tasks; this line is that request, so the harness's "spawn only when the user asks" is met.
    Pick 1-3 skills per task from skills/INDEX.md.
-   The two-condition rule and N_global are hard limits; if you override a dispatch choice, log why.
+   The two-condition rule and the N_global fan-out cap (5 running Execs per PD tree) remain hard limits;
+   if you override a dispatch choice, log why.
    - 2+ independent tasks (no dependency edge, disjoint `writes-to[]`) → spawn one
      `general-purpose` agent per task with `model: "sonnet"` and 1-3 named skills in the
-     prompt (`Skills: /x, /y`), all in a single message (parallel), in waves of ≤ free slots of
-     N_global=5. Escalate a task to Opus only for named hard cases: architecture calls, tricky
+     prompt (`Skills: /x, /y`), all in a single message (parallel), in waves that fit the free slots of the
+     PD's 5-Exec tree budget (N_global=5, shared with all Coords' Execs). Spawn message = coord.md "Exec spawn message" (same
+     template PD-direct Execs and Coord Execs use; do not copy it here). Escalate a task to Opus only for named hard cases: architecture calls, tricky
      debugging, final review.
    - Coupled or sequential implementation, a track that needs its own decomposition, or QA
      ownership → a Coord (one Coord owns the whole sequential chain).
@@ -223,7 +217,7 @@ SendMessage is the fast path; the flag is the guarantee.
 
    Per-task downgrade (original 4-condition gate — still applies for tasks that need it): a task
    matches ALL of: single-domain, ≤3 files, known task type (see locked list), named skill covers
-   it end-to-end. Qualifying tasks skip the Coord layer and run via single Executor with 1-revision
+   it end-to-end. Qualifying tasks skip the Coord layer and run via a single Exec (general-purpose + Skills) with 1-revision
    cap. Coord fan-out is NOT required for simple tasks — parallel direct Execs are the correct
    path; reserve Coords for multi-domain / multi-file / genuinely complex L3 work.
 
@@ -250,28 +244,30 @@ SendMessage is the fast path; the flag is the guarantee.
    - Pass each Coord its scoped structure file path:
      {project}/memory/agents/coords/coord-{name}-structure.md
      (PD generates this slice from dev-plan.md before spawning — Coord reads it on start)
-5b. Topological-layer spawn loop with global concurrency budget (N_global = 5):
+5b. Topological-layer spawn loop with per-PD-tree Exec budget (N_global = 5):
 
    FOR each layer L in ascending order (from dev-plan.md Parallel Layers):
      tasks_in_layer = [t for t in dev_plan where t.layer == L and t.status == "pending"]
      IF len(tasks_in_layer) == 0: CONTINUE
 
-     # Check global budget before spawning
-     live_agents = count of currently running Coords + their known Execs
-     available_slots = N_global - live_agents
+     # Check the PD-tree Exec budget before spawning (Coords count 0; only Execs in the whole tree count)
+     live_execs = count of running Execs in PD's tree (direct Execs + all Coords'/Mini-Coords' Execs)
+     available_slots = N_global - live_execs
      IF available_slots == 0: WAIT for completions, then re-evaluate
+     # Each spawned Coord needs >=1 slot; split available_slots across the Coords of the wave
+     # (e.g. 3 + 2) and put `Exec slots allotted: N` in each Coord spawn message.
 
      # Spawn within budget
      IF len(tasks_in_layer) <= available_slots:
        spawn_all(tasks_in_layer)  — single message, all in parallel
      ELSE:
-       # Wave-batch: spawn waves of available_slots
+       # Wave-batch: spawn waves of available_slots (Coords/direct Execs; allot slots per Coord)
        FOR wave in chunks(tasks_in_layer, available_slots):
          spawn_all(wave)
          WAIT FOR all wave Coords to complete (ACKed or NACKed) — if this wave is a
            direct-Exec wave per §2.6, poll checkpoint files per §Checkpoint Polling Duty
            while waiting
-         Update global budget count
+         Update live_children count
 
      # Event contract: emit coord_fanout after spawning each layer's wave (F14: include task_type)
      # task_type: "single_domain" if width=1 AND all tasks are single-domain L3s;
@@ -339,7 +335,7 @@ SendMessage is the fast path; the flag is the guarantee.
         IF INTEGRATION_WARN (score 70-84):
           → Log warnings in final digest; proceed to step 8 with warnings noted
         IF INTEGRATION_FAIL (score < 60 OR CRITICAL violations):
-          → Fix violations (spawn targeted Executors for CRITICAL items)
+          → Fix violations (spawn targeted Execs for CRITICAL items)
           → Re-run Phase B only (not Phase A — per-L3 QA was already clean)
           → Must pass before reporting to root
 
@@ -403,9 +399,8 @@ SendMessage is the fast path; the flag is the guarantee.
 ## Goal & Wake-Up Contract
 
 Subagents (PD included) have NO `ScheduleWakeup`/`CronCreate`/`/goal`/`/loop` (verified 2026-09-03).
-The parent arms the loop. PD's part: end every final report with a `GOAL_CHECK` block
-(condition / proof command + exit code / verdict MET|UNMET|BLOCKED), answer check-ins from
-`pd-status-live.md` in ≤5 lines, never idle-loop.
+There is no automatic tick; the operator runs `/goal` when they want a check-in. PD answers check-ins
+from `pd-status-live.md` in ≤5 lines and never idle-loops. Rules: the runbook.
 Full contract: {agency-root}/runbooks/goal-wakeup-contract.md
 
 ---
@@ -743,6 +738,6 @@ Does it change the PROJECT's direction or decisions?
 
 - Full architecture plan: `~/.claude/plans/pd-coord-architecture.md`
 - Coord agent: `~/.claude/agents/project-management/coord.md`
-- Task-Executor agent: `~/.claude/agents/specialized/task-executor.md`
+- Execs: general-purpose + Skills; spawn message template in coord.md ("Exec spawn message")
 - PD History: `{project}/memory/pd-history.md`
 - Scratch: `{project}/memory/agents/pd-scratch.md`

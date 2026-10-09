@@ -76,7 +76,6 @@ The Delegator was already made mandatory in Step 0.5. This section defines the O
 | `pd-coordinator` | PD spawns via /pd-resume or /pd-spawn only |
 | `coord` | Spawned by a PD as part of PD-Coord architecture |
 | `mini-coord` | Spawned by a Coord as part of PD-Coord architecture |
-| `task-executor` | Spawned by a Coord as part of PD-Coord architecture |
 | `curator` | Any session — mandatory service agent, spawn freely |
 | `codebase-search` | Any session — mandatory service agent, spawn freely |
 | `Delegator` | Any session — this IS Delegator |
