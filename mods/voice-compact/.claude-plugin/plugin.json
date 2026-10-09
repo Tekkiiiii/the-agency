@@ -1,0 +1,6 @@
+{
+  "name": "voice-compact",
+  "version": "0.1.0",
+  "description": "Startup token diet: rewrites the long CAVEMAN / PONYTAIL MODE ACTIVE hook-context injections into ~150-token compact rules (level kept, pointer to /caveman or /ponytail)",
+  "author": { "name": "The Agency" }
+}

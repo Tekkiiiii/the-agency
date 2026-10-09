@@ -8,6 +8,15 @@ All notable changes to The Agency are documented here, grouped by release wave (
 
 ### Tiếng Việt
 
+**Đợt 2026-10-09 — năm mod Claude Code tùy chọn trong `mods/`, `model-pin.py` ghim model và giới hạn Exec, và dòng ABANDONED của `reconcile-stale-spawns.sh` mang đủ loại agent, model, chi phí.** Mod cần Claude Code 2.1.287 trở lên, nạp bằng tay (`CLAUDE_CODE_PLUGIN_DIRS` hoặc `--plugin-dir`); installer chưa cài mod.
+
+#### Added (2026-10-09)
+- **`mods/`: năm plugin Claude Code** gồm `context-band` (dải context, cache, chi phí, mốc reset 5h/7d trên prompt; dòng Jev chỉ hiện khi có log của router), `agent-ctx` (cảnh báo context 70% / 80% cho từng agent), `loop-guard` (cảnh báo khi gọi cùng một tool 5 lần liên tiếp), `spawn-ledger` (sổ spawn JSONL, ghim model, giới hạn Exec, kiểm tra artifact, chuyển `RESPAWN_REQUEST`) và `voice-compact` (nén lời nhắc CAVEMAN / PONYTAIL còn khoảng 150 token). Đường dẫn tính từ root (`AGENCY_HOME` > `CLAUDE_CONFIG_DIR` > `~/.claude`), ngày của `context-band` theo múi giờ máy. Cách nạp, phần trùng với hook shell và bảng phụ thuộc nằm ở `mods/README.md`.
+- **`hooks/lib/model-pin.py` và `hooks/lib/exec-model-map.json`**: `spawn-ledger` gọi trước mỗi lần spawn để bỏ `model` sai của người gọi khi agent có model ghim trong frontmatter, đặt model mặc định cho `general-purpose`, và giới hạn số Exec chạy cùng lúc dưới mỗi PD. Lỗi nào cũng cho spawn đi tiếp; công tắc tắt: `MODEL_PIN_OFF=1`, `state/model-pin.off`, `SPAWN_CAP_OFF=1`. Test nằm ở `mods/spawn-ledger/tests/test_model_pin.py`.
+
+#### Changed (2026-10-09)
+- **`hooks/lib/reconcile-stale-spawns.sh` (C4)**: dòng `spawn_end` ABANDONED chép `agent_type` và `model` từ spawn nó đóng (lấy `resolved_model` của dòng `spawn_launched` khi dòng start chỉ ghi inherit/unknown) và ghi `cost_usd` 0.0 cùng `cost_source` "unavailable" thay vì để trống. Giữ cách `cd` vào thư mục log cho Windows.
+
 **Đợt 2026-10-09 — gỡ tầng phòng ban (8 trưởng phòng, 7 điều phối phòng ban, room-manager) và dựng Hội đồng mới: một ghế cho mỗi hạng model, hỏi một đợt duy nhất.** Việc chạy theo một chuỗi duy nhất: PD -> Coord -> Exec (`general-purpose` + 1-3 skill; người spawn chọn model và skill). Các thư mục `agents/<thư mục>/` vẫn còn làm nơi chứa định nghĩa PD của người dùng (`project-scaffolder` ghi PD mới vào đó) nhưng không còn là "phòng ban" có trưởng. Hội đồng cũ gồm 8 trưởng phòng nên đi theo.
 
 #### Removed (2026-10-09, gỡ phòng ban)
@@ -254,6 +263,15 @@ Mục tiêu: catalog ship ra khớp đúng hệ thống live, không giữ thêm
 - **1M context (`[1m]`) áp dụng CHỌN LỌC, không áp dụng toàn fleet.** Hậu tố `[1m]` chỉ gắn cho các role điều phối — PD, Coord, Mini-Coord, Dept-Coord (21 file) — vì đây là những role duy nhất có context phình theo *khối lượng công việc* chứ không theo độ dài brief của chính nó. Toàn bộ agent còn lại giữ nguyên. Quyết định này đã chốt, không mở lại. Chính sách đầy đủ ở `core/ORG.md` § Model tiering. Kèm theo đó: `modelTier:` chỉ là tag tài liệu và hoàn toàn trơ khi spawn — `model:` mới là key Claude Code thực sự đọc, và là nơi `[1m]` được gắn vào.
 
 ### English
+
+**Wave 2026-10-09 — five optional Claude Code mods in `mods/`, a `model-pin.py` model pin and Exec cap, and `reconcile-stale-spawns.sh` ABANDONED rows that carry agent type, model and cost.** Mods need Claude Code 2.1.287 or newer and are loaded by hand (`CLAUDE_CODE_PLUGIN_DIRS` or `--plugin-dir`); the installer does not set them up yet.
+
+#### Added (2026-10-09)
+- **`mods/`: five Claude Code plugins.** `context-band` (context, cache, cost and 5h/7d reset band above the prompt; the Jev router row shows only when the router usage log exists), `agent-ctx` (per-agent context warnings at 70% and 80%), `loop-guard` (stall warning after five identical tool calls in a row), `spawn-ledger` (JSONL spawn ledger, model pin, Exec cap, artifact check, `RESPAWN_REQUEST` relay) and `voice-compact` (shrinks the CAVEMAN / PONYTAIL startup injections to about 150 tokens). Paths resolve from the agency root (`AGENCY_HOME` > `CLAUDE_CONFIG_DIR` > `~/.claude`); `context-band` counts its day in machine-local time. Loading, overlap with the shell hooks and a dependency table are in `mods/README.md`.
+- **`hooks/lib/model-pin.py` and `hooks/lib/exec-model-map.json`**: `spawn-ledger` calls it before each spawn to strip a caller `model` that overrides a frontmatter-pinned agent, set the default model for `general-purpose`, and cap how many Execs run at once under each PD. Any error lets the spawn through; kill switches: `MODEL_PIN_OFF=1`, `state/model-pin.off`, `SPAWN_CAP_OFF=1`. Tests live in `mods/spawn-ledger/tests/test_model_pin.py`.
+
+#### Changed (2026-10-09)
+- **`hooks/lib/reconcile-stale-spawns.sh` (C4)**: the ABANDONED `spawn_end` row copies `agent_type` and `model` from the spawn it closes (using the `spawn_launched` row's `resolved_model` when the start row only says inherit/unknown) and writes `cost_usd` 0.0 with `cost_source` "unavailable" instead of leaving them out. The `cd`-into-the-log-directory idiom for Windows is kept.
 
 **Wave 2026-10-09 — the department tier is retired (8 department leads, 7 department coordinators, room-manager) and a new Council replaces the 8-lead one: one seat per model tier, one wave.** Work runs as a single chain: PD -> Coord -> Exec (`general-purpose` + 1-3 skills; the spawner picks the model and skills). The `agents/<folder>/` directories stay as homes for users' PD definitions (`project-scaffolder` writes new PDs there) but are no longer "departments" with heads. The old Council of 8 leads goes with them.
 

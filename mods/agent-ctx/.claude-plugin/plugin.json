@@ -1,0 +1,7 @@
+{
+  "name": "agent-ctx",
+  "version": "0.1.0",
+  "description": "Each agent loop's own context %, measured per request; a one-line CONTEXT_PCT_ALERT rides that agent's next tool result when it crosses 70% or 80%",
+  "author": { "name": "The Agency" },
+  "types": "./types/index.d.ts"
+}

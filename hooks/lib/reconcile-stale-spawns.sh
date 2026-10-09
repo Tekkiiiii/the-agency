@@ -22,6 +22,10 @@
 # once per SPAWN_RECONCILE_INTERVAL_SEC (default 900s) per log file — safe to call
 # from a hot hook path on every spawn event.
 #
+# C4: the ABANDONED row copies agent_type and model (launched.resolved_model when the start row
+# only says inherit/unknown) from the spawn it closes, and marks the unknowable cost as cost_usd 0.0 +
+# cost_source "unavailable". Nothing is recomputed; the real cost of an abandoned spawn is not recoverable here.
+#
 # Usage: bash reconcile-stale-spawns.sh /path/to/spawns.jsonl
 #
 # FAILURE ISOLATION: fire-and-forget. Never blocks, never exits non-zero to the
@@ -60,7 +64,7 @@ LOG_BASE=$(basename "$LOG_FILE")
 
 ( cd "$LOG_DIR" 2>/dev/null || exit 0
 python3 -c '
-import sys, json
+import sys, json, re
 from datetime import datetime
 
 log_file = sys.argv[1]
@@ -74,6 +78,7 @@ except Exception:
 
 starts = {}
 has_end = set()
+launched_model = {}
 
 for line in lines:
     line = line.strip()
@@ -91,6 +96,8 @@ for line in lines:
         starts[sid] = e
     elif ev == "spawn_end":
         has_end.add(sid)
+    elif ev == "spawn_launched" and e.get("resolved_model"):
+        launched_model[sid] = re.sub(r"\[[^\]]*\]$", "", e["resolved_model"])
 
 try:
     now = datetime.now().astimezone()
@@ -112,14 +119,26 @@ for sid, s in starts.items():
         continue
     if age < stale_threshold:
         continue
+    smodel = (s.get("model") or "").strip()
+    if smodel in ("", "inherit", "unknown") and sid in launched_model:
+        model, model_source = launched_model[sid], "launched"
+    elif smodel:
+        model, model_source = smodel, s.get("model_source") or "start"
+    else:
+        model, model_source = "unknown", "unavailable"
     entry = {
         "event": "spawn_end",
         "spawn_id": sid,
         "tool_use_id": s.get("tool_use_id", ""),
         "outcome": "ABANDONED",
+        "agent_type": s.get("subagent_type", "") or s.get("child_agent", ""),
+        "model": model,
+        "model_source": model_source,
         "duration_ms": 0,
         "tokens": 0,
         "tool_uses": 0,
+        "cost_usd": 0.0,
+        "cost_source": "unavailable",
         "summary_excerpt": "reconciliation-sweep: no spawn_end recorded within %ds of spawn_start" % stale_threshold,
         "ts": now.isoformat(timespec="seconds"),
         "source": "reconciliation-sweep"

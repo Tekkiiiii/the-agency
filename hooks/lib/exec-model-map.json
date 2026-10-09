@@ -1,0 +1,22 @@
+{
+  "_comment": "Model pin policy read by hooks/lib/model-pin.py (spawn-ledger agent.spawn hook). Category entries are EMPTY on purpose: empty = use \"default\". A spawner picks a category with a line `MODEL-CATEGORY: <name>` (or `[category:<name>]`) in the prompt/description. Named agents ignore this file: their frontmatter model: wins. exec_cap: max Execs running per ROOT PD across its whole tree (coords, mini-coords, direct Execs; coords never count); chain with no PD ancestor is exempt, unresolvable chain fails open. Kill switches: MODEL_PIN_OFF=1 | state/model-pin.off | .hook-profile=minimal (everything); SPAWN_CAP_OFF=1 | state/spawn-cap.off (cap only).",
+  "default": "sonnet",
+  "categories": {
+    "lookup": "",
+    "implement": "",
+    "debug": "",
+    "review": "",
+    "research": ""
+  },
+  "escalation": {
+    "enabled": false,
+    "allowed": ["opus"]
+  },
+  "exec_cap": {
+    "enabled": true,
+    "max": 5,
+    "types": ["general-purpose", "task-executor"],
+    "include_root": false,
+    "stale_after_sec": 7200
+  }
+}

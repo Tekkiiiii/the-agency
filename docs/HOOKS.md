@@ -136,6 +136,8 @@ To wire any of the remaining four in yourself, merge an entry into the correspon
 ]
 ```
 
+Mod counterparts (optional, Claude Code 2.1.287+): `mods/loop-guard` does the job of `loop-detector.sh`, and `mods/spawn-ledger` covers `artifact-verify.sh`, `spawn-logger.sh` and `spawn-completion.sh` and adds a model pin and Exec cap. Running a mod next to its shell hook gives duplicate warnings or log rows; see [mods/README.md](../mods/README.md) for loading and overlap.
+
 ---
 
 ## Settings Hygiene Patterns

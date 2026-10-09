@@ -1,0 +1,16 @@
+{
+  "name": "context-band",
+  "version": "0.7.0",
+  "description": "Band above the prompt: context %, tokens, model, cost, prompt-cache size/share/TTL countdown, 5h and weekly usage-window reset timers and next-request estimate; /ctx opens a detail pane; toast when a background subagent finishes; Jev router line (today's calls, tokens, USD, Haiku fallback) and outage warning, hidden unless the router usage log exists",
+  "author": { "name": "The Agency" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "cacheTtl": {
+      "type": "string",
+      "title": "Prompt cache TTL",
+      "description": "TTL your requests use: 1h normally, 5m when usage drops to the short cache",
+      "options": ["1h", "5m"],
+      "default": "1h"
+    }
+  }
+}
