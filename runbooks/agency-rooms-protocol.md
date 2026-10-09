@@ -17,48 +17,15 @@ Agency Rooms are persistent, file-based chat spaces where agents communicate acr
     └── shared.md   # Auto-summarized shared context
 ```
 
-Rooms are managed by the **/room-manager** polling process (a skill, no longer a registered agent type) and powered by `room-utils.sh`.
+Rooms are plain files written by `agents/scripts/room-utils.sh`, and by the feedback-pipeline cron (it writes under `agency-rooms/feedback/`). There is no polling process: the room polling skill was archived in the 2026-10-08 dept sunset, so nothing auto-notifies members, auto-summarizes `context/shared.md`, or routes `ESCALATE:` messages. Read rooms on demand with `room-utils.sh read`.
 
 ---
 
 ## Quick Start
 
-### For a Human / Parent AI
+### Commands (room-utils.sh)
 
-**Create a room:**
-```
-TO: room-manager
-ACTION: create_room
-ROOM_NAME: api-design-sync
-DESCRIPTION: Weekly sync between engineering and design leads on shared API architecture
-MEMBERS: [engineering-lead, design-lead, testing-lead]
-```
-
-**Send a message:**
-```
-TO: room-manager
-ACTION: send_message
-ROOM: api-design-sync
-MESSAGE: We've finalized the schema approach. @engineering-lead please review the benchmark results.
-```
-
-**List all rooms:**
-```
-TO: room-manager
-ACTION: list_rooms
-```
-
-**Add a member:**
-```
-TO: room-manager
-ACTION: add_member
-ROOM: api-design-sync
-MEMBER: specialized-lead
-```
-
-### For an Agent (via room-utils.sh)
-
-Any agent can use the utilities directly:
+Any agent or the main session can use the utilities directly:
 
 ```bash
 # Create a room
@@ -89,46 +56,17 @@ room-utils.sh rooms-for my-agent
 
 ---
 
-## RoomManager Actions Reference
-
-| Action | Parameters | Description |
-|--------|-----------|-------------|
-| `create_room` | `ROOM_NAME`, `DESCRIPTION`, `MEMBERS` (optional) | Create a new room |
-| `delete_room` | `ROOM_NAME` | Delete a room (confirms first) |
-| `add_member` | `ROOM`, `MEMBER` | Add an agent to a room |
-| `remove_member` | `ROOM`, `MEMBER` | Remove an agent (not the owner) |
-| `list_rooms` | — | List all agency rooms |
-| `room_info` | `ROOM` | Show room metadata + stats |
-| `set_topic` | `ROOM`, `TOPIC` | Set/change discussion topic |
-| `send_message` | `ROOM`, `MESSAGE` | Post a message to the room |
-| `read_room` | `ROOM`, `LIMIT` (default 50) | Read recent messages |
-| `escalate` | `ROOM`, `SENDER`, `TIER`, `SUMMARY` | Post an escalation (auto-routed to council-chair) |
-| `write_handoff` | `ROOM`, `ID`, `FROM`, `TO`, `TASK`, `CONTENT` | Write a NEXUS handoff doc |
-| `complete_handoff` | `ROOM`, `HANDOFF_ID` | Mark a handoff as complete |
-| `read_handoffs` | `ROOM`, `FILTER` (pending/complete/all) | Read handoff docs |
-| `poll` | — | Internal: run polling cycle (called by cron) |
-| `check_escalations` | — | Check and route pending escalations |
-| `check_handoffs` | — | Check for new pending handoffs and notify recipients |
-| `help` | — | Show this reference |
-
----
-
 ## Room Naming Conventions
 
 - **Format**: `kebab-case` — `api-design-sync`, `content-campaign-q2`, `ux-research`
-- **Scope prefix** (optional): `dept-name/room-name` — `engineering/api-design`, `content-creation/campaign-brief`
+- **Scope prefix** (optional): `project-or-domain/room-name` — `engineering/api-design`, `content-creation/campaign-brief`
 - **Avoid**: Spaces, special characters, names longer than 50 chars
 
 ---
 
 ## @Mention Syntax
 
-Agents can mention other agents in messages:
-```
-@{from-agent} @{to-agent} — ready for review
-```
-
-The RoomManager parses these and sends targeted notifications to mentioned agents.
+Agents can mention other agents in messages by convention (`@{from-agent} @{to-agent} — ready for review`). Mentions are plain text; no process parses them.
 
 ---
 
@@ -151,7 +89,7 @@ room-utils.sh complete-handoff <room> <handoff-id>
 
 **Lifecycle:**
 1. `from` agent completes their work, writes handoff via `room-utils.sh write-handoff`
-2. RoomManager polling detects pending handoff → sends `SendMessage` to `to` agent
+2. The sender tells the `to` agent (or the main session) the handoff exists; a later `room-utils.sh read-handoffs <room> pending` also finds it
 3. `to` agent reads handoff content and begins work
 4. `to` agent marks complete with `room-utils.sh complete-handoff`
 
@@ -168,66 +106,42 @@ room-utils.sh complete-handoff <room> <handoff-id>
 
 Each room has a `context/` subdirectory. Agents write shared documents there:
 
-- **`context/shared.md`** — Auto-summarized by RoomManager (key decisions, action items, open questions)
+- **`context/shared.md`** — Shared summary (key decisions, action items, open questions); maintained by hand
 - **`context/spec.md`** — Current specification or design doc
 - **`context/decisions.md`** — Decision log
 - **`context/todos.md`** — Action items
 
 Example — writing to shared context:
 ```bash
-room-utils.sh write-context my-room todos.md "# Open Items\n- [ ] Review schema proposal (assigned: @engineering-lead)\n- [ ] Security audit scheduled for Friday"
+room-utils.sh write-context my-room todos.md "# Open Items\n- [ ] Review schema proposal (assigned: @{agent})\n- [ ] Security audit scheduled for Friday"
 ```
 
 ---
 
-## Message Patterns Recognized by RoomManager
+## Message Pattern Conventions
 
-These prefixes auto-populate `context/shared.md` and/or trigger routing actions:
+Prefix messages so they are greppable and easy to lift into `context/shared.md` by hand:
 
-| Pattern | Example | Effect |
-|---------|---------|--------|
-| `DECIDED:`, `CONCLUSION:` | `DECIDED: Using REST with versioned paths` | → Key Decisions section |
-| `ACTION:` | `ACTION: @{to-agent} review PR #42` | → Action Items section |
-| `TODO:` | `TODO: Document the auth flow` | → Action Items section |
-| `QUESTION:` | `QUESTION: Should we use JWT or sessions?` | → Open Questions section |
-| `UNRESOLVED:` | `UNRESOLVED: Database choice TBD` | → Open Questions section |
-| `SUMMARY:` | `SUMMARY: Resolved by choosing option A because...` | → Updates shared summary |
-| `ESCALATE:` | `ESCALATE: tier-2 — API spec delayed, blocking 3 tasks` | **→ Routed to council-chair by RoomManager** |
-
----
-
-## Active Polling
-
-The RoomManager polls every **15 minutes** via `CronCreate`. On each poll:
-1. Reads `state.json` for last check timestamps per room
-2. Checks `messages.mdl` for new entries since last poll
-3. Identifies members with unread messages
-4. Sends `SendMessage` notifications with summaries
-5. Updates `context/shared.md` with new decisions/actions/questions
-6. Updates `state.json` with new checkpoints
-
-**Throttling**: Members aren't re-notified for the same room within 30 minutes.
+| Pattern | Example | Meaning |
+|---------|---------|---------|
+| `DECIDED:`, `CONCLUSION:` | `DECIDED: Using REST with versioned paths` | Key decision |
+| `ACTION:`, `TODO:` | `ACTION: @{to-agent} review PR #42` | Action item |
+| `QUESTION:`, `UNRESOLVED:` | `QUESTION: Should we use JWT or sessions?` | Open question |
+| `SUMMARY:` | `SUMMARY: Resolved by choosing option A because...` | Summary line |
+| `ESCALATE:` | `ESCALATE: tier-2 — API spec delayed, blocking 3 tasks` | Needs the main session; use `room-utils.sh escalate`, then tell the main session directly (see `escalation-protocol.md`) |
 
 ---
 
 ## Room Lifecycle
 
 ### Creation
-1. RoomManager creates directory and files
-2. Creator becomes room owner
-3. Initial members added to `members.json`
-4. Room appears in `list_rooms`
-5. Members receive welcome notification
+`room-utils.sh create <room> "<description>" [members...]` creates the directory and files; the creator becomes room owner and initial members go into `members.json`.
 
 ### Deletion
-1. Owner or parent AI requests `delete_room`
-2. RoomManager confirms with `y/N`
-3. Directory and all files permanently removed
-4. No archive (rooms are not preserved on deletion)
+`room-utils.sh delete <room>` removes the directory and all files permanently. No archive.
 
 ### Ownership Transfer
-- Not currently supported via command
-- To transfer: remove current owner as member, re-add as member, manually update `members.json` owner field
+Not supported via command. Edit the `owner` field in `members.json` by hand.
 
 ---
 
@@ -244,24 +158,6 @@ Rooms don't replace `SendMessage` — they complement it:
 | Cross-session threads | Room |
 | Status updates | Room |
 | Context sharing | Room + context files |
-
----
-
-## Running the RoomManager
-
-The RoomManager is no longer a registered agent type. Run it as the `/room-manager` skill, or spawn it as
-`general-purpose + /room-manager` (role file: `agents-archive/generalist-2026-10-06/specialized/infra/room-manager.md`):
-
-```
-/room-manager
-```
-
-To activate polling on first run, the RoomManager will `CronCreate` with:
-```
-cron: "*/15 * * * *"
-prompt: "Run RoomManager polling cycle"
-durable: true
-```
 
 ---
 
@@ -288,4 +184,4 @@ durable: true
 
 **Messages not appearing** — Verify `room-utils.sh send` succeeded (should print `OK:`)
 
-**RoomManager not polling** — Re-run `/room-manager` (or re-spawn general-purpose + /room-manager); it re-registers its cron on activation
+**No notifications arrive** — Expected: there is no polling process. Read the room with `room-utils.sh read <room>` or tell the recipient directly.

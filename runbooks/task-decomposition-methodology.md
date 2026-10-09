@@ -12,7 +12,7 @@ lazyRead: true
 **LAZY-READ:** Load this file ONLY when actively decomposing tasks (PD generating dev-plan,
 Coord generating L4-L6 structure). Never load in base agent context.
 
-Referenced by: `pd-coordinator.md`, `coord.md`, `dept-coord-protocol.md`
+Referenced by: `pd-coordinator.md`, `coord.md`
 
 ---
 
@@ -257,7 +257,7 @@ The two conditions are designed to catch all interference cases.
   general-purpose agent per task (`model: "sonnet"`, 1-3 skills), all spawned in parallel,
   PD QAs each result; coupled/sequential implementation or a track that needs its own
   decomposition → a Coord. PD does only knowledge work directly, never implementation.
-- Coord/Dept-Coord parallel layer: ≤4 tasks. When a Coord has ≤4 independent Execs in a
+- Coord parallel layer: ≤4 tasks. When a Coord has ≤4 independent Execs in a
   layer, spawn them all in one parallel message (no wave-batching needed).
 If all tasks pass the two-condition rule, assign them to the same layer (Layer 1). Do NOT
 assign sequential layers "just to be safe." A sequential assignment is only correct when a

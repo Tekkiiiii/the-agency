@@ -13,13 +13,12 @@ Before matching agents or skills, check if an active protocol governs the task:
 
 | Task pattern | Protocol | File |
 |---|---|---|
-| Content production (blog, email, ad, social, video script) | content-request | `agents/content-creation/protocols/content-request.md` |
+| Content production (blog, email, ad, social, video script) | content-request | `runbooks/content-request-protocol.md` |
 | Quality gate for any creative or code deliverable | quality-loop | `runbooks/quality-loop-protocol.md` |
-| Cross-dept work not listed above | Check protocol-registry | `runbooks/protocol-registry.md` |
 | Escalation, conflict, authority dispute | escalation-protocol | `runbooks/escalation-protocol.md` |
-| Department initiative execution (D1→D6) | dept-coord-protocol | `runbooks/dept-coord-protocol.md` |
+| Multi-step initiative execution (PD -> Coord -> Exec) | coord-spawn-template | `runbooks/coord-spawn-template.md` |
 
-If a protocol matches → route through the protocol's owning department. Skills and agents are dispatched **within** the protocol flow, not instead of it.
+If a protocol matches → route through the PD -> Coord chain following the protocol. Skills and agents are dispatched **within** the protocol flow, not instead of it.
 
 ## Step 0.5 — Lookup-first, Delegator second
 
@@ -34,20 +33,20 @@ Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, Cura
 | Task domain | Prefer this agent type |
 |---|---|
 | Research, analysis, investigation | `Explore`, `research-pd` |
-| Frontend, UI, design | general-purpose + /frontend, /next-best-practices, /tailwind (role file: agents-archive/generalist-2026-10-06/engineering/engineering-frontend-developer.md); UI: general-purpose + /ui-ux-pro-max, /impeccable (role file: agents-archive/generalist-2026-10-06/design/design-ui-designer.md); `Design Lead` |
+| Frontend, UI, design | general-purpose + /frontend, /next-best-practices, /tailwind (role file: agents-archive/generalist-2026-10-06/engineering/engineering-frontend-developer.md); UI: general-purpose + /ui-ux-pro-max, /impeccable (role file: agents-archive/generalist-2026-10-06/design/design-ui-designer.md) |
 | Backend, API, database | general-purpose + /backend, /postgresql-schema, /plan-eng-review (role file: agents-archive/generalist-2026-10-06/engineering/engineering-backend-architect.md); data: + /xlsx-toolkit (role file: agents-archive/generalist-2026-10-06/engineering/engineering-data-engineer.md) |
 | Full-stack / feature work, Laravel/PHP stack | general-purpose + /laravel-builder, /review (role file: agents-archive/generalist-2026-10-06/engineering/engineering-senior-developer.md), domain-specific PD |
 | Full-stack / feature work, non-Laravel stack (Node.js, Python, bash, docs, etc.) | `coord` (or general-purpose + stack-appropriate skills), domain-specific PD — do NOT use the Laravel/PHP-scoped senior-developer role file on other stacks |
-| Content creation, writing, copy, editorial, scripts, docs, decks | `Chief Content Officer`, `content-creation-lead` |
+| Content creation, writing, copy, editorial, scripts, docs, decks | general-purpose + /content-creator, /copywriting, then /content-polish; critics via /cc-loop (see `runbooks/content-request-protocol.md`) |
 | Security, compliance, legal | general-purpose + /security, /cso (role file: agents-archive/generalist-2026-10-06/engineering/engineering-security-engineer.md; review: `critique-security`); compliance: + /legal-contract-review (role file: agents-archive/generalist-2026-10-06/specialized/audit/compliance-auditor.md) |
 | Deployment, DevOps, infra | general-purpose + /pipeline-deploy, /vercel-deploy, /railway-deploy (role file: agents-archive/generalist-2026-10-06/engineering/engineering-devops-automator.md) |
-| QA, testing, verification | `Testing Lead`, general-purpose + /qa-only, /browse, /webapp-testing (role file: agents-archive/generalist-2026-10-06/testing/testing-evidence-collector.md), `qa` skill |
+| QA, testing, verification | general-purpose + /qa-only, /browse, /webapp-testing (role file: agents-archive/generalist-2026-10-06/testing/testing-evidence-collector.md), `qa` skill |
 | Experiment design, A/B | general-purpose + /content-experimentation-best-practices, /project-status (role file: agents-archive/generalist-2026-10-06/project-management/project-management-experiment-tracker.md) |
 | Knowledge retrieval, project context, history lookup | `curator` |
 | Task planning, decomposition, DAG structuring, sprint planning | general-purpose + /superpowers-writing-plans (role file: agents-archive/generalist-2026-10-06/specialized/task-planner.md) |
 | Voice cloning, TTS, voice generation, text-to-speech, dubbing, voice design | general-purpose (no skill; role file: agents-archive/generalist-2026-10-06/video-studio/vs-voice-director.md) via OmniVoice Studio (default tool) — MCP: `mcp__omnivoice__generate_speech` |
-| Video editing, transcription, color grade, subtitles, overlays, raw footage | `/video-use` skill (default), `content-creation-lead` for strategy |
-| Video production (scripted, AI-generated, full pipeline) | Video Studio dept — `video-studio-lead` for strategy, `video-studio-coord` for production coordination |
+| Video editing, transcription, color grade, subtitles, overlays, raw footage | `/video-use` skill (default); strategy: general-purpose + /content-strategy |
+| Video production (scripted, AI-generated, full pipeline) | general-purpose + /video-shotcraft, /video-prompt-director, /hyperframes (role files: agents-archive/generalist-2026-10-06/video-studio/); PD -> Coord coordinates production |
 | Quality gate for any creative deliverable | `quality-loop-router` skill — always the terminal step; determines Mode A (internal loop) or Mode B (external fix plan) |
 | Code quality review (non-security) | `critique-code` agent or skill |
 | Data/analytics/dashboard critique | `critique-data` agent or skill |
@@ -58,10 +57,10 @@ Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, Cura
 | Social media content extraction (FB/IG/LinkedIn/X/TikTok/YouTube/Reddit) | general-purpose + /lightpanda, /scrape, /firecrawl-crawl (role file above) — runs social decision ladder (API → Apify → session → FLAG) |
 | Messaging platform read/write (TG/Discord/Slack/WA/Signal/Matrix) | `mcp__hermes__*` tools directly — no web-extraction spawn needed |
 
-## Cross-Department Protocol: Marketing ↔ Content Creation
+## Cross-Function Protocol: Marketing ↔ Content Creation
 
 Marketing owns **strategy** (what, who, when, where, why). Content Creation owns **execution** (the written artifact).
-- Content production tasks → Content Creation (CCO receives strategic brief from Marketing)
+- Content production tasks → general-purpose writer via PD -> Coord (strategic brief from Marketing; see `runbooks/content-request-protocol.md`)
 - Content strategy, audience targeting, distribution, performance → Marketing
 - Marketing briefs Content Creation → Content Creation produces → Marketing distributes → Marketing feeds back performance data → Content Creation optimizes
 
@@ -89,7 +88,7 @@ The Delegator was already made mandatory in Step 0.5. This section defines the O
 If unsure which skills fit, use `agents-archive/ROLE-MAP.md` / skills/INDEX.md; spawn Delegator only for ambiguous or cross-domain tasks.
 
 ## Step 2 — Pick skills from the role map.
-Use `Explore` for research; for domain work spawn general-purpose + the skills listed in `agents-archive/ROLE-MAP.md` (role file when expertise matters). Kept named agents (`*-pd`, Coords, critique-*, dept heads) stay spawnable by name.
+Use `Explore` for research; for domain work spawn general-purpose + the skills listed in `agents-archive/ROLE-MAP.md` (role file when expertise matters). Kept named agents (`*-pd`, Coords, critique-*) stay spawnable by name.
 
 ## Step 3 — general-purpose is the default.
 No ROLE-MAP row? general-purpose + the 1-3 skills from `skills/INDEX.md` that fit the task.

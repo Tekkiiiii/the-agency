@@ -1,6 +1,6 @@
 ---
 name: coord-respawn-self
-description: "Used by a Coord agent when context reaches 80% mid-L3. Saves mid-L3 state, writes a continuation manifest, notifies the spawner (PD or Dept Head) and stops so a fresh Coord resumes. Max 3 respawns per Coord per 24h. Only at clean task boundaries, never mid-Executor-spawn or mid-ACK/NACK."
+description: "Used by a Coord agent when context reaches 80% mid-L3. Saves mid-L3 state, writes a continuation manifest, notifies the spawner (PD) and stops so a fresh Coord resumes. Max 3 respawns per Coord per 24h. Only at clean task boundaries, never mid-Executor-spawn or mid-ACK/NACK."
 ---
 
 # /coord-respawn-self — Coord Context-Aware Self-Respawn
@@ -93,10 +93,8 @@ L3 task: {l3-task-description}
 **Determine who your spawner is:**
 - If you are an **execution Coord** (spawned by a PD, `reports_to: pd-coordinator`):
   → Send to "PD-{slug}" via SendMessage.
-- If you are a **Dept-Coord** (role: dept-coord, spawned by a dept lead):
-  → Send to your Dept Head (e.g. "engineering-lead", "design-lead") via SendMessage.
 
-Message format (same in both cases — substitute the correct recipient):
+Message format (substitute the correct recipient):
 ```
 Coord-{l3-name}-{pun}: COORD_RESPAWN TRIGGERED
 Context at respawn: {PCT}%

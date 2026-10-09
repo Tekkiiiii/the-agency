@@ -20,7 +20,7 @@ Use the Task Executor agent to refactor this component.
 ```
 
 ```
-Apply the Testing Lead agent to verify this is production-ready.
+Spawn general-purpose with /qa-only to verify this is production-ready.
 ```
 
 ## Manual Usage

@@ -73,7 +73,7 @@ Each project has a dedicated PD agent that:
 The system is designed to be extended:
 
 - **New skills**: drop in `skills/` directory, register in INDEX.md
-- **New agents**: add agent spec in `core/agents/` and copy to `~/.claude/agents/{department}/` — see `docs/DEVELOPER.md`
+- **New agents**: add agent spec in `core/agents/` and copy to `~/.claude/agents/{folder}/` — see `docs/DEVELOPER.md`
 - **New projects**: run `agency init --project name`
 - **Custom coordination**: add rooms in `{agency-root}/agency-rooms/` — see `docs/ROOMS.md`
 
@@ -81,7 +81,7 @@ The system is designed to be extended:
 
 ## Tiered Agent Architecture
 
-The system has two parallel execution chains: project delivery (PD-Coord) and department operations (Dept-Coord).
+Work runs as one chain: PD → Coord → Exec. The department layer (lead agents and coordinators) was retired in the 2026-10-08 sunset; the archived files and restore steps are in `{agency-root}/agents-archive/MANIFEST.md`.
 
 ### Project Delivery Chain (PD-Coord)
 
@@ -99,25 +99,11 @@ PD  (L1→L3 decomposition, spawns Coords)
 | L6+ | Mini-Coord | L6 → L7 → L8 → L9... | Exec | Opus |
 | Atomic | Exec (general-purpose + Skills) | No | — | Sonnet |
 
-### Department Operations Chain (Dept-Coord)
+**Critics.** `critique-*` agents and `sag-critique` are spawned directly by the PD or Coord and report to whoever spawned them (the caller). They sit outside any folder hierarchy.
 
-```
-Dept Head  (D1→D3 decomposition, spawns Dept-Coords)
- └── Dept-Coord × N  (D3→D4→D5→D6, spawns Dept Members, owns one D3 track)
-      └── Dept Member × K  (executes one D6 atomic task, reports to Dept-Coord)
-```
+**Agent folders.** `agents/<folder>/` directories (engineering, design, content-creation, testing, project-management, specialized, critiques, video-studio) stay as homes for PD definitions (`project-scaffolder` writes new PDs there). They have no heads and no coordinators.
 
-| Layer | Agent | Decomposes | Spawns | Model |
-|-------|-------|-----------|--------|-------|
-| D1–D3 | Dept Head | D1 → D2 → D3 | Dept-Coord | Opus |
-| D3–D6 | Dept-Coord | D3 → D4 → D5 → D6 | Dept Member | Sonnet |
-| D6 | Dept Member | No | — | Sonnet |
-
-A Dept Member is `general-purpose` + 1-3 skills, with the archived role file in `{agency-root}/agents-archive/` read first (see `agents-archive/ROLE-MAP.md`).
-
-**Hard boundary:** Dept-Coord handles department-operational work only (pipelines, protocols, member development). PD-Coord handles project delivery only. These chains never cross.
-
-See `core/runbooks/dept-coord-protocol.md` for the full operational manual.
+**Content.** One pipeline: PD → Coord → writer → `/content-polish` → critics via `/cc-loop` (`runbooks/content-request-protocol.md`).
 
 ### Naming Convention
 
@@ -162,9 +148,9 @@ redundant once tool search exists — the two mechanisms fail independently.
 
 ## Delegator — Agency Routing Agent
 
-The Delegator is a stateless Sonnet agent that routes work to the correct agent, skill, pipeline, or protocol. Any agent (PD, Coord, Dept Head) can spawn the Delegator when the right route is not obvious.
+The Delegator is a stateless Sonnet agent that routes work to the correct agent, skill, pipeline, or protocol. Any agent (PD or Coord) can spawn the Delegator when the right route is not obvious.
 
-Since the generalist switch (2026-10-06) the member-level specialist roles are archived. The Delegator does not pick a specialist agent for them. It returns `general-purpose` plus 1-3 skills, and names the role file to read first. Role files live in `{agency-root}/agents-archive/` (deployed by all four installers), and `agents-archive/ROLE-MAP.md` maps each archived role to its skills. Dept heads, Coords, PDs, critics, and service agents (curator, codebase-search) stay registered and are still returned by name.
+Since the generalist switch (2026-10-06) the member-level specialist roles are archived. The Delegator does not pick a specialist agent for them. It returns `general-purpose` plus 1-3 skills, and names the role file to read first. Role files live in `{agency-root}/agents-archive/` (deployed by all four installers), and `agents-archive/ROLE-MAP.md` maps each archived role to its skills. Coords, PDs, critics, council seats, and service agents (curator, codebase-search) stay registered and are still returned by name.
 
 ```
 Agent({
@@ -176,8 +162,8 @@ Agent({
 ```
 
 The Delegator:
-- Reads the agency catalog, org chart, protocol registry, and skill index
-- Returns a structured routing recommendation (AGENT | DEPARTMENT | SKILL | PIPELINE | PROTOCOL | INTER-SPAWN)
+- Reads the agency catalog, org chart, and skill index
+- Returns a structured routing recommendation (AGENT | SKILL | PIPELINE | PROTOCOL | INTER-SPAWN)
 - Dies immediately after returning the recommendation — it holds no state
 
 **Routing exceptions** — spawn Delegator is NOT required when:
@@ -185,6 +171,14 @@ The Delegator:
 - The task is a curator spawn (memory retrieval — always fire-and-forget)
 
 Definition: `agents/specialized/delegator.md`
+
+---
+
+## Agency Council
+
+An advisory board of five seats: `council-fable`, `council-opus`, `council-sonnet`, `council-haiku` (one per Claude model tier, in `agents/council/`) plus an optional fifth seat run through the `codex` CLI when it is installed. Seats are read-only and answer in at most 300 words (`VERDICT`, `REASONS`, `RISKS`, `CONFIDENCE`, `DISSENT`).
+
+The caller sends one identical brief to every seat in a single message (one wave, no `TeamCreate`); no seat sees another's answer. The caller synthesises a table of verdicts, agreements, disagreements, and a recommendation. Three of five seats is a quorum, and `council-opus` breaks a tie when the caller is a cheap model. Triggers: "BOD", "assemble", "the board", "the council", "convene the council"; `/resume-bod` restores context and then runs it. Protocol: `core/memory/agency-council.md`.
 
 ---
 
@@ -207,7 +201,7 @@ Reports are asynchronous: an agent's report lands when the agent stops, and the 
 
 ### PD-Level Pre-Aggregate QA Gate
 
-After all Coords report DONE, PD spawns `Coord-qa-Canary` (Sonnet, Testing Lead) to QA the combined L3 output before reporting to root.
+After all Coords report DONE, PD spawns `Coord-qa-Canary` (Sonnet, QA Coord) to QA the combined L3 output before reporting to root.
 
 Deliverables:
 - Health score (0–100 integer)
@@ -224,8 +218,7 @@ The repo ships its full skill library (the catalog is `skills/INDEX.md`). The co
 | Category | Skills |
 |----------|--------|
 | Memory | `save-state`, `recall`, `pd-resume`, `project-status`, `wrap` |
-| Dept Ops | `dept-resume`, `dept-save-state`, `dept-status` |
-| Coordination | `swarm`, `delegate`, `room-manager`, `nexus-gatekeeper` |
+| Coordination | `swarm`, `delegate`, `nexus-gatekeeper` |
 | Ops | `self-healing`, `investigate`, `guard`, `task-store` |
 | Planning | `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review`, `office-hours`, `retro` |
 | Execution | `ship`, `land-and-deploy`, `setup-deploy`, `canary`, `qa` |
@@ -253,16 +246,14 @@ File-based inter-agent chat system for persistent coordination between agents.
 ├── members.json        # Active members
 ├── handoffs/           # Pending NEXUS handoffs (JSON)
 └── context/
-    ├── shared.md       # Extracted DECIDED/ACTION/QUESTION items
-    └── rolling.md      # Dept head status feed (dept rooms only)
+    └── shared.md       # Shared summary, maintained by hand
 ```
 
 Room types:
 - **Project rooms** — one per active project, owned by the project's PD
-- **Department rooms** — one per department (engineering, testing, etc.)
 - **Oversight room** — `project-oversight/` aggregates all PD statuses
 
-RoomManager polls rooms on a configurable interval. Run with `/room-manager`.
+Rooms are plain files written by `agents/scripts/room-utils.sh`; there is no polling process (the `room-manager` skill was archived in the 2026-10-08 sunset). Read rooms on demand. See `docs/ROOMS.md`.
 
 ---
 
@@ -291,7 +282,7 @@ Target: ~500 tokens on spawn.
 
 **On route (only when delegating):**
 1. Check PD-BRIEFING for a pre-written routing entry
-2. If not found, load `{agency-root}/agents/{department}/INDEX.md` (one dept only)
+2. If not found, load `{agency-root}/agents/{folder}/INDEX.md` (one folder only)
 3. Spawn agent directly
 
 See `core/runbooks/pd-boot-sequence.md` for the full protocol.

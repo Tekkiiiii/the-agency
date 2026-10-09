@@ -8,5 +8,5 @@
 
 1. Create `protocols/{name}.md` with YAML frontmatter (name, version, status, owner, cross-dept list, last-updated)
 2. Add row to this registry
-3. If cross-dept: also add to `runbooks/protocol-registry.md`
-4. Cross-dept changes require both dept heads to sign off
+3. If cross-dept: also add to `runbooks/quality-loop-protocol.md` (or the protocol's own runbook)
+4. Cross-dept changes require sign-off from the affected PDs

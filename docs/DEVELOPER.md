@@ -32,7 +32,7 @@ node cli/bin/agency.js init
 ```
 
 This creates `~/.claude/` on your machine with:
-- `skills/` — skills library (240+ skills)
+- `skills/` — skills library (235+ skills)
 - `task-store.db` — SQLite task pipeline
 - `sessions/` — session logs
 - `lessons/` — lessons learned
@@ -130,8 +130,8 @@ In Claude Code:
 
 ## Adding an Agent
 
-Agents are defined in `core/agents/{department}/{name}.md` and deployed to
-`~/.claude/agents/{department}/` so Claude Code can discover them.
+Agents are defined in `core/agents/{name}.md` or `agents/{folder}/{name}.md` and deployed to
+`~/.claude/agents/{folder}/` so Claude Code can discover them. A folder is just a home for related agent definitions; it has no lead or coordinator.
 
 ### Agent frontmatter
 
@@ -139,7 +139,7 @@ Agents are defined in `core/agents/{department}/{name}.md` and deployed to
 ---
 name: my-agent
 description: What it does
-department: engineering
+department: engineering   # the agent folder name
 role: specialist
 reports_to: project-director
 modelTier: sonnet
@@ -150,7 +150,7 @@ skills:
 ---
 ```
 
-> **Generalist switch (2026-10-06).** Member-level roles are no longer registered as agent types. A new member role goes into `agents-archive/` as a role file with a row in `agents-archive/ROLE-MAP.md` (role to 1-3 skills), and callers spawn it as `general-purpose` + those skills. Register an agent under `agents/` only for a dept head, coord, PD, critic, or service agent. `agents-archive/` is deployed beside `agents/`, never under it (see `docs/INSTALL-LAYOUT.md`).
+> **Generalist switch (2026-10-06).** Member-level roles are no longer registered as agent types. A new member role goes into `agents-archive/` as a role file with a row in `agents-archive/ROLE-MAP.md` (role to 1-3 skills), and callers spawn it as `general-purpose` + those skills. Register an agent under `agents/` only for a PD, coord, critic, council seat, or service agent. `agents-archive/` is deployed beside `agents/`, never under it (see `docs/INSTALL-LAYOUT.md`).
 
 ### Agent model tiers
 
@@ -322,7 +322,7 @@ is a directory with an append-only message log, shared context extracts, and a
 `handoffs/` directory for NEXUS handoff JSON files.
 
 See `docs/ROOMS.md` for the full room structure, PD status protocol, agent request
-protocol, and RoomManager behavior.
+protocol, and handoff format.
 
 ---
 

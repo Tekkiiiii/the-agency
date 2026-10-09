@@ -124,14 +124,15 @@ Votes stored in `voting-state.json`:
       "revision_cycle": 2,
       "draft_date": "2026-03-25",
       "votes": {
-        "engineering-lead": "approve",
-        "design-lead": "revise",
-        "testing-lead": "approve",
-        "project-management-lead": "approve",
+        "council-fable": "approve",
+        "council-opus": "revise",
+        "council-sonnet": "approve",
+        "council-haiku": "approve",
+        "codex": "approve",
         ...
       },
       "revision_notes": {
-        "design-lead": "Split into two phases: MVP first, polish later"
+        "council-opus": "Split into two phases: MVP first, polish later"
       }
     }
   }

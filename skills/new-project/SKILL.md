@@ -50,13 +50,17 @@ Use AskUserQuestion with these 4 questions in a single call:
   - "~/projects/ (Recommended)" — Standard location for code/business projects
   - "~/.claude/projects/" — For system/infrastructure projects
 
-**Question 3 — "Department"**
-- Question: "Which department should the PD belong to?"
-- Header: "Department"
+**Question 3 — "Folder"**
+- Question: "Which folder should the PD belong to?"
+- Header: "Folder"
 - Options:
   - "specialized (Recommended)" — Default for most projects
   - "project-management" — For the operator's own products/services
   - "engineering" — For technical infrastructure projects
+
+Routing (same for every folder):
+- PD -> Coord -> general-purpose Exec
+- Critics are spawned directly
 
 **Question 4 — "Tech stack"**
 - Question: "Tech stack, hex color, and extra skills? (e.g. Next.js 15, Supabase | #6366f1 | backend, vercel-deploy)"
@@ -70,7 +74,7 @@ Use AskUserQuestion with these 4 questions in a single call:
 From the answers:
 1. Parse identity: split on `|` to get SLUG, NAME, DESCRIPTION (trim whitespace)
 2. Parse location: expand to full path (`~/projects/{SLUG}` or `~/.claude/projects/{SLUG}`)
-3. Parse department: use the selected value
+3. Parse folder: use the selected value
 4. Parse stack line: split on `|` to get STACK, COLOR, EXTRA_SKILLS (trim whitespace)
 5. Build SKILLS = `save-state, recall` + any EXTRA_SKILLS
 6. Set TODAY = current date (YYYY-MM-DD)

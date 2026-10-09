@@ -3,7 +3,7 @@ name: critique-seo
 description: SEO/GEO/AEO critic. Finds keyword failures, title/heading weakness, missing meta data, and thin content. For blogs, landing pages, and any publicly-indexed content.
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

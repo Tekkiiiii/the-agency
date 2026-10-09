@@ -20,7 +20,7 @@ This creates `.opencode/agents/<slug>.md` files in your project directory.
 In OpenCode, invoke a subagent with the `@` prefix:
 
 ```
-@task-executor help build this component.
+@general-purpose (with /frontend) help build this component.
 ```
 
 ```

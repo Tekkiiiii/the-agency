@@ -101,7 +101,7 @@ touch ~/.claude/agency-rooms/project-oversight/context/shared.md
 touch ~/.claude/agency-rooms/project-oversight/context/rolling.md
 ```
 
-Create a room for each active project and department as needed. See `docs/ROOMS.md`
+Create a room for each active project as needed. See `docs/ROOMS.md`
 for the full directory structure and setup instructions.
 
 ## 9. Enable graphify knowledge-graph MCP (optional)

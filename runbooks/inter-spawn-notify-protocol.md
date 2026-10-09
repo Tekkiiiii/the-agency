@@ -16,7 +16,7 @@ spawned PD to its caller PD will land in the parent session (the user's main Cla
 window) or be lost — the caller PD's session is already closed by the time the
 spawned PD finishes. Neither party acts on it. File-only is the only reliable mechanism.
 
-This rule applies regardless of who is calling: PD → PD, Dept Head → PD, or any
+This rule applies regardless of who is calling: PD → PD, main session → PD, or any
 agent that spawns another agent to do work and needs to know when it is done.
 
 ---
@@ -101,14 +101,14 @@ Target project:
 
 ---
 
-## Dept Head → PD Variant
+## Main Session / Coord → PD Variant
 
-When a Dept Head creates a task for a PD:
+When the main session (or a Coord acting on a PD's behalf) creates a task for another project's PD:
 
-1. Dept Head writes briefing to `{project}/memory/inter-spawn-tasks/incoming/{slug}-{YYYY-MM-DD}.md`
+1. The sender writes briefing to `{project}/memory/inter-spawn-tasks/incoming/{slug}-{YYYY-MM-DD}.md`
 2. PD picks it up on next boot — pd-resume reads incoming/ automatically (per 2026-06-02 fix)
-3. No SendMessage from Dept Head to PD
-4. PD writes outcome to project + dept decision logs as specified in the briefing
+3. No SendMessage from the sender to the PD
+4. PD writes outcome to the project decision log as specified in the briefing
 
 ---
 
@@ -137,4 +137,4 @@ No SendMessage at any step.
 - Decision: `~/.claude/projects/project-a/memory/decisions/2026-06-02-inter-spawn-notify.md`
 - Caller implementation: `~/.claude/skills/pd-spawn/SKILL.md` (Steps 3–5b)
 - PD identity template: PD Spawner Protocol sections in `agents/specialized/*-pd.md`
-- The constraint in context: `dept-coord-protocol.md` §14 Dept Head → PD
+- The constraint in context: background headless agents have no live session to receive a SendMessage (see the opening section)

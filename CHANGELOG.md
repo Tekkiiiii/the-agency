@@ -8,6 +8,26 @@ All notable changes to The Agency are documented here, grouped by release wave (
 
 ### Tiếng Việt
 
+**Đợt 2026-10-09 — gỡ tầng phòng ban (8 trưởng phòng, 7 điều phối phòng ban, room-manager) và dựng Hội đồng mới: một ghế cho mỗi hạng model, hỏi một đợt duy nhất.** Việc chạy theo một chuỗi duy nhất: PD -> Coord -> Exec (`general-purpose` + 1-3 skill; người spawn chọn model và skill). Các thư mục `agents/<thư mục>/` vẫn còn làm nơi chứa định nghĩa PD của người dùng (`project-scaffolder` ghi PD mới vào đó) nhưng không còn là "phòng ban" có trưởng. Hội đồng cũ gồm 8 trưởng phòng nên đi theo.
+
+#### Removed (2026-10-09, gỡ phòng ban)
+- **15 agent được lưu trữ** vào `agents-archive/dept-sunset-2026-10-08/` (cách khôi phục nằm trong `agents-archive/MANIFEST.md`): 8 trưởng phòng (`content-creation-lead`, `critiques-lead`, `design-lead`, `engineering-lead`, `project-management-lead`, `specialized-lead`, `testing-lead`, `video-studio-lead`) và 7 điều phối phòng ban (`*-coord`).
+- **5 runbook được lưu trữ** (kèm bản sao trong `core/runbooks/`): `dept-coord-protocol`, `department-lead-protocol`, `department-lead-template`, `dept-boot-sequence`, `protocol-registry`. Các giao thức liên nhóm giờ trích dẫn `runbooks/quality-loop-protocol.md`.
+- **6 skill được lưu trữ**: `dept-resume`, `dept-save-state`, `dept-status`, `dept-wrap`, `room-manager`, `room-manager-digest`. Phòng chat vẫn là file thường (`agents/scripts/room-utils.sh`); không còn tiến trình quét, nên không có thông báo tự động, không tự tóm tắt `context/shared.md`, không tự chuyển `ESCALATE:`.
+- **Bản cài sẵn không bị dọn.** Installer chỉ chép file, không xoá, nên cài đặt cũ giữ các file agent, skill và runbook đã lưu trữ trên đĩa cho đến khi bạn xoá tay. Một dòng lệnh để xoá: `cd {agency-root} && rm -rf agents/*/{content-creation,design,engineering,project-management,specialized,testing,video-studio}-{lead,coord}.md agents/critiques/critiques-lead.md skills/{dept-resume,dept-save-state,dept-status,dept-wrap,room-manager,room-manager-digest} {runbooks,core/runbooks}/{dept-coord-protocol,department-lead-protocol,department-lead-template,dept-boot-sequence,protocol-registry}.md`
+
+#### Changed (2026-10-09, gỡ phòng ban)
+- **Định tuyến:** PD -> Coord -> Exec. Critic (`critique-*`, `sag-critique`) do PD hoặc Coord spawn trực tiếp; `reports_to` của critic là người gọi.
+- **Nội dung có một pipeline:** `runbooks/content-request-protocol.md` v2.0.0 (PD -> Coord -> writer -> `/content-polish` -> critic qua `/cc-loop`).
+- **`CLAUDE.md` mẫu:** danh sách agent cấu trúc bỏ "dept heads/coords" và thêm ghế `council-*`; mở phiên chạy `/unwrap`, kết phiên chạy `/save-state` + `/wrap`; `next-session.md` là file mang sang phiên sau duy nhất.
+- **Tài liệu:** `README.md`, `docs/ARCHITECTURE.md`, `docs/SKILLS.md`, `docs/ROOMS.md`, `docs/HOOKS.md`, `docs/DEVELOPER.md`, `docs/SETUP.md`, `docs/NEXUS.md` bỏ nội dung về phòng ban, trưởng phòng, Dept-Coord, room-manager và các skill `dept-*`.
+- **Số liệu:** 235+ skill (237 sau khi bỏ 6), 35+ agent (46 - 15 + 4 ghế hội đồng). Repo làm tròn xuống bội của 5 kèm dấu "+". Số "phòng ban" không còn được nêu trong văn bản.
+
+#### Added (2026-10-09, Hội đồng Agency)
+- **4 ghế hội đồng** trong `agents/council/`: `council-fable`, `council-opus`, `council-sonnet`, `council-haiku`, mỗi ghế một hạng model Claude; chỉ đọc, trả lời tối đa 300 từ theo khung `VERDICT` / `REASONS` / `RISKS` / `CONFIDENCE` / `DISSENT`. Ghế thứ năm tuỳ chọn chạy qua CLI `codex` khi đã cài.
+- **Một đợt duy nhất:** người gọi gửi cùng một bản brief cho mọi ghế trong một tin nhắn, không ghế nào thấy câu trả lời của ghế khác, rồi tự tổng hợp (bảng kết luận, điểm đồng thuận, điểm bất đồng, khuyến nghị). Đủ túc số khi có 3 trên 5 ghế; `council-opus` phá hoà khi người gọi là model rẻ. Không còn `TeamCreate` và không còn hai đợt.
+- Giao thức nằm ở `core/memory/agency-council.md` (cài tại `{agency-root}/core/memory/agency-council.md`). `/resume-bod` khôi phục ngữ cảnh rồi chạy giao thức này. Câu kích hoạt: "BOD", "assemble", "the board", "the council", "convene the council".
+
 **Đợt 2026-10-09 — gỡ agent `task-executor`: Exec là `general-purpose` + 1-3 skill; Coord chạy Sonnet; trần 5 Exec cho mỗi cây PD; bỏ tick đánh thức tự động.** Tầng Exec không còn là một agent đặt tên riêng. Hợp đồng Exec (một việc, không tự sinh agent con, báo `DONE`/`BLOCKED`/`ESCALATE` kèm bằng chứng) nằm trong mục "Exec spawn message" của `coord.md`, dùng chung cho Coord, Mini-Coord và PD khi spawn Exec trực tiếp.
 
 #### Removed (2026-10-09)
@@ -234,6 +254,26 @@ Mục tiêu: catalog ship ra khớp đúng hệ thống live, không giữ thêm
 - **1M context (`[1m]`) áp dụng CHỌN LỌC, không áp dụng toàn fleet.** Hậu tố `[1m]` chỉ gắn cho các role điều phối — PD, Coord, Mini-Coord, Dept-Coord (21 file) — vì đây là những role duy nhất có context phình theo *khối lượng công việc* chứ không theo độ dài brief của chính nó. Toàn bộ agent còn lại giữ nguyên. Quyết định này đã chốt, không mở lại. Chính sách đầy đủ ở `core/ORG.md` § Model tiering. Kèm theo đó: `modelTier:` chỉ là tag tài liệu và hoàn toàn trơ khi spawn — `model:` mới là key Claude Code thực sự đọc, và là nơi `[1m]` được gắn vào.
 
 ### English
+
+**Wave 2026-10-09 — the department tier is retired (8 department leads, 7 department coordinators, room-manager) and a new Council replaces the 8-lead one: one seat per model tier, one wave.** Work runs as a single chain: PD -> Coord -> Exec (`general-purpose` + 1-3 skills; the spawner picks the model and skills). The `agents/<folder>/` directories stay as homes for users' PD definitions (`project-scaffolder` writes new PDs there) but are no longer "departments" with heads. The old Council of 8 leads goes with them.
+
+#### Removed (2026-10-09, department sunset)
+- **15 agents archived** to `agents-archive/dept-sunset-2026-10-08/` (restore steps in `agents-archive/MANIFEST.md`): the 8 department leads (`content-creation-lead`, `critiques-lead`, `design-lead`, `engineering-lead`, `project-management-lead`, `specialized-lead`, `testing-lead`, `video-studio-lead`) and the 7 department coordinators (`*-coord`).
+- **5 runbooks archived** (with their `core/runbooks/` copies): `dept-coord-protocol`, `department-lead-protocol`, `department-lead-template`, `dept-boot-sequence`, `protocol-registry`. Cross-team protocols now cite `runbooks/quality-loop-protocol.md`.
+- **6 skills archived**: `dept-resume`, `dept-save-state`, `dept-status`, `dept-wrap`, `room-manager`, `room-manager-digest`. Rooms stay plain files (`agents/scripts/room-utils.sh`); there is no polling process, so nothing auto-notifies members, auto-summarizes `context/shared.md`, or routes `ESCALATE:` messages.
+- **Existing installs are not cleaned up.** The installer copies files and never prunes, so an existing install keeps the archived agent, skill and runbook files on disk until you remove them by hand. One-line removal: `cd {agency-root} && rm -rf agents/*/{content-creation,design,engineering,project-management,specialized,testing,video-studio}-{lead,coord}.md agents/critiques/critiques-lead.md skills/{dept-resume,dept-save-state,dept-status,dept-wrap,room-manager,room-manager-digest} {runbooks,core/runbooks}/{dept-coord-protocol,department-lead-protocol,department-lead-template,dept-boot-sequence,protocol-registry}.md`
+
+#### Changed (2026-10-09, department sunset)
+- **Routing:** PD -> Coord -> Exec. Critics (`critique-*`, `sag-critique`) are spawned directly by the PD or Coord; a critic's `reports_to` is the caller.
+- **One content pipeline:** `runbooks/content-request-protocol.md` v2.0.0 (PD -> Coord -> writer -> `/content-polish` -> critics via `/cc-loop`).
+- **Template `CLAUDE.md`:** the structural-agents list drops "dept heads/coords" and adds the `council-*` seats; session start runs `/unwrap`, session end runs `/save-state` + `/wrap`; `next-session.md` is the only carry-forward file.
+- **Docs:** `README.md`, `docs/ARCHITECTURE.md`, `docs/SKILLS.md`, `docs/ROOMS.md`, `docs/HOOKS.md`, `docs/DEVELOPER.md`, `docs/SETUP.md`, `docs/NEXUS.md` drop the department, department-lead, Dept-Coord, room-manager and `dept-*` skill prose.
+- **Counts:** 235+ skills (237 after dropping 6), 35+ agents (46 - 15 + 4 council seats). The repo rounds public counts down to a multiple of 5 with a "+". Prose no longer states a "department" count.
+
+#### Added (2026-10-09, Agency Council)
+- **4 council seats** in `agents/council/`: `council-fable`, `council-opus`, `council-sonnet`, `council-haiku`, one per Claude model tier; read-only, at most 300 words each in the `VERDICT` / `REASONS` / `RISKS` / `CONFIDENCE` / `DISSENT` frame. An optional fifth seat runs through the `codex` CLI when it is installed.
+- **One wave:** the caller sends the identical brief to every seat in one message, no seat sees another's answer, and the caller synthesises (table of verdicts, agreements, disagreements, recommendation). 3 of 5 seats is a quorum; `council-opus` breaks a tie when the caller is a cheap model. No `TeamCreate`, no waves.
+- The protocol is `core/memory/agency-council.md` (installed at `{agency-root}/core/memory/agency-council.md`). `/resume-bod` restores context and then runs it. Triggers: "BOD", "assemble", "the board", "the council", "convene the council".
 
 **Wave 2026-10-09 — the `task-executor` agent is retired: an Exec is `general-purpose` + 1-3 skills; Coord runs on Sonnet; 5-Exec cap per PD tree; no automatic wake-up tick.** The Exec tier is no longer a separately named agent. The Exec contract (one task, no sub-spawn, report `DONE`/`BLOCKED`/`ESCALATE` with evidence) lives in the "Exec spawn message" section of `coord.md`, shared by Coord, Mini-Coord and a PD spawning Execs directly.
 

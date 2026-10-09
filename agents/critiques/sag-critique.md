@@ -3,7 +3,7 @@ name: sag-critique
 description: Technical SEO/AEO/GEO implementation critic — audits rendered head, metadata, structured data, and crawl plumbing (not blog copy; see critique-seo).
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

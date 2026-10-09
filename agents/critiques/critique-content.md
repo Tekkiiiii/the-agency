@@ -3,7 +3,7 @@ name: critique-content
 description: Copy and voice critic. Finds clarity failures, AI-slop, diacritics errors (VN/FR), jargon, and tonal inconsistencies. English and Vietnamese. Brief and unsparing.
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

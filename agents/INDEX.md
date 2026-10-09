@@ -1,10 +1,10 @@
 # The Agency — Agent Directory
 
-Navigate to the department that fits your task. Each department has its own `INDEX.md` listing all members.
+Each folder below is a PD home with its own `INDEX.md` listing the agents registered there.
 
-## Departments
+## Folders
 
-| Department | Directory | Use when you need... |
+| Folder | Directory | Use when you need... |
 |---|---|---|
 | [Engineering](engineering/INDEX.md) | `engineering/` | Code, APIs, infrastructure, security, DevOps, mobile, AI/ML |
 | [Design](design/INDEX.md) | `design/` | UI, UX, branding, visual storytelling, creative direction |
@@ -13,36 +13,24 @@ Navigate to the department that fits your task. Each department has its own `IND
 | [Testing](testing/INDEX.md) | `testing/` | QA, performance, accessibility, API testing, audits |
 | [Specialized](specialized/INDEX.md) | `specialized/` | Agents infra, audits, data extraction, web extraction/crawling, ZK knowledge, Vietnamese text processing, misc |
 | [Critiques](critiques/INDEX.md) | `critiques/` | Scored critique of any deliverable — design, content, marketing, pedagogy, SEO, product, security, brand |
+| [Council](council/INDEX.md) | `council/` | Independent read-only opinions on a decision brief (4 tier seats, optional Codex seat) |
 | [Video Studio](video-studio/INDEX.md) | `video-studio/` | All video production — scripted or AI-generated. Pre-production, production, post-production, distribution, QA |
 
-## Department Coordination (Dept-Coord System)
+## Routing (department layer sunset 2026-10-08)
 
-Each department has a Dept-Coord agent for department-operational work (pipeline management, protocol improvement, member development). See [ORG.md § Department Operations](ORG.md) for the full architecture.
-
-| Dept-Coord Agent | Department | File |
-|-----------------|-----------|------|
-| content-creation-coord | Content Creation | `content-creation/content-creation-coord.md` |
-| design-coord | Design | `design/design-coord.md` |
-| engineering-coord | Engineering | `engineering/engineering-coord.md` |
-| project-management-coord | Project Management | `project-management/project-management-coord.md` |
-| specialized-coord | Specialized | `specialized/specialized-coord.md` |
-| testing-coord | Testing | `testing/testing-coord.md` |
-| video-studio-coord | Video Studio | `video-studio/video-studio-coord.md` |
+There are no department heads or department coordinators. Work routes PD -> Coord -> general-purpose Exec (spawner picks model + 1-3 skills); critics (`critique-*`) are spawned directly by the PD or Coord. The folders above are PD homes (PD definitions + the few kept files), not teams. Archived specialist and department files: `{agency-root}/agents-archive/` (role-to-skills map: `agents-archive/ROLE-MAP.md`; history: `agents-archive/MANIFEST.md`). See [ORG.md](ORG.md).
 
 ## Runbooks
 
-- [Department Lead Protocol](runbooks/department-lead-protocol.md) — how dept leaders communicate
-- [Dept-Coord Protocol](runbooks/dept-coord-protocol.md) — full dept-coord operational manual
-- [Dept Boot Sequence](runbooks/dept-boot-sequence.md) — two-mode dept head startup
-- [Protocol Registry](runbooks/protocol-registry.md) — cross-department protocol index
-- [Escalation Protocol](runbooks/escalation-protocol.md) — Tier 1/2/3 decision routing
-- [Content Request Protocol](runbooks/content-request-protocol.md) — how content gets requested, produced, and distributed
-- [Project Kickoff Protocol](runbooks/project-kickoff-protocol.md) — how to spin up a project team
-- [Project Team Templates](runbooks/project-team-templates.md) — pre-built team compositions
-- [Content → Video Protocol](runbooks/content-to-video-protocol.md) — script handoff from Content Creation to Video Studio, end-to-end video pipeline
-- [Quality Loop Protocol](runbooks/quality-loop-protocol.md) — agency-wide quality gate protocol; quality-loop-router is the terminal step for all creative pipelines
+- [Escalation Protocol](../runbooks/escalation-protocol.md) — Tier 1/2/3 decision routing
+- [Content Request Protocol](../runbooks/content-request-protocol.md) — how content gets requested, produced, and distributed
+- [Project Kickoff Protocol](../runbooks/project-kickoff-protocol.md) — how to spin up a project team
+- [Project Team Templates](../runbooks/project-team-templates.md) — pre-built team compositions
+- [Content → Video Protocol](../runbooks/content-to-video-protocol.md) — script handoff from Content Creation to Video Studio, end-to-end video pipeline
+- [Quality Loop Protocol](../runbooks/quality-loop-protocol.md) — agency-wide quality gate protocol; quality-loop-router is the terminal step for all creative pipelines
 
 ## Reference
 
-- [ORG.md](ORG.md) — full org chart, leadership table, council protocol, dept-coord system
+- [council/](council/) — 4 council seats (council-fable, council-opus, council-sonnet, council-haiku): read-only opinion agents for BOD/council; protocol in `{agency-root}/core/memory/agency-council.md`
+- [ORG.md](ORG.md) — org chart (PD -> Coord -> Exec), council seats
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to add new agents

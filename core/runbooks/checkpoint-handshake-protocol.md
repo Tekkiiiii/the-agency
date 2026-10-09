@@ -12,13 +12,13 @@ version: 1.2.0
 ## Why this exists
 
 Upward name-addressed SendMessage does not resolve — the team roster is flat, so a
-message from a child agent to a punny name like "Coord-{l3-name}-{pun}" or "DC-{name}"
+message from a child agent to a punny name like "Coord-{l3-name}-{pun}"
 misroutes to main, not the intended parent. This is a permanent harness limitation, not
 a bug to work around case-by-case.
 
 The QA gate survives this: the Exec/Member's completion report arrives as its FINAL task
 result (a working channel — that's what the spawner receives when the child finishes),
-and the Coord/DC's NACK travels DOWNWARD via the child's `agentId` (also working). Do
+and the Coord's NACK travels DOWNWARD via the child's `agentId` (also working). Do
 NOT apply this protocol to the QA gate — it doesn't need it.
 
 The APPROACH gate (pre-work approval) and the CHECKPOINT gate (50% check-in) are
@@ -32,9 +32,9 @@ the single source of truth in both directions.
 
 **Execs/Members using this protocol MUST be spawned in the BACKGROUND** (the Agent
 tool's default — `run_in_background: true`, or simply omit the parameter). Background
-spawning is what keeps the Coord/DC alive and free to poll the checkpoint file while its
-children work. If a Coord/DC spawns an Exec/Member with `run_in_background: false`, the
-Coord/DC blocks until that child finishes — it cannot poll, and this handshake becomes
+spawning is what keeps the Coord alive and free to poll the checkpoint file while its
+children work. If a Coord spawns an Exec/Member with `run_in_background: false`, the
+Coord blocks until that child finishes — it cannot poll, and this handshake becomes
 structurally impossible again (back to the original deadlock risk). Never
 foreground-spawn a child that will use this protocol.
 
@@ -47,14 +47,9 @@ checkpoint contract unattended.
 
 ## The file — one rolling file per Exec/Member
 
-Project-scoped tree (PD → Coord → Exec, and Coord → Mini-Coord → Exec):
+Project tree (PD → Coord → Exec, and Coord → Mini-Coord → Exec):
 ```
 {project}/memory/agents/execs/exec-{subtask}-{pun}-checkpoint.md
-```
-
-Dept-scoped tree (Dept Head → Dept-Coord → Member):
-```
-{agency-root}/agents/{dept}/scratch/members/member-{id}-{pun}-checkpoint.md
 ```
 
 This is a SEPARATE file from the Exec/Member's own working scratch file
@@ -118,7 +113,7 @@ than needing to detect whether content exists under a heading.
    The unreviewed marker is mandatory paperwork, not optional — a silent proceed with no
    marker deletes the gate while keeping none of its value. Do NOT re-poll indefinitely —
    one bounded wait, then move on.
-5. The spawner (Coord / Mini-Coord / Dept-Coord / PD) MAY also send a downward
+5. The spawner (Coord / Mini-Coord / PD) MAY also send a downward
    SendMessage (via your `agentId`) as a wake-up nudge — that direction works.
    Correctness never depends on the message; the file is authoritative. If the message
    arrives before you finish polling, still read the `## Reply` block before acting (the
@@ -137,7 +132,7 @@ than needing to detect whether content exists under a heading.
 - Interim state (IN_PROGRESS, QA_GATE) goes in the scratch `## Status` table or this file; upward SendMessage NEVER used.
 - Stop immediately after delivering the final report; the spawner reads it only when you stop. A NACK arrives as a fresh spawn.
 
-## Spawner side (Coord / Mini-Coord / Dept-Coord / PD spawning direct Execs)
+## Spawner side (Coord / Mini-Coord / PD spawning direct Execs)
 
 **Governing rule:** the checkpoint contract is owned by the DIRECT SPAWNER, whoever that
 is. A PD that bypasses the Coord layer and spawns Execs directly (pd-coordinator.md §2.6
@@ -148,7 +143,6 @@ delegation test) inherits this entire section — it is not Coord-only.
    ```bash
    grep -l '^Status: AWAITING' {project}/memory/agents/execs/*-checkpoint.md 2>/dev/null
    ```
-   (dept-scoped: `{agency-root}/agents/{dept}/scratch/members/*-checkpoint.md`)
    Do this at every natural pause — after each spawn batch, before/after each completion
    you process — and at minimum once per turn while any Exec/Member is in flight. Do not
    let an AWAITING request sit unpolled indefinitely.
@@ -182,9 +176,9 @@ If an Exec/Member's completion report includes `APPROACH_UNREVIEWED` or
 
 ## What this does NOT change
 
-- The QA gate (Coord/DC review of the Exec/Member's final completion report, and the
-  ACK/NACK that follows) is unaffected — leave it exactly as documented in coord.md /
-  dept-coord-protocol.md. Do not apply this file-poll mechanism there.
+- The QA gate (Coord review of the Exec/Member's final completion report, and the
+  ACK/NACK that follows) is unaffected — leave it exactly as documented in coord.md.
+  Do not apply this file-poll mechanism there.
 - TIER_A tasks still skip the APPROACH gate entirely (one-sentence "starting" fire-and-
   forget notice, no checkpoint file, no poll). CHECKPOINT is still mandatory for all
   tiers, TIER_A included.
@@ -195,7 +189,7 @@ the-agency Wave 20 (2026-08-14): two Execs were spawned DIRECTLY BY THE PD (Coor
 bypassed via the pd-coordinator.md §2.6 direct-Exec path, then named PARALLEL DIRECT-EXEC,
 now the §2.6 Delegation test). Both opened APPROACH gates, wrote checkpoint files, and
 polled the full 5-minute ceiling — nobody upstream was polling, because this runbook's
-reply-side section was titled "Coord/Dept-Coord side," and a PD acting as a direct spawner
+reply-side section was titled for Coords only (since retitled), and a PD acting as a direct spawner
 was not covered by its own text.
 Both Execs correctly proceeded per the timeout branch and marked `APPROACH_UNREVIEWED` in
 their completion reports, but the unattended gates also generated escalation spam to
@@ -212,5 +206,4 @@ rather than assuming a Coord is always present.
 - Coord: `{agency-root}/agents/project-management/coord.md` §6b/6c
 - Mini-Coord: `{agency-root}/agents/project-management/mini-coord.md` §6b/6c
 - Exec spawn message: `{agency-root}/agents/project-management/coord.md` (Exec side = this runbook "Exec/Member side")
-- Dept-Coord Protocol: `{agency-root}/runbooks/dept-coord-protocol.md` §4/§4c
 - PD direct-spawn polling duty: `{agency-root}/agents/project-management/pd-coordinator.md` §Checkpoint Polling Duty

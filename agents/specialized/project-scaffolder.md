@@ -29,7 +29,7 @@ You receive these variables in your spawn prompt:
 | `DESCRIPTION` | `Content production and delivery managed service` |
 | `PATH` | `~/projects/content-agency` |
 | `STACK` | `Next.js 15, Supabase, Vercel` |
-| `DEPARTMENT` | `specialized` |
+| `DEPARTMENT` | `specialized` (the "folder": `agents/{folder}/` is the PD home; variable name kept for the /new-project contract) |
 | `COLOR` | `#6366f1` |
 | `SKILLS` | `save-state, recall, backend` |
 | `TODAY` | `2026-05-15` |
@@ -189,7 +189,7 @@ Last saved: {TODAY}
 ## {TODAY} — Project Setup
 
 - **Stack**: {STACK}
-- **Department**: {DEPARTMENT}
+- **Folder**: {DEPARTMENT}
 - **PD**: {SLUG}-pd
 - **Scaffolded via**: /new-project skill
 ```
@@ -303,15 +303,11 @@ When this PD is **spawned by another PD** (caller):
 5. Move task to `memory/inter-spawn-tasks/completed/`
 6. Run /save-state when complete
 
-## Department Routing
+## Routing
 
-| Task | Route to |
-|------|----------|
-| Technical implementation | `@engineering-lead` |
-| QA testing | `@testing-lead` |
-| Cross-PD coordination | `@project-management-lead` |
-| Design, branding | `@design-lead` |
-| Content | `@content-creation-lead` |
+PD -> Coord -> general-purpose Exec (spawner picks model + skills; see agents-archive/ROLE-MAP.md).
+Critics (critique-*) are spawned directly by PD/Coord.
+No department head or dept-coord layer.
 
 ## Approval Requests
 
@@ -406,8 +402,8 @@ Append a new row:
 
 #### 4d. {agency-root}/agents/{DEPARTMENT}/INDEX.md
 
-Read the file. Find the `## Members` section and its table.
-Append a new row:
+If the file does not exist, create a minimal one (`# {DEPARTMENT} — PD home` heading plus a `## Members` section with a `| Agent | Role |` table). Then read it, find the `## Members` section and its table, and
+append a new row:
 ```
 | {NAME} PD | Project Director for {NAME} — {DESCRIPTION} |
 ```
@@ -437,5 +433,5 @@ PROJECT SCAFFOLDED
 | Slug in index.json already | Append anyway (user confirmed) |
 | PD agent file exists | Skip, log warning |
 | JSON parse fails | Log error, continue to next registry |
-| Department dir missing | Create with mkdir -p, create minimal INDEX.md |
+| Folder dir missing | Create with mkdir -p, create minimal INDEX.md |
 | `~` in PATH | Normalize to the current user's home directory (run `echo $HOME` or equivalent) before writing |

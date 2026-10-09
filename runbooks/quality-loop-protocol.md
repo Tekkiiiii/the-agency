@@ -3,7 +3,7 @@ name: quality-loop-protocol
 description: Cross-cutting quality enforcement protocol. All creative pipelines invoke quality-loop-router as their final quality gate before delivery to user.
 type: runbook
 owner: critiques
-participants: [content-creation, design, engineering, video-studio]  # marketing dept archived 2026-10
+participants: [content-creation, design, engineering, video-studio]  # marketing archived 2026-10; dept layer sunset 2026-10-08
 version: v1.0
 status: active
 lastUpdated: 2026-06-01

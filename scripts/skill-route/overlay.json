@@ -173,21 +173,6 @@
    "domain": "claude-system-ops",
    "hint": "Use to hand a task to a subagent with full context snapshot; not to spawn another PD (pd-spawn) or hand off between agents (task-handoff)."
   },
-  "dept-resume": {
-   "exclude": "internal",
-   "why": "Department session-start lifecycle command; no Exec task loads it"
-  },
-  "dept-save-state": {
-   "exclude": "renamed",
-   "why": "Renamed to dept-wrap (skills/INDEX.md: \"RENAMED -> use dept-wrap\"); dept-wrap SKILL.md says renamed from it"
-  },
-  "dept-status": {
-   "domain": "claude-system-ops"
-  },
-  "dept-wrap": {
-   "exclude": "internal",
-   "why": "Department session-end lifecycle command; no Exec task loads it"
-  },
   "design-consultation": {
    "domain": "design-visual"
   },
@@ -625,14 +610,6 @@
   "review": {
    "domain": "code-quality-testing",
    "hint": "Use for gstack pre-landing review of the branch diff; not to dispatch a structured review (requesting-code-review) or act on feedback (receiving-code-review)."
-  },
-  "room-manager": {
-   "exclude": "internal",
-   "why": "Background 10-min chat-room polling loop; infrastructure plumbing, not an Exec task skill"
-  },
-  "room-manager-digest": {
-   "exclude": "internal",
-   "why": "12h cron dept-room digest; infrastructure plumbing, not an Exec task skill"
   },
   "run-acceptance-tests": {
    "domain": "backend-infra-deploy"

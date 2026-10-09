@@ -2,7 +2,7 @@
 
 Agency Rooms are file-based chat rooms that let agents coordinate across sessions
 without needing to be running simultaneously. Every room is a directory with structured
-log files that agents read and write to.
+log files that agents read and write to. Rooms are plain files: `agents/scripts/room-utils.sh` writes them (and the feedback-pipeline cron writes under `agency-rooms/feedback/`). There is no polling process; the `room-manager` skill was archived in the 2026-10-08 department sunset, so nothing auto-notifies members, auto-summarizes `context/shared.md`, or routes handoffs. Read a room on demand with `room-utils.sh read`.
 
 ## Room Directory Structure
 
@@ -13,8 +13,8 @@ log files that agents read and write to.
 ├── members.json        # Active members
 ├── handoffs/           # Pending NEXUS handoffs (JSON)
 └── context/
-    ├── shared.md       # Extracted DECIDED/ACTION/QUESTION items
-    └── rolling.md      # Dept head status feed (dept rooms only)
+    ├── shared.md       # Shared summary (DECIDED/ACTION/QUESTION), maintained by hand
+    └── rolling.md      # Append-only status feed (oversight room)
 ```
 
 ### room.json schema
@@ -22,7 +22,7 @@ log files that agents read and write to.
 ```json
 {
   "name": "{room-name}",
-  "type": "project | department | oversight",
+  "type": "project | oversight",
   "owner": "{agent-id}",
   "created": "{ISO timestamp}",
   "members": ["{agent-id}", "..."]
@@ -51,7 +51,7 @@ Each line is a structured log entry:
 Example:
 ```
 [2026-04-16T09:00:00Z] @{project}-pd [brief]: Q from PD re: pricing page copy
-[2026-04-16T09:05:00Z] @design-lead [reply]: Budget for landing page = $2k
+[2026-04-16T09:05:00Z] @design-agent [reply]: Budget for landing page = $2k
 [2026-04-16T09:07:00Z] @{project}-pd [action]: Spawning copywriting agent for pricing page
 ```
 
@@ -62,16 +62,6 @@ One room per active project. The project's PD owns the room and manages membersh
 
 ```
 {agency-root}/agency-rooms/{project}/
-```
-
-### Department Rooms
-One room per department. Department heads coordinate their members here.
-
-```
-{agency-root}/agency-rooms/engineering/
-{agency-root}/agency-rooms/testing/
-{agency-root}/agency-rooms/design/
-{agency-root}/agency-rooms/marketing/
 ```
 
 ### Oversight Room
@@ -98,34 +88,15 @@ Do NOT implement recurring status pings. See **Status Loop Prohibition** in
 
 ## Agent Request Protocol
 
-When an agent needs help from another department:
+When an agent needs help from another agent or project:
 
-1. Agent writes a message to the relevant **department room**:
+1. Write a message to the relevant room:
    ```
-   [{timestamp}] @{requesting-agent} [request]: @{dept-head} need X for {project}. Context: {brief description}.
+   [{timestamp}] @{requesting-agent} [request]: @{recipient} need X for {project}. Context: {brief description}.
    ```
-2. RoomManager fans the request out to the department head.
-3. Department head replies in the same room thread.
-4. If the request requires spawning a worker (`general-purpose` + skills), the department head creates a handoff JSON in `handoffs/`.
-
-## RoomManager Behavior
-
-RoomManager polls all rooms on a configurable interval (default: 10 minutes). On each poll it:
-
-1. Reads `messages.mdl` since the last checkpoint timestamp
-2. Extracts structured signals into `context/shared.md`:
-   - Lines starting with `DECIDED:` → append to DECIDED section
-   - Lines starting with `ACTION:` → append to ACTION section
-   - Lines starting with `QUESTION:` → append to QUESTION section
-3. Appends department-head messages to `context/rolling.md` in department rooms
-4. Detects new files in `handoffs/` and routes them to the named receiving agent
-5. Throttles notifications: max 1 per 30 minutes per member
-6. Emits a 12-hour activity digest to each department head
-
-Run RoomManager:
-```
-/room-manager
-```
+2. Tell the recipient (or the main session) that the request exists. Mentions are plain text; no process parses them or notifies anyone.
+3. The recipient replies in the same room thread.
+4. If the request needs a worker (`general-purpose` + skills), the PD or Coord creates a handoff JSON in `handoffs/` (`room-utils.sh write-handoff`).
 
 ## NEXUS Handoff JSON Format
 
@@ -159,7 +130,7 @@ Handoff artifacts in `handoffs/` are JSON files (not markdown). Filename convent
 }
 ```
 
-RoomManager processes new handoff files automatically and notifies the receiving agent.
+The sender tells the receiving agent the handoff exists; `room-utils.sh read-handoffs <room> pending` also finds it. Mark it done with `room-utils.sh complete-handoff`.
 See `core/runbooks/agency-rooms-protocol.md` for the full schema specification.
 
 ## Setting Up a Room
@@ -170,7 +141,7 @@ mkdir -p "$ROOM/handoffs" "$ROOM/context"
 touch "$ROOM/messages.mdl" "$ROOM/context/shared.md"
 ```
 
-For department rooms, also create `context/rolling.md`:
+For the oversight room, also create `context/rolling.md`:
 ```bash
 touch "$ROOM/context/rolling.md"
 ```
@@ -179,6 +150,5 @@ touch "$ROOM/context/rolling.md"
 
 - Do NOT send direct messages between agents — everything goes through rooms
 - Do NOT write vague messages — always include `@{recipient}` and `[{phase}]`
-- Do NOT omit checkpoints — RoomManager will re-read the entire history without them
 - Do NOT skip the handoff JSON — without it, context is lost between sessions
 - Do NOT implement recurring status loops — use on-demand reads via `/swarm`

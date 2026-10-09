@@ -3,7 +3,7 @@ name: critique-product
 description: UX, IA, and usability critic. Finds navigation failures, information architecture problems, interaction design flaws, and accessibility issues. For apps, dashboards, and any interactive deliverable.
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

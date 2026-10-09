@@ -1,10 +1,6 @@
-# Specialized Department
+# Specialized — PD home and service agents
 
-**Call this department when you need something that doesn't fit elsewhere** — agent infrastructure (GitNexus, identity/trust, LSP indexing), financial and compliance audits (SOC 2, ML models), data extraction from Excel, live sales dashboards, knowledge-base management (ZK/Zettelkasten), cultural intelligence, CLI harness engineering, and autonomous project expansion scanning.
-
-**Leader**: Specialized Agents Lead
-**Sub-teams**: infra | audit — see below
-**Model tier**: Members = Sonnet, Leaders = Opus
+This folder is a home for Project Director (PD) agent definitions plus the agency's service agents. The department layer (department heads and department coordinators) was sunset 2026-10-08: routing is PD -> Coord -> general-purpose Exec (spawner picks model + skills); critics (`critique-*`) are spawned directly by the PD or Coord. Role-to-skills map for archived specialists: `{agency-root}/agents-archive/ROLE-MAP.md`. Archived dept files (including the audit and infra sub-team indexes): `{agency-root}/agents-archive/dept-sunset-2026-10-08/` (see `{agency-root}/agents-archive/MANIFEST.md`).
 
 ## Members
 
@@ -13,6 +9,9 @@ Specialist roles are archived; spawn general-purpose + skills — see {agency-ro
 | Agent | What it does |
 |---|---|
 | Example Project PD | Project Director for a specific product/app — one PD is spawned per active project via `/new-project` (see Project Scaffolder) |
+| Delegator | Routing agent: knows the agents, skills, protocols and pipelines; guides a caller to the right agent and skills. Read-only |
+| Curator | Project knowledge retrieval across memory files and research notebooks. Read-only |
+| Save-State Runner | One-project save-state reconstructor for subagent mode (`/save-state all`, crash recovery) |
 | Project Scaffolder | Autonomous project + PD scaffolding agent — creates all files and registries for /new-project |
 | Codebase Search | Fast read-only file/symbol search across {agency-root}/, projects, and skill library — replaces Explore for system searches |
 | Overseer PD | Meta-overseer PD — monitors all other PDs, reads heartbeat/next-session/dept-state files, flags STALE (>3 days) and BLOCKED, ships daily digest. Reports only — no auto-poke. |
@@ -34,17 +33,6 @@ Code comprehension agents from the Understand-Anything tool (`~/.claude/tools/un
 | understand-article-analyzer | Analyzes markdown/wiki files to extract knowledge graph nodes and edges |
 
 **Route via skills:** Use `/understand-*` skills (see `~/.claude/memory/skill-triggers.md`) — they invoke these agents internally. Do NOT spawn these agents directly.
-
-## Infra Sub-team
-
-See [infra/INDEX.md](infra/INDEX.md) — agent lifecycle, identity/trust, code intelligence.
-
-| Agent | What it does |
-|---|---|
-
-## Audit Sub-team
-
-See [audit/INDEX.md](audit/INDEX.md) — compliance and ML model audits.
 
 ## Parent Directory
 

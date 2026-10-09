@@ -26,13 +26,13 @@ Checks per agent file:
                            per Coord ACK_APPROACH note on F31.
   4. role_hint           — inferred from frontmatter `role:` (preferred
                            signal) with a filename/path fallback:
-                           pd | coord | dept-coord | executor | specialist
+                           pd | coord | executor | specialist
                            | unknown.
 
 Excludes: {agency-root}/agents-archive/ (sibling dir of {agency-root}/agents/,
 naturally out of scope for the **/*.md walk, guarded anyway in case of
 symlinks) and any path with a `state` directory component — state/*.md
-files (active-coords.md, member-roster.md, dept-state.md, state/incoming/*)
+files (runtime state, state/incoming/*)
 are runtime logs, not agent definitions.
 
 Output: JSON array to stdout (one object per agent file) + a summary line
@@ -79,7 +79,6 @@ SPAWN_RE = re.compile(r"Agent\(|subagent_type\s*:|run_in_background\s*:\s*true",
 # frontmatter `role:` value -> role_hint bucket
 ROLE_MAP = {
     "project-director": "pd", "project_director": "pd",
-    "dept-coord": "dept-coord",
     "coord": "coord", "mini-coord": "coord", "leader": "coord",
     "executor": "executor",
     "specialist": "specialist", "member": "specialist", "contract": "specialist",
@@ -124,8 +123,6 @@ def role_hint(fm, path):
     stem = path.stem.lower()
     if stem.endswith("-pd") or "project-director" in stem:
         return "pd"
-    if "dept-coord" in stem:
-        return "dept-coord"
     if "coord" in stem:
         return "coord"
     if stem.startswith("exec-") or "executor" in stem:

@@ -3,7 +3,7 @@ name: critique-data
 description: Data-viz/analytics critic — finds chart misrepresentation, misleading axes, stat errors, and dashboard UX failures from screenshots, not tables.
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

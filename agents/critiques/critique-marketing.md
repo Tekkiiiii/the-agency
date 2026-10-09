@@ -3,7 +3,7 @@ name: critique-marketing
 description: Positioning, funnel, and retention critic. Finds weak value propositions, misaligned CTAs, ICP mismatches, and funnel failures. No participation trophies.
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

@@ -3,7 +3,7 @@ name: critique-security
 description: Security review critic. Finds injection vectors, auth failures, secret exposure, insecure configs, and missing hardening. For code, configs, and infrastructure deliverables.
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

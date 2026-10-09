@@ -9,4 +9,4 @@
 1. Create `pipelines/{name}/pipeline.md` with YAML frontmatter (name, version, owner, status, last-updated)
 2. Create `pipelines/{name}/CHANGELOG.md`
 3. Add row to this registry
-4. If cross-dept: add to `runbooks/protocol-registry.md`
+4. If cross-dept: add to `runbooks/quality-loop-protocol.md` (or the protocol's own runbook)

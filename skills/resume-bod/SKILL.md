@@ -1,6 +1,6 @@
 ---
 name: resume-bod
-description: "Use on /resume-bod, /bod-resume, \"resume the board\", \"continue council workflow\", \"pick up where BOD left off\". Restores BOD/Agency Council context from memory and reassembles the 8-person council in two waves (max 6 per wave), or a focused sub-council, reusing an intact team."
+description: "Use on /resume-bod, /bod-resume, \"resume the board\", \"continue council workflow\", \"pick up where BOD left off\". Restores BOD/Agency Council context from memory and reassembles the 5-seat council (Fable, Opus, Sonnet, Haiku + Codex on gpt-6-astra) in one wave and synthesises the answers."
 ---
 
 # Resume BOD — Continue Council Workflow in New Session
@@ -49,36 +49,21 @@ Do not re-explore the codebase unless PROJECT.md is stale or missing critical st
 After context summary, offer explicit next actions:
 
 - **Assemble full council now** (`BOD`, `assemble`, `the board`, `the council`)
-- **Assemble focused team** (engineering / content / custom)
+- **Assemble a sub-council** (pick 3-4 of the 5 seats; quorum rule still 3)
 - **Skip assembly** and continue solo planning
 
 If user confirms assembly, proceed immediately.
 
 ---
 
-## Step 4: Assemble via TeamCreate + Two-Wave Spawn
+## Step 4: Assemble the 5-Seat Council (one wave)
 
-For full council:
+Protocol source of truth: `{agency-root}/core/memory/agency-council.md`. Read it first; do not restate it here.
 
-1. Create team `agency-council` via `TeamCreate`
-2. Spawn leaders in TWO WAVES (max 6 each):
-
-Wave 1:
-- engineering-lead
-- design-lead
-- content-creation-lead
-- project-management-lead
-
-Wave 2:
-- testing-lead
-- specialized-lead
-- critiques-lead
-- video-studio-lead
-
-3. Wait for wave 1 join acknowledgements before wave 2
-4. Send council kickoff brief after all 8 are online
-
-Never spawn all 8 in a single parallel burst — it can corrupt team config writes.
+1. Write the brief once (Step 5 template). Same text to every seat.
+2. In ONE message: four Agent calls (`council-fable`, `council-opus`, `council-sonnet`, `council-haiku`; background; no `name`, no `model`) plus one Bash call for Codex (`codex exec -m gpt-6-astra -s read-only ...`, exact command in agency-council.md C3). Codex runs via the `codex` binary on PATH; if `codex` is absent, skip that seat and name it as missing.
+3. No TeamCreate, no waves. Seats are read-only opinion agents, pinned by their agent files, and do not count toward the 5-Exec cap.
+4. Proceed once 3 of 5 have answered; name any missing seat.
 
 ---
 
@@ -87,33 +72,27 @@ Never spawn all 8 in a single parallel burst — it can corrupt team config writ
 Use this message format:
 
 ```
-TYPE: council-assembly
+TYPE: council-brief
 PURPOSE: project-resume
 PROJECT: [project name]
 SCOPE: [brief]
-DEPARTMENTS_NEEDED: [list]
 TIMELINE: [urgency]
-PROJECT_LEAD: [team-lead]
 ---
 [What was completed previously]
 [What remains]
-[Decisions needed now]
+[Decision needed now]
+ANSWER FORMAT: VERDICT / REASONS (top 3) / RISKS / CONFIDENCE 0-100 / DISSENT, max 300 words. Answer alone.
 ```
-
-Then request each leader's dept perspective (deliverables, dependencies, risks).
 
 ---
 
 ## Step 6: Resume Execution Loop
 
-After leader replies:
-1. Synthesize shared plan
-2. Assign work packages
-3. Enforce tiers:
-   - Tier 1 = leader approves
-   - Tier 2 = escalate to parent AI
-   - Tier 3 = escalate to human
-4. Report concise checkpoint summary to user
+After the seats reply:
+1. The CALLER synthesises (no extra seat): table of seat/verdict/confidence, agreement, disagreement, recommended decision, risks. Cheap-agent caller: council-opus is the tie-break.
+2. Weigh reasons, not vote count
+3. Hand the decision to the project PD for work packages
+4. Report concise checkpoint summary to user with the five raw verdicts
 
 ---
 
@@ -121,7 +100,6 @@ After leader replies:
 
 - Read memory first, spawn second
 - Treat PROJECT.md as source of truth unless user says otherwise
-- Use 2-wave spawn policy every time
+- Use the single-wave 5-seat assembly every time
 - Keep kickoff summaries concise and decision-focused
-- If prior team still exists, reuse it instead of creating duplicate team
-- If team config looks corrupted, shutdown, clean up, then recreate
+- Seats are stateless one-shot subagents: re-run the whole assembly, do not reuse a team

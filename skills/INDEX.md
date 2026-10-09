@@ -1,6 +1,6 @@
 # Skills Index
 
-240+ reusable workflow skills for Claude Code. Invoke with `/skill-name`.
+237 reusable workflow skills for Claude Code. Invoke with `/skill-name`.
 
 > **What discovery actually depends on — read before "fixing" missing frontmatter.**
 > A skill is discovered by its **location on disk**, not by its metadata: every code
@@ -27,15 +27,6 @@
 > copy published here does not. Because `skills/` is deliberately absent from
 > `core/.preserve`, a sync overwrites the install from this repo — so repairs must
 > land **here**, or an upgrade will undo them.
-
-## Department Lifecycle
-
-| Skill | Description |
-|-------|-------------|
-| `dept-resume` | Resume department head sessions — reads dept-state.md, spawns dept heads with lean briefings |
-| `dept-wrap` | Freeze department state at session end — pairs with /dept-resume (renamed from dept-save-state) |
-| `dept-save-state` | RENAMED → use `dept-wrap` instead |
-| `dept-status` | Quick department status check — reads state files, returns compact digest |
 
 ## Memory & Session
 
@@ -67,8 +58,6 @@
 | `pd-spawn` | Spawn another PD to do work on your behalf — inter-PD protocol |
 | `task-handoff` | Structured agent handoff via shared task store |
 | `task-store` | SQLite-backed task store for multi-agent pipeline state |
-| `room-manager` | Poll agency rooms, route escalations, fan out PD statuses |
-| `room-manager-digest` | 12-hour dept head digests from rolling.md feeds |
 | `nexus-gatekeeper` | reality-check blocking gate — tasks can't advance until cleared |
 | `sync-md-json` | Bidirectional sync between .json and .md files |
 | `respawn-self` | PD context-aware self-respawn at 80% context — saves state, writes continuation manifest |
@@ -423,9 +412,6 @@ Common combinations:
 /save-state
 /save-state [slug]
 /save-state all
-/dept-resume [dept-slug]
-/dept-wrap [dept-slug]
-/dept-wrap all
 /swarm
 /pipeline-feature [description]
 /pipeline-bugfix [bug]

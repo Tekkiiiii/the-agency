@@ -2,34 +2,27 @@
 
 Pre-defined team compositions for common project types. Use `TeamCreate` with these as reference.
 
-> **Note 2026-10-08 (doctrine sync):** Only these department leads resolve as agents today:
-> `engineering-lead`, `design-lead`, `content-creation-lead`, `critiques-lead`,
-> `project-management-lead`, `specialized-lead`, `testing-lead`, `video-studio-lead`.
-> `marketing-lead`, `sales-lead`, `paid-media-lead`, `product-lead`, `operations-lead` and
-> `pm-lead` are archived (see `{agency-root}/agents-archive/MANIFEST.md`); `dept-*` member names
-> (dept-frontend, dept-backend, ...) are not agents. Since the generalist switch (2026-10-06),
-> staff those roles as `general-purpose` + 1-3 skills picked from
-> `skills/INDEX.md`; old role names map to skills in
-> `{agency-root}/agents-archive/ROLE-MAP.md`. Templates below keep the original rosters as role
-> labels; read archived leads as roles to spawn that way.
+> **Note 2026-10-08 (dept sunset):** There is no department layer. A project team is a PD, one or more Coords, and `general-purpose` Execs staffed with 1-3 skills picked with
+> `python3 {agency-root}/scripts/skill-route.py "<task>"`; old role names map to skills in
+> `{agency-root}/agents-archive/ROLE-MAP.md`. Only the `critique-*` agents (spawned by PD/Coord or via `/cc-loop`) and the structural agents (`coord`, `mini-coord`, `pd-coordinator`, `{slug}-pd`) resolve as named agents. Rosters below are role labels with skills, not agent names.
 
 ---
 
-## Template: Full Agency (All Departments)
+## Template: Full Agency (All Domains)
 
 **When**: Complex multi-domain projects, strategic initiatives, company-wide changes
 
 ```
 Team: [project-name]-full
-Members:
-  - engineering-lead
-  - design-lead
-  - content-creation-lead
-  - critiques-lead
-  - project-management-lead
-  - testing-lead
-  - video-studio-lead
-  - specialized-lead
+Members (role label -> general-purpose + skills):
+  - engineering      /frontend, /backend, /security
+  - design           /design-router, /ui-ux-pro-max
+  - content          /content-creator, /copywriting
+  - critique         critique-* agents via /cc-loop
+  - project-mgmt     /persona-project-manager, /project-status
+  - testing          /qa-only, /benchmark
+  - video            /video-use, /ffmpeg
+  - specialized      /xlsx-toolkit, /legal-contract-review
   - council-chair (me)
 ```
 
@@ -42,17 +35,17 @@ Members:
 ```
 Team: [project-name]-engineering
 Members:
-  - engineering-lead
-  - design-lead (if UX/UI involved)
-  - project-management-lead
-  - testing-lead
+  - engineering      Execs (see below)
+  - design           (if UX/UI involved)
+  - project-mgmt
+  - testing
   - council-chair (me)
 ```
 
-**Typical members added** (general-purpose + skills, not named agents):
-- Frontend (Engineering): `/frontend`, `/tailwind`
-- Backend (Engineering): `/backend`
-- Security (Engineering): `/security`, `/cso`
+**Typical members** (general-purpose + skills, not named agents):
+- Frontend: `/frontend`, `/tailwind`
+- Backend: `/backend`
+- Security: `/security`, `/cso`
 - Project Management: `/persona-project-manager`, `/project-status`
 - QA (Testing): `/qa-only`, `/benchmark`
 
@@ -65,17 +58,21 @@ Members:
 ```
 Team: [project-name]-content
 Members:
-  - content-creation-lead
-  - design-lead (if creative assets needed)
-  - specialized-lead (if reporting/analytics needed)
+  - content          Execs (pipeline: content-request-protocol.md)
+  - design           (if creative assets needed)
+  - video            (if video needed; content-to-video-protocol.md)
+  - critique         critique-* agents via /cc-loop
+  - project-mgmt
   - council-chair (me)
 ```
 
-**Typical members added** (general-purpose + skills, not named agents):
-- Growth / content: `/content-strategy`, `/copywriting`
+**Typical members** (general-purpose + skills, not named agents):
+- Content / SEO / social: `/content-creator`, `/copywriting`, `/seo-aeo-best-practices`
 - Analytics: `/chart-viz`, `/xlsx-toolkit`
 
-Strategy, growth and sales work has no dedicated department; run it as `general-purpose` + skills (for example /content-strategy, /copywriting).
+Strategy, growth and sales work has no dedicated team (marketing, sales, paid-media,
+product and operations are archived); run it as `general-purpose` + skills (for
+example `/content-strategy`, `/inbound-sales`).
 
 ---
 
@@ -83,20 +80,20 @@ Strategy, growth and sales work has no dedicated department; run it as `general-
 
 **When**: Focused projects with clear boundaries
 
-Build from the department roster:
+Build from the role roster (each row = `general-purpose` + skills):
 
-| Dept | Leader | Common Members (general-purpose + skills) |
-|------|--------|--------------|
-| Engineering | `engineering-lead` | frontend `/frontend`, backend `/backend`, AI `/claude-api`, security `/security`, devops `/github-deploy` |
-| Design | `design-lead` | `/design-router`, `/ui-ux-pro-max`, `/brandkit`, `/impeccable` |
-| Content Creation | `content-creation-lead` | `/content-creator`, `/copywriting`, `/seo-aeo-best-practices`, `/content-polish` |
-| Critiques | `critiques-lead` | named `critique-*` agents |
-| Project Management | `project-management-lead` | `/persona-project-manager`, `/project-status` |
-| Testing | `testing-lead` | `/qa-only`, `/benchmark`, `/webapp-testing` |
-| Video Studio | `video-studio-lead` | `/video-use`, `/ffmpeg`, `/hyperframes` |
-| Specialized | `specialized-lead` | `/xlsx-toolkit`, `/legal-contract-review`, `/security` |
-| Marketing, Sales, Paid Media, Product, Operations | archived | see `{agency-root}/agents-archive/MANIFEST.md` and ROLE-MAP.md |
-| Spatial Computing, Game Development | archived 2026-06-25 | see `{agency-root}/agents-archive/MANIFEST.md` |
+| Domain | Common skills |
+|------|--------------|
+| Engineering | frontend `/frontend`, backend `/backend`, AI `/claude-api`, security `/security`, devops `/github-deploy` |
+| Design | `/design-router`, `/ui-ux-pro-max`, `/brandkit`, `/impeccable` |
+| Content | `/content-creator`, `/copywriting`, `/seo-aeo-best-practices`, `/content-polish` |
+| Critiques | named `critique-*` agents (via `/cc-loop` or spawned directly) |
+| Project Management | `/persona-project-manager`, `/project-status` |
+| Testing | `/qa-only`, `/benchmark`, `/webapp-testing` |
+| Video | `/video-use`, `/ffmpeg`, `/hyperframes` |
+| Specialized | `/xlsx-toolkit`, `/legal-contract-review`, `/security` |
+| Marketing, Sales, Paid Media, Product, Operations | archived - see `{agency-root}/agents-archive/MANIFEST.md` and ROLE-MAP.md |
+| Spatial Computing, Game Development | archived 2026-06-25 - see `{agency-root}/agents-archive/MANIFEST.md` |
 
 ---
 
@@ -106,7 +103,7 @@ When creating a project team:
 
 1. [ ] Select template or build custom roster
 2. [ ] Identify project lead (usually me / council chair)
-3. [ ] Send `council-assembly` to relevant leaders
+3. [ ] Send `council-assembly` to the participating PD / Coords
 4. [ ] Run kickoff brainstorming session
 5. [ ] Create team with `TeamCreate`
 6. [ ] Assign initial work packages
@@ -122,7 +119,7 @@ When creating a project team:
 When a project completes:
 
 1. [ ] Verify all deliverables complete
-2. [ ] Collect final status from all leaders
+2. [ ] Collect final status from all Coords / Execs
 3. [ ] Send project completion report to human
 4. [ ] Members: send `shutdown_request` to all members
 5. [ ] Await `shutdown_response` from all

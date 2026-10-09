@@ -34,8 +34,7 @@ PROMPT=$(printf '%s' "$INPUT" | python3 -c \
 case "$SUBAGENT_TYPE" in
   general-purpose|claude|"" \
   | pd-coordinator|coord|mini-coord|curator|codebase-search|Delegator|save-state-runner|project-scaffolder \
-  | *-pd|*" Dept-Coord"|critique-*|*-critique|"Critiques Lead" \
-  | "Chief Content Officer"|"Design Lead"|"Engineering Lead"|"Project Management Lead"|"Specialized Agents Lead"|"Testing Lead"|"Video Studio Director" \
+  | *-pd|critique-*|*-critique \
   | architecture-analyzer|article-analyzer|assemble-reviewer|domain-analyzer|file-analyzer|graph-reviewer|knowledge-graph-guide|project-scanner|tour-builder \
   | Explore|Plan|statusline-setup|claude-code-guide|fork|caveman:*)
     echo '{}'

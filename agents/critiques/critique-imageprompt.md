@@ -3,7 +3,7 @@ name: critique-imageprompt
 description: "Image generation prompt critic. Finds character-consistency gaps, missing prompt layers, vague descriptors, style contradictions, and generator-fit errors."
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

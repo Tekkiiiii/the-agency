@@ -1,28 +1,26 @@
 # Escalation Protocol
 
-How leaders escalate decisions up the chain — from leader autonomy to AI review to human approval.
+How PDs and Coords escalate decisions up the chain — from PD autonomy to AI review to human approval.
 
 ---
 
 ## The Escalation Chain
 
 ```
-MEMBER (Level 4)
+EXEC (final report)
       │
-      ▼ (reports via assistant)
-PROJECT ASSISTANT (Level 3) ── synthesis ──► PROJECT DIRECTOR (Level 2)
-                                                         │
-DEPT ASSISTANT (Level 3) ◄── synthesis ◄── DEPT HEAD (Level 2)
-                                                         │
-                                                         ▼
-                                                  PARENT AI (Level 1)
-                                                         │
-                                                         ├─► TIER 1: Independent (no action needed)
-                                                         ├─► TIER 2: Reviews and approves/denies
-                                                         └─► TIER 3: Surfaces to human with recommendation
+      ▼
+COORD ── synthesis ──► PD (Project Director)
+                          │
+                          ▼
+                   PARENT AI (main session)
+                          │
+                          ├─► TIER 1: Independent (no action needed)
+                          ├─► TIER 2: Reviews and approves/denies
+                          └─► TIER 3: Surfaces to human with recommendation
 ```
 
-**Matrix conflict path:** Project Director ↔ Dept Head disagree → both escalate to Parent AI with `matrix_conflict` type. Parent AI adjudicates based on severity + financial importance.
+**Cross-project conflict path:** two PDs disagree (priority, shared resource, shared files) → both escalate to Parent AI with `matrix_conflict` type. Parent AI adjudicates based on severity + financial importance. Escalations travel as the final Exec/Coord report or an inter-spawn task file; upward SendMessage is never used (see `checkpoint-handshake-protocol.md`).
 
 ---
 
@@ -43,7 +41,7 @@ Escalate when the action is:
 
 ```
 TYPE: approval_request
-DEPARTMENT: [dept]
+PROJECT: [project]
 ACTION: [what you want to do]
 FILES_AFFECTED: [list files or "new file(s)"]
 LINES_CHANGED: [approximate or "N/A for new file"]
@@ -59,7 +57,7 @@ TIER: 2
 ```
 TYPE: approval_response
 DECISION: [approved | denied | approved_with_conditions]
-DEPARTMENT: [dept]
+PROJECT: [project]
 CONDITIONS: [if applicable — what must be met]
 REASONING: [brief justification]
 ---
@@ -93,7 +91,7 @@ Scope: {files, paths, or systems the action may touch}
 Granted-at: {ISO timestamp}
 Expires: {ISO timestamp — default +24h}
 ```
-Only the main session writes these files. No PD, Coord, Exec, or dept agent ever authors
+Only the main session writes these files. No PD, Coord or Exec ever authors
 a consent file — for itself or for anyone else. That is the whole basis of the
 authentication.
 
@@ -144,7 +142,7 @@ Escalate when the action is:
 ═══════════════════════════════════════════
 ⚠️  ESCALATION TO HUMAN — ACTION REQUIRED
 ═══════════════════════════════════════════
-Department: [dept]
+Project: [project]
 Requesting: [action description]
 
 WHAT THIS DOES:
@@ -173,11 +171,11 @@ To modify: describe the change you want
 
 When human approves:
 - Execute the action immediately
-- Report completion to the dept lead
+- Report completion to the requesting PD / Coord
 - Log the approval in the escalation record
 
 When human denies:
-- Inform the dept lead
+- Inform the requesting PD / Coord
 - Proceed without the action
 - If the denial blocks critical work, escalate further context
 
@@ -199,64 +197,64 @@ When human modifies:
 
 ## Delegation Budget
 
-Leaders have an implicit **delegation budget** — they can act autonomously on Tier 1 without notifying me, but should keep me informed of overall team activity through periodic `status_report` messages.
+PDs and Coords have an implicit **delegation budget** — they can act autonomously on Tier 1 without notifying me, but should keep me informed of overall team activity through periodic `status_report` messages.
 
 **Recommended status report cadence:**
 - Weekly: summary of completed tasks, active tasks, blockers
-- Ad-hoc: when hitting a blocker that requires cross-dept coordination
+- Ad-hoc: when hitting a blocker that requires cross-project coordination
 
 ---
 
 ## Edge Cases
 
 **What if I (parent AI) am unavailable?**
-- Leaders operate within Tier 1 autonomy
-- Tier 2 actions are queued — leaders proceed with caution and document
+- PDs and Coords operate within Tier 1 autonomy
+- Tier 2 actions are queued — they proceed with caution and document
 - Tier 3 actions wait until availability returns
 
-**What if a member escalates directly to me instead of to their leader?**
-- I will route the message back to the appropriate leader
-- Members should always go through their dept lead first
+**What if an Exec escalates directly to me instead of to its Coord / PD?**
+- I will route the message back to the spawning Coord / PD
+- Execs should always go through their spawner first (final report)
 
-**What if two leaders disagree on a cross-dept task?**
-- Leaders negotiate directly first
-- If unresolved after reasonable effort, either leader escalates to me
+**What if two PDs disagree on a cross-project task?**
+- The PDs negotiate directly first (inter-spawn task files)
+- If unresolved after reasonable effort, either PD escalates to me
 - I mediate and make a final decision
 
 ---
 
-## Matrix Conflict Resolution
+## Cross-Project Conflict Resolution
 
-In the matrix model, conflicts between Project Directors and Dept Heads follow a specific escalation path.
+Conflicts between two PDs (or a PD and a Coord over scope) follow a fixed path.
 
 ### When a Conflict Occurs
 
-1. **PD and Dept Head negotiate directly** for up to 30 minutes
+1. **The parties negotiate directly** (inter-spawn task files) for up to 30 minutes
 2. **If unresolved:** either party escalates to Parent AI with `matrix_conflict` type
 3. **Parent AI adjudicates** based on severity + financial importance
 
-### Matrix Conflict Escalation Format
+### Conflict Escalation Format
 
 ```
 TYPE: matrix_conflict
 SEVERITY: [low | medium | high | critical]
 FINANCIAL_IMPACT: [project revenue, deadline, reputation risk]
-PARTIES: [PD name, Dept Head name]
+PARTIES: [PD name, PD or Coord name]
 ISSUE: [priority | quality | resource]
 ---
-[PD position + reasoning]
+[Party A position + reasoning]
 
-[Dept Head position + reasoning]
+[Party B position + reasoning]
 
 PROPOSED_RESOLUTION: [what I think should happen]
 ```
 
 ### Conflict Types and Resolution Rules
 
-| Issue | Dept Head Wins | PD Wins | Escalate to Parent AI |
-|-------|---------------|---------|----------------------|
-| Skill quality / architecture | ✓ | — | If PD disputes |
-| Project timeline / scope | — | ✓ | If it affects skill standards |
-| Member priority (which project) | — | — | Always escalate |
-| Resource conflict (same member) | — | — | Always escalate |
-| Tier 1 execution decisions | — | ✓ | If Dept Head disputes |
+| Issue | Owner decides | Escalate to Parent AI |
+|-------|---------------|----------------------|
+| Skill quality / architecture within one project | That project's PD | If another PD disputes |
+| Project timeline / scope | That project's PD | If it affects shared standards |
+| Resource conflict (same Exec capacity, shared files) | — | Always escalate |
+| Priority between projects | — | Always escalate |
+| Tier 1 execution decisions | The executing PD | If the other party disputes |

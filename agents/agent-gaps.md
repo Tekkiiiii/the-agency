@@ -1,6 +1,6 @@
 # Agent Gaps Log
 
-> **Gap log status (2026-10-06): generalist switch ACTIVE.** Specialist agents are archived; `general-purpose` + 1-3 skills named in the prompt is the default spawn, so "no named agent covers it" is no longer a gap. All gap rows below are RESOLVED by the 2026-10-06 generalist switch (history kept). Role to skills map: `{agency-root}/agents-archive/ROLE-MAP.md`. Only log a row here if a KEPT agent (PD, coord, critique-*, dept head, etc.) is missing or fails to resolve.
+> **Gap log status (2026-10-06): generalist switch ACTIVE.** Specialist agents are archived; `general-purpose` + 1-3 skills named in the prompt is the default spawn, so "no named agent covers it" is no longer a gap. All gap rows below are RESOLVED by the 2026-10-06 generalist switch (history kept). Role to skills map: `{agency-root}/agents-archive/ROLE-MAP.md`. Only log a row here if a KEPT agent (PD, coord, critique-*, council seat, etc.) is missing or fails to resolve.
 
 When a caller needs a KEPT-type agent (e.g. a new `*-pd`) and none is registered
 (after checking delegator-cache → agency-dispatch → `agents-archive/MANIFEST.md`),

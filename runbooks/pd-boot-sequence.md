@@ -49,7 +49,11 @@ hours of cross-L3 conflict resolution later.
 
 **Step 1:** Check the PD-BRIEFING doc for a pre-written routing entry for this task type.
 
-**Step 2:** If not in briefing, pick 1-3 skills yourself from `skills/INDEX.md` (no per-dept catalog loads).
+**Step 2:** If not in briefing, pick skills with the router (no catalog loads):
+```
+python3 {agency-root}/scripts/skill-route.py "<task>"
+```
+Pick skills yourself only when it returns `low_confidence`.
 
 **Step 3:** Delegate per Agent Dispatch Priority below. Spawn `general-purpose` (model sonnet) with 1-3 named skills in the prompt (`Skills: /x, /y`). Only structural agents spawn by name (see Agent Dispatch Priority step 2 below).
 
@@ -63,7 +67,7 @@ hours of cross-L3 conflict resolution later.
    NO  → step 2
 
 2. Is it a structural role ({slug}-pd, pd-coordinator, coord, mini-coord,
-   dept head / dept-coord, critique-* critic, Delegator, curator, codebase-search,
+   critique-* critic, Delegator, curator, codebase-search,
    save-state-runner, project-scaffolder)?
    YES → spawn that agent by name
    NO  → step 3
@@ -85,26 +89,6 @@ Old specialist role names (backend-architect, frontend-developer, etc.) no longe
 
 ---
 
-## Department Routing (reference — don't load on spawn)
-
-Live departments: content-creation, critiques, design, engineering, integrations,
-project-management, specialized, testing, video-studio. Departments are routing
-labels, not spawn catalogs: pick skills from `skills/INDEX.md`, then spawn general-purpose.
-
-| Task | Department | Skill pick |
-|---|---|---|
-| Frontend / backend / DB / CI-CD | engineering | skills (e.g. /frontend, /backend) |
-| QA / accessibility / performance | testing | skills (e.g. /qa-only, /benchmark) |
-| UI design / brand / visual | design | skills (e.g. /design-router) |
-| Content writing / copy / editorial | content-creation | skills (e.g. /content-creator) |
-| Content strategy / social / growth | content-creation | skills (e.g. /content-strategy, /copywriting) |
-| Project scheduling | project-management | skills or `pd-coordinator` / `coord` |
-| Data extraction / compliance / research | specialized | skills from `skills/INDEX.md` |
-
-Marketing, marketing/china and sales are not live departments (archived); see ROLE-MAP.md.
-
----
-
 ## PD-BRIEFING Template
 
 Create at `{project}/.claude/PD-BRIEFING.md`:
@@ -116,22 +100,9 @@ PD: [pd-name]
 
 ## This Project's Agents
 
-| Task | Skills (general-purpose) or structural agent | Department |
-|---|---|---|
-| [task type] | [/skill-a, /skill-b or agent name] | [dept] |
-
-## Department Contacts
-
-| Department | Who to Tag |
+| Task | Skills (general-purpose) or structural agent |
 |---|---|
-| Engineering | `@engineering-lead` |
-| Design | `@design-lead` |
-| Testing | `@testing-lead` |
-| Content Creation | `@content-creation-lead` |
-| Critiques | `@critiques-lead` |
-| Project Management | `@project-management-lead` |
-| Video Studio | `@video-studio-lead` |
-| Specialized | `@specialized-lead` |
+| [task type] | [/skill-a, /skill-b or agent name] |
 
 ## Active Priorities
 - [top 2-3 priorities from current session]
@@ -149,6 +120,5 @@ PD: [pd-name]
 1. Create the PD-BRIEFING doc at `{project}/.claude/PD-BRIEFING.md`
 2. Paste Mode 1 (Spawn) + Mode 2 (Route) into the PD agent file, before `## Identity`
 3. Paste Agent Dispatch Priority as a reference block (no file reads on spawn)
-4. Paste Department Routing table as a reference block (lazy load only)
 
-Total text added to PD agent file: ~60 lines. No file reads on spawn. Routing tables are reference, not runtime-loaded.
+Total text added to PD agent file: ~60 lines. No file reads on spawn. Routing text is reference, not runtime-loaded.

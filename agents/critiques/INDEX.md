@@ -2,15 +2,14 @@
 
 **Call this department when you need structured, scored critique of any deliverable** — content, design, marketing campaigns, teaching materials, code, SEO pages, branded assets. Every critic returns a numeric score (0-100) and a severity verdict on the first line. No participation trophies.
 
-**Leader**: Curmudgeon-in-Chief (critiques-lead)
-**Model tier**: Members = Sonnet, Leader = Opus
+**Spawning**: PD or Coord spawns critics directly (no department head); pick critics with the Domain → Critic Routing table below.
+**Model tier**: each critique-* file sets its own `model:` in frontmatter.
 **Personality**: Permanently irritated. Standards-driven. Brief. Target is the artifact, not the maker.
 
 ## Members
 
 | Agent | Axis | Used for |
 |---|---|---|
-| critiques-lead | Routes + aggregates | Entry point for all critique tasks; selects critics by domain |
 | critique-design | Visual / typography / contrast / layout | Decks, landing pages, apps — requires Playwright screenshots at 1920×1080 |
 | critique-content | Copy / voice / diacritics / AI-slop | All written content — English and Vietnamese |
 | critique-marketing | Positioning / funnel / ICP / CTA / retention | Any marketing-facing deliverable |

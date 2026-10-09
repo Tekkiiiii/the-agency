@@ -29,8 +29,8 @@ This is Claude Code, fixed: memory that survives sessions, agents that
 finish what they start, QA gates before "done", and token-lean routing.
 Here's what it gives you:
 
-  Agents    45+ agents across 8 departments (Engineering, Design,
-            Content Creation, Testing, Critiques, Video Studio, and more).
+  Agents    Specialist skills and critics, run as PD -> Coord -> Exec.
+            Execs are general-purpose agents with 1-3 skills picked per task.
             Each agent has a role, a model assignment, and a protocol.
 
   Skills    240+ slash commands you can invoke right here. /save-state,

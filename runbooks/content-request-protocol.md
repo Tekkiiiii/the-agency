@@ -1,62 +1,54 @@
+---
+name: content-request-protocol
+description: The single content-production pipeline. PD -> Coord -> general-purpose writer -> /content-polish -> critics via /cc-loop. Brief format, writer routing table, quality gate, turnaround, repurposing, escalation.
+type: runbook
+owner: system-improvement
+lastUpdated: 2026-10-08
+version: 2.0.0
+---
+
 # Content Request Protocol
 
-How content gets produced in The Agency. This protocol governs the handoff between any requester (PD, department lead, parent AI) and the Content Creation department, with a strategy owner providing the strategic layer.
+How written content gets produced. This is the ONE content pipeline doc. There is no department layer and no content head: the 2026-10-08 dept sunset folded `agents/content-creation/protocols/content-request.md` and `agents/content-creation/pipelines/content-production/` into this file (originals archived under `{agency-root}/agents-archive/dept-sunset-2026-10-08/content-creation/`).
 
 ## The Flow
 
 ```
-Requester (PD / Dept Lead / Parent AI)
-       │
-       ▼
-Strategy Owner (builds strategic brief)
-       │
-       ▼
-Chief Content Officer (receives brief, routes to writer)
-       │
-       ▼
-Content Creation Dept-Coord (assigns writers, runs quality gates)
-       │
-       ├──► Format-specific writer (general-purpose + skills; drafts content)
-       │         │
-       │         └──► Polish pass (general-purpose + /content-polish, /humanizer-writing)
-       │               └──► critique-content review
-       │
-       ▼
-CCO approves → delivers back to Strategy Owner
-       │
-       ▼
-Strategy Owner (publishes, distributes, measures)
-       │
-       ▼
-Strategy Owner feeds performance data back to CCO (optimization loop)
+Requester (operator / main session / PD; owns strategy, builds the strategic brief)
+       |
+       v
+PD  (validates brief completeness, hands the production task to a Coord)
+       |
+       v
+Coord  (spawns the writer, runs the quality gate, owns delivery)
+       |
+       +--> Writer: general-purpose + skills (drafts)
+       |         |
+       |         +--> /content-polish   (humanizer + proofreader pass; EN or VI chain)
+       |               |
+       |               +--> /cc-loop    (critics in parallel; pass avg >= 80, min >= 70, max 3 rounds)
+       v
+Coord delivers the approved artifact + quality evidence to the PD
+       |
+       v
+PD / requester publishes, distributes, measures
+       |
+       v
+Requester feeds performance data back to the PD (next briefs cite what worked / did not)
 ```
+
+Spawn rules: writers are `general-purpose` Execs with 1-3 skills, spawned by the Coord (or by the PD directly when the delegation test in `pd-coordinator.md` says no Coord is needed). Critics are `critique-*` agents (`agents/critiques/`), spawned by `/cc-loop`. Role files for each writer type are listed in `{agency-root}/agents-archive/ROLE-MAP.md`.
 
 ## Step-by-Step
 
-### Step 1 — Requester Sends Resource Request to the Strategy Owner
+### Step 1 - Requester states the request
 
-The requester does NOT go to Content Creation directly. The Strategy Owner owns the strategy layer, so the request starts there. The Strategy Owner is the requester itself, or a `general-purpose` agent with /content-strategy and /copywriting that the requester spawns.
+The request can be short: what content, rough topic, target audience, timeline, priority (`low | medium | high | critical`). The PD (or a `general-purpose` Exec with `/content-strategy` on its behalf) expands it into the strategic brief in Step 2. The PD hands the brief to a Coord as a normal task (task file with the brief inline or linked).
 
-```
-TO: strategy-owner
-TYPE: resource_request
-DEPARTMENT: [requester's project/dept]
-PRIORITY: [low | medium | high | critical]
----
-[What content is needed, rough topic, target audience, and timeline]
-```
-
-The request can be brief. The Strategy Owner will flesh it out into a full strategic brief.
-
-**Exception:** If the parent AI (council chair) is orchestrating directly, they can send the request to the CCO with a strategic brief already attached — bypassing the Strategy Owner only when the strategy is already defined.
-
-### Step 2 — Strategy Owner Builds the Strategic Brief
-
-The Strategy Owner fills in the full strategic context. The brief must include all 6 fields:
+### Step 2 - Strategic brief (6 fields, all mandatory)
 
 ```
 STRATEGIC BRIEF
-───────────────
 Project:      [project name]
 Content type: [blog post | social post | ad copy | email | video script | etc.]
 Pillar:       [which content pillar this falls under]
@@ -88,27 +80,17 @@ WHY (objective & KPI):
 BRAND CONTEXT:
 - Voice and tone guidelines
 - CTA convention
-- Reference to brand-guidelines.md file path
+- Path to {project}/memory/brand-guidelines.md
 - Any specific constraints or requirements
 ```
 
-### Step 3 — Strategy Owner Sends Brief to CCO
+**Completeness check (PD, before handing to the Coord).** If any of the six fields is missing, the PD returns the brief to the requester with the exact list of gaps. Do not start production on an incomplete brief.
 
-```
-TO: content-creation-lead
-TYPE: coordination_request
-DEPARTMENT: [requester's project/dept]
-PRIORITY: [matches the original request priority]
----
-Strategic brief attached for [project] [content type].
-[Any additional context or urgency notes]
-```
+### Step 3 - Coord routes to the right writer
 
-### Step 4 — CCO Routes to the Right Writer
+The Coord reads the brief and spawns the writer as `general-purpose` with the skills below. Spawn prompt: "Role: read the role file for this writer listed in `{agency-root}/agents-archive/ROLE-MAP.md` first. Skills: ... Task: ..." The Coord attaches the strategic brief, the brand-guidelines path and any extra editorial direction.
 
-The CCO (or the Content Creation Dept-Coord, if delegated) reads the brief and spawns the right writer as `general-purpose` with the skills below. Spawn prompt: "Role: read the role file for this writer listed in `{agency-root}/agents-archive/ROLE-MAP.md` first. Skills: ... Task: ..." (full map: `{agency-root}/agents-archive/ROLE-MAP.md`):
-
-| Content type | Spawn as `general-purpose` + skills (role file: see ROLE-MAP) |
+| Content type | Spawn as `general-purpose` + skills |
 |---|---|
 | Blog post, article, thought leadership | /blog-pipeline, /content-creator, /seo-aeo-best-practices |
 | Case study, whitepaper, report | /content-creator, /content-polish |
@@ -128,129 +110,110 @@ The CCO (or the Content Creation Dept-Coord, if delegated) reads the brief and s
 | Ad copy (Meta/Google/TikTok) | /copywriting, /content-polish |
 | Landing page / sales page | /copywriting, /seo-aeo-best-practices |
 | Email campaign / sequence | /copywriting, /content-polish |
-| Video script | /youtube-narration, /video-prompt-director |
+| Video script | /youtube-narration, /video-prompt-director (then `content-to-video-protocol.md` for production) |
 | Developer docs, API refs, tutorials | /tech-writer, /document-release |
 | Slide deck / pitch deck | /deck-narrative, /marp |
 | Press release, media kit | /content-creator, /content-polish |
 
-The CCO attaches:
-- The strategic brief from the Strategy Owner
-- The brand guidelines file path
-- Any additional editorial direction
+Capacity: if one writer type already has more than 3 active tasks in the same Coord, the Coord queues, reassigns or expedites; it never silently stacks.
 
-### Step 5 — Writer Produces the Draft
+### Step 4 - Writer produces the draft
 
-The assigned writer:
-1. Reads the strategic brief and brand guidelines
-2. Researches the topic (competing content, data points, angles)
-3. Creates an outline (for long-form) or drafts directly (for short-form)
-4. Writes the full piece in the brand's voice
-5. Runs a self-check (stop-slop scan + proofreader pass)
-6. Submits to the Content Creation Dept-Coord
+The writer:
+1. Reads the strategic brief and brand guidelines.
+2. Researches the topic (competing content, data points, angles).
+3. Outlines (long-form) or drafts directly (short-form).
+4. Writes the full piece in the brand's voice.
+5. Self-check: stop-slop scan, then submits the draft to the Coord. The full polish happens in Step 5, not here.
 
-### Step 6 — Quality Gate (Dept-Coord runs it, `critique-content` reviews)
+### Step 5 - Quality gate: /content-polish, then /cc-loop
 
-The Content Creation Dept-Coord runs mandatory quality gates (editing passes via general-purpose + `/content-polish`, `/humanizer-writing`; review by the kept `critique-content` agent):
+The Coord runs the gate (or spawns a `general-purpose` Exec with `/cc-loop` to run it):
 
-| Gate | Tool | Requirement |
-|---|---|---|
-| Content critique | `content-critique` | Grade B or above |
-| AI-slop detection | `stop-slop` | Zero flags |
-| Humanizing | `humanizer` | Clean pass |
-| Proofreading | `proofreader` | No errors |
-| Brand voice | Manual check vs `brand-guidelines.md` | Consistent |
+1. **`/content-polish`** on the draft. English runs `humanizer` + `proofreader`; Vietnamese runs `humanizer-vi` + `grammar-checker-vi` (optional `translationese-cleaner-vi` first). AI-slop check via `stop-slop`.
+2. **`/cc-loop`** with the domain that matches the content (`blog`, `email`, `brief`, `script`, `deck`, or `custom` with `--critics`). Critics run in parallel (default for written content: `critique-content`, plus marketing / SEO / brand critics per the cc-loop critic matrix; `critique-social`, `critique-seo`, `critique-video` where the format calls for them).
+3. **Pass bar:** average score across critics >= 80 AND lowest single score >= 70. Max 3 rounds. Brand voice is checked against `brand-guidelines.md` by `critique-brand`.
 
-**If the post fails any gate:** the Dept-Coord returns it to the writer with specific, actionable editorial notes. The writer revises and resubmits.
+If the loop ends below the bar after 3 rounds, the Coord does NOT ship: it escalates (see Escalation). The Coord attaches the cc-loop score table and the log path to the delivery.
 
-**If the post passes all gates:** `critique-content` signs off and the Dept-Coord forwards to the CCO for final approval (the CCO holds approval authority).
+**Critical priority.** For `PRIORITY: critical` the PD may approve a condensed gate: `/content-polish` only (proofreader pass), skipping `/cc-loop`. Used only when the brief explicitly marks `critical`; the delivery must say the loop was skipped.
 
-### Step 7 — CCO Approves
+### Step 6 - Sign-off
 
-- **Standard content** (blog posts, social, email): a passing `critique-content` verdict plus Dept-Coord sign-off is sufficient. CCO reviews only if flagged.
-- **High-stakes content** (press releases, content with legal/financial/medical claims, crisis communications): CCO reviews personally before release.
+- **Standard content** (blog posts, social posts, emails, video scripts): a passing `/cc-loop` result is sufficient.
+- **High-stakes content** (press releases, legal/financial/medical claims, crisis communications): the PD reviews personally and, for legal/financial/medical claims, escalates to the operator before release (Tier 3).
 
-### Step 8 — CCO Delivers Back to Strategy Owner
+### Step 7 - Delivery
+
+The Coord delivers to the PD as a normal Exec/Coord completion report (the final result, not a SendMessage):
 
 ```
-TO: strategy-owner
-TYPE: status_report
-DEPARTMENT: content-creation
-PRIORITY: [matches original]
----
 [Content type] for [project] delivered.
-- Quality gate: [grade, slop status, polish status]
+- Quality gate: [cc-loop avg / min / rounds, polish status]
 - File: [output file path]
 - SEO notes: [keyword suggestions, internal linking recommendations]
 - A/B suggestion: [variant ideas for testing, if applicable]
-
 Ready for your distribution decision.
 ```
 
-### Step 9 — Strategy Owner Distributes
+Output location follows the standard rule: `{project}/outputs/{skill}/{YYYY-MM-DD}-{descriptor}/`.
 
-The Strategy Owner owns publishing and distribution:
-1. Reviews the artifact for strategic alignment (does it match the brief?)
-2. Publishes to the target channel
-3. Optionally sends follow-up requests to Content Creation for repurposed versions on other platforms
+### Step 8 - Distribution and feedback
 
-### Step 10 — Strategy Owner Feeds Back Results
+The requester owns publishing and distribution: review against the brief, publish, optionally request repurposed versions. After the measurement window (typically 7-14 days) the requester records performance data (key metrics, what resonated, recommended follow-ups) in the project's memory/lessons so future briefs cite concrete "this worked / this did not" evidence.
 
-After the measurement window (typically 7-14 days), the Strategy Owner shares performance data:
+## Turnaround
 
-```
-TO: content-creation-lead
-TYPE: status_report
-DEPARTMENT: [requester's project/dept]
----
-Performance data for [content piece]:
-- [Key metrics: views, engagement, CTR, conversions, DMs, etc.]
-- [Top insight: what resonated, what didn't]
-- [Recommendation: follow-up pieces, angle adjustments]
-```
+Measured from the moment the Coord receives a COMPLETE brief. Brief-building time is additional.
 
-The CCO uses this data to:
-- Brief writers with concrete "this worked / this didn't" feedback
-- Adjust voice, format, and messaging for future content
-- Identify which content types and angles drive the best results
+| Content type | Standard | Critical |
+|---|---|---|
+| Social media post (single platform) | Same day | 2 hours |
+| Blog post (1,000-2,000 words) | 1-2 days | Same day |
+| Case study / whitepaper | 3-5 days | 2 days |
+| Email sequence (3-5 emails) | 2-3 days | 1 day |
+| Video script (short-form) | Same day | 2 hours |
+| Video script (long-form) | 1-2 days | Same day |
+| Press release | 1-2 days | Same day |
+| Slide deck | 2-3 days | 1 day |
+| Whitepaper (5,000+ words) | 5-10 days | 3 days |
 
-## Turnaround Times
-
-| Content type | Expected turnaround |
-|---|---|
-| Social media post (single platform) | Same day |
-| Blog post (1,000-2,000 words) | 1-2 days |
-| Case study / whitepaper | 3-5 days |
-| Email sequence (3-5 emails) | 2-3 days |
-| Video script (short-form) | Same day |
-| Video script (long-form) | 1-2 days |
-| Press release | 1-2 days |
-| Slide deck | 2-3 days |
-
-These are production times after the strategic brief is received. The Strategy Owner's brief-building time is additional.
+`critical` may reduce gate depth (Step 5, critical priority).
 
 ## Repurposing Requests
 
-When the Strategy Owner wants the same content adapted for multiple platforms, they send separate requests for each platform — not one request for "all platforms." Each platform writer needs their own brief because format, voice, and constraints differ.
+Request each platform separately, not "all platforms": every platform writer needs its own brief because format, voice and constraints differ. Example after a blog post ships:
+- LinkedIn writer (general-purpose + skills): "Adapt the blog's key insight into a thought leadership post"
+- Twitter/X writer: "Create a thread summarizing the 3 points"
+- TikTok writer: "Write hook + caption for a short video on point #1"
 
-Example: A blog post gets published. The Strategy Owner then sends:
-- Brief to the LinkedIn writer (general-purpose + skills): "Adapt the blog's key insight into a thought leadership post"
-- Brief to the Twitter/X writer: "Create a thread summarizing the 3 points"
-- Brief to the TikTok writer: "Write hook + caption for a short video on point #1"
-
-Each is a separate production cycle through the Dept-Coord's quality gate.
+Each is a separate production cycle through the Step 5 gate.
 
 ## Escalation
 
 | Situation | Escalation path |
 |---|---|
-| Writer disagrees with strategic brief | Writer → Dept-Coord → CCO → Strategy Owner |
-| Quality gate fails 3+ times on same piece | Dept-Coord → CCO (may reassign to different writer) |
-| Strategy Owner and Content Creation disagree on voice/approach | CCO → parent AI (council chair arbitrates) |
-| Content involves legal/financial/medical claims | CCO → parent AI → human (Tier 3) |
-| Urgent request (same-day turnaround) | Requester marks PRIORITY: critical; CCO may assign directly, skip full gate |
+| Writer disagrees with the strategic brief | Writer -> Coord -> PD -> requester |
+| `/cc-loop` below bar after 3 rounds | Coord -> PD (may reassign to a fresh writer with the critic fix list) |
+| Requester and PD disagree on voice/approach | PD -> operator arbitrates |
+| Legal/financial/medical claims | PD -> operator (Tier 3) |
+| Urgent same-day request | Requester marks `PRIORITY: critical`; Step 5 critical rule applies |
+
+Upward escalation travels as the final Exec/Coord report (never upward SendMessage; see `checkpoint-handshake-protocol.md`).
 
 ## What This Protocol Does NOT Cover
 
-- **Content strategy creation** (editorial calendars, pillar planning) — that's the Strategy Owner's domain, handled outside this protocol
-- **Content distribution and engagement** — the Strategy Owner owns publishing, community management, and audience engagement
-- **Visual content** (images, videos, design assets) — Design department handles visual production; Content Creation handles the written component only
+- Content strategy creation (editorial calendars, pillar planning): the requester / PD, with `/content-strategy`.
+- Distribution and community engagement: the requester.
+- Visual content (images, video, design assets): see `content-to-video-protocol.md` for video; design work routes to a `general-purpose` Exec with design skills (`/design-router`).
+
+## Improving This Protocol
+
+Propose changes as a PD task file in `{project}/memory/tasks/`; edit this file and bump `version` + add a Version History row on approval.
+
+## Version History
+
+| Version | Date | Change | Approved by |
+|---|---|---|---|
+| 1.0 | 2026-05-13 | Initial formalization (multi-layer department flow) | System initialization |
+| 2.0 | 2026-10-08 | Dept sunset (D8): single doc; PD -> Coord -> general-purpose writer -> /content-polish -> /cc-loop critics; folded the content-production pipeline and agents/content-creation protocol; removed the department-head, dept-coordinator and department state-file machinery | Maintainers (dept sunset) |

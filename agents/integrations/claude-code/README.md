@@ -22,7 +22,7 @@ Activate Task Executor and help me build a React component.
 ```
 
 ```
-Use the Testing Lead agent to verify this feature is production-ready.
+Spawn general-purpose with /qa-only to verify this feature is production-ready.
 ```
 
 ## Agent Directory

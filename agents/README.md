@@ -66,11 +66,11 @@ See the [Multi-Tool Integrations](#-multi-tool-integrations) section below for f
 
 ## 🏛️ Org Structure
 
-The Agency operates as a three-layer organization: the **Agency Council** (all 8 department leaders coordinating strategy), **Project Teams** (relevant leaders + members executing projects), and **Department Members** (individual specialists). Each department is led by a senior authority who coordinates work, manages approvals, and escalates decisions.
+The Agency operates as a three-layer organization: the **Agency Council** (4 independent model-tier seats plus an optional Codex seat, see `{agency-root}/core/memory/agency-council.md`), **Project Directors** (one per project, PD -> Coord -> general-purpose Exec), and **Critics** (`critique-*`, spawned directly by the PD or Coord). The department-head and department-coordinator layer was sunset 2026-10-08 (`agents-archive/dept-sunset-2026-10-08/`).
 
-See [ORG.md](ORG.md) for the full org chart, leadership table, agency council roster, and team spawning instructions.
+See [ORG.md](ORG.md) for the org chart, council seats, and routing.
 
-Leaders operate on a 3-tier approval model: **Tier 1** (dept leader approves immediately — small edits, research, code review), **Tier 2** (escalates to parent AI — new files, config changes, code modifications), **Tier 3** (surfaces to human — destructive ops, deployments, financial transactions).
+The org operates on a 3-tier approval model: **Tier 1** (PD approves immediately within project scope — small edits, research, code review), **Tier 2** (escalates to parent AI — new files, config changes, code modifications), **Tier 3** (surfaces to human — destructive ops, deployments, financial transactions).
 
 ## 🎨 The Agency Roster
 
@@ -115,7 +115,7 @@ The unique specialists who don't fit in a box.
 2. 🏗️ **general-purpose + /backend, /postgresql-schema** - Design the API and database
 3. 🚀 **general-purpose + /content-strategy, /copywriting** - Plan user acquisition
 4. ⚡ **general-purpose + /mattpocock-skills:prototype** - Fast iteration cycles
-5. 🔍 **Testing Lead** - Ensure quality before launch
+5. 🔍 **general-purpose + /qa-only, /run-acceptance-tests** - Ensure quality before launch
 
 **Result**: Ship faster with specialized expertise at every stage.
 
@@ -124,9 +124,9 @@ The unique specialists who don't fit in a box.
 ### Scenario 2: Marketing Campaign Launch
 
 **Your Team**:
-1. 📝 **Chief Content Officer** - Develop campaign content across formats
-2. 🎬 **Video Studio Director** - Short-form video and distribution
-3. 🔍 **Critiques Lead** - Route the output to brand, content, and SEO critics
+1. 📝 **general-purpose + /content-creator, /content-polish** - Develop campaign content across formats
+2. 🎬 **general-purpose + /video-use, /ffmpeg** - Short-form video and distribution
+3. 🔍 **critique-brand, critique-content, critique-seo** - Spawn the critics directly (see `critiques/INDEX.md`)
 4. 📊 **general-purpose + /chart-viz** - Track and optimize performance
 
 **Result**: Multi-channel coordinated campaign with platform-specific expertise.
@@ -141,7 +141,7 @@ The unique specialists who don't fit in a box.
 3. 🎨 **general-purpose + /ui-ux-pro-max** - Design system and components
 4. 🧪 **general-purpose + /content-experimentation-best-practices** - A/B test planning
 5. 📸 **general-purpose + /qa-only, /browse** - Quality verification
-6. 🔍 **Testing Lead** - Production readiness
+6. 🔍 **general-purpose + /qa-only, /run-acceptance-tests** - Production readiness
 
 **Result**: Enterprise-grade delivery with quality gates and documentation.
 
@@ -224,7 +224,7 @@ Each agent is designed with:
 
 ## 📊 Stats
 
-- 🎭 Specialist roles archived 2026-10-06 (see ROLE-MAP); registered agents are dept heads, coords, PDs, critiques, and service agents
+- 🎭 Specialist roles archived 2026-10-06 (see ROLE-MAP); registered agents are PDs, coords, critiques, council seats, and service agents (department layer archived 2026-10-08)
 - 📝 **46,000+ lines** of personality, process, and code examples
 - ⏱️ **Months of iteration** from real-world usage
 - 🌟 **Battle-tested** in production environments

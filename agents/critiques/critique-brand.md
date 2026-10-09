@@ -3,7 +3,7 @@ name: critique-brand
 description: Brand consistency critic. Finds voice deviations, off-brand visuals, naming inconsistencies, and positioning drift. For any branded deliverable — content, design, campaigns, docs.
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

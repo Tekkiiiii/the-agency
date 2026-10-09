@@ -1,10 +1,8 @@
-# Project Management Department
+# Project Management — PD home
 
-**Call this department when you need to orchestrate work across teams** — sprint planning, project coordination, timeline management, Jira/Git workflow enforcement, studio operations, experiment tracking (A/B tests), and multi-project portfolio management.
+This folder is a home for Project Director (PD) agent definitions and the Coord agent definitions (`coord.md`, `mini-coord.md`, `pd-coordinator.md`). The department layer (department heads and department coordinators) was sunset 2026-10-08: routing is PD -> Coord -> general-purpose Exec (spawner picks model + skills); critics (`critique-*`) are spawned directly by the PD or Coord. Role-to-skills map for archived specialists: `{agency-root}/agents-archive/ROLE-MAP.md`. Archived dept files: `{agency-root}/agents-archive/dept-sunset-2026-10-08/` (see `{agency-root}/agents-archive/MANIFEST.md`).
 
-**Leader**: Project Management Lead
-**Dept-Coord**: Project Management Dept-Coord
-**Model tier**: Members = general-purpose (Sonnet), Leaders = Opus
+**Call these roles when you need to orchestrate work across teams** — sprint planning, project coordination, timeline management, Jira/Git workflow enforcement, studio operations, experiment tracking (A/B tests), and multi-project portfolio management.
 
 ## Members
 

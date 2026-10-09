@@ -150,7 +150,7 @@ During Step 3 (critic selection), if the task type maps to no existing critic:
 ### Preemptively scaffolded critics
 
 These three critics are pre-built to cover known gaps:
-- `critique-video` — video deliverables (video-studio dept output)
+- `critique-video` — video deliverables
 - `critique-data` — analytics, charts, dashboards
 - `critique-code` — general code quality (distinct from critique-security)
 

@@ -69,7 +69,7 @@ Four things make it different from a conversation with an AI:
 
 **1. Memory that persists.** You run `/save-state` before you close Claude Code. Tomorrow you run `/recall`. The agent picks up exactly where it left off — open tasks, decisions made, what was blocked, what shipped. No re-explaining. No context collapse.
 
-**2. A real team structure.** The agents are organized across 8 departments: Engineering, Design, Content Creation, Testing, Project Management, Specialized, Critiques, and Video Studio. The right agent gets the right task automatically.
+**2. A real team structure.** Work routes PD → Coord → Exec. A Project Director owns the project, a Coord owns one gated task, and an Exec is a `general-purpose` agent with one to three named skills. Critics (`critique-*`) review the result. Agent folders (engineering, design, content-creation, testing, project-management, specialized, critiques, video-studio) group the agent definitions. The right route is picked for you.
 
 **3. Autonomous coordination.** You give direction to a Project Director. The PD decomposes the work, assigns it to specialists, runs the tasks in parallel, checks the output at every handoff, and reports back. You don't coordinate. You supervise.
 
@@ -107,11 +107,12 @@ You didn't explain anything the second day. The agent remembered.
 - **Production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, and more — all invoked via `/skill-name`.
 - **SQLite task store — nothing leaves your machine**: Task pipeline, gates, retries, blocking in `~/.claude/`. No servers. No API keys.
 - **Session persistence**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where it left off.
-- **Agency Rooms** — file-based inter-agent chat with persistent rooms, RoomManager polling, NEXUS JSON handoffs, and 12-hour department digests.
+- **Agency Rooms** — file-based inter-agent chat with persistent rooms and NEXUS JSON handoffs, written through `room-utils.sh` and read on demand (no polling process).
 - **Inter-PD Protocol** — PDs coordinate via filesystem, not messaging. Delegation through `inter-spawn-tasks/` directories with completion tracking.
 - **Delegator Agent** — routing-as-a-service. When the right route is not obvious, an agent spawns the Delegator; it reads the agency catalog and returns the route. Worker roles run as `general-purpose` plus 1-3 skills (archived role files live in `agents-archive/`). No hardcoded selection hierarchies.
 - **Curator Agent** — context retrieval on demand. PDs and Coords spawn curator to query per-project knowledge graphs, Pinecone, and NotebookLM. Never reads full memory files into context.
-- **Dept-Coord System** — department operations run as a parallel chain: Dept Head → Dept-Coord → Dept Member. Handles pipeline management, protocol improvement, and member development without mixing with project delivery.
+- **PD → Coord → Exec routing** — a Project Director decomposes, a Coord owns one task, an Exec (`general-purpose` plus 1-3 named skills) does the work, and critics review it. Quality gates sit on every handoff.
+- **Agency Council** — one seat per Claude model tier plus an optional Codex seat, asked the same question in one wave. See [Agency Council and Governance](#agency-council-and-governance).
 - **PD Boot Sequence** — lazy-loading spawn targeting <500 tokens. Per-project PD-BRIEFING.md for instant routing.
 - **Status Loop Prohibition** — no automated ping loops. On-demand status via append-only `pd-status-live.md`.
 - **Project Scope Management** — `scope.json` per project with 3-tier authority model (PD self-approve → parent AI → human).
@@ -154,12 +155,12 @@ The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. 
 
 ```
 ~/.claude/
-├── skills/              ← 240+ skills as {name}/SKILL.md directories
+├── skills/              ← 235+ skills as {name}/SKILL.md directories
 │   ├── backend/SKILL.md
 │   ├── frontend/SKILL.md
 │   ├── ship/SKILL.md
 │   └── ...
-├── agents/              ← 45+ agents organized by department
+├── agents/              ← 35+ agents in agent folders
 │   ├── engineering/
 │   ├── design/
 │   ├── content-creation/
@@ -416,8 +417,8 @@ Each PD spawns independently, runs its workstream, and reports back.
 After this walkthrough:
 
 - **`~/.agency/projects/`** — project state that persists across sessions
-- **`~/.agency/skills/`** — 240+ skills ready to invoke
-- **`~/.agency/agents/`** — 45+ agents organized by department
+- **`~/.agency/skills/`** — 235+ skills ready to invoke
+- **`~/.agency/agents/`** — 35+ agents in agent folders
 - **`~/.agency/task-store.db`** — SQLite task pipeline with gate tracking
 
 The PD handles decomposition, delegation, QA gating, and state persistence. You give direction and review results.
@@ -497,7 +498,7 @@ Spawned via `/recall {project}`. Owns the project end-to-end:
 
 **Memory & Session**: `save-state`, `recall`, `pd-resume`, `wrap`, `unwrap`, `project-status`, `context-save`, `context-restore`, `freeze`, `unfreeze`
 
-**Coordination**: `swarm`, `delegate`, `pd-spawn`, `task-handoff`, `task-store`, `room-manager`, `room-manager-digest`, `nexus-gatekeeper`, `sync-md-json`
+**Coordination**: `swarm`, `delegate`, `pd-spawn`, `task-handoff`, `task-store`, `nexus-gatekeeper`, `sync-md-json`
 
 **Planning**: `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review`, `plan-devex-review`, `plan-tune`, `office-hours`, `retro`, `seed`, `project-expansion-scout`
 
@@ -537,8 +538,8 @@ Full categorized registry: [`skills/INDEX.md`](skills/INDEX.md)
 the-agency/
 ├── core/
 │   ├── agents/          # PD/Coord/Mini-Coord/Exec/Delegator/Curator templates
-│   ├── runbooks/        # Boot, escalation, kickoff, dept-coord, protocol registry
-│   ├── ORG.md           # Org chart, authority model, dept-coord system
+│   ├── runbooks/        # Boot, escalation, kickoff, quality loop, content pipeline
+│   ├── ORG.md           # Org chart, authority model
 │   ├── PD_PROTOCOL.md   # PD quick reference
 │   ├── memory/          # Memory system specification
 │   ├── nexus/           # NEXUS coordination protocol
@@ -560,8 +561,8 @@ the-agency/
 │   ├── cost-tracker.sh  # Stop: compute session token cost
 │   ├── fable-on-opus.sh # UserPromptSubmit: inject Fable reasoning discipline on Opus
 │   └── fable/           # Fable playbook modules read by fable-on-opus.sh
-├── agents/              # 45+ agent definitions (8 departments + dept-coords)
-├── skills/              # 240+ reusable workflow skills
+├── agents/              # 35+ agent definitions (PD/Coord/critic/council + project PDs)
+├── skills/              # 235+ reusable workflow skills
 └── plans/               # Architecture decision records
 ```
 
@@ -569,7 +570,7 @@ the-agency/
 
 Two ways to extend the system:
 
-**New agents** — add a specialist to an existing department or propose a new one. See `agents/CONTRIBUTING.md` for the agent spec format and review process.
+**New agents** — add an agent to an existing agent folder or propose a new folder. See `agents/CONTRIBUTING.md` for the agent spec format and review process.
 
 **New skills** — create a markdown file in `skills/`, register it in `skills/INDEX.md`, and invoke it with `/skill-name`. Skills are reusable workflows: a skill can call other skills, spawn agents, or chain multi-stage pipelines. Contributors also add an overlay entry for the new skill (`python3 scripts/skill-route-overlay-add.py <name> [--domain D --hint H]`); CI's skill-router menu gate fails without it. Users who enable the optional skill router need an entry for their own skills too, to make them routable. See `docs/DEVELOPER.md` for the full guide.
 
@@ -607,7 +608,7 @@ Everything above describes what the system does. This section describes how it w
 
 **Memory System** — four filesystem layers (see Memory System below).
 
-**NEXUS Protocol** — file-based 6-phase handoff doctrine for inter-agent coordination. Handoff artifacts are JSON files, processed by RoomManager.
+**NEXUS Protocol** — file-based 6-phase handoff doctrine for inter-agent coordination. Handoff artifacts are JSON files, read on demand with `room-utils.sh`.
 
 **Hook System** — shell scripts wired into Claude Code's 5 lifecycle events. Live at `{root}/hooks` (root = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`); install and `agency upgrade` copy them and wire them into `settings.json` from `hooks/hooks.json` (`agency hooks sync|remove` does the wiring on demand). Profile-aware (`standard` / `strict` / `minimal`).
 
@@ -642,7 +643,7 @@ PD  (L1→L3 decomposition, spawns Coords)
 Every Project Director follows 3 mandatory rules on every spawn, without exception:
 
 1. **Decompose** — break every task into the smallest independent sub-tasks before acting
-2. **Agent Selection via Delegator** — when spawning a subagent, spawn the Delegator first. It reads the full agency catalog and returns the right agent, department, skill, or protocol. Never default to general-purpose — always route through Delegator.
+2. **Agent Selection via Delegator** — when spawning a subagent, spawn the Delegator first. It reads the full agency catalog and returns the right agent, skill, or protocol. Never default to general-purpose — always route through Delegator.
 3. **Parallelize** — spawn one subagent per sub-task simultaneously
 4. **Report** — send each completion immediately, not at the end
 
@@ -660,7 +661,7 @@ Every agent-to-agent handoff passes through a mandatory QA gate:
 
 **NACK** — returns a fix list; reporter fixes, re-runs QA gate, re-reports.
 
-After all Coords report DONE, PD spawns `Coord-qa-Canary` (Sonnet, Testing Lead) to QA the combined L3 output before reporting to root. Deliverables: health score (0–100), issues by severity (CRITICAL/HIGH/MEDIUM/LOW), screenshots at `{project}/memory/qa/screenshots/`, report at `{project}/memory/qa/qa-report-final-{timestamp}.md`.
+After all Coords report DONE, PD spawns `Coord-qa-Canary` (Sonnet, QA Coord) to QA the combined L3 output before reporting to root. Deliverables: health score (0–100), issues by severity (CRITICAL/HIGH/MEDIUM/LOW), screenshots at `{project}/memory/qa/screenshots/`, report at `{project}/memory/qa/qa-report-final-{timestamp}.md`.
 
 ### Memory System
 
@@ -724,13 +725,13 @@ NEXUS is the handoff doctrine. Core principle: every agent writes what it knows;
 | tier-2 | Major blocker | Escalate to team-lead, pause task |
 | tier-3 | Crisis | Escalate to council, stop work |
 
-Handoff artifacts are JSON files placed in `{room}/handoffs/`. RoomManager processes them automatically and routes to the receiving agent.
+Handoff artifacts are JSON files placed in `{room}/handoffs/`. the sender tells the receiving agent the handoff exists, and `room-utils.sh read-handoffs <room> pending` lists the open ones.
 
 </details>
 
 ### Delegator — Routing Layer
 
-The Delegator is a stateless service agent. Any agent (PD, Coord, dept head) spawns it when they need to pick the right agent, skill, department, or protocol for a task.
+The Delegator is a stateless service agent. Any agent (PD or Coord) spawns it when they need to pick the right agent, skill, or protocol for a task.
 
 ```
 Agent({
@@ -741,9 +742,9 @@ Agent({
 })
 ```
 
-The Delegator reads the agency catalog (`memory/agency-dispatch.md`), org chart, department INDEX files, protocol registry, and skill index. It returns a structured `DELEGATOR ROUTING` recommendation. It never executes work, never writes files, never holds state.
+The Delegator reads the agency catalog (`memory/agency-dispatch.md`), org chart, agent-folder INDEX files, and skill index. It returns a structured `DELEGATOR ROUTING` recommendation. It never executes work, never writes files, never holds state.
 
-**Routing rules:** Skills before agents (cheaper), department leads for department-scoped work, PDs for project deliverables, Dept-Coord for department-operational work, inter-spawn for cross-authority tasks.
+**Routing rules:** Skills before agents (cheaper), PDs for project deliverables, Coords for one gated task, an Exec (`general-purpose` plus 1-3 skills) for the work itself, inter-spawn for cross-authority tasks.
 
 ### Curator — Context Retrieval
 
@@ -760,17 +761,17 @@ Agent({
 
 Retrieval order: per-project graph → unified graph (MCP) → NotebookLM → Pinecone → raw file reads. Returns a `CURATOR ANSWER` block with source references and confidence level. Never fabricates. Never appears in Children tables — it's a service call.
 
-### Dept-Coord System
+### PD → Coord → Exec Routing
 
-Departments run their own operational work through a parallel chain that mirrors the PD-Coord chain but is scoped to department initiatives (pipeline management, protocol improvement, member development).
+Project work runs as one chain. Departments with their own leads and coordinators were retired in the 2026-10-08 sunset (the archived files and restore steps are in `agents-archive/MANIFEST.md`).
 
 ```
-Dept Head (Opus)       — decomposes D1 → D2 → D3, dispatches Dept-Coords
-  └── Dept-Coord (Sonnet)  — owns D3 track, decomposes D3 → D6, dispatches members
-        └── Dept Member (Sonnet)  — executes one D6 atomic task
+PD (Opus)              — owns the project, decomposes L1 → L3, spawns Coords
+  └── Coord (Sonnet)       — owns one gated task, hands it to one Exec or splits it
+        └── Exec (Sonnet)      — `general-purpose` + 1-3 named skills, does the work
 ```
 
-Each department has a `{dept}-coord.md` agent in its directory. Dept-Coords use identical patterns to project Coords: scratch files, QA gates, ACK/NACK handshakes, curator for memory retrieval, and hard authority ceilings.
+Critics (`critique-*`, `sag-critique`) are spawned directly by the PD or Coord and report to whoever spawned them. Content goes PD → Coord → writer → `/content-polish` → critics via `/cc-loop` (`runbooks/content-request-protocol.md`).
 
 ### Inter-PD Filesystem Protocol
 
@@ -822,12 +823,12 @@ All agents carry a `modelTier` tag in their frontmatter. Routing is automatic.
 
 | Model | Role | Used for |
 |-------|------|---------|
-| Opus | Leadership, orchestration | PDs, Coords, Mini-Coords, dept heads, planning |
-| Sonnet | Execution, synthesis | Execs, assistants, QA agents |
+| Opus | Leadership, planning | PDs, architecture and final review |
+| Sonnet | Orchestration, execution | Coords, Mini-Coords, Execs, QA agents |
 | Haiku | Menial, high-volume | Scraping, research, data extraction |
 
 **1M context (`[1m]`) is selective, not fleet-wide.** Only orchestrator roles —
-PD, Coord, Mini-Coord, Dept-Coord — carry the `[1m]` model suffix, because they are
+PD, Coord, Mini-Coord — carry the `[1m]` model suffix, because they are
 the only agents whose context grows with the size of the work rather than the size of
 their own brief. Everything below them stays plain. Full policy and rationale:
 [`core/ORG.md` § Model tiering](core/ORG.md).
@@ -839,9 +840,8 @@ actually reads, and it is the one `[1m]` attaches to.
 
 File-based inter-agent communication. Agents coordinate through rooms, not direct messaging.
 
-Three room types:
+Two room types:
 - **Project rooms** — one per active project, owned by the project's PD
-- **Department rooms** — one per department; dept heads coordinate members here
 - **Oversight room** — `project-oversight/`; all PDs post status; main session reads on demand
 
 <details>
@@ -855,7 +855,6 @@ Three room types:
 ├── handoffs/           # Pending NEXUS handoffs (JSON)
 └── context/
     ├── shared.md       # Extracted DECIDED/ACTION/QUESTION items
-    └── rolling.md      # Dept head status feed (dept rooms only)
 ```
 
 Message format:
@@ -863,9 +862,7 @@ Message format:
 [{ISO timestamp}] @{agent-name} [{phase}]: {content}
 ```
 
-RoomManager polls on a configurable interval (default: 10 minutes). On each poll it reads new messages, extracts structured signals into `context/shared.md`, routes handoff JSON to named agents, and emits 12-hour digests to department heads.
-
-Run with `/room-manager`.
+Rooms are plain files written by `agents/scripts/room-utils.sh` (and by the feedback-pipeline cron under `agency-rooms/feedback/`). There is no polling process: the `room-manager` skill was archived in the 2026-10-08 department sunset, so nothing auto-notifies members, auto-summarizes `context/shared.md` (keep it by hand), or routes `ESCALATE:` messages. Read a room on demand with `room-utils.sh read`. See `runbooks/agency-rooms-protocol.md`.
 
 Anti-patterns:
 - Do NOT send direct messages between agents — everything goes through rooms
@@ -876,50 +873,37 @@ Anti-patterns:
 
 ### Agency Council and Governance
 
-The Agency Council is the governing body for all cross-department decisions. All 8 department leaders report to the Council Chair (the parent AI).
+The Agency Council is an advisory board of five seats, one per Claude model tier plus an optional Codex seat. The caller (the parent AI, acting as council chair) asks all seats the same question and synthesises the answers. The seats are read-only opinion agents; they never edit, write, or spawn.
 
-Council members:
-
-| Leader | Role | Department |
-|--------|------|-----------|
-| Engineering Lead | engineering-lead | Engineering |
-| Design Lead | design-lead | Design |
-| Chief Content Officer | content-creation-lead | Content Creation |
-| Project Management Lead | project-management-lead | Project Management |
-| Testing Lead | testing-lead | Testing |
-| Specialized Agents Lead | specialized-lead | Specialized |
-| Curmudgeon-in-Chief | critiques-lead | Critiques |
-| Video Studio Director | video-studio-lead | Video Studio |
+| Seat | Agent | Model tier |
+|------|-------|-----------|
+| 1 | `council-fable` | Fable |
+| 2 | `council-opus` | Opus (also the tie-break seat) |
+| 3 | `council-sonnet` | Sonnet |
+| 4 | `council-haiku` | Haiku |
+| 5 (optional) | `codex` CLI | Codex, only when the `codex` CLI is installed |
 
 <details>
-<summary>Council spawn protocol and approval tiers</summary>
+<summary>Council protocol, quorum and approval tiers</summary>
 
-**Trigger phrases:**
-- "BOD", "assemble", "assemble the board", "the board", "the council", "activate the agency council"
-- "convene the council", "call the board to order", "full agency", "all hands", "agency-wide [project]"
+**Trigger phrases:** "BOD", "assemble", "the board", "the council", "convene the council". `/resume-bod` restores the board context from memory, then runs the same protocol.
 
-**Spawning steps:**
+**One wave, no team:**
 
-```
-1. Use TeamCreate to create a team named "agency-council"
-2. Spawn leaders in TWO WAVES (race-condition prevention):
-   Wave 1 (4): engineering-lead, design-lead, content-creation-lead,
-               project-management-lead
-   Wave 2 (4): testing-lead, specialized-lead, critiques-lead,
-               video-studio-lead
-   Wait ~30s for Wave 1 before spawning Wave 2.
-3. Each leader joins "agency-council" and sends intro to "team-lead"
-4. Parent AI is the council chair
-5. Send welcome brief explaining current priorities
-```
+1. The caller writes one brief and sends it to every seat in a single message, so all seats get the identical text.
+2. No seat sees another seat's answer. There is no `TeamCreate` and there are no waves.
+3. Each seat answers in at most 300 words: `VERDICT`, `REASONS`, `RISKS`, `CONFIDENCE`, `DISSENT`.
+4. The caller synthesises: a table of verdicts, the points of agreement, the points of disagreement, and a recommendation.
 
-**Why two waves:** Spawning more than 6 agents in parallel causes race-condition writes to the team config file, breaking late-joiners.
+**Quorum:** 3 of 5 seats. When the caller is a cheap model, `council-opus` breaks a tie.
+
+The full protocol is in `core/memory/agency-council.md` (installed at `{agency-root}/core/memory/agency-council.md`).
 
 **Approval tiers:**
 
 | Tier | Approver | Examples |
 |------|----------|---------|
-| 1 | Department Leader | File edits <10 lines, read-only, docs within project scope |
+| 1 | Project Director (within `scope.json`) | File edits <10 lines, read-only, docs within project scope |
 | 2 | Council Chair (parent AI) | New files, code >10 lines, config changes, deps, migrations |
 | 3 | Human operator | Deployments, secrets, destructive ops, external comms, financial |
 
@@ -936,17 +920,15 @@ Each project carries a `scope.json` that defines the PD's authority boundaries. 
 4. Invoke with `/{skill-name}` in Claude Code
 
 **Adding an agent:**
-1. Create the agent spec in `agents/{department}/{agent-name}.md`
-2. Follow the frontmatter convention (name, role, modelTier, department)
-3. Reference in the department's index file
+1. Create the agent spec in `agents/{folder}/{agent-name}.md`
+2. Follow the frontmatter convention (name, role, modelTier)
+3. Reference it in the folder's `INDEX.md`
 4. See `agents/CONTRIBUTING.md` for the full spec format
 
-**Adding a department:**
-1. Create `agents/{department}/` directory
-2. Add department head and member agent files
-3. Register the department head in `agents/ORG.md` Leadership Table
-4. Add the department room to `agency-rooms/`
-5. See `docs/DEVELOPER.md` for the full guide
+**Adding an agent folder:**
+1. Create `agents/{folder}/` with an `INDEX.md`
+2. Add the agent files (project PD definitions live in these folders; `project-scaffolder` writes new PDs there)
+3. See `docs/DEVELOPER.md` for the full guide
 
 ---
 

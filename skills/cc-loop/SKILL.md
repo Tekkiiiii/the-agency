@@ -25,7 +25,6 @@ Agent types used (from Agency catalog):
 - **Video critic**: `agents/critiques/critique-video.md` (pacing/captions/visual consistency/audio sync, frame-grounded)
 - **Imageprompt critic**: `agents/critiques/critique-imageprompt.md` (AI image-generation prompt quality)
 - **SAG critic**: `agents/critiques/sag-critique.md` (technical SEO/AEO/GEO implementation audits)
-- **Critique lead**: `agents/critiques/critiques-lead.md` (routes + aggregates all critics)
 
 ---
 

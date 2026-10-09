@@ -3,7 +3,7 @@ name: critique-pedagogy
 description: Teaching effectiveness critic. Finds scaffolding failures, cognitive overload, missing examples, and poor retention design. For courses, workshops, training materials, and teaching decks.
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

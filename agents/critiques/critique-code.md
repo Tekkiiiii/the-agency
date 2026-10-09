@@ -3,7 +3,7 @@ name: critique-code
 description: General code quality critic. Finds readability failures, dead code, unnecessary complexity, missing error handling, and maintainability problems. Distinct from critique-security (which covers auth/injection/secrets). No participation trophies. Brief.
 department: critiques
 role: specialist
-reports_to: critiques-lead
+reports_to: caller
 modelTier: opus
 model: opus[1m]
 effort: high

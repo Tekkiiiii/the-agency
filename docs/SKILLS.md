@@ -4,26 +4,9 @@ Skills are reusable workflows that agents invoke to handle common tasks. Each sk
 
 ## Overview
 
-240+ skills are installed to `{agency-root}/skills/` as `{name}/SKILL.md` directories. Invoke any skill with `/skill-name` in Claude Code.
+235+ skills are installed to `{agency-root}/skills/` as `{name}/SKILL.md` directories. Invoke any skill with `/skill-name` in Claude Code.
 
 ## Skill Categories
-
-### Department Lifecycle
-
-Manage department head sessions — resume, save, and check status without spawning subagents.
-
-| Skill | What it does | When to use |
-|---|---|---|
-| `dept-resume` | Resume department head sessions — reads dept-state.md, spawns dept heads with lean briefings | Start of session for one or all departments |
-| `dept-save-state` | Freeze department state at session end — writes dept-state.md, updates rosters, archives scratch | End of department session |
-| `dept-status` | Quick read-only status check — reads state files, returns compact digest | Check what a department is working on |
-
-```
-/dept-resume all
-/dept-resume engineering
-/dept-save-state marketing
-/dept-status all
-```
 
 ### Memory & Session
 
@@ -174,7 +157,7 @@ curl -fsSL https://github.com/Tekkiiiii/the-agency/raw/main/install | bash
 Or install a single skill:
 
 ```bash
-agency skill install dept-resume
+agency skill install save-state
 ```
 
 ## Skill Invocation
@@ -185,7 +168,7 @@ In Claude Code, type `/skill-name` to invoke:
 /save-state my-project
 /pipeline-feature "add search functionality"
 /security-critique
-/dept-status all
+/swarm
 ```
 
 ## Creating Custom Skills

@@ -9,7 +9,7 @@ How to spin up a project team, assemble the agency council for brainstorming, an
 Use this when:
 - A new project is being started
 - A significant new phase of an existing project begins
-- A complex cross-department problem needs structured analysis
+- A complex cross-domain problem needs structured analysis
 - The human or parent AI calls a council assembly
 
 ---
@@ -19,13 +19,15 @@ Use this when:
 Before assembling the council, establish:
 
 1. **What is the project?** One-paragraph description
-2. **What departments are involved?** Not every project needs every dept
+2. **What domains are involved?** Not every project needs every domain
 3. **What is the timeline?** Urgency affects council size and depth
 4. **Who is the project lead?** May be the parent AI or a designated council member
 
-### Department Involvement Guide
+### Domain Involvement Guide
 
-| Project Type | Required Depts |
+Each domain is staffed as `general-purpose` Execs + skills under a Coord (see `project-team-templates.md`); there is no department layer.
+
+| Project Type | Required Domains |
 |-------------|---------------|
 | Feature development | Engineering, Testing |
 | Full product build | Engineering, Design, Testing, PM |
@@ -39,23 +41,23 @@ Before assembling the council, establish:
 
 ## Step 2: Assemble the Council
 
-1. Identify which dept leaders are relevant to the project
-2. Send a `council-assembly` broadcast to those leaders:
+1. Identify which domains are relevant to the project
+2. Brief the participating PD / Coords (or council seats, see `agents/council/`) with a `council-assembly` message:
 
 ```
 TYPE: council-assembly
 PURPOSE: project-kickoff
 PROJECT: [project name]
 SCOPE: [brief description]
-DEPARTMENTS_NEEDED: [list]
+DOMAINS_NEEDED: [list]
 TIMELINE: [urgency/timeline]
-PROJECT_LEAD: [me or designated leader]
+PROJECT_LEAD: [me or designated PD]
 ---
 [Full project brief]
 ```
 
-3. Wait for leaders to acknowledge participation
-4. If a needed dept leader is unavailable, they may send a delegate or provide async input
+3. Wait for participants to acknowledge
+4. If a needed participant is unavailable, they may send a delegate or provide async input
 
 ---
 
@@ -63,37 +65,37 @@ PROJECT_LEAD: [me or designated leader]
 
 The council convenes to analyze the problem from multiple angles.
 
-### Leader Input Format
+### Participant Input Format
 
-Each leader should contribute:
+Each participant (PD / Coord / council seat) should contribute:
 
 ```
-FROM: [dept-lead]
-DEPARTMENT: [dept]
+FROM: [participant]
+DOMAIN: [domain]
 ---
-**What [my dept] sees in this problem:**
+**What [my domain] sees in this problem:**
 [Perspective, risks, opportunities from your domain]
 
-**What [my dept] needs to succeed:**
-[Requirements, dependencies, inputs from other depts]
+**What [my domain] needs to succeed:**
+[Requirements, dependencies, inputs from other domains]
 
-**What [my dept] can deliver:**
+**What [my domain] can deliver:**
 [Concrete contributions, timelines, scope]
 
 **Key risks I see:**
 [Domain-specific risks to flag]
 
-**Questions for other leaders:**
-[Any cross-dept questions or assumptions to validate]
+**Questions for other participants:**
+[Any cross-domain questions or assumptions to validate]
 ```
 
 ### Synthesis (Parent AI)
 
-After all leaders have contributed, I synthesize:
+After all participants have contributed, I synthesize:
 
 1. **Shared understanding** — what the project actually is
-2. **Cross-dept dependencies** — who needs what from whom
-3. **Conflicting priorities** — where depts disagree
+2. **Cross-domain dependencies** — who needs what from whom
+3. **Conflicting priorities** — where domains disagree
 4. **Risk map** — technical, design, business, timeline risks
 5. **Work breakdown** — who does what, in what order
 6. **Escalation plan** — what needs human approval upfront
@@ -105,16 +107,16 @@ After all leaders have contributed, I synthesize:
 Based on the brainstorm:
 
 1. **Create a project team** with `TeamCreate`
-   - Include relevant dept leaders + me as project lead
-   - Or designate one leader as project lead
+   - Include the relevant PD / Coords + me as project lead
+   - Or designate one PD as project lead
 
 2. **Define the project team channels**:
    - Project channel: all project team members
-   - Dept channels: leader + their members within the project
+   - Domain channels: Coord + its Execs within the project
 
 3. **Assign initial tasks**:
-   - Each dept leader receives their work package
-   - Leaders assign to members
+   - Each Coord receives its work package
+   - Coords assign to Execs
    - Dependencies are explicit in task assignments
 
 4. **Establish checkpoint cadence**:
@@ -130,8 +132,8 @@ Once the project team is formed and tasks are assigned:
 
 1. Council brainstorming channel closes (or moves to async)
 2. Project team channel activates for daily coordination
-3. Leaders report progress to me via project team
-4. Cross-dept blockers escalate to me for resolution
+3. Coords / PDs report progress to me via project team
+4. Cross-domain blockers escalate to me for resolution
 5. Tier 3 escalations surface to human with project context
 
 ---
@@ -140,19 +142,19 @@ Once the project team is formed and tasks are assigned:
 
 ### Full Agency (template-full-team)
 
-All 8 dept leads + members. Use for: complex multi-domain projects, strategic initiatives, company-wide changes.
+All domains (Coords + Execs). Use for: complex multi-domain projects, strategic initiatives, company-wide changes.
 
 ### Engineering-Heavy (template-engineering-team)
 
-Engineering + PM + Testing + Design leads + members. Use for: feature development, product builds, technical projects.
+Engineering + PM + Testing + Design. Use for: feature development, product builds, technical projects.
 
 ### Content Launch (template-content-team)
 
-Content Creation + Design + Video Studio + Critiques leads + members. Use for: launches, campaigns, content programs.
+Content + Design + Video + Critiques (`critique-*` via `/cc-loop`). Use for: launches, campaigns, content programs.
 
 ### Custom (template-custom-team)
 
-Select depts as needed. Use for: focused projects with clear boundaries.
+Select domains as needed. Use for: focused projects with clear boundaries.
 
 ---
 
@@ -167,23 +169,23 @@ When transitioning from kickoff to execution, document:
 [One paragraph]
 
 ## Council Participants
-| Dept | Leader | Contribution |
+| Domain | Owner | Contribution |
 |------|--------|-------------|
-| [dept] | [name] | [what they'll deliver] |
+| [domain] | [name] | [what they'll deliver] |
 
 ## Work Packages
-| Dept | Work Package | Deadline | Dependencies |
+| Domain | Work Package | Deadline | Dependencies |
 |------|-------------|----------|-------------|
-| [dept] | [description] | [date] | [depends on] |
+| [domain] | [description] | [date] | [depends on] |
 
 ## Escalations to Human
 - [ ] [action needed — approve before work begins]
 - [ ] [action needed — approve before work begins]
 
 ## Risks
-| Risk | Dept | Likelihood | Mitigation |
+| Risk | Domain | Likelihood | Mitigation |
 |------|------|-----------|------------|
-| [risk] | [dept] | [H/M/L] | [plan] |
+| [risk] | [domain] | [H/M/L] | [plan] |
 
 ## Checkpoint Cadence
 [Daily/Weekly] — [day/time]

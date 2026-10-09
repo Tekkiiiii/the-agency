@@ -123,3 +123,20 @@ Skills with a namespace prefix (for example `design:user-research`) come from Cl
 | RoomManager | room-manager | `agents-archive/generalist-2026-10-06/specialized/infra/room-manager.md` |
 
 | task-executor (retired 2026-10-08) | general-purpose + Skills of the task; spawn template coord.md "Exec spawn message" |
+
+## Department sunset 2026-10-08 (leads and dept-coords)
+
+Routing is now PD -> Coord -> general-purpose Exec (spawner picks model + skills); critics (`critique-*`, `sag-critique`) are spawned directly by the PD or Coord. Archived files: `{agency-root}/agents-archive/dept-sunset-2026-10-08/<dept>/` (restore: see MANIFEST.md).
+
+| Role (old agent name) | Spawn as | Role file |
+|---|---|---|
+| Chief Content Officer / Content Creation Dept-Coord | general-purpose + /content-creator, /content-polish; review via /cc-loop | `agents-archive/dept-sunset-2026-10-08/content-creation/content-creation-{lead,coord}.md` |
+| Critiques Lead | none: spawn the needed `critique-*` agents directly (routing table `agents/critiques/INDEX.md`) | `agents-archive/dept-sunset-2026-10-08/critiques/critiques-lead.md` |
+| Design Lead / Design Dept-Coord | general-purpose + /design-router, /ui-ux-pro-max; review via critique-design | `agents-archive/dept-sunset-2026-10-08/design/design-{lead,coord}.md` |
+| Engineering Lead / Engineering Dept-Coord | general-purpose + /plan-eng-review, /backend or /frontend | `agents-archive/dept-sunset-2026-10-08/engineering/engineering-{lead,coord}.md` |
+| Project Management Lead / PM Dept-Coord | the project's PD, or `coord` for delivery tracks | `agents-archive/dept-sunset-2026-10-08/project-management/project-management-{lead,coord}.md` |
+| Specialized Agents Lead / Specialized Dept-Coord | the project's PD, or general-purpose + the task's skills | `agents-archive/dept-sunset-2026-10-08/specialized/specialized-{lead,coord}.md` |
+| Testing Lead / Testing Dept-Coord | general-purpose + /qa-only, /run-acceptance-tests | `agents-archive/dept-sunset-2026-10-08/testing/testing-{lead,coord}.md` |
+| Video Studio Director / Video Studio Dept-Coord | general-purpose + /video-use, /ffmpeg; review via critique-video | `agents-archive/dept-sunset-2026-10-08/video-studio/video-studio-{lead,coord}.md` |
+
+Note on the RoomManager row above: the `room-manager` skill it names was archived with this sunset (`agents-archive/dept-sunset-2026-10-08/skills/room-manager/`); spawn `general-purpose` for that role instead. The `agency-rooms/` directory stays.

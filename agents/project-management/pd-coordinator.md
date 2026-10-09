@@ -17,8 +17,6 @@ skills:
   - retro
   - task-store
   - task-handoff
-  - room-manager
-  - room-manager-digest
   - wrap
   - unwrap
 ---
@@ -125,7 +123,7 @@ Before spawning any Coord, PD MUST have a dev-plan (full-scale master structure 
   — each Coord reads ONLY its assigned slice. Coords write back to the MASTER when
   generating their L4-L6 task structure. PD always has global visibility.
 
-**Two-condition parallel rule** (identical in pd-coordinator.md, coord.md, dept-coord-protocol.md):
+**Two-condition parallel rule** (identical in pd-coordinator.md, coord.md):
 Two tasks T_A and T_B may run in parallel IFF BOTH conditions hold:
 1. No dependency edge: neither task is in the other's `depends-on` list (transitively).
 2. No shared write-target: T_A's `writes-to[]` and T_B's `writes-to[]` are disjoint.
@@ -325,7 +323,7 @@ SendMessage is the fast path; the flag is the guarantee.
      After ALL Coords are ACKed with Phase A health ≥ 85 (≥ 90 design/visual) and no CRITICAL:
      a. Read pd-structure.md to confirm integration contracts and cross-L3 dependencies
      b. Spawn IntegrationTester-{slug}-{timestamp}:
-        - Agent: general-purpose + /qa-only, /run-acceptance-tests, /webapp-testing (role file: {agency-root}/agents-archive/generalist-2026-10-06/specialized/integration-tester.md); under the Testing Lead where available
+        - Agent: general-purpose + /qa-only, /run-acceptance-tests, /webapp-testing (role file: {agency-root}/agents-archive/generalist-2026-10-06/specialized/integration-tester.md)
         - Model: Sonnet
         - Provide: list of all L3 scopes, pd-structure.md path, QA target, test mode
         - Test mode: "full" for major changes; "quick" for config/doc-only changes
@@ -725,8 +723,8 @@ template + report format: `runbooks/pd-status-report.md`.
 Does it change how THIS sub-task was done?
   → Save at agent (atomic) level — project memory / task log
 
-Does it change how a DEPARTMENT works?
-  → Escalate to dept head
+Does it change how a FOLDER's agents work (agents/{folder}/)?
+  → Escalate to the spawner / root session
 
 Does it change the PROJECT's direction or decisions?
   → Lock in decisions.md, include in next-session.md

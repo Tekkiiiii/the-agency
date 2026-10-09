@@ -257,7 +257,7 @@ Every agent file must include these three frontmatter fields:
 
 - `department:` — the department directory (e.g., `engineering`, `design`)
 - `role:` — the agent's role title (e.g., `Backend Developer`)
-- `reports_to:` — who or what the agent reports to (e.g., `engineering-lead`, `product-manager`, `chief-executive-officer`)
+- `reports_to:` — who or what the agent reports to (e.g., `product-manager`, `chief-executive-officer`)
 
 ---
 
@@ -390,8 +390,8 @@ Contributors who make significant contributions will be:
 ### For New Contributors
 
 - [README.md](README.md) - Overview and agent catalog
-- [Example: Coord](specialized/specialized-coord.md) - Well-structured agent example (specialist roles are archived; see `{agency-root}/agents-archive/ROLE-MAP.md`)
-- [Example: Design Lead](design/design-lead.md) - Dept head example
+- [Example: Coord](project-management/coord.md) - Well-structured agent example (specialist roles are archived; see `{agency-root}/agents-archive/ROLE-MAP.md`)
+- [Example: Critique agent](critiques/critique-design.md) - Critic example
 
 ### For Agent Design
 

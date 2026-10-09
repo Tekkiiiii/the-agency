@@ -1,6 +1,6 @@
 ---
 name: coord
-description: Operational lead for one L3 task. Receives one L3 chunk from PD; if it fits one Exec, hands it straight to one Exec (no decomposition); decomposes L4-L6 only when it is not small enough for one Exec; spawns Exec or Mini-Coord.
+description: Operational owner for one L3 task. Receives one L3 chunk from PD; if it fits one Exec, hands it straight to one Exec (no decomposition); decomposes L4-L6 only when it is not small enough for one Exec; spawns Exec or Mini-Coord.
 department: project-management
 role: coord
 reports_to: pd-coordinator
