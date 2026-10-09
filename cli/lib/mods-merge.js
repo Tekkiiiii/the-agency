@@ -139,8 +139,26 @@ function expandHome(entry, home) {
   return (entry === '~' || /^~[\\/]/.test(entry)) ? home + entry.slice(1) : entry;
 }
 
+// Split a CLAUDE_CODE_PLUGIN_DIRS value. With ';' that is a plain split. With ':'
+// a colon is NOT a separator when it is a drive-letter colon: it sits at the start
+// of an entry, right after exactly one ASCII letter, and is followed by '\' or '/'
+// (C:\x, c:/x). A value can hold such entries whichever separator the platform
+// uses (hand-edited values, Git Bash paths, Windows temp dirs under an injected
+// Unix platform), and cutting them apart orphans every entry we own.
 function splitValue(raw, sep) {
-  return String(raw).split(sep).map(s => s.trim()).filter(Boolean);
+  const s = String(raw);
+  if (sep !== ':') return s.split(sep).map(x => x.trim()).filter(Boolean);
+  const out = [];
+  let start = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] !== ':') continue;
+    const next = s[i + 1];
+    if (/^[A-Za-z]$/.test(s.slice(start, i).trim()) && (next === '\\' || next === '/')) continue;
+    out.push(s.slice(start, i));
+    start = i + 1;
+  }
+  out.push(s.slice(start));
+  return out.map(x => x.trim()).filter(Boolean);
 }
 
 // ---------------------------------------------------------------------------
@@ -574,6 +592,7 @@ module.exports = {
   autoSyncMods,
   formatResult,
   runCli,
+  splitValue,
 };
 
 if (require.main === module) {

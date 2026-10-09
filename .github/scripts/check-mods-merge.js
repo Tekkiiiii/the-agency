@@ -505,6 +505,59 @@ const OWNED = root => ['alpha', 'beta-dir', 'gamma'].map(d => modEntry(root, d))
   check('x6 CLI --auto honours AGENCY_NO_MODS', oo.status === 0 && !/changed/.test(oo.stdout));
 }
 
+// ---------------------------------------------------------------------------
+// w. drive-letter safety of the CLAUDE_CODE_PLUGIN_DIRS parser (the Windows CI bug:
+//    a Unix-separator value holding real C:\Users\... paths was cut at the drive colon)
+{
+  const split = typeof lib.splitValue === 'function' ? lib.splitValue : () => 'splitValue is not exported';
+  check('w0 splitValue is exported', typeof lib.splitValue === 'function');
+  {
+    eq("w1 splitValue(':') keeps drive letters whole (C:\\, c:/, D:/, lone e)",
+      split('C:\\u\\a:/u/b:D:/x/y:e:\\z', ':'), ['C:\\u\\a', '/u/b', 'D:/x/y', 'e:\\z']);
+    eq("w1 splitValue(':') still splits plain posix and trims/drops empties",
+      split(' /a/b : :/c/d ::', ':'), ['/a/b', '/c/d']);
+    eq("w1 a colon after a longer word is a separator, not a drive", split('ab:\\x:/y', ':'), ['ab', '\\x', '/y']);
+    eq("w1 a letter+colon not followed by a slash is a separator", split('C:foo:/y', ':'), ['C', 'foo', '/y']);
+    eq("w2 splitValue(';') splits on ';' only", split('C:\\u\\a;D:\\b', ';'), ['C:\\u\\a', 'D:\\b']);
+    eq("w2 splitValue(';') leaves ':' alone", split('/a:/b;C:/x', ';'), ['/a:/b', 'C:/x']);
+  }
+}
+{
+  // Unix-platform sync over a value that already holds drive-letter entries
+  const repo = makeRepo();
+  const root = tmp('w3');
+  const original = ['C:\\fake\\plug', '/u/b', 'D:/fake/other', 'e:\\z'].join(':');
+  write(path.join(root, 'settings.json'), JSON.stringify({ env: { CLAUDE_CODE_PLUGIN_DIRS: original } }, null, 2) + '\n');
+  const r1 = lib.syncMods(opts(root, repo));
+  const v1 = readJson(path.join(root, 'settings.json')).env.CLAUDE_CODE_PLUGIN_DIRS;
+  eq('w3 first sync changed', r1.status, 'changed');
+  eq('w3 value = drive-letter user entries kept verbatim + 3 owned', v1, [original].concat(OWNED(root)).join(':'));
+  const bytes = fs.readFileSync(path.join(root, 'settings.json'), 'utf8');
+  const r2 = lib.syncMods(opts(root, repo));
+  eq('w3 second sync unchanged', r2.status, 'unchanged');
+  eq('w3 second sync: identical bytes, no new backup', [fs.readFileSync(path.join(root, 'settings.json'), 'utf8') === bytes, baks(root).length], [true, 1]);
+  const rm = lib.removeMods(opts(root, repo));
+  eq('w3 remove restores the value exactly', [rm.status, readJson(path.join(root, 'settings.json')).env.CLAUDE_CODE_PLUGIN_DIRS], ['changed', original]);
+}
+{
+  // injected win32: sync + resync + remove round trip with ';' joins (runs on every OS)
+  const repo = makeRepo();
+  const root = tmp('w4');
+  const original = 'C:\\fake\\plug;D:/fake/other';
+  write(path.join(root, 'settings.json'), JSON.stringify({ env: { CLAUDE_CODE_PLUGIN_DIRS: original } }, null, 2) + '\n');
+  const o = () => opts(root, repo, { platform: 'win32' });
+  const native = d => path.join(root, 'mods', d).replace(/\//g, '\\');
+  const r1 = lib.syncMods(o());
+  const v1 = readJson(path.join(root, 'settings.json')).env.CLAUDE_CODE_PLUGIN_DIRS;
+  eq('w4 first sync changed', r1.status, 'changed');
+  eq("w4 ';'-joined, user value first, native owned entries after", v1, [original, native('alpha'), native('beta-dir'), native('gamma')].join(';'));
+  const r2 = lib.syncMods(o());
+  eq('w4 resync unchanged', r2.status, 'unchanged');
+  eq('w4 resync leaves the value alone', readJson(path.join(root, 'settings.json')).env.CLAUDE_CODE_PLUGIN_DIRS, v1);
+  const rm = lib.removeMods(o());
+  eq('w4 remove restores the value exactly', [rm.status, readJson(path.join(root, 'settings.json')).env.CLAUDE_CODE_PLUGIN_DIRS], ['changed', original]);
+}
+
 for (const d of cleanup) {
   try { fs.rmSync(d, { recursive: true, force: true }); } catch (_) {}
 }

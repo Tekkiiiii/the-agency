@@ -22,6 +22,7 @@ All notable changes to The Agency are documented here, grouped by release wave (
 - **`agency upgrade` không triển khai mod** (báo ngày 2026-10-09): `upgrade` đồng bộ skill, agent, hook nhưng không động tới `mods/`, nên người nâng cấp không bao giờ có mod. Giờ `upgrade` (và `init`) chạy cùng engine với installer.
 - **`install.sh` không cài `hooks/lib/*.py` và `hooks/lib/*.json`**: `model-pin.py`, `exec-model-map.json` và `claude_pricing.py` mà mod `spawn-ledger` gọi không có trong bản cài; nay được chép cùng `hooks/lib/`.
 - **Skill, agent, runbook, core doc đã bị repo xoá nằm lại mãi trong bản cài** (và vẫn được đăng ký): nay bị dọn ở lần cài hoặc nâng cấp kế tiếp, xem `retired-prune.js` ở trên.
+- **Trình đọc `CLAUDE_CODE_PLUGIN_DIRS` cắt đường dẫn Windows ở dấu hai chấm của ổ đĩa** (lỗi ở CI Windows): với dấu phân cách `:`, `C:\Users\...` bị tách thành `C` và `\Users\...`, nên engine không nhận ra mục của chính nó, loại trùng, gỡ và dọn đều hỏng, và đồng bộ lại thì thêm mục trùng. `splitValue()` nay không tách ở dấu hai chấm của ổ đĩa (một chữ cái đứng đầu mục, theo sau là `\` hoặc `/`), dù giá trị dùng dấu phân cách nào; bộ test thêm ca `w1`-`w4`.
 
 #### Changed (2026-10-09, mod và dọn file đã gỡ)
 - **`agency hooks remove` giữ bản ghi `mods`**: file `.agency-hooks-state.json` chỉ còn khoá `mods` thay vì bị xoá khi mod vẫn được ghi ở đó (gỡ mod là việc của `agency mods remove`). Phần ghi của hook merge giữ nguyên khoá `mods` qua mọi lần ghi lại.
@@ -307,6 +308,7 @@ Mục tiêu: catalog ship ra khớp đúng hệ thống live, không giữ thêm
 - **`agency upgrade` did not deploy mods** (reported 2026-10-09): `upgrade` synced skills, agents and hooks but never touched `mods/`, so upgraders never got a mod. `upgrade` (and `init`) now run the same engine as the installers.
 - **`install.sh` did not install `hooks/lib/*.py` and `hooks/lib/*.json`**: `model-pin.py`, `exec-model-map.json` and `claude_pricing.py`, which the `spawn-ledger` mod calls, were missing from installs; they are now copied with `hooks/lib/`.
 - **Skills, agents, runbooks and core docs the repo deleted stayed in installs forever** (and stayed registered): they are removed on the next install or upgrade, see `retired-prune.js` above.
+- **The `CLAUDE_CODE_PLUGIN_DIRS` parser cut Windows paths at the drive-letter colon** (Windows CI failure): with the `:` separator, `C:\Users\...` was split into `C` and `\Users\...`, so the engine no longer recognised its own entries and dedupe, remove, prune and status all failed, and a resync appended duplicates. `splitValue()` now never splits at a drive-letter colon (one letter at the start of an entry, followed by `\` or `/`), whichever separator the value uses; the test suite gains cases `w1`-`w4`.
 
 #### Changed (2026-10-09, mods and retired-file prune)
 - **`agency hooks remove` keeps the `mods` record**: when mods are recorded in `.agency-hooks-state.json` the file is reduced to the `mods` key instead of being deleted (unwiring mods is `agency mods remove`). The hooks merge carries the `mods` key through every rewrite.
