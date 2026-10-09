@@ -1,8 +1,8 @@
 # check-retired-install.ps1 - regression guard for the retired-files prune wired into
 # install.ps1 and `agency upgrade` on Windows. Line-for-line parallel to
 # check-retired-install.sh (read that header for the case list I, I-delete, I-bogus,
-# U, U-delete, U-bogus); the engine is cli\lib\retired-prune.js and its unit test is
-# check-retired-prune.js.
+# U, U-delete, U-bogus, plus the legacy git installs L-B, L-B-other and L-A); the
+# engine is cli\lib\retired-prune.js and its unit test is check-retired-prune.js.
 #
 # Every case runs against a fresh temp AGENCY_HOME inside one sandbox directory;
 # USERPROFILE/HOME point into it so nothing outside is touched. The installer runs
@@ -243,6 +243,115 @@ foreach ($l in (((Read-Raw (Join-Path $W 'ub.log')) -split "`r?`n") | Select-Obj
 Check "agency upgrade --retired=bogus exit 2 (got $code)" ($code -eq 2)
 Check "the old install is byte-for-byte unchanged" ($before -ceq (Tree-Sum $H))
 Check "the clone was not touched" ((& git -C $Clone rev-parse HEAD | Out-String).Trim() -eq $headBefore)
+
+# -- legacy git installs ------------------------------------------------------
+# The old `git clone <repo> ~/.claude` (and the old rescue.sh) made the Claude root
+# itself a git clone of the repo. Such a root is a normal prune target, no -Force.
+# A throwaway node file lists the manifest paths still on disk under a root.
+$LeftJs = Join-Path $W 'left.js'
+Write-Text $LeftJs @'
+const fs = require('fs'), p = require('path');
+const m = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')).paths;
+const left = Object.keys(m).filter((x) => fs.existsSync(p.join(process.argv[3], ...x.split('/'))));
+console.log(left.length + ' ' + left.slice(0, 5).join(','));
+'@
+function Left-Count([string]$root) {
+    $o = (& node $LeftJs (Join-Path $root 'retired-manifest.json') $root | Out-String).Trim()
+    return $o
+}
+# Legacy-Edit <root> - the user's edit + own skill on top of an old clone
+function Legacy-Edit([string]$root) {
+    Write-Text (Join-Path $root 'skills\my-own\SKILL.md') 'my own skill'
+    [System.IO.File]::AppendAllText((Join-Path $root 'skills\dept-status\SKILL.md'), ("`n" + $EditMark + "`n"), $Utf8NoBom)
+}
+# Legacy-Clone <dir> <origin url> - a git clone of the code under test, at OldRev
+function Legacy-Clone([string]$dir, [string]$url) {
+    & git -c core.autocrlf=false clone -q --no-checkout $Repo $dir 2>&1 | Out-Null
+    & git -C $dir -c core.autocrlf=false checkout -q --detach $OldRev 2>&1 | Out-Null
+    & git -C $dir remote set-url origin $url 2>&1 | Out-Null
+}
+
+Write-Host "case L-B: install.ps1 prunes a legacy git clone root with no -Force"
+$RUrl = (& git -C $Repo remote get-url origin 2>$null | Out-String).Trim()
+if (-not $RUrl) {
+    Write-Host "  skip REPO has no origin remote, so a clone of it cannot be told apart from another git root"
+} else {
+    $H = Join-Path $W 'lb'
+    Legacy-Clone $H $RUrl
+    Legacy-Edit $H
+    & git -C $H ls-files --error-unmatch 'skills/dept-resume/SKILL.md' 2>&1 | Out-Null
+    Check "the legacy root is a git clone at $OldRev with the retired files tracked" ($LASTEXITCODE -eq 0)
+    $code = Install-Into $H (Join-Path $W 'lb.log') $Repo @()
+    Print-Retired (Join-Path $W 'lb.log')
+    $lbLog = Read-Raw (Join-Path $W 'lb.log')
+    Check "install.ps1 exit 0 (got $code)" ($code -eq 0)
+    Check "the legacy install was announced" (Has $lbLog 'Retired files: legacy git install detected')
+    Check "no 'git work tree' skip" (-not (Has $lbLog 'is a git work tree'))
+    Assert-Default $H (Join-Path $W 'lb.log')
+    $code = Install-Into $H (Join-Path $W 'lb2.log') $Repo @()
+    Check "rerun install.ps1 exit 0 (got $code)" ($code -eq 0)
+    Check "rerun leaves my-own untouched" ((Read-Raw (Join-Path $H 'skills\my-own\SKILL.md')).Trim() -ceq 'my own skill')
+
+    Write-Host "case L-B-other: a git root with some other origin is still skipped without -Force"
+    $H = Join-Path $W 'lbo'
+    Legacy-Clone $H 'https://example.invalid/someone/dotfiles.git'
+    Legacy-Edit $H
+    $code = Install-Into $H (Join-Path $W 'lbo.log') $Repo @()
+    $lboLog = Read-Raw (Join-Path $W 'lbo.log')
+    Check "install.ps1 exit 0 (got $code)" ($code -eq 0)
+    Check "skipped as a git work tree" (Has $lboLog 'is a git work tree; run: agency prune --force')
+    Check "the retired file is still there" (Present (Join-Path $H 'skills\dept-resume\SKILL.md'))
+    Check "no legacy announcement" (-not (Has $lboLog 'legacy git install'))
+}
+
+Write-Host "case L-A: agency upgrade run from the legacy clone that IS the root"
+# OldRev history + the code under test (the working-tree copy in $Seed) as one new
+# commit, in a bare origin. The root is a clone of it reset to OldRev, so
+# `agency upgrade` pulls the retired-file removal as a legacy user's upgrade would.
+$LaSeed = Join-Path $W 'la-seed'; $LaOrigin = Join-Path $W 'origin\la.git'; $H = Join-Path $W 'la'
+& git -c core.autocrlf=false clone -q --no-checkout $Repo $LaSeed 2>&1 | Out-Null
+& git -C $LaSeed -c core.autocrlf=false checkout -q -b la-main $OldRev 2>&1 | Out-Null
+foreach ($item in @(Get-ChildItem -LiteralPath $LaSeed -Force | Where-Object { $_.Name -ne '.git' })) {
+    Remove-Item -LiteralPath $item.FullName -Recurse -Force -ErrorAction SilentlyContinue
+}
+foreach ($item in @(Get-ChildItem -LiteralPath $Seed -Force | Where-Object { $_.Name -ne '.git' })) {
+    Copy-Item -LiteralPath $item.FullName -Destination $LaSeed -Recurse -Force
+}
+& git -C $LaSeed -c core.autocrlf=false add -A 2>&1 | Out-Null
+& git -C $LaSeed -c core.autocrlf=false commit -q -m 'seed: code under test' 2>&1 | Out-Null
+& git init -q --bare $LaOrigin 2>&1 | Out-Null
+& git -C $LaOrigin symbolic-ref HEAD refs/heads/main 2>&1 | Out-Null
+& git -C $LaSeed push -q $LaOrigin 'la-main:main' 2>&1 | Out-Null
+& git -c core.autocrlf=false clone -q $LaOrigin $H 2>&1 | Out-Null
+& git -C $H reset -q --hard $OldRev 2>&1 | Out-Null
+Legacy-Edit $H
+& git -C $H diff --quiet -- 'skills/dept-status/SKILL.md' 2>&1 | Out-Null
+Check "the root is a clone at $OldRev with the edit pending" (($LASTEXITCODE -eq 1) -and ((& git -C $H rev-parse --short HEAD | Out-String).Trim() -eq $OldRev))
+$Clone = $H
+$code = Upgrade-Into $H (Join-Path $W 'la.log') @()
+Print-Retired (Join-Path $W 'la.log')
+$laLog = Read-Raw (Join-Path $W 'la.log')
+Check "agency upgrade exit 0 (got $code)" ($code -eq 0)
+$left = Left-Count $H
+Check "no retired manifest path left on disk (tracked or untracked): $left" ($left -like '0*')
+Check "the pull removed the tracked retired files" ((Absent (Join-Path $H 'skills\dept-resume')) -and (Absent (Join-Path $H 'agents\engineering\engineering-lead.md')))
+$kept = $false
+$arch = Join-Path $H 'agents-archive'
+if (Test-Path -LiteralPath $arch) {
+    foreach ($f in @(Get-ChildItem -LiteralPath $arch -Recurse -File -ErrorAction SilentlyContinue)) {
+        if (Has (Read-Raw $f.FullName) $EditMark) { $kept = $true; break }
+    }
+}
+Check "the edited retired file survives at its renamed agents-archive path (no data loss)" $kept
+Check "nothing was archived for files git removed" (Absent (Join-Path $H 'archive'))
+$sumLines = @(($laLog -split "`r?`n") | Where-Object { $_ -like 'Retired files:*' })
+Check "exactly one summary line, 'none to remove' (no double count)" (($sumLines.Count -eq 1) -and ($sumLines[0] -like 'Retired files: none to remove*'))
+Check "the root was not skipped as the repo checkout" (-not (Has $laLog 'agency repo checkout itself'))
+Check "user skill my-own untouched" ((Read-Raw (Join-Path $H 'skills\my-own\SKILL.md')).Trim() -ceq 'my own skill')
+Check "a still-shipped skill is intact (skills\recall)" (Present (Join-Path $H 'skills\recall\SKILL.md'))
+$code = Upgrade-Into $H (Join-Path $W 'la2.log') @()
+Check "rerun agency upgrade exit 0 (got $code)" ($code -eq 0)
+Check "rerun prints 'Retired files: none to remove'" (Has (Read-Raw (Join-Path $W 'la2.log')) 'Retired files: none to remove')
 
 Cleanup
 Write-Host ""

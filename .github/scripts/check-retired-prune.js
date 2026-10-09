@@ -33,6 +33,12 @@
 //  19  CLI: json, --retired=delete, exit codes
 //  20  autoPrune never throws, prints the summary
 //  21  manifest paths that escape the four trees are ignored
+//  22  legacy clone (root != repoDir, remote matches repoDir's) pruned without force, marked 'legacy-clone'
+//  23  a git root whose remote does not match is still skipped ('git-root'); no remote at all too
+//  24  remote forms match: https, user@, trailing .git and /, scp host:owner/repo, host case
+//  25  root == repoDir == the resolved config root: only manifest paths NOT tracked by git are pruned
+//  26  root == repoDir but NOT the resolved config root (developer checkout): refused 'repo-root'
+//  27  repoDir without a git remote falls back to the repository URL in cli/package.json
 'use strict';
 
 const crypto = require('crypto');
@@ -349,6 +355,173 @@ async function main() {
     const r = await run(base(repo, root, {}));
     check('21 only the four trees are ever touched', r.removed.length === 1 && exists(path.join(path.dirname(root), 'outside.txt')) && exists(path.join(root, 'hooks/live-hook.sh')), JSON.stringify(r));
     fs.rmSync(path.join(path.dirname(root), 'outside.txt'), { force: true });
+  }
+  // 22-27: legacy git installs (real `git init` repos in temp dirs)
+  const GENV = { ...process.env, GIT_CONFIG_NOSYSTEM: '1', GIT_AUTHOR_NAME: 'ci', GIT_AUTHOR_EMAIL: 'ci@example.invalid', GIT_COMMITTER_NAME: 'ci', GIT_COMMITTER_EMAIL: 'ci@example.invalid' };
+  for (const k of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE']) delete GENV[k];
+  const git = (dir, ...a) => spawnSync('git', ['-C', dir, ...a], { env: GENV, encoding: 'utf8' });
+  const gitInit = (dir, remote) => {
+    git(dir, 'init', '-q');
+    if (remote) git(dir, 'remote', 'add', 'origin', remote);
+    return git(dir, 'rev-parse', '--is-inside-work-tree').status === 0;
+  };
+  const gitCommitAll = (dir) => { git(dir, 'add', '-A'); git(dir, 'commit', '-q', '-m', 'seed'); };
+  if (!gitInit(mk('probe'), null)) { ok('22-27 (git unavailable: legacy-install cases skipped)'); return; }
+  const AGENCY_URL = 'https://git.example.com/acme-owner/agency-fork.git';
+
+  // 22
+  {
+    const repo = fakeRepo({ 'skills/old-skill/SKILL.md': ['shipped'], 'skills/ed/SKILL.md': ['v'] });
+    gitInit(repo, AGENCY_URL);
+    const root = mk('root');
+    gitInit(root, 'git@git.example.com:acme-owner/agency-fork.git');
+    put(root, 'skills/old-skill/SKILL.md', 'shipped');
+    put(root, 'skills/ed/SKILL.md', 'edited');
+    put(root, 'skills/mine/SKILL.md', 'mine');
+    gitCommitAll(root); // the legacy clone TRACKS its retired files
+    const c = cons();
+    const r = await run(base(repo, root, { console: c }));
+    check('22 legacy clone pruned without force', r.status === 'changed' && r.removed.length === 1 && r.archived.length === 1 && !exists(path.join(root, 'skills/old-skill/SKILL.md')), JSON.stringify(r));
+    check("22 marked 'legacy-clone'", r.reason === 'legacy-clone', String(r.reason));
+    check('22 prints the one legacy line', c.out.includes(`Retired files: legacy git install detected at ${root}; pruning normally`), c.out.join(' | '));
+    check('22 user skill untouched, edited file archived not deleted', exists(path.join(root, 'skills/mine/SKILL.md')) && exists(path.join(root, 'archive', `agency-retired-${DATE}`, 'skills/ed/SKILL.md')));
+    const r2 = await run(base(repo, root, {}));
+    check('22 rerun is a no-op', r2.status === 'unchanged', JSON.stringify(r2));
+  }
+  // 23
+  {
+    const repo = fakeRepo({ 'skills/old-skill/SKILL.md': ['shipped'] });
+    gitInit(repo, AGENCY_URL);
+    const root = mk('root');
+    gitInit(root, 'https://git.example.com/someone-else/tekki-claude.git');
+    put(root, 'skills/old-skill/SKILL.md', 'shipped');
+    const r = await run(base(repo, root, {}));
+    check('23 non-matching remote still skipped (git-root)', r.status === 'skipped' && r.reason === 'git-root' && exists(path.join(root, 'skills/old-skill/SKILL.md')), JSON.stringify(r));
+    const r2 = await run(base(repo, root, { force: true }));
+    check('23 force still prunes it', r2.status === 'changed' && !exists(path.join(root, 'skills/old-skill/SKILL.md')), JSON.stringify(r2));
+    const root3 = mk('root');
+    gitInit(root3, null);
+    put(root3, 'skills/old-skill/SKILL.md', 'shipped');
+    const r3 = await run(base(repo, root3, {}));
+    check('23 root with no remote at all stays skipped', r3.reason === 'git-root' && exists(path.join(root3, 'skills/old-skill/SKILL.md')), JSON.stringify(r3));
+    const repoNoRemote = fakeRepo({ 'skills/old-skill/SKILL.md': ['shipped'] });
+    gitInit(repoNoRemote, null);
+    const root4 = mk('root');
+    gitInit(root4, AGENCY_URL);
+    put(root4, 'skills/old-skill/SKILL.md', 'shipped');
+    const r4 = await run(base(repoNoRemote, root4, {}));
+    check('23 repoDir with no remote and no package.json url: skipped', r4.reason === 'git-root' && exists(path.join(root4, 'skills/old-skill/SKILL.md')), JSON.stringify(r4));
+  }
+  // 24
+  {
+    const forms = [
+      ['https://git.example.com/acme-owner/agency-fork.git', 'https://git.example.com/acme-owner/agency-fork'],
+      ['git@git.example.com:acme-owner/agency-fork.git', 'https://git.example.com/acme-owner/agency-fork.git'],
+      ['ssh://git@git.example.com/acme-owner/agency-fork.git', 'git@git.example.com:acme-owner/agency-fork'],
+      ['https://user:tok@Git.Example.COM/acme-owner/agency-fork/', 'git@git.example.com:acme-owner/agency-fork.git'],
+      ['git@git.example.com:acme-owner/agency-fork.git', 'git@git.example.com:acme-owner/agency-fork.git'],
+    ];
+    let allOk = true; let why = '';
+    for (const [rootUrl, repoUrl] of forms) {
+      const repo = fakeRepo({ 'skills/old-skill/SKILL.md': ['shipped'] });
+      gitInit(repo, repoUrl);
+      const root = mk('root');
+      gitInit(root, rootUrl);
+      put(root, 'skills/old-skill/SKILL.md', 'shipped');
+      const r = await run(base(repo, root, {}));
+      if (!(r.status === 'changed' && r.reason === 'legacy-clone')) { allOk = false; why += ` [${rootUrl} vs ${repoUrl}: ${r.status}/${r.reason}]`; }
+    }
+    check('24 https / user@ / .git / trailing slash / scp / host case all match', allOk, why);
+    const repo = fakeRepo({ 'skills/old-skill/SKILL.md': ['shipped'] });
+    gitInit(repo, 'https://git.example.com/acme-owner/agency-fork.git');
+    const root = mk('root');
+    gitInit(root, 'git@git.example.com:acme-owner/agency-fork-two.git');
+    put(root, 'skills/old-skill/SKILL.md', 'shipped');
+    check('24 a different repo name does not match', (await run(base(repo, root, {}))).reason === 'git-root');
+    const root2 = mk('root');
+    gitInit(root2, 'https://gitlab.com/acme-owner/agency-fork.git');
+    put(root2, 'skills/old-skill/SKILL.md', 'shipped');
+    check('24 a different host does not match', (await run(base(repo, root2, {}))).reason === 'git-root');
+  }
+  // 25
+  {
+    const repo = fakeRepo({ 'skills/old-skill/SKILL.md': ['shipped'], 'agents/gone/gone-lead.md': ['g1'], 'skills/stray/SKILL.md': ['s1'], 'runbooks/stray-edited.md': ['r1'] });
+    gitInit(repo, AGENCY_URL);
+    put(repo, 'skills/old-skill/SKILL.md', 'shipped');         // tracked: git owns it
+    put(repo, 'agents/gone/gone-lead.md', 'user edit');        // tracked + edited: git owns it
+    put(repo, 'skills/keep/SKILL.md', 'mine');
+    gitCommitAll(repo);
+    put(repo, 'skills/stray/SKILL.md', 's1');                  // untracked leftover: pruned
+    put(repo, 'runbooks/stray-edited.md', 'r1 edited');        // untracked + edited: archived
+    const c = cons();
+    const r = await run(base(repo, repo, { console: c, env: { AGENCY_HOME: repo } }));
+    check('25 root==repoDir==config root: untracked manifest paths pruned', r.status === 'changed' && r.removed.length === 1 && r.removed[0] === 'skills/stray/SKILL.md' && r.archived.length === 1 && !exists(path.join(repo, 'skills/stray/SKILL.md')), JSON.stringify(r));
+    check('25 tracked manifest paths left alone (clean and edited)', exists(path.join(repo, 'skills/old-skill/SKILL.md')) && fs.readFileSync(path.join(repo, 'agents/gone/gone-lead.md'), 'utf8') === 'user edit');
+    check('25 untracked edited file archived with its content', exists(path.join(repo, 'archive', `agency-retired-${DATE}`, 'runbooks/stray-edited.md')) && fs.readFileSync(path.join(repo, 'archive', `agency-retired-${DATE}`, 'runbooks/stray-edited.md'), 'utf8') === 'r1 edited');
+    check('25 summary counts only what prune did', lib.formatResult(r)[0] === 'Retired files: 1 removed, 1 archived (modified)', lib.formatResult(r).join(' | '));
+    // CLAUDE_CONFIG_DIR is the second rung of the ladder
+    put(repo, 'skills/stray3/SKILL.md', 's3');
+    const m3 = JSON.parse(fs.readFileSync(path.join(repo, 'retired-manifest.json'), 'utf8')); m3.paths['skills/stray3/SKILL.md'] = [sha('s3')]; fs.writeFileSync(path.join(repo, 'retired-manifest.json'), JSON.stringify(m3));
+    const viaCfg = await run(base(repo, repo, { env: { CLAUDE_CONFIG_DIR: repo } }));
+    check('25 CLAUDE_CONFIG_DIR counts as the config root', viaCfg.status === 'changed' && !exists(path.join(repo, 'skills/stray3/SKILL.md')), JSON.stringify(viaCfg));
+    // realpath comparison: root given as a symlink to the config root
+    put(repo, 'skills/stray2/SKILL.md', 's1');
+    const m2 = JSON.parse(fs.readFileSync(path.join(repo, 'retired-manifest.json'), 'utf8')); m2.paths['skills/stray2/SKILL.md'] = [sha('s1')]; fs.writeFileSync(path.join(repo, 'retired-manifest.json'), JSON.stringify(m2));
+    const link = path.join(mk('lnk'), 'root'); fs.symlinkSync(repo, link);
+    const viaLink = await run(base(repo, link, { env: { AGENCY_HOME: repo } }));
+    check('25 realpath comparison: a symlink to the config root works', viaLink.status === 'changed' && !exists(path.join(repo, 'skills/stray2/SKILL.md')), JSON.stringify(viaLink));
+  }
+  // 26
+  {
+    const repo = fakeRepo({ 'skills/stray/SKILL.md': ['s1'] });
+    gitInit(repo, AGENCY_URL);
+    put(repo, 'skills/stray/SKILL.md', 's1');
+    const other = mk('other');
+    const r = await run(base(repo, repo, { env: { AGENCY_HOME: other } }));
+    check("26 developer checkout (not the config root) refused 'repo-root'", r.status === 'skipped' && r.reason === 'repo-root' && exists(path.join(repo, 'skills/stray/SKILL.md')), JSON.stringify(r));
+    const r2 = await run(base(repo, repo, { env: { AGENCY_HOME: other }, force: true }));
+    check('26 still refused with force', r2.reason === 'repo-root' && exists(path.join(repo, 'skills/stray/SKILL.md')), JSON.stringify(r2));
+    const r3 = await run(base(repo, repo, { env: {}, home: other }));
+    check('26 default HOME/.claude is not the checkout either', r3.reason === 'repo-root', JSON.stringify(r3));
+    const plain = fakeRepo({ 'skills/stray/SKILL.md': ['s1'] });
+    put(plain, 'skills/stray/SKILL.md', 's1');
+    const r4 = await run(base(plain, plain, { env: { AGENCY_HOME: plain } }));
+    check('26 config root that is not a git work tree stays refused', r4.reason === 'repo-root' && exists(path.join(plain, 'skills/stray/SKILL.md')), JSON.stringify(r4));
+  }
+  // 27
+  {
+    const mkRepo = (pkg) => {
+      const repo = fakeRepo({ 'skills/old-skill/SKILL.md': ['shipped'] });
+      gitInit(repo, null);
+      put(repo, 'cli/package.json', JSON.stringify(pkg));
+      return repo;
+    };
+    const cases = [
+      ['object url (git+https)', { name: 'x', repository: { type: 'git', url: 'git+https://git.example.com/acme-owner/agency-fork.git' } }, 'git@git.example.com:acme-owner/agency-fork.git'],
+      ['string url', { name: 'x', repository: 'https://git.example.com/acme-owner/agency-fork' }, 'git@git.example.com:acme-owner/agency-fork.git'],
+      ['github: shorthand', { name: 'x', repository: 'github:acme-owner/agency-fork' }, 'https://github.com/acme-owner/agency-fork.git'],
+      ['owner/repo shorthand', { name: 'x', repository: 'acme-owner/agency-fork' }, 'https://github.com/acme-owner/agency-fork.git'],
+    ];
+    for (const [label, pkg, rootUrl] of cases) {
+      const repo = mkRepo(pkg);
+      const root = mk('root');
+      gitInit(root, rootUrl);
+      put(root, 'skills/old-skill/SKILL.md', 'shipped');
+      const r = await run(base(repo, root, {}));
+      check(`27 no repoDir remote: package.json repository (${label}) used`, r.status === 'changed' && r.reason === 'legacy-clone', JSON.stringify(r));
+    }
+    const repo = mkRepo({ name: 'x', repository: 'https://git.example.com/acme-owner/agency-fork' });
+    const root = mk('root');
+    gitInit(root, 'git@git.example.com:other/agency-fork.git');
+    put(root, 'skills/old-skill/SKILL.md', 'shipped');
+    check('27 package.json fallback mismatch stays skipped', (await run(base(repo, root, {}))).reason === 'git-root');
+    // a real remote on repoDir wins over a stale package.json
+    const repo2 = mkRepo({ name: 'x', repository: 'https://git.example.com/acme-owner/agency-fork' });
+    git(repo2, 'remote', 'add', 'origin', 'https://git.example.com/zzz/real.git');
+    const root2 = mk('root');
+    gitInit(root2, 'https://git.example.com/acme-owner/agency-fork.git');
+    put(root2, 'skills/old-skill/SKILL.md', 'shipped');
+    check('27 a real repoDir remote takes precedence over package.json', (await run(base(repo2, root2, {}))).reason === 'git-root');
   }
 }
 

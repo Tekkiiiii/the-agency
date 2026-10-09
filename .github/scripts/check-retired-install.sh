@@ -21,6 +21,14 @@
 #     - a rerun prints "Retired files: none to remove"
 #     - --retired=delete on a second fresh old install deletes the edited file too
 #     - --retired=bogus exits 2 and changes nothing
+#   L-B legacy clone, root != repo: the old install is a git clone of REPO at OLD_REV
+#       (what `git clone ... ~/.claude` made) whose origin is REPO's origin; the
+#       current install.sh prunes it with NO --force and says it found a legacy
+#       install; a git root with some OTHER origin is still skipped
+#   L-A legacy clone that is also the CLI's repo: the same clone is AGENCY_HOME and
+#       `agency upgrade` runs from it; the pull removes the tracked retired files
+#       (git renames carry a user's edit to its new agents-archive path), the prune
+#       then has nothing left to do and says so once (no double handling, no archive)
 #
 # Code under test: REPO (default this checkout). The old tree is a `git worktree`
 # of REPO, so REPO needs FULL history (CI: actions/checkout with fetch-depth: 0).
@@ -206,6 +214,85 @@ check "agency upgrade --retired=bogus exit 2 (got $CODE)" [ "$CODE" -eq 2 ]
 tree_sum "$H" > "$W/ub.after"
 check "the old install is byte-for-byte unchanged" cmp -s "$W/ub.before" "$W/ub.after"
 check "the clone was not touched" [ "$(git -C "$CLONE" rev-parse HEAD)" = "$HEAD_BEFORE" ]
+
+# ── legacy git installs ──────────────────────────────────────────────────────
+# The old `git clone <repo> ~/.claude` (and the old rescue.sh) made the Claude root
+# itself a git clone of the repo. Such a root is a normal prune target, no --force.
+# A throwaway node file lists the manifest paths still on disk under a root.
+cat > "$W/left.js" <<'JS'
+const fs = require('fs'), p = require('path');
+const m = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')).paths;
+const left = Object.keys(m).filter((x) => fs.existsSync(p.join(process.argv[3], ...x.split('/'))));
+console.log(left.length + ' ' + left.slice(0, 5).join(','));
+JS
+# legacy_edit <root> - the user's edit + own skill on top of an old clone
+legacy_edit() {
+  mkdir -p "$1/skills/my-own"
+  printf 'my own skill\n' > "$1/skills/my-own/SKILL.md"
+  printf '\n%s\n' "$EDIT_MARK" >> "$1/skills/dept-status/SKILL.md"
+}
+
+echo "case L-B: install.sh prunes a legacy git clone root with no --force"
+RURL="$(git -C "$REPO" remote get-url origin 2>/dev/null)" || RURL=""
+if [ -z "$RURL" ]; then
+  echo "  skip REPO has no origin remote, so a clone of it cannot be told apart from another git root"
+else
+  H="$W/lb"
+  git clone -q --no-checkout "$REPO" "$H" && git -C "$H" checkout -q --detach "$OLD_REV" && git -C "$H" remote set-url origin "$RURL"
+  legacy_edit "$H"
+  check "the legacy root is a git clone at $OLD_REV with the retired files tracked" bash -c 'git -C "$1" ls-files --error-unmatch skills/dept-resume/SKILL.md >/dev/null 2>&1' _ "$H"
+  AGENCY_HOME="$H" bash "$REPO/install.sh" > "$W/lb.log" 2>&1 </dev/null; CODE=$?
+  grep -E 'Retired|retired|You changed' "$W/lb.log" | sed 's/^/    | /' || true
+  check "install.sh exit 0 (got $CODE)" [ "$CODE" -eq 0 ]
+  check "the legacy install was announced" grep -q 'Retired files: legacy git install detected' "$W/lb.log"
+  check "no 'git work tree' skip" bash -c '! grep -q "is a git work tree" "$1"' _ "$W/lb.log"
+  assert_default "$H" "$W/lb.log"
+  AGENCY_HOME="$H" bash "$REPO/install.sh" > "$W/lb2.log" 2>&1 </dev/null; CODE=$?
+  check "rerun install.sh exit 0 (got $CODE)" [ "$CODE" -eq 0 ]
+  check "rerun leaves my-own untouched" bash -c '[ "$(cat "$1/skills/my-own/SKILL.md" 2>/dev/null)" = "my own skill" ]' _ "$H"
+
+  echo "case L-B-other: a git root with some other origin is still skipped without --force"
+  H="$W/lbo"
+  git clone -q --no-checkout "$REPO" "$H" && git -C "$H" checkout -q --detach "$OLD_REV" && git -C "$H" remote set-url origin "https://example.invalid/someone/dotfiles.git"
+  legacy_edit "$H"
+  AGENCY_HOME="$H" bash "$REPO/install.sh" > "$W/lbo.log" 2>&1 </dev/null; CODE=$?
+  check "install.sh exit 0 (got $CODE)" [ "$CODE" -eq 0 ]
+  check "skipped as a git work tree" grep -q 'is a git work tree; run: agency prune --force' "$W/lbo.log"
+  check "the retired file is still there" present "$H/skills/dept-resume/SKILL.md"
+  check "no legacy announcement" bash -c '! grep -q "legacy git install" "$1"' _ "$W/lbo.log"
+fi
+
+echo "case L-A: agency upgrade run from the legacy clone that IS the root"
+# OLD_REV history + the code under test (REPO's working tree) as one new commit, in a
+# bare origin. The root is a clone of it reset to OLD_REV, so `agency upgrade`
+# pulls the retired-file removal exactly as a legacy user's upgrade would.
+LASEED="$W/la-seed"; LAORIGIN="$W/origin/la.git"; H="$W/la"
+git clone -q --no-checkout "$REPO" "$LASEED"
+git -C "$LASEED" checkout -q -b la-main "$OLD_REV"
+find "$LASEED" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+( cd "$SEED" && tar -cf - --exclude=.git . ) | tar -xf - -C "$LASEED"
+( cd "$LASEED" && git add -A && git commit -q -m "seed: code under test" )
+git init -q --bare "$LAORIGIN"
+git -C "$LAORIGIN" symbolic-ref HEAD refs/heads/main
+git -C "$LASEED" push -q "$LAORIGIN" la-main:main
+git clone -q "$LAORIGIN" "$H"
+git -C "$H" reset -q --hard "$OLD_REV"
+legacy_edit "$H"
+check "the root is a clone at $OLD_REV with the edit pending" bash -c '[ "$(git -C "$1" rev-parse --short HEAD)" = "$2" ] && ! git -C "$1" diff --quiet -- skills/dept-status/SKILL.md' _ "$H" "$OLD_REV"
+( cd "$W" && AGENCY_HOME="$H" node "$H/cli/bin/agency.js" upgrade ) > "$W/la.log" 2>&1 </dev/null; CODE=$?
+grep -E 'Retired|retired|You changed|Upgrade' "$W/la.log" | sed 's/^/    | /' | head -8 || true
+check "agency upgrade exit 0 (got $CODE)" [ "$CODE" -eq 0 ]
+check "no retired manifest path left on disk (tracked or untracked): $(node "$W/left.js" "$H/retired-manifest.json" "$H")" bash -c '[ "$(node "$1" "$2/retired-manifest.json" "$2" | cut -d" " -f1)" = "0" ]' _ "$W/left.js" "$H"
+check "the pull removed the tracked retired files" bash -c '[ ! -e "$1/skills/dept-resume" ] && [ ! -e "$1/agents/engineering/engineering-lead.md" ]' _ "$H"
+check "the edited retired file survives at its renamed agents-archive path (no data loss)" bash -c 'grep -rl "$2" "$1/agents-archive" >/dev/null 2>&1' _ "$H" "$EDIT_MARK"
+check "nothing was archived for files git removed" absent "$H/archive"
+check "exactly one summary line, 'none to remove' (no double count)" bash -c '[ "$(grep -c "^Retired files:" "$1")" = "1" ] && grep -q "^Retired files: none to remove" "$1"' _ "$W/la.log"
+check "the root was not skipped as the repo checkout" bash -c '! grep -q "agency repo checkout itself" "$1"' _ "$W/la.log"
+check "user skill my-own untouched" bash -c '[ "$(cat "$1/skills/my-own/SKILL.md" 2>/dev/null)" = "my own skill" ]' _ "$H"
+check "a still-shipped skill is intact (skills/recall)" present "$H/skills/recall/SKILL.md"
+( cd "$W" && AGENCY_HOME="$H" node "$H/cli/bin/agency.js" upgrade ) > "$W/la2.log" 2>&1 </dev/null; CODE=$?
+check "rerun agency upgrade exit 0 (got $CODE)" [ "$CODE" -eq 0 ]
+check "rerun prints 'Retired files: none to remove'" grep -q 'Retired files: none to remove' "$W/la2.log"
 
 echo
 if [ "$FAILS" -eq 0 ]; then

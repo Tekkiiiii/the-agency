@@ -18,10 +18,31 @@
 // exception: the installers copy agents/ as *.md only, so a retired non-.md file
 // under agents/ is simply absent from an install; harmless here.)
 //
-// Safety, in order: the repo checkout itself is always refused (even with
-// force); a root that is a git work tree is skipped unless force (a live,
-// git-managed root can legitimately hold files the repo dropped); symlinks are
-// never followed; a manifest path outside the four trees is ignored.
+// Safety, in order: the repo checkout itself is refused (even with force) unless
+// it is the user's own Claude config root (legacy shape A, below); a root that is
+// a git work tree is skipped unless force (a live, git-managed root can
+// legitimately hold files the repo dropped) unless it is a legacy install
+// (shape B, below); symlinks are never followed; a manifest path outside the
+// four trees is ignored.
+//
+// Legacy installs. The old `git clone <repo> ~/.claude` and the old rescue.sh made
+// the Claude root itself a git clone of this repo. Two shapes, both pruned without
+// --force, because the repo's own files are what is stale there:
+//   B  root != repoDir, root is a git work tree and one of its remotes equals one
+//      of repoDir's (URLs normalized: protocol, user@, trailing .git and / dropped,
+//      scp host:owner/repo read as host/owner/repo, host lowercased; repoDir with
+//      no remote falls back to the "repository" URL in cli/package.json; no
+//      owner/repo is hard-coded, so forks work). Pruned normally; result.reason is
+//      'legacy-clone' and one line says so. A git root with any other remote (a
+//      dotfiles repo, say) is still skipped unless --force.
+//   A  root == repoDir AND root is the resolved Claude config root (AGENCY_HOME,
+//      else CLAUDE_CONFIG_DIR, else HOME/.claude, compared by realpath): the CLI
+//      runs out of the root clone and `agency upgrade`'s own git pull has already
+//      removed the tracked retired files (a rename keeps a user's edit at the new
+//      path). Git owns every tracked file, so only manifest paths NOT in
+//      `git ls-files` are pruned (untracked leftovers), with the usual hash and
+//      edited-file rules; no double handling. result.reason is 'legacy-root'.
+//      A repoDir that is NOT the config root (a developer checkout) is refused.
 //
 // Used by: install.sh / install.ps1 (CLI form), `agency upgrade` and
 // `agency init` (autoPrune), `agency prune`.
@@ -32,6 +53,7 @@
 
 const crypto = require('crypto');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { resolveRoot } = require('./hooks-merge.js');
@@ -71,6 +93,85 @@ function isGitWorkTree(root, env) {
     const r = spawnSync('git', ['-C', root, 'rev-parse', '--is-inside-work-tree'], { encoding: 'utf8', env: e, timeout: 10000 });
     return r.status === 0 && String(r.stdout).trim() === 'true';
   } catch { return false; }
+}
+
+// ---- legacy git installs --------------------------------------------------
+
+function gitEnv(env) {
+  const e = { ...(env || process.env) };
+  if (!e.PATH && process.env.PATH) e.PATH = process.env.PATH;
+  delete e.GIT_DIR; delete e.GIT_WORK_TREE; delete e.GIT_INDEX_FILE;
+  return e;
+}
+
+// "https://me:tok@Host.invalid:443/o/r.git/" | "me@host.invalid:o/r" | "ssh://me@host.invalid/o/r" -> "host.invalid/o/r"
+function normalizeRemote(raw) {
+  let u = String(raw == null ? '' : raw).trim();
+  if (!u) return '';
+  let m;
+  let hosty = true;
+  if ((m = u.match(/^[A-Za-z][A-Za-z0-9+.-]*:\/\/(.*)$/))) {
+    u = m[1].replace(/^[^@/]*@/, '').replace(/^([^/:]+):\d+(?=\/|$)/, '$1');
+    if (u.startsWith('/')) hosty = false; // file:///path
+  } else if (/^([A-Za-z]:[\\/]|[\\/.~])/.test(u)) {
+    u = u.replace(/\\/g, '/'); hosty = false; // a local path
+  } else if ((m = u.match(/^(?:[^@/:]+@)?([^/:]+):(?!\/\/)(.*)$/))) {
+    u = `${m[1]}/${m[2].replace(/^\/+/, '')}`; // scp form host:owner/repo
+  }
+  u = u.replace(/\/+$/, '').replace(/\.git$/i, '').replace(/\/+$/, '');
+  if (hosty) u = u.replace(/^[^/]+/, (h) => h.toLowerCase());
+  return u;
+}
+
+function remoteSet(dir, env) {
+  const set = new Set();
+  try {
+    const r = spawnSync('git', ['-C', dir, 'remote', '-v'], { encoding: 'utf8', env: gitEnv(env), timeout: 10000 });
+    if (r.status !== 0) return set;
+    for (const line of String(r.stdout).split('\n')) {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length >= 2) { const n = normalizeRemote(parts[1]); if (n) set.add(n); }
+    }
+  } catch { /* none */ }
+  return set;
+}
+
+// The repository URL from <repoDir>/cli/package.json (string, {url}, or the npm
+// shorthands github:o/r, gitlab:o/r, bitbucket:o/r, o/r).
+function packageRepoUrl(repoDir) {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(repoDir, 'cli', 'package.json'), 'utf8'));
+    let r = pkg && pkg.repository;
+    if (r && typeof r === 'object') r = r.url;
+    if (typeof r !== 'string' || !r.trim()) return '';
+    r = r.trim();
+    const sh = r.match(/^(github|gitlab|bitbucket):(.+)$/i);
+    if (sh) return `${sh[1].toLowerCase()}.${sh[1].toLowerCase() === 'bitbucket' ? 'org' : 'com'}/${sh[2]}`;
+    if (/^[\w.-]+\/[\w.-]+$/.test(r)) return `github.com/${r}`;
+    return r;
+  } catch { return ''; }
+}
+
+// Shape B: root's git remote is the same repo as repoDir's.
+function isLegacyClone(root, repoDir, env) {
+  const rootRemotes = remoteSet(root, env);
+  if (!rootRemotes.size) return false;
+  let repoRemotes = remoteSet(repoDir, env);
+  if (!repoRemotes.size) {
+    const n = normalizeRemote(packageRepoUrl(repoDir));
+    repoRemotes = new Set(n ? [n] : []);
+  }
+  for (const r of rootRemotes) if (repoRemotes.has(r)) return true;
+  return false;
+}
+
+// Every path in the root's git index, or null when git cannot say.
+function gitTrackedSet(root, env) {
+  try {
+    const r = spawnSync('git', ['-C', root, 'ls-files', '-z'], { encoding: 'utf8', env: gitEnv(env), timeout: 30000, maxBuffer: 256 * 1024 * 1024 });
+    if (r.status !== 0) return null;
+    return new Set(String(r.stdout).split('\0').filter(Boolean));
+  } catch { return null; }
 }
 
 // "skills/foo/SKILL.md" -> {kind:'skill', name:'foo'}
@@ -188,8 +289,18 @@ async function pruneRetired(opts = {}) {
   const realRoot = realOrNull(root);
   if (!realRoot) { res.status = 'skipped'; res.reason = 'no-root'; return res; }
   const realRepo = realOrNull(repoDir);
-  if (realRepo && samePath(realRoot, realRepo)) { res.status = 'skipped'; res.reason = 'repo-root'; return res; }
-  if (!opts.force && isGitWorkTree(root, env)) { res.status = 'skipped'; res.reason = 'git-root'; return res; }
+  let tracked = null; // legacy shape A: paths git owns, never touched here
+  if (realRepo && samePath(realRoot, realRepo)) {
+    const cfg = realOrNull(resolveRoot(undefined, { env, platform, home: opts.home || os.homedir() }));
+    if (cfg && samePath(realRoot, cfg) && isGitWorkTree(root, env)) tracked = gitTrackedSet(root, env);
+    if (!tracked) { res.status = 'skipped'; res.reason = 'repo-root'; return res; }
+    res.reason = 'legacy-root';
+    res.trackedKept = 0;
+  } else if (!opts.force && isGitWorkTree(root, env)) {
+    if (!isLegacyClone(root, repoDir, env)) { res.status = 'skipped'; res.reason = 'git-root'; return res; }
+    res.reason = 'legacy-clone';
+    say(`Retired files: legacy git install detected at ${root}; pruning normally`);
+  }
 
   const loaded = loadManifest(manifestPath);
   if (loaded.missing) { res.status = 'skipped'; res.reason = 'no-manifest'; res.manifestPath = manifestPath; return res; }
@@ -201,6 +312,7 @@ async function pruneRetired(opts = {}) {
   const edited = [];
   for (const p of Object.keys(paths).sort()) {
     if (!safeManifestPath(p)) continue;
+    if (tracked && tracked.has(p)) { res.trackedKept++; continue; }
     const parts = p.split('/');
     let cur = root;
     let symlinkAncestor = false;
