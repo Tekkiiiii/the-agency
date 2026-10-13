@@ -1,20 +1,17 @@
 ---
 name: delegate
 description: "Use to hand a task off with full context to a subagent that owns it end-to-end: \"delegate this\", offloading multi-step work, or keeping the main context clean. Snapshots open files, conversation, memory and decisions into a briefing; prefers a named specialist, falls back to general-purpose."
-triggers:
-  - /delegate
-  - delegate this task
-  - finish this for me
-  - hand off to subagent
-aliases: []
-scope: global
-dept: [all]
-team: ["-"]
-priority: implementation
-author: skill-seekers
-provenance: skill-seekers
-last_updated: "2026-04-10"
-trust_level: agent-authored
+metadata:
+  triggers: "[\"/delegate\", \"delegate this task\", \"finish this for me\", \"hand off to subagent\"]"
+  aliases: "[]"
+  scope: "global"
+  dept: "[\"all\"]"
+  team: "[\"-\"]"
+  priority: "implementation"
+  author: "skill-seekers"
+  provenance: "skill-seekers"
+  last_updated: "2026-04-10"
+  trust_level: "agent-authored"
 ---
 
 # delegate

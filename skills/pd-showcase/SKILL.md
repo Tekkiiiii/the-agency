@@ -160,7 +160,7 @@ your tool calls; you just connect the dots.
   activates when explicitly requested (`--showcase` arg or `/pd-showcase on`).
 - The flag file persists until explicitly cleared with `/pd-showcase off`.
   After a demo, always run `/pd-showcase off` to prevent leakage into the next session.
-- This toggle does NOT affect Curator, Delegator, codebase-search, or any
+- This toggle does NOT affect Delegator, codebase-search, or any
   non-PD agent. Only `/pd-spawn` and `/pd-resume` honor it.
 - If a PD spawn blocks the main session unexpectedly, check flag state with
   `/pd-showcase status`, then `/pd-showcase off` to restore background mode.

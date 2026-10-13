@@ -56,9 +56,7 @@ echo '{payload}' | python3 ~/.claude/scripts/save-state.py --project {project-pa
 The script does ALL mechanical work: session log, heartbeat, next-session.md
 (incl. pending-inbound sweep), decisions append + auto-prune, next-action stub
 materialization (Step 3c), inter-spawn index, STATE.md, save-state-state.json
-reset, overseer brief, metric emits, graphify update + unified-graph session
-node, Pinecone upsert (skipped unless `PINECONE_API_KEY` and `PINECONE_INDEX` are set). All fire-and-forget parts are backgrounded by the
-script itself — no caller-side follow-up steps.
+reset, overseer brief, metric emits. No caller-side follow-up steps.
 
 3. Relay the script's `save-state done!` line. Stop. No further narration.
 
@@ -72,7 +70,7 @@ Spawn ONE `save-state-runner` (sonnet, background OK) with this prompt:
 ```
 SKILL SPAWN: save-state. You own the save-state ritual for one project.
 Project: {project-path}   Slug: {slug}
-Read ~/.claude/skills/save-state/full-scan.md and follow it exactly.
+Read ${CLAUDE_SKILL_DIR}/full-scan.md and follow it exactly.
 ```
 
 The runner full-scans the project (delta check → baseline reads → mid-flight

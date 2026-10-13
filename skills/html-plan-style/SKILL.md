@@ -1,38 +1,18 @@
 ---
 name: html-plan-style
 description: "Use when generating any HTML plan, report or deliverable for operator review: \"create a plan\", \"make an HTML plan\", /pipeline-* plan outputs, ADRs, session digests, agent reports. Locked palette, 22px body, rem sizing, print CSS, component vocabulary; base skeleton plan-template.html. Not for slide decks."
-scope: global
-dept:
-  - all
-team: "-"
-priority: foundation
-triggers:
-  - create a plan
-  - write a plan
-  - make an html plan
-  - write an html plan
-  - generate a plan
-  - plan.html
-  - output convention
-  - pipeline-feature
-  - pipeline-bugfix
-  - pipeline-content
-  - pipeline-audit
-  - pipeline-deploy
-  - pipeline-seo
-  - html report
-  - html deliverable
-  - architecture decision record
-  - session digest
-aliases:
-  - plan-style
-  - html-plan
-  - plan-template
-last_updated: "2026-05-22"
-trust_level: human-authored
-author: operator
-provenance: manual
-quality_gate_passed: true
+metadata:
+  scope: "global"
+  dept: "[\"all\"]"
+  team: "-"
+  priority: "foundation"
+  triggers: "[\"create a plan\", \"write a plan\", \"make an html plan\", \"write an html plan\", \"generate a plan\", \"plan.html\", \"output convention\", \"pipeline-feature\", \"pipeline-bugfix\", \"pipeline-content\", \"pipeline-audit\", \"pipeline-deploy\", \"pipeline-seo\", \"html report\", \"html deliverable\", \"architecture decision record\", \"session digest\"]"
+  aliases: "[\"plan-style\", \"html-plan\", \"plan-template\"]"
+  last_updated: "2026-05-22"
+  trust_level: "human-authored"
+  author: "operator"
+  provenance: "manual"
+  quality_gate_passed: "true"
 ---
 
 # html-plan-style

@@ -13,13 +13,13 @@ Source: [EvoLinkAI/awesome-gpt-image-2-prompts](https://github.com/EvoLinkAI/awe
 ## Prompt Database
 
 The full prompt collection is stored as JSON at:
-`~/.claude/skills/gpt-image-prompts/references/gpt_image2_prompts.json`
+`${CLAUDE_SKILL_DIR}/references/gpt_image2_prompts.json`
 
 ## Usage
 
 ### Search by keyword
 ```bash
-cat ~/.claude/skills/gpt-image-prompts/references/gpt_image2_prompts.json | python3 -c "
+cat ${CLAUDE_SKILL_DIR}/references/gpt_image2_prompts.json | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 query = '${QUERY}'.lower()
@@ -31,7 +31,7 @@ for r in results[:10]:
 
 ### Browse by category
 ```bash
-cat ~/.claude/skills/gpt-image-prompts/references/gpt_image2_prompts.json | python3 -c "
+cat ${CLAUDE_SKILL_DIR}/references/gpt_image2_prompts.json | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 categories = set()

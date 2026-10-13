@@ -1,41 +1,15 @@
 ---
 name: deck-narrative
 description: "Use to review or fix a deck's argument, not its look: \"does this deck make sense\", \"is this an action title\", \"Minto pyramid\", \"one message per slide\", \"decision slide\", \"check deck fonts\". Rules as pass/fail checks; ships scripts/audit_deck.py for .pptx. Co-load with a visual deck skill."
-scope: global
-dept:
-  - design
-team: "-"
-priority: foundation
-triggers:
-  - deck narrative
-  - review deck narrative
-  - audit deck structure
-  - action title
-  - topic title vs action title
-  - is this an action title
-  - one message per slide
-  - minto pyramid
-  - minto principle
-  - top-down deck
-  - deck doesn't land
-  - deck feels like a wall of text
-  - horizontal logic
-  - vertical logic
-  - table vs chart
-  - decision slide
-  - approval slide
-  - does this deck make sense
-  - check my slide titles
-  - check deck fonts
-  - system font check
-  - font audit deck
-  - deck-narrative
-aliases:
-  - deck-architecture
-  - deck-logic
-  - audit-deck
-last_updated: "2026-07-30"
-trust_level: human-authored
+metadata:
+  scope: "global"
+  dept: "[\"design\"]"
+  team: "-"
+  priority: "foundation"
+  triggers: "[\"deck narrative\", \"review deck narrative\", \"audit deck structure\", \"action title\", \"topic title vs action title\", \"is this an action title\", \"one message per slide\", \"minto pyramid\", \"minto principle\", \"top-down deck\", \"deck doesn't land\", \"deck feels like a wall of text\", \"horizontal logic\", \"vertical logic\", \"table vs chart\", \"decision slide\", \"approval slide\", \"does this deck make sense\", \"check my slide titles\", \"check deck fonts\", \"system font check\", \"font audit deck\", \"deck-narrative\"]"
+  aliases: "[\"deck-architecture\", \"deck-logic\", \"audit-deck\"]"
+  last_updated: "2026-07-30"
+  trust_level: "human-authored"
 ---
 
 # deck-narrative

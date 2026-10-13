@@ -1,28 +1,14 @@
 ---
 name: awesome-design-md
 description: "Use when a design task names a product to emulate (\"make it look like Stripe\", \"inspired by Linear\", \"apply the Notion aesthetic\") or needs concrete tokens. Reference library of real design systems with palette, type, spacing, motion. Not a router (use /design-router) or review gate."
-triggers:
-  - design
-  - ui design
-  - ux design
-  - visual design
-  - redesign
-  - design system
-  - make it look like
-  - inspired by
-  - apply design
-  - design review
-  - review design
-  - ui/ux
-scope: global
-dept: all
-priority: implementation
-aliases:
-  - design-md
-  - design-reference
-  - design-task
-author: voltagent + community
-provenance: skill-seekers + custom
+metadata:
+  triggers: "[\"design\", \"ui design\", \"ux design\", \"visual design\", \"redesign\", \"design system\", \"make it look like\", \"inspired by\", \"apply design\", \"design review\", \"review design\", \"ui/ux\"]"
+  scope: "global"
+  dept: "all"
+  priority: "implementation"
+  aliases: "[\"design-md\", \"design-reference\", \"design-task\"]"
+  author: "voltagent + community"
+  provenance: "skill-seekers + custom"
 ---
 
 # Awesome Design MD

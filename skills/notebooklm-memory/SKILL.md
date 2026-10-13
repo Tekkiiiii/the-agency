@@ -1,6 +1,6 @@
 ---
 name: notebooklm-memory
-description: "Use to query, curate or audit Google NotebookLM research notebooks: market data, tech best practices, industry patterns. Modes QUERY, CURATE (add sources, create/tag notebooks), AUDIT (stale notebooks). Uses mcp__notebooklm-mcp__* tools and reads the notebook registry (if one exists) first."
+description: "Use to query, curate or audit Google NotebookLM research notebooks: market data, tech best practices, industry patterns. Research topics only, NOT a memory store (memory lives in the wiki and a shared-memory MCP server, if you run one). Modes QUERY, CURATE (add sources, create/tag notebooks), AUDIT (stale notebooks). Uses mcp__notebooklm-mcp__* tools and reads the notebook registry (if one exists) first."
 ---
 
 # notebooklm-research
@@ -84,7 +84,7 @@ For questions spanning multiple domains:
 | High | Research papers, whitepapers (URL) | Academic papers, policy documents |
 | Medium | Curated blog posts, case studies (URL) | Vetted quality articles |
 | Medium | Internal synthesis docs (text) | Audience profiles, research summaries |
-| Avoid | Session logs, decisions.md, code files | These belong in graphify/Pinecone |
+| Avoid | Session logs, decisions.md, code files | These belong in the wiki (memory files) or the repo |
 
 ## Mode 3: AUDIT — Check Notebook Health
 
@@ -106,16 +106,16 @@ For questions spanning multiple domains:
    - Tech stack notebooks: semi-annual refresh
 3. Recommend: which sources to refresh (re-add URL) or archive
 
-## Integration with Curator Agent
+## Integration with Direct Lookups
 
-The curator agent (`{agency-root}/agents/specialized/curator.md`) uses NotebookLM as L2.5 in its retrieval protocol. When a PD spawns a curator with a domain-level question (market research, tech best practices, industry patterns), the curator:
+Agents query NotebookLM for research-topic questions only, after the wiki and a shared-memory MCP server (if you run one) miss (order: wiki -> shared-memory MCP server -> NotebookLM; the curator agent was retired 2026-10-12). For a domain-level question (market research, tech best practices, industry patterns), the asking agent, or the one read-only general-purpose (sonnet) synthesis spawn it routes like any spawn:
 
 1. Reads the registry to find relevant notebooks
 2. Matches question domain to notebook tags
 3. Queries via `mcp__notebooklm-mcp__notebook_query`
 4. Returns answer with NotebookLM source citations
 
-This skill is for direct human-invoked operations. The curator handles agent-to-agent queries autonomously.
+This skill covers human-invoked operations and direct agent lookups.
 
 ## Autonomy Rules
 
@@ -138,11 +138,13 @@ This skill is for direct human-invoked operations. The curator handles agent-to-
 
 ## Relationship to Other Systems
 
-| Layer | Tool | Purpose |
-|-------|------|---------|
-| Project structure | graphify (L1-L2) | Code relationships, project knowledge graph |
-| Curated research | NotebookLM (L2.5) | Domain knowledge — markets, tech, industry |
-| Semantic search | Pinecone (L3) | Broad vector search across all indexed content |
-| Raw files | Read tool (L4) | Direct file access — decisions.md, lessons/, heartbeat |
+NotebookLM = research only. It is NOT a memory or lookup layer.
 
-NotebookLM does NOT replace any existing layer. It fills the gap between project-structural knowledge (graphify) and broad semantic search (Pinecone) with curated, citation-grounded domain research.
+| Need | Where | Rule |
+|------|-------|------|
+| Claude-only memory (prefs, lessons, project notes) | Wiki: `MEMORY.md` + memory files + project `memory/` | Always first |
+| Cross-agent facts, handoffs, task board | A shared-memory MCP server, if you run one | Second |
+| Research topics (markets, tech, industry) | NotebookLM | Last, research topics only |
+| Code relationships | graphify / tokensave, on demand | Not a lookup step |
+
+Pinecone is retired as a lookup step (2026-10-08).

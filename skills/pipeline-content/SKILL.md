@@ -1,7 +1,7 @@
 ---
 name: pipeline-content
 version: 1.0.0
-description: "Content creation pipeline — research, strategy, create, critique, humanize, knowledge capture. Chains auto-researcher, content-strategy, content-creator/copywriting/tech-writer, content-critique, humanizer, graphify, and obsidian-vault into a quality-gated content workflow."
+description: "Content creation pipeline — research, strategy, create, critique, humanize, knowledge capture. Chains auto-researcher, content-strategy, content-creator/copywriting/tech-writer, content-critique, humanizer, and graphify into a quality-gated content workflow."
 ---
 
 # Pipeline: Content Creation
@@ -172,14 +172,7 @@ Run these as background tasks after delivering the final content to the user:
 ### 6a: Knowledge graph
 Invoke `/graphify` with the final content to capture entities, relationships, and topics in the knowledge graph.
 
-### 6b: Obsidian vault
-Invoke `/obsidian-vault` to persist the content metadata:
-- Topic, type, platform, audience
-- Research sources used
-- Critique grade achieved
-- Final content location
-
-These are fire-and-forget — don't block the pipeline report on them.
+This is fire-and-forget — don't block the pipeline report on it.
 
 ---
 
@@ -199,7 +192,7 @@ Run: {timestamp}
 | 3 | CREATE | {skill used} | {result} | Draft produced | {angle/formula used} |
 | 4 | CRITIQUE | content-critique | {result} | Grade: {letter} | {revision cycles} |
 | 5 | HUMANIZE | humanizer | {result} | Self-audit: PASS | — |
-| 6 | KNOWLEDGE | graphify, obsidian | {result} | — | background |
+| 6 | KNOWLEDGE | graphify | {result} | — | background |
 
 Overall: {PASS / PASS_WITH_REVISIONS}
 Final content: {delivered inline or file path}

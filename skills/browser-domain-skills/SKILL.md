@@ -14,7 +14,7 @@ Shared, cross-tool knowledge base for site-specific browser automation patterns.
 ## Directory Structure
 
 ```
-~/.claude/skills/browser-domain-skills/
+${CLAUDE_SKILL_DIR}/
 ├── SKILL.md              (this file — convention definition)
 └── {hostname}/
     └── notes.md          (domain knowledge for that host)
@@ -53,7 +53,7 @@ confidence: high | medium | low
 
 All browser tools SHOULD check:
 ```bash
-ls ~/.claude/skills/browser-domain-skills/{hostname}/ 2>/dev/null
+ls ${CLAUDE_SKILL_DIR}/{hostname}/ 2>/dev/null
 ```
 If `notes.md` exists, read it before interacting. This avoids re-learning known quirks.
 
@@ -61,7 +61,7 @@ If `notes.md` exists, read it before interacting. This avoids re-learning known 
 
 When a browser tool discovers something non-obvious about a site (a tricky selector, an anti-bot pattern, a reliable workflow), write or append to:
 ```
-~/.claude/skills/browser-domain-skills/{hostname}/notes.md
+${CLAUDE_SKILL_DIR}/{hostname}/notes.md
 ```
 
 Rules:
@@ -84,8 +84,8 @@ Rules:
 
 **Creating a note:**
 ```bash
-mkdir -p ~/.claude/skills/browser-domain-skills/linkedin.com
-cat > ~/.claude/skills/browser-domain-skills/linkedin.com/notes.md << 'EOF'
+mkdir -p ${CLAUDE_SKILL_DIR}/linkedin.com
+cat > ${CLAUDE_SKILL_DIR}/linkedin.com/notes.md << 'EOF'
 ---
 host: linkedin.com
 last_updated: 2026-05-16

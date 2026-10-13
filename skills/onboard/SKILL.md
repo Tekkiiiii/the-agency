@@ -1,10 +1,8 @@
 ---
 name: onboard
 description: "Use on \"onboard\", \"set up the agency\", \"get started\", \"walk me through\", \"how does this work\", \"first time setup\", after `agency init` or ./install.sh. Interactive tour of The Agency in Claude Code: install check, slash commands, MCP servers, first project, demo run."
-aliases:
-  - setup-agency
-  - get-started
-  - first-run
+metadata:
+  aliases: "[\"setup-agency\", \"get-started\", \"first-run\"]"
 ---
 
 # /onboard — The Agency Onboarding
@@ -195,7 +193,6 @@ Claude Code settings. Here's what's useful with The Agency:
 
   Recommended:
     Playwright     Browser automation for /browse and QA testing
-    Pinecone       Long-term memory and semantic search
     Firebase       Deploy and manage Firebase projects
     Supabase       Database and auth
 

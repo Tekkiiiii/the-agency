@@ -39,10 +39,10 @@ Read `MEMORY.md` in each target directory. Parse all `[Title](file.md)` links.
 
 ### Step 2 — Check Dead Links
 For each link in MEMORY.md: verify the file exists.
-Auto-fix: remove entries for files that are missing (append `[DELETE YYYY-MM-DD]` to wiki-log.md).
+Auto-fix: remove entries for files that are missing (git history is the log).
 
 ### Step 3 — Check Orphans
-List all `.md` files in the directory (excluding MEMORY.md, wiki-log.md, wiki-schema.md itself).
+List all `.md` files in the directory (excluding MEMORY.md, wiki-schema.md itself).
 Flag files present on disk but absent from MEMORY.md.
 Do NOT auto-delete orphans — present them for user review.
 
@@ -60,19 +60,6 @@ For memory files that share 2+ topic keywords (e.g., both mention "Acme Corp"):
 Check if they contain `See also:` links to each other.
 Suggest (but do not auto-add) missing cross-links.
 
-### Step 6b — Check Graph God Nodes in Memory
-
-Query the graphify MCP for the most-connected nodes:
-```
-mcp__graphify__god_nodes(top_n=20)
-```
-
-Filter results to nodes whose `source_file` contains `/.claude/memory/`. For each match
-with `edge_count > 15`, flag it as a memory god node — a file doing too many jobs that
-should be split into focused files.
-
-If the graphify MCP is unavailable, skip this step silently.
-
 ### Step 7 — Report + Apply Safe Fixes
 
 Output format:
@@ -85,14 +72,7 @@ MEMORY LINT — {date}
 ⚠️  Contradictions ({n}): [list] → needs resolution
 ⚠️  Stale project memories ({n}): [list]
 💡 Suggested cross-links ({n}): [list]
-🔗 Graph god nodes in memory ({n}): [file (edges)] → consider splitting
 
 Auto-applied: {n} fixes
 Action needed: {n} items
-```
-
-### Step 8 — Update wiki-log.md
-Append to `~/.claude/memory/wiki-log.md`:
-```
-[LINT YYYY-MM-DD] global — {n} dead links removed, {n} orphans found, {n} contradictions flagged, {n} god nodes flagged
 ```

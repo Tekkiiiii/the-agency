@@ -154,7 +154,6 @@ Scope: {scope}
 
 ### Persist
 - Save report to `.gstack/audit-reports/audit-{date}.md`
-- Invoke `/obsidian-vault` to persist audit results (background)
 - Invoke `/graphify` on the audit report to map risk areas (background)
 
 ---

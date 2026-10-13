@@ -1,20 +1,17 @@
 ---
 name: feedback-pipeline
 description: "Use when customer feedback must reach the right owner without manual triage, SLA compliance matters, or onboarding a project into feedback routing. Reads Google Sheet submissions, routes via table, hands off on Slack/chat, tracks SLA, escalates breaches, emails customers on resolution. 4-hour cron."
-triggers:
-  - /feedback-pipeline
-  - feedback pipeline
-  - process feedback
-  - new feedback submissions
-aliases: []
-scope: agency-rooms
-dept: [ops]
-team: ["team-lead"]
-priority: ops
-author: agency-rooms
-provenance: agency-rooms
-last_updated: "2026-04-10"
-trust_level: agent-authored
+metadata:
+  triggers: "[\"/feedback-pipeline\", \"feedback pipeline\", \"process feedback\", \"new feedback submissions\"]"
+  aliases: "[]"
+  scope: "agency-rooms"
+  dept: "[\"ops\"]"
+  team: "[\"team-lead\"]"
+  priority: "ops"
+  author: "agency-rooms"
+  provenance: "agency-rooms"
+  last_updated: "2026-04-10"
+  trust_level: "agent-authored"
 ---
 
 # Feedback Pipeline — Skill
@@ -53,7 +50,7 @@ Customer fills Google Form → Sheet row (G=pending)
 ## Files
 
 ```
-~/.claude/skills/feedback-pipeline/
+${CLAUDE_SKILL_DIR}/
 ├── SKILL.md              ← this file
 ├── routing.json          ← project → PD slug mapping
 ├── feedback-sheet.ts     ← Google Sheets read/write (11-col schema)
@@ -106,7 +103,7 @@ cat ~/.claude/agency-rooms/feedback/feedback-pipeline/state.json
 # Set "sheet_id" to the ID from step 1.5
 
 # Verify routing.json has your PDs
-cat ~/.claude/skills/feedback-pipeline/routing.json
+cat ${CLAUDE_SKILL_DIR}/routing.json
 ```
 
 ### 3. Add routing
@@ -137,7 +134,7 @@ tsx feedback-pipeline.ts escalation
 
 ```
 /loop 4h /feedback-pipeline
-/loop 2h "tsx ~/.claude/skills/feedback-pipeline/feedback-pipeline.ts escalation"
+/loop 2h "tsx ${CLAUDE_SKILL_DIR}/feedback-pipeline.ts escalation"
 ```
 
 Or use CronCreate with:

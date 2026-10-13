@@ -180,7 +180,6 @@ Date: {timestamp}
 
 ### Persist
 - Save report to `.gstack/deploy-reports/deploy-{target}-{date}.md`
-- Invoke `/obsidian-vault` to persist deploy record (background)
 
 ---
 
