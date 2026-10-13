@@ -831,7 +831,7 @@ agency mods sync                   # wire them now
 agency mods remove                 # remove exactly our entries and copies; your value is restored
 ```
 
-The shell hooks `loop-detector` and `artifact-verify` stay wired next to the mods for now, so you may see duplicate warnings. Loading by hand, what overlaps with the shell hooks, and what each mod reads: [mods/README.md](mods/README.md).
+The shell hooks `loop-detector` and `artifact-verify` stay wired next to the mods for now, so you may see duplicate warnings. Loading by hand, what overlaps with the shell hooks, and what each mod reads: [mods/README.md](mods/README.md). Windows: the mods are simulated-tested only and unproven on a real Windows host; see [Windows status](mods/README.md#windows-status).
 
 ### Model Routing Table
 
