@@ -23,11 +23,11 @@ for both EXCLUDE_NAMES and EXCLUDE_DIRS, imported here, not redefined):
     This script achieves that non-recursion structurally (glob("*.md") on
     the target dir + one explicit lessons/ pass, never rglob) rather than by
     consulting EXCLUDE_DIRS directly — EXCLUDE_DIRS exists so mem-scorecard.py
-    and mem-graph-build.py, which DO rglob, can enforce the identical boundary.
+    (and formerly the retired memory-graph builder), which DO rglob, can enforce the identical boundary.
   - Hard-excluded filenames (mechanically owned by save-state.py / recall /
     pd-resume — schema must never touch these): next-session.md, decisions.md,
     decisions-archive.md, heartbeat.md, STATE.md, PROJECT.md, MEMORY.md,
-    wiki-log.md, wiki-schema.md, pd-scratch.md, index.md, README.md,
+    wiki-schema.md, pd-scratch.md, index.md, README.md,
     CLAUDE.md, .canary.md.
   - Any file already starting with `---` is left untouched (idempotent).
 """

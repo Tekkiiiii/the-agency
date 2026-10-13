@@ -539,12 +539,11 @@ Special recognition to the 50+ Redditors who requested this within the first 12 
 This directory contains **prompt-based agents** (personality + workflows in `.md` files) enhanced with **MCP (Model Context Protocol)** for tool integration and **A2A (Agent-to-Agent)** for service discovery.
 
 **MCP Servers** (configured in `~/.claude/settings.json` `mcpServers`):
-- `obsidian` — Long-term memory via Obsidian vault (remember, recall, rollback, search)
 - `filesystem` — File system access for agent file operations
 - `supabase` — Supabase/PostgreSQL database queries
 
 **Tool Schemas** (`~/.claude/tools/`):
-Each skill domain has a typed JSON Schema defining inputs/outputs. These provide machine-readable tool definitions so MCP clients can discover and invoke skill capabilities programmatically. See `backend.json`, `frontend.json`, `supabase.json`, `security.json`, `browser.json`, and `obsidian.json`.
+Each skill domain has a typed JSON Schema defining inputs/outputs. These provide machine-readable tool definitions so MCP clients can discover and invoke skill capabilities programmatically. See `backend.json`, `frontend.json`, `supabase.json`, `security.json`, and `browser.json`.
 
 **Agent Discovery (A2A)**:
 Agent Cards at `~/.claude/.well-known/agent-card.json` expose The Agency's capabilities as action slugs. Remote agents can fetch the card at runtime to discover what The Agency agents can do without code-level integration.

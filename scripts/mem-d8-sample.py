@@ -20,7 +20,7 @@ up as genuine data points with their own (often longer or shorter) latency,
 not filtered out. This is disclosed in the output, not hidden.
 
 Scope: only <agency-root>/projects/<agency-root-slug>/*.jsonl -- the transcript
-directory that sits alongside the two memory bundles mem-graph-build.py already
+directory that sits alongside the two memory bundles the scorecard
 scores (global memory/ + auto-memory). Keeps D8's data source aligned with the
 same bundle boundary the rest of the scorecard uses, instead of inventing a
 third scope.

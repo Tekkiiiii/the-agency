@@ -313,8 +313,8 @@ echo ""
 #                    project's own .env, never in this shared bootstrap script.
 #                    Never script, never echo, never touch these credentials.
 #
-# obsidian         — broken: empty command string on the original dev machine,
-#                    root cause not yet investigated. Leave out until resolved.
+# obsidian         — retired 2026-10-08 as a memory/lookup MCP (memory consolidation).
+#                    Not installed by this script; Pinecone is retired the same way.
 
 # ── MANUAL AUTH CHECKLIST ────────────────────────────────────────────────────
 # Unquoted heredoc so $AGENCY_ROOT expands — every path printed below is meant to

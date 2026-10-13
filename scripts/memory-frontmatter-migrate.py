@@ -19,8 +19,8 @@ Usage:
     python3 memory-frontmatter-migrate.py --dir /path/to/memory --apply
 
 EXCLUDE_NAMES is imported from memory_scope.py (canonicalized 2026-07-27) —
-the same control-file list memory-frontmatter-add.py, mem-scorecard.py, and
-mem-graph-build.py all use. Do not redefine it locally here.
+the same control-file list memory-frontmatter-add.py, mem-scorecard.py (and the
+retired memory-graph builder, archived 2026-10-12) all use. Do not redefine it locally here.
 """
 
 import argparse

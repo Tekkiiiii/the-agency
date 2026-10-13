@@ -3,7 +3,7 @@ schema/scan boundary. Every script that mutates memory frontmatter OR counts/
 scores memory files for the scorecard MUST import EXCLUDE_NAMES and
 EXCLUDE_DIRS from here — never redefine them locally. That duplication is
 exactly what caused the 2026-07-27 R4 scan-scope bug: mem-scorecard.py and
-mem-graph-build.py rglob'd every subdirectory under memory/, including
+the (since retired) memory-graph builder rglob'd every subdirectory under memory/, including
 sessions/, qa/, tasks/, inter-spawn-tasks/, agents/, and outputs/ — dirs that
 memory-frontmatter-add.py's docstring already documented as "managed/log/
 control, not knowledge memory" — so R4 could never reach 100% no matter how
@@ -11,7 +11,7 @@ much frontmatter migration ran, and nobody could tell from reading the code
 that the two scripts disagreed about what "memory" even means.
 
 Consumers: memory-frontmatter-add.py, memory-frontmatter-migrate.py,
-mem-scorecard.py, mem-graph-build.py.
+mem-scorecard.py (the retired memory-graph builder, archived 2026-10-12, was a consumer).
 """
 
 # Hard-excluded filenames — mechanically owned by save-state.py / recall /
@@ -21,7 +21,7 @@ mem-scorecard.py, mem-graph-build.py.
 # failing R4 forever is not a real schema gap, it's a scope bug.
 EXCLUDE_NAMES = {
     "next-session.md", "decisions.md", "decisions-archive.md", "heartbeat.md",
-    "STATE.md", "PROJECT.md", "MEMORY.md", "wiki-log.md", "wiki-schema.md",
+    "STATE.md", "PROJECT.md", "MEMORY.md", "wiki-schema.md",
     "pd-scratch.md", "index.md", "README.md", "CLAUDE.md",
     # L0 integrity fixture — fixed content, SHA-256 byte-compared daily (R1).
     # Frontmatter would change its bytes and break the canary check.

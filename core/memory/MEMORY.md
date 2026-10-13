@@ -67,11 +67,12 @@ When a memory file relates to 2+ other memory files, add at the bottom:
 See also: [[target-file-stem]], [[other-target-stem]]
 ```
 Use the target file's stem (no `.md`, no path) inside `[[double brackets]]` —
-this is what `scripts/mem-graph-build.py` parses as a graph edge. Legacy
-`[Title](file.md)` markdown links also still resolve (parsed the same way),
-but `[[wikilink]]` is the current convention going forward — prefer it for
-new links. See `core/memory/memory-v2.md` for the full graph/scorecard/canary
-pipeline this convention feeds.
+this is how memories point at each other (the scorecard's link check R2
+resolves them; the derived memory graph was retired 2026-10-08). Legacy
+`[Title](file.md)` markdown links also still resolve, but `[[wikilink]]` is
+the current convention going forward — prefer it for new links. See
+`core/memory/memory-v2.md` for the scorecard/canary pipeline this convention
+feeds.
 
 ## What NOT to Save
 

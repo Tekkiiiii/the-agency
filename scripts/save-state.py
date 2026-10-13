@@ -29,7 +29,7 @@ Payload schema (all fields optional except slug, phase, next):
 
 Contracts preserved (consumers in parentheses):
   next-session.md format          (recall, pd-resume Step 2)
-  sessions/YYYY-MM-DD.md log      (Pinecone upsert, humans)
+  sessions/YYYY-MM-DD.md log      (humans, recall)
   heartbeat.md Session End block  (save-state full-scan baseline)
   decisions.md append + >200-line prune to decisions-archive.md
   tasks/ongoing/ next-action stub (Step 3c — pd-resume actionability)
@@ -37,8 +37,6 @@ Contracts preserved (consumers in parentheses):
   .claude/save-state-state.json reset (Step 10 — turn counter)
   overseer incoming brief         (Step 11 — overseer-pd digest)
   save_state / save_state_complete metric events (weekly aggregator)
-  graphify update + unified merge + session node (Step 11b/13 — curator)
-  Pinecone session upsert         (Step 12 — RAG recall)
 """
 
 import argparse
@@ -70,11 +68,6 @@ def agency_root(home):
 AGENCY_ROOT = pathlib.Path(agency_root(str(HOME)))
 OVERSEER_INCOMING = HOME / "projects/overseer/memory/inter-spawn-tasks/incoming"
 EMIT = AGENCY_ROOT / "hooks/emit-metric.sh"
-PINECONE_SCRIPT = AGENCY_ROOT / "skills/save-state/pinecone_upsert.py"
-UNIFIED_GRAPH = AGENCY_ROOT / "graphify-out/unified/graph.json"
-# Written by Python (below) and consumed by the detached bash job in
-# fire_background_jobs() — one definition so the two can never drift apart.
-SESSION_MERGE_FLAG = AGENCY_ROOT / "graphify-out/.session_merge_needed"
 
 
 def now_utc():
@@ -323,103 +316,6 @@ def write_overseer_brief(p: dict):
     atomic_write(OVERSEER_INCOMING / f"save-state-brief-{ts}-{p['slug']}.md", content)
 
 
-def inject_session_node(project: pathlib.Path, slug: str, date_str: str):
-    """Step 13 — session node + mention edges into the unified graph. Best-effort."""
-    if not UNIFIED_GRAPH.exists():
-        return
-    try:
-        graph = json.loads(UNIFIED_GRAPH.read_text())
-    except (json.JSONDecodeError, OSError):
-        return
-    node_id = f"session_{re.sub(r'[^a-z0-9]', '_', slug.lower())}_{date_str.replace('-', '_')}"
-    session_file = f"memory/sessions/{date_str}.md"
-    nodes = graph.setdefault("nodes", [])
-    edges = graph.setdefault("links", [])  # edges live under "links", NOT "edges"
-    if any(n.get("id") == node_id for n in nodes):
-        return
-    nodes.append({"id": node_id, "label": f"{slug} session {date_str}",
-                  "file_type": "session", "source_file": session_file,
-                  "source_location": None, "source_url": None,
-                  "captured_at": date_str, "author": None, "contributor": None})
-    session_path = project / session_file
-    text = ""
-    if session_path.exists():
-        try:
-            text = session_path.read_text(errors="ignore")
-        except OSError:
-            pass
-    node_ids = {n.get("id") for n in nodes}
-    for skill in set(re.findall(r"/([a-z][a-z0-9-]+)", text)):
-        edges.append({"source": node_id, "target": f"skill_{re.sub(r'[^a-z0-9]', '_', skill)}",
-                      "relation": "used_skill", "confidence": "EXTRACTED",
-                      "confidence_score": 1.0, "source_file": session_file, "weight": 1.0})
-    for agent in set(re.findall(r"\b([a-z][a-z0-9-]+-(?:pd|coord|exec))\b", text, re.IGNORECASE)):
-        edges.append({"source": node_id, "target": f"agent_{re.sub(r'[^a-z0-9]', '_', agent.lower())}",
-                      "relation": "worked_with", "confidence": "EXTRACTED",
-                      "confidence_score": 1.0, "source_file": session_file, "weight": 1.0})
-    if re.search(r"(?i)(decision|decided|resolved)", text):
-        edges.append({"source": node_id, "target": f"decisions_{re.sub(r'[^a-z0-9]', '_', slug.lower())}",
-                      "relation": "recorded_decision", "confidence": "INFERRED",
-                      "confidence_score": 0.8, "source_file": session_file, "weight": 1.0})
-    for fpath in list(set(re.findall(r"(?:memory|src|lib|app)/[a-zA-Z0-9/_-]+\.(?:md|ts|py|rs|json)", text)))[:10]:
-        target_id = re.sub(r"[^a-z0-9]", "_", pathlib.Path(fpath).stem.lower())
-        if target_id in node_ids:
-            edges.append({"source": node_id, "target": target_id, "relation": "modified",
-                          "confidence": "INFERRED", "confidence_score": 0.7,
-                          "source_file": session_file, "weight": 1.0})
-    session_nodes = [n for n in nodes if n.get("file_type") == "session"]
-    if len(session_nodes) % 5 == 0:
-        SESSION_MERGE_FLAG.write_text(str(len(session_nodes)))
-    atomic_write(UNIFIED_GRAPH, json.dumps(graph, indent=2))
-
-
-def fire_background_jobs(project: pathlib.Path, p: dict, date_str: str):
-    """Steps 11b + 12 — graphify update/merge and Pinecone upsert, detached."""
-    cmd = f'''
-if command -v graphify >/dev/null 2>&1 && [ -d "{project}/memory" ]; then
-  cd "{project}"
-  graphify memory/ --update --no-viz --exclude "brand/" --exclude "qa/" --exclude "graphify-out/" 2>/dev/null || \
-  graphify memory/ --update --no-viz 2>/dev/null || true
-  if [ -f "memory/graphify-out/graph.json" ] && [ -f "{UNIFIED_GRAPH}" ]; then
-    graphify merge-graphs "{UNIFIED_GRAPH}" memory/graphify-out/graph.json --in-place 2>/dev/null || true
-  fi
-fi
-FLAG="{SESSION_MERGE_FLAG}"
-if [ -f "$FLAG" ]; then
-  rm -f "$FLAG"
-  graphify merge-graphs "{UNIFIED_GRAPH}" --in-place 2>/dev/null || true
-fi
-'''
-    try:
-        subprocess.Popen(["bash", "-c", cmd], stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL, start_new_session=True)
-    except OSError:
-        pass
-    if PINECONE_SCRIPT.exists():
-        session_log = ""
-        sp = project / "memory/sessions" / f"{date_str}.md"
-        if sp.exists():
-            try:
-                session_log = sp.read_text(errors="ignore")[-4000:]
-            except OSError:
-                pass
-        blob = json.dumps({
-            "project_slug": p["slug"], "session_date": date_str,
-            "session_log": session_log,
-            "decisions": "\n".join(p.get("decisions") or []),
-            "next_action": p["next"],
-            "blockers": "; ".join(p.get("blockers") or []) or "none",
-            "mid_flight": "; ".join(p.get("mid_flight") or []) or "none",
-            "status": p["phase"],
-        })
-        try:
-            subprocess.Popen(["/tmp/pinecone-env/bin/python3", str(PINECONE_SCRIPT), blob],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                             start_new_session=True)
-        except OSError:
-            pass
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True)
@@ -450,11 +346,6 @@ def main():
     update_state_md(project, p, date_str)
     reset_state_json(project, date_str)
     write_overseer_brief(p)
-    try:
-        inject_session_node(project, p["slug"], date_str)
-    except Exception:
-        pass
-    fire_background_jobs(project, p, date_str)
 
     emit({"ts": now_utc().strftime("%Y-%m-%dT%H:%M:%SZ"), "event": "save_state_complete",
           "project": p["slug"], "mode": "script"})

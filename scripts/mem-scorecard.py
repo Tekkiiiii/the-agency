@@ -9,7 +9,7 @@ Each check is a function returning (status, evidence):
   status   — "PASS" | "FAIL" | "NOT_IMPLEMENTED"  (NOT_IMPLEMENTED counts as fail)
   evidence — one-line human-readable proof/explanation
 
-Score per family = 10 * (checks passed / 10). Writes {agency-root}/memory/scorecard.md
+Score per family = 10 * (checks passed / live checks; RETIRED excluded). Writes {agency-root}/memory/scorecard.md
 (current scores + per-check table + 12-week trend) and emits one metric event per
 check plus a summary event, via hooks/emit-metric.sh.
 
@@ -60,8 +60,6 @@ SCRIPTS = CLAUDE / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 from memory_scope import EXCLUDE_NAMES, EXCLUDE_DIRS  # noqa: E402
 
-GRAPH_JSON = MEMORY / "graphify-out/memory-graph.json"
-GRAPH_HTML = MEMORY / "graphify-out/memory-graph.html"
 CANARY_FILE = MEMORY / ".canary.md"
 CANARY_HASH = MEMORY / ".canary.sha256"
 CANARY_SESSION = MEMORY / ".canary-session.json"
@@ -87,7 +85,16 @@ BUNDLES = [MEMORY, AUTO_MEMORY]
 # MEMORY.md/index.md are already members of it.
 VALID_TYPES = {"feedback", "lesson", "decision", "reference", "note", "project", "registry", "user"}
 REQUIRED_FIELDS = ["name", "type", "description", "created"]
-STORE_NAMES = ["Pinecone", "graphify", "NotebookLM", "Obsidian", "tokensave"]
+# Pinecone and the Obsidian MCP retired 2026-10-08 (REV001 M3). A shared-memory MCP server is
+# optional (not everyone runs one), so it is not required here.
+STORE_NAMES = ["graphify", "NotebookLM", "tokensave"]
+
+# Checks retired 2026-10-08 (REV001 M4): they measured the derived memory graph
+# built by the memory-graph builder (archived 2026-10-12), which is retired with the graphify lookup layer.
+# IDs stay stable (history in ops/scorecard-history.jsonl); RETIRED checks are
+# excluded from the family denominator. Link health: R2 (resolution) + lint-memory Step 2.
+_GRAPH_GONE = "memory graph retired 2026-10-08 (the memory-graph builder no longer runs); excluded from scoring"
+RETIRED = {cid: _GRAPH_GONE for cid in ("R3", "S1", "S2", "S3", "S4", "S6", "S8", "S10")}
 
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
 WIKILINK_RE = re.compile(r"\[\[([a-zA-Z0-9_\-]+)\]\]")
@@ -162,23 +169,7 @@ def slugify(stem):
     return re.sub(r"[^a-z0-9_]", "_", stem.lower())
 
 
-def py_bin():
-    venv = Path.home() / ".local/share/uv/tools/graphifyy/bin/python"
-    return str(venv) if venv.exists() else sys.executable
-
-
 _CACHE = {}
-
-
-def load_graph():
-    if "graph" in _CACHE:
-        return _CACHE["graph"]
-    if not GRAPH_JSON.exists():
-        _CACHE["graph"] = None
-        return None
-    with open(GRAPH_JSON) as f:
-        _CACHE["graph"] = json.load(f)
-    return _CACHE["graph"]
 
 
 def load_memory_files_cache():
@@ -229,7 +220,7 @@ def check_r2():
     3-link FAIL that wouldn't clear no matter how complete the index got):
       1. Does an index link RESOLVE — does the target file exist on disk at
          all? This must check against EVERY real file (control files
-         included) — a link to wiki-schema.md or wiki-log.md from MEMORY.md
+         included) — a link to wiki-schema.md from MEMORY.md
          is a legitimate navigation cross-reference to a real, existing file.
          It was being counted as "unresolved" (implying broken/missing)
          purely because those filenames are excluded from the *coverage*
@@ -293,15 +284,7 @@ def check_r2():
 
 
 def check_r3():
-    dead_count = None
-    if DEAD_LINKS.exists():
-        lines = [l for l in DEAD_LINKS.read_text().splitlines()
-                 if l.strip() and not l.startswith("#")]
-        dead_count = len(lines)
-    status = "PASS" if dead_count == 0 else "FAIL"
-    evidence = f"{dead_count} unresolved link(s) in {DEAD_LINKS}" if dead_count is not None \
-        else "dead-links.txt not found (graph not yet built this run)"
-    return status, evidence
+    return "RETIRED", RETIRED["R3"]
 
 
 def check_r4():
@@ -637,101 +620,20 @@ def check_d10():
 # SCANNABILITY — S1-S10
 # ============================================================
 
-def rebuild_graph():
-    if "rebuild_done" in _CACHE:
-        return _CACHE["rebuild_done"]
-    try:
-        r = subprocess.run([py_bin(), str(SCRIPTS / "mem-graph-build.py")],
-                            capture_output=True, text=True, timeout=120)
-        _CACHE["rebuild_done"] = (r.returncode == 0, r.stdout, r.stderr)
-    except Exception as e:
-        _CACHE["rebuild_done"] = (False, "", str(e))
-    _CACHE.pop("graph", None)
-    return _CACHE["rebuild_done"]
-
-
 def check_s1():
-    ok, out, err = rebuild_graph()
-    if not ok:
-        return "FAIL", f"mem-graph-build.py failed: {err[:200]}"
-    g = load_graph()
-    if not g:
-        return "FAIL", "memory-graph.json missing after rebuild"
-    return "PASS", f"graph rebuilt clean: {out.strip()}"
+    return "RETIRED", RETIRED["S1"]
 
 
 def check_s2():
-    g = load_graph()
-    if not g:
-        return "FAIL", "no graph loaded"
-    nodes = g.get("nodes", [])
-    links = g.get("links", g.get("edges", []))
-    degree = {n["id"]: 0 for n in nodes}
-    for e in links:
-        src = e.get("source") or e.get("_src")
-        tgt = e.get("target") or e.get("_tgt")
-        if src in degree:
-            degree[src] += 1
-        if tgt in degree:
-            degree[tgt] += 1
-    orphans = [nid for nid, d in degree.items() if d == 0]
-    status = "PASS" if not orphans else "FAIL"
-    return status, f"{len(orphans)}/{len(nodes)} orphan node(s) ({len(orphans)/len(nodes):.1%}) — link-sparse corpus, real backlog item not a script bug"
+    return "RETIRED", RETIRED["S2"]
 
 
 def check_s3():
-    g = load_graph()
-    if not g:
-        return "FAIL", "no graph loaded"
-    nodes = g.get("nodes", [])
-    links = g.get("links", g.get("edges", []))
-    adj = {n["id"]: set() for n in nodes}
-    for e in links:
-        src = e.get("source") or e.get("_src")
-        tgt = e.get("target") or e.get("_tgt")
-        if src in adj and tgt in adj:
-            adj[src].add(tgt)
-            adj[tgt].add(src)
-
-    roots = set()
-    stems_to_id = {n["id"]: n["id"] for n in nodes}
-    for base in BUNDLES:
-        for name in ("MEMORY.md", "index.md"):
-            p = base / name
-            if not p.exists():
-                continue
-            for m in MD_LINK_RE.finditer(p.read_text(errors="replace")):
-                target_stem = Path(m.group(1)).stem
-                sid = slugify(target_stem)
-                if sid in adj:
-                    roots.add(sid)
-
-    reachable = set(roots)
-    frontier = set(roots)
-    for _ in range(3):
-        nxt = set()
-        for nid in frontier:
-            nxt |= adj.get(nid, set())
-        nxt -= reachable
-        reachable |= nxt
-        frontier = nxt
-        if not frontier:
-            break
-
-    total = len(nodes)
-    pct = len(reachable) / total if total else 0
-    status = "PASS" if pct >= 0.95 else "FAIL"
-    return status, f"{len(reachable)}/{total} nodes reachable from {len(roots)} MEMORY.md/index.md roots within 3 hops ({pct:.1%})"
+    return "RETIRED", RETIRED["S3"]
 
 
 def check_s4():
-    mem_cli = SCRIPTS / "mem"
-    if not (mem_cli.exists() and mem_cli.stat().st_mode & 0o111):
-        return "FAIL", "scripts/mem not found or not executable"
-    ok, _, _ = rebuild_graph()
-    html_ok = GRAPH_HTML.exists()
-    status = "PASS" if (ok and html_ok) else "FAIL"
-    return status, f"scripts/mem executable=yes, graph html {'present' if html_ok else 'missing'} after rebuild (smoke test; `open` step not invoked headlessly)"
+    return "RETIRED", RETIRED["S4"]
 
 
 def check_s5():
@@ -745,13 +647,7 @@ def check_s5():
 
 
 def check_s6():
-    g = load_graph()
-    if not g:
-        return "FAIL", "no graph loaded"
-    nodes = g.get("nodes", [])
-    typed = sum(1 for n in nodes if n.get("file_type"))
-    status = "PASS" if nodes and typed == len(nodes) else "FAIL"
-    return status, f"{typed}/{len(nodes)} nodes carry file_type"
+    return "RETIRED", RETIRED["S6"]
 
 
 def check_s7():
@@ -775,22 +671,7 @@ def check_s7():
 
 
 def check_s8():
-    g = load_graph()
-    if not g:
-        return "FAIL", "no graph loaded"
-    nodes = {n["id"]: n for n in g.get("nodes", [])}
-    links = g.get("links", g.get("edges", []))
-    if not links:
-        return "FAIL", "0 edges — cannot assess cross-domain ratio"
-    cross = 0
-    for e in links:
-        src, tgt = e.get("source") or e.get("_src"), e.get("target") or e.get("_tgt")
-        sn, tn = nodes.get(src), nodes.get(tgt)
-        if sn and tn and sn.get("memory_type") != tn.get("memory_type"):
-            cross += 1
-    pct = cross / len(links)
-    status = "PASS" if pct >= 0.10 else "FAIL"
-    return status, f"{cross}/{len(links)} edges cross-domain ({pct:.1%}, budget >=10%)"
+    return "RETIRED", RETIRED["S8"]
 
 
 def check_s9():
@@ -806,11 +687,7 @@ def check_s9():
 
 
 def check_s10():
-    if not GRAPH_JSON.exists():
-        return "FAIL", "memory-graph.json missing"
-    age_s = time.time() - GRAPH_JSON.stat().st_mtime
-    status = "PASS" if age_s < 3600 else ("FAIL" if age_s > 8 * 86400 else "PASS")
-    return status, f"graph rebuilt {age_s:.0f}s ago by this scorecard run (S1)"
+    return "RETIRED", RETIRED["S10"]
 
 
 CHECKS = {
@@ -828,11 +705,6 @@ FAMILY_NAME = {"R": "Robustness", "D": "Depth", "S": "Scannability"}
 
 
 def run_all():
-    # Rebuild the graph once, up front, so every check (R3's dead-links.txt read
-    # included) sees fresh data — not just S1 onward. Fixes an ordering bug where
-    # R3 read a stale dead-links.txt written by the PREVIOUS run, undercounting
-    # fixes made earlier in the same session.
-    rebuild_graph()
     results = {}
     for fam, checks in CHECKS.items():
         for cid, fn in checks:
@@ -848,8 +720,9 @@ def run_all():
 def write_scorecard(results, run_ts):
     scores = {}
     for fam, checks in CHECKS.items():
-        passed = sum(1 for cid, _ in checks if results[cid]["status"] == "PASS")
-        scores[fam] = (passed, len(checks), 10 * passed / len(checks))
+        live = [cid for cid, _ in checks if results[cid]["status"] != "RETIRED"]
+        passed = sum(1 for cid in live if results[cid]["status"] == "PASS")
+        scores[fam] = (passed, len(live), 10 * passed / len(live))
 
     # This function fully rewrites scorecard.md every run — any frontmatter
     # added by hand or by memory-frontmatter-add.py gets clobbered the next
@@ -859,7 +732,7 @@ def write_scorecard(results, run_ts):
     lines.append("---")
     lines.append("name: Memory v2 Scorecard")
     lines.append("type: reference")
-    lines.append("description: Auto-regenerated by scripts/mem-scorecard.py -- R/D/S check results (30 checks) plus the 12-week trend table. Read for current memory-system health status, not a static reference.")
+    lines.append("description: Auto-regenerated by scripts/mem-scorecard.py -- R/D/S check results plus the 12-week trend table. Read for current memory-system health status, not a static reference.")
     lines.append("created: 2026-07-10")
     lines.append("links: []")
     lines.append("---")
@@ -869,9 +742,9 @@ def write_scorecard(results, run_ts):
     lines.append(f"Last run: {run_ts}")
     lines.append("")
     lines.append(f"**Overall: R {scores['R'][2]:.1f}/10 · D {scores['D'][2]:.1f}/10 · S {scores['S'][2]:.1f}/10** "
-                 f"({scores['R'][0]+scores['D'][0]+scores['S'][0]}/30 checks passing)")
+                 f"({scores['R'][0]+scores['D'][0]+scores['S'][0]}/{scores['R'][1]+scores['D'][1]+scores['S'][1]} live checks passing)")
     lines.append("")
-    lines.append("Score per family = 10 x (checks passed / 10). NOT_IMPLEMENTED counts as fail — "
+    lines.append("Score per family = 10 x (checks passed / live checks). RETIRED checks are excluded from the denominator. NOT_IMPLEMENTED counts as fail — "
                  "this is an honest baseline, not an inflated one. See §3 of "
                  "outputs/memory-audit/2026-07-10-memory-system-audit/memory-v2-target-architecture.html "
                  "for the full check spec.")
@@ -885,7 +758,7 @@ def write_scorecard(results, run_ts):
         lines.append("|---|--------|----------|")
         for cid, _ in CHECKS[fam]:
             r = results[cid]
-            mark = {"PASS": "PASS", "FAIL": "FAIL", "NOT_IMPLEMENTED": "N/A"}[r["status"]]
+            mark = {"PASS": "PASS", "FAIL": "FAIL", "NOT_IMPLEMENTED": "N/A", "RETIRED": "RETIRED"}[r["status"]]
             lines.append(f"| {cid} | {mark} | {r['evidence']} |")
         lines.append("")
 
@@ -905,7 +778,9 @@ def write_scorecard(results, run_ts):
     # can't distinguish pre-fix v2 rows from post-fix v2 rows — v2b marks
     # rows at/after this specific fix, not just the date.
     R2_FIX_TS = datetime(2026, 7, 27, 10, 30, tzinfo=timezone.utc)
-    if date.today() < SCOPE_NARROWING_DATE:
+    if date.today() >= date(2026, 10, 8):
+        current_scope_tag = "v3"
+    elif date.today() < SCOPE_NARROWING_DATE:
         current_scope_tag = "v1"
     elif datetime.now(timezone.utc) >= R2_FIX_TS:
         current_scope_tag = "v2b"
@@ -945,7 +820,7 @@ def write_scorecard(results, run_ts):
         lines.append("**Scope v1 -> v2 (2026-07-27):** R2/R4/S1/S2/S3/S6/S7/S8 denominators "
                       "narrowed to exclude memory/{sessions,qa,tasks,inter-spawn-tasks,agents,outputs}/ "
                       "— managed/log/control dirs that memory-frontmatter-add.py's docstring already "
-                      "excluded from schema migration, but that mem-scorecard.py/mem-graph-build.py "
+                      "excluded from schema migration, but that mem-scorecard.py/the since-retired graph builder "
                       "were still counting as \"memory\" needing frontmatter. v1 rows are NOT directly "
                       "comparable to v2 rows for these checks — a score change spanning the boundary "
                       "may be a real fix, a scope change, or both. See scripts/memory_scope.py and "
@@ -961,6 +836,12 @@ def write_scorecard(results, run_ts):
                       "unchanged (still non_control only); only what \"resolved\" means changed. v2 "
                       "rows before this fix are NOT directly comparable to v2b rows for R2 specifically. "
                       "See memory/decisions.md (2026-07-27 entry) for the full rationale.")
+        lines.append("")
+
+    if current_scope_tag == "v3":
+        lines.append("**Scope v3 (2026-10-08):** 8 graph-derived checks (R3, S1, S2, S3, S4, S6, S8, S10) "
+                      "retired with the memory graph and excluded from the denominators (R 9, S 3 live). "
+                      "v3 rows are NOT comparable to v2/v2b rows. See memory/wiki-schema.md B6.")
         lines.append("")
 
     SCORECARD_MD.write_text("\n".join(lines))
@@ -986,9 +867,9 @@ def main():
     emit("scorecard_run_end",
          r=round(scores["R"][2], 1), d=round(scores["D"][2], 1), s=round(scores["S"][2], 1),
          total_passed=scores["R"][0] + scores["D"][0] + scores["S"][0])
-    print(f"R {scores['R'][2]:.1f}/10 ({scores['R'][0]}/10)  "
-          f"D {scores['D'][2]:.1f}/10 ({scores['D'][0]}/10)  "
-          f"S {scores['S'][2]:.1f}/10 ({scores['S'][0]}/10)")
+    print(f"R {scores['R'][2]:.1f}/10 ({scores['R'][0]}/{scores['R'][1]})  "
+          f"D {scores['D'][2]:.1f}/10 ({scores['D'][0]}/{scores['D'][1]})  "
+          f"S {scores['S'][2]:.1f}/10 ({scores['S'][0]}/{scores['S'][1]})")
     print(f"Wrote {SCORECARD_MD}")
 
 

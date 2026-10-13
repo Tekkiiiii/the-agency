@@ -63,3 +63,12 @@ Then re-add the routing rows in `core/memory/agency-dispatch.md`; registration t
 
 ## curator-retire-2026-10-12
 The curator agent is retired (memory consolidation, 2026-10-12). `agents/specialized/curator.md` and its `core/agents/curator.md` mirror moved to `agents-archive/curator-retire-2026-10-12/` (`curator.specialized.md`, `curator.core.md`, plus `ARCHIVED.md` with the why and the restore steps). Nothing deleted. Project knowledge is now direct lookups (wiki, then a shared-memory MCP server if you run one, then NotebookLM for research topics); multi-source synthesis is one read-only `general-purpose` spawn. The `curator_skip` / `curator_spawn` metric events are retired. Not spawnable.
+
+## rev001-curator-2026-10-12
+Memory consolidation REV001 (2026-10-12): Pinecone, the Obsidian MCP and the memory-graph builder are retired as memory and lookup steps. Lookup order is now wiki (memory files), then a shared-memory MCP server if you run one, then NotebookLM for research topics. Moved, never deleted; each item carries its own `ARCHIVED.md` with the restore step.
+
+| Archived (now in `agents-archive/rev001-curator-2026-10-12/`) | Was |
+|---|---|
+| `scripts/mem-graph-build.py` | `scripts/mem-graph-build.py`: built the derived memory graph; its callers (`scripts/mem` graph subcommand, the gardener Rebuild step, 8 scorecard checks) are retired or repointed |
+| `skills/obsidian-vault/` | `skills/obsidian-vault/` |
+| `skills/save-state-pinecone-upsert/pinecone_upsert.py` | `skills/save-state/pinecone_upsert.py`: the Pinecone session upsert that `scripts/save-state.py` no longer fires |

@@ -26,6 +26,8 @@ APPROVAL_QUEUE="$OPS_DIR/approval-queue.md"
 SCORECARD="$CLAUDE_DIR/memory/scorecard.md"
 EMIT="$CLAUDE_DIR/hooks/emit-metric.sh"
 
+# Interpreter only; used by the Migrate + Score steps. Prefers the uv graphifyy tool-env python
+# (legacy path, kept so behaviour is unchanged) and falls back to python3.
 PYBIN="$HOME/.local/share/uv/tools/graphifyy/bin/python"
 [ -x "$PYBIN" ] || PYBIN="python3"
 
@@ -73,7 +75,10 @@ echo "--- 3. Distill ---"
 # with "gardener distill pass" for the real step.
 
 echo "--- 4. Rebuild ---"
-"$PYBIN" "$CLAUDE_DIR/scripts/mem-graph-build.py"
+# Retired 2026-10-08 (memory consolidation M4): the memory-graph rebuild no
+# longer runs anywhere (builder archived 2026-10-12 to
+# agents-archive/rev001-curator-2026-10-12/scripts/). The scorecard checks that
+# measured the graph are RETIRED; link health is R2 + lint-memory Step 2.
 
 echo "--- 5. Evaluate ---"
 # The recall-eval mechanical proxy runs as part of D1 inside Score (step 6) —

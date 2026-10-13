@@ -69,24 +69,25 @@ mentioned but not listed is "stranded" and fails D5. Template entry:
 - **Access:** tool/API surface used to read it
 ```
 
-## P2 — Knowledge graph + search
+## P2 — Search (the memory graph was retired 2026-10-08)
 
-- `scripts/mem-graph-build.py` — walks the memory estate (global memory +
-  Claude Code's per-cwd auto-memory folder), builds a graph of memory files
-  as nodes and `[[wikilink]]`/`links:` frontmatter as edges, writes
-  `memory/graphify-out/memory-graph.json` + `.html` (visual viewer) and a
-  dead-links report.
 - `scripts/mem-find.sh` — 4-tier ranked search across the memory estate:
   MEMORY.md/index.md title match → frontmatter match → body grep → 1-hop
   link expansion from tier 1-3 hits.
-- `scripts/mem` — thin CLI wrapper: `mem graph` (rebuild + open the viewer),
-  `mem find <query>`.
+- `scripts/mem` — thin CLI wrapper: `mem find <query>`.
+- Retired (memory consolidation REV001, 2026-10-08/12): the graph builder
+  `scripts/mem-graph-build.py` (archived to
+  `agents-archive/rev001-curator-2026-10-12/scripts/`), the `mem graph`
+  subcommand, and the 8 scorecard checks that measured the derived graph
+  (R3, S1, S2, S3, S4, S6, S8, S10). `[[wikilink]]` / `links:` frontmatter
+  stay as the way memories point at each other; link health is scorecard
+  check R2 plus the lint-memory skill.
 
 ## P3 — Gardener (weekly curation) + 30-check scorecard
 
 **Gardener** (`scripts/mem-gardener.sh`, full runbook in
 `core/memory/gardener-runbook.md`): a six-step weekly pipeline — Lint,
-Curate, Distill, Rebuild, Evaluate, Score. Delta edits only, one git commit
+Curate, Distill, Rebuild (retired, no-op), Evaluate, Score. Delta edits only, one git commit
 per run (rollback = `git revert HEAD`), destructive changes (merge/archive/
 delete) always land in `memory/ops/approval-queue.md` for manual approval,
 never auto-applied. Self-grading: if the post-run FAIL count is higher than
@@ -98,7 +99,7 @@ run `reverted_regression` instead of leaving a regression live.
 correctness...), **D** (Distillation/schema, D1-D10: frontmatter
 completeness, decision-entry linkage, external-stores registry parity,
 review-by expiry, contradiction queue...), **S** (Storage/structure,
-S1-S10). Each check returns `PASS` / `FAIL` / `NOT_IMPLEMENTED` plus a
+S1-S10; 8 graph-derived checks are RETIRED and excluded from the denominators, 22 live). Each check returns `PASS` / `FAIL` / `NOT_IMPLEMENTED` plus a
 one-line evidence string. Honesty rule: MEASURED vs ESTIMATED vs PROXY vs
 NOT_IMPLEMENTED must stay distinct in the evidence text — an honest partial
 baseline beats an inflated one. Output: `memory/scorecard.md` (current
@@ -119,13 +120,12 @@ memory/
 ├── .canary-session.json    ← P0 last session-check result
 ├── external-stores.md      ← D5 registry
 ├── scorecard.md            ← P3 output (scores + trend)
-├── graphify-out/           ← P2 output (graph json/html, dead-links)
 ├── ops/
 │   ├── approval-queue.md       ← destructive curation changes, manual approval
 │   ├── contradiction-queue.md  ← flagged contradictions, manual approval
 │   └── gardener-last-run.json  ← P3 self-grading marker
 └── qa/
-    ├── dead-links.txt       ← P2 output
+    ├── dead-links.txt       ← dead-link report (scorecard R2)
     └── recall-evals.md      ← D-family recall proxy evidence
 ```
 

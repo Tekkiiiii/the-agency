@@ -28,8 +28,8 @@ Driver: `scripts/mem-gardener.sh`. Six-step pipeline, in order:
    (never destructive rewrite). Same LLM-judgment constraint as Curate — bash
    driver stubs this step; run the same PD with "gardener distill pass" for the
    real step.
-4. **Rebuild** — `scripts/mem-graph-build.py` regenerates `memory-graph.json` +
-   `memory-graph.html` + `dead-links.txt`.
+4. **Rebuild** — retired 2026-10-08 (memory graph removed; no graph artifacts are built).
+   The step stays in the driver as a no-op so the numbering is stable.
 5. **Evaluate** — recall-eval mechanical proxy runs as part of D1 inside Score.
 6. **Score** — `scripts/mem-scorecard.py` runs all 30 checks, writes
    `memory/scorecard.md` (current scores + trend), emits metric events.
