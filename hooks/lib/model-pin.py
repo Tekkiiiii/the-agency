@@ -51,10 +51,14 @@ import sys
 import time
 from datetime import datetime, timezone
 
-try:
-    import fcntl  # POSIX only; on Windows the cap runs without the lock (parallel spawns may over-count)
+try:  # ponytail: win32 has no fcntl; lock via msvcrt there, else best-effort (no lock)
+    import fcntl
 except ImportError:
     fcntl = None
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 
 HOME = os.environ.get("MODEL_PIN_HOME") or os.path.expanduser("~")
 
@@ -172,7 +176,7 @@ def append_row(row, d=None):
         d = os.path.dirname(path)
         if d:
             os.makedirs(d, exist_ok=True)
-        with open(path, "a") as f:
+        with open(path, "a", encoding="utf-8") as f:
             f.write(json.dumps(row) + "\n")
     except Exception:
         pass
@@ -186,7 +190,7 @@ def kill_switch():
     if os.path.exists(os.path.join(state_dir(), "model-pin.off")):
         return "flag file model-pin.off"
     try:
-        with open(os.path.join(ROOT, ".hook-profile")) as f:
+        with open(os.path.join(ROOT, ".hook-profile"), encoding="utf-8") as f:
             if f.read().strip() == "minimal":
                 return "hook-profile minimal"
     except Exception:
@@ -203,7 +207,7 @@ def cap_killed():
 def load_map():
     """Missing file -> built-in default. Unreadable/corrupt/wrong shape -> raises (caller fails open)."""
     try:
-        with open(map_path()) as f:
+        with open(map_path(), encoding="utf-8") as f:
             text = f.read()
     except FileNotFoundError:
         return dict(BUILTIN_MAP)
@@ -245,7 +249,7 @@ def agent_frontmatter_model(subagent_type):
             for fn in sorted(files):
                 if not fn.endswith(".md"):
                     continue
-                with open(os.path.join(root, fn), errors="ignore") as af:
+                with open(os.path.join(root, fn), encoding="utf-8", errors="ignore") as af:
                     head = af.read(4000)
                 if not head.startswith("---"):
                     continue
@@ -449,6 +453,30 @@ def count_running(rows, root, types, stale, now, anc=None, include_root=False):
     return running, start_tuids
 
 
+def _lock(fh):
+    """Exclusive lock on fh. POSIX: fcntl.flock (unchanged). win32: msvcrt.locking of byte 0; a locking OSError
+    (LK_LOCK gives up after ~10s) means proceed unlocked. Neither module: no lock (best effort)."""
+    if fcntl is not None:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+    elif msvcrt is not None:
+        try:
+            fh.seek(0)  # ponytail: locks 1 byte at offset 0 (works on the empty lock file too)
+            msvcrt.locking(fh.fileno(), msvcrt.LK_LOCK, 1)
+        except OSError:
+            pass
+
+
+def _unlock(fh):
+    if fcntl is not None:
+        fcntl.flock(fh, fcntl.LOCK_UN)
+    elif msvcrt is not None:
+        try:
+            fh.seek(0)
+            msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+
+
 def cap_check(cap, parent, parent_agent, tuid, now, d=None):
     """-> (status, denied, total_running_plus_reserved, root). status: "ok" (root PD found and counted),
     "exempt" (chain fully resolved, no PD) or "unresolved" (broken chain; root = the missing spawn_id).
@@ -461,8 +489,7 @@ def cap_check(cap, parent, parent_agent, tuid, now, d=None):
     os.makedirs(sd, exist_ok=True)
     slots = os.path.join(sd, "spawn-slots.jsonl")
     with open(os.path.join(sd, "spawn-slots.lock"), "a") as lock:
-        if fcntl:
-            fcntl.flock(lock, fcntl.LOCK_EX)
+        _lock(lock)
         try:
             rows = []
             for lp in cap_logs(d):
@@ -476,7 +503,7 @@ def cap_check(cap, parent, parent_agent, tuid, now, d=None):
             running, start_tuids = count_running(rows, root, types, stale, now, anc, include_root)
             fresh = []
             try:
-                with open(slots) as f:
+                with open(slots, encoding="utf-8") as f:
                     for line in f:
                         try:
                             r = json.loads(line)
@@ -507,13 +534,12 @@ def cap_check(cap, parent, parent_agent, tuid, now, d=None):
                 keep = [r for r in fresh if not (tuid and r.get("tool_use_id") == tuid)]
                 keep.append({"root": root, "tool_use_id": tuid, "ts": now})
                 denied = False
-            with open(slots, "w") as f:
+            with open(slots, "w", encoding="utf-8") as f:
                 for r in keep:
                     f.write(json.dumps(r) + "\n")
             return "ok", denied, total, root
         finally:
-            if fcntl:
-                fcntl.flock(lock, fcntl.LOCK_UN)
+            _unlock(lock)
 
 
 def cap_message(n, max_n, root):
@@ -584,7 +610,17 @@ def decide(raw):
     return out
 
 
+def _utf8_stdio():
+    """The Node side sends UTF-8 JSON; on Windows the std streams default to the locale code page. Never raises."""
+    for s in (sys.stdin, sys.stdout, sys.stderr):
+        try:
+            s.reconfigure(encoding="utf-8", errors=s.errors)  # keep each stream's error policy
+        except Exception:
+            pass
+
+
 def main():
+    _utf8_stdio()
     raw = ""
     try:
         raw = sys.stdin.read()

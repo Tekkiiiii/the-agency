@@ -1,6 +1,8 @@
 import type { AgentSpawnInput, EngineInterface, Register } from 'claude-code'
 
 import type { Spawn } from '../types'
+import { isWindows, joinPath, pickHome, pythonRunner } from './platform'
+import type { PyInit } from './platform'
 
 // Replaces hooks/spawn-logger.sh, spawn-completion.sh and artifact-verify.sh.
 // This module is the event source; bin/ledger.py does the JSONL writes so the
@@ -32,28 +34,47 @@ export const parseKnownSlugs = (md: string): Set<string> => {
   return slugs
 }
 
-export const respawnNotice = (slug: string, from: string, root: string): string =>
-  `RESPAWN_REQUEST ${slug} from background agent "${from}". Parent contract: run /pd-resume ${slug} now, ` +
-  `then rm ${root}/state/respawn-queue/${slug} (runbooks/respawn-contract.md).`
+// `win`: the queue file is removed from PowerShell there (no `rm`).
+export const respawnNotice = (slug: string, from: string, root: string, win = false): string => {
+  const queue = `${root}/state/respawn-queue/${slug}`
+  return (
+    `RESPAWN_REQUEST ${slug} from background agent "${from}". Parent contract: run /pd-resume ${slug} now, ` +
+    (win
+      ? `then delete "${queue.replace(/\//g, '\\')}" (PowerShell Remove-Item; runbooks/respawn-contract.md).`
+      : `then rm ${queue} (runbooks/respawn-contract.md).`)
+  )
+}
 
-// The agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else <HOME or USERPROFILE>/.claude (hooks/lib/resolve-root.sh).
+// The agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else <home>/.claude (hooks/lib/resolve-root.sh); <home> per OS
+// (platform.ts pickHome: USERPROFILE first on Windows, HOME elsewhere).
 // bin/ledger.py resolves the same way, so both halves of the mod agree on where the logs live.
+// The names are spelled here: the loader wants literal `$.env.get('NAME')`, and follows `$` only inside this file
+// (platform.ts holds the pure parts).
 async function agencyRoot($: EngineInterface): Promise<string> {
-  const [agency, config, home, winHome] = await Promise.all([
+  const [agency, config, os, home, profile, drive, path] = await Promise.all([
     $.env.get('AGENCY_HOME'),
     $.env.get('CLAUDE_CONFIG_DIR'),
+    $.env.get('OS'),
     $.env.get('HOME'),
     $.env.get('USERPROFILE'),
+    $.env.get('HOMEDRIVE'),
+    $.env.get('HOMEPATH'),
   ])
-  return agency || config || `${home || winHome || ''}/.claude`
+  return agency || config || joinPath(pickHome([os, home, profile, drive, path]), '.claude')
 }
+
+// python3 on macOS/Linux; on Windows whichever python is installed (see platform.ts). One runner per register(), so the
+// resolved interpreter is remembered for the load and no state is shared between loads.
+type Python = ReturnType<typeof pythonRunner>
+const runPy = ($: EngineInterface, py: Python, args: string[], init: PyInit) =>
+  py.run(args, init, (argv, i) => $.process.run(argv, i), () => $.env.get('CLAUDE_PYTHON'))
 
 type Registry = { slugs?: Set<string> }
 
 // null = registry unreadable: the anchored match alone decides, and the log says so.
 async function knownSlugs($: EngineInterface, registry: Registry): Promise<Set<string> | null> {
   if (registry.slugs) return registry.slugs
-  const md = await $.fs.read(`${await agencyRoot($)}/memory/medium-term.md`).then(String, () => '')
+  const md = await $.fs.read(joinPath(await agencyRoot($), 'memory', 'medium-term.md')).then(String, () => '')
   const slugs = parseKnownSlugs(md)
   if (slugs.size === 0) {
     $.ui.log('spawn-ledger: medium-term.md Active Projects unreadable; RESPAWN_REQUEST slug not checked against known projects')
@@ -64,12 +85,12 @@ async function knownSlugs($: EngineInterface, registry: Registry): Promise<Set<s
 
 // <root>/.hook-profile = minimal turns the spawn hooks off, as it did the shell ones.
 async function isMinimal($: EngineInterface): Promise<boolean> {
-  const profile = await $.fs.read(`${await agencyRoot($)}/.hook-profile`).catch(() => '')
+  const profile = await $.fs.read(joinPath(await agencyRoot($), '.hook-profile')).catch(() => '')
   return String(profile).trim() === 'minimal'
 }
 
-async function ledger($: EngineInterface, cmd: string, payload: unknown): Promise<string> {
-  const ran = await $.process.run(['python3', `${$.plugin.root}/bin/ledger.py`, cmd], {
+async function ledger($: EngineInterface, py: Python, cmd: string, payload: unknown): Promise<string> {
+  const ran = await runPy($, py, [`${$.plugin.root}/bin/ledger.py`, cmd], {
     stdin: JSON.stringify(payload),
     timeoutMs: 20_000,
   })
@@ -94,10 +115,9 @@ export const parsePin = (stdout: string): Pin | null => {
   return pin.action === 'pass' ? { action: 'pass', model: null } : null
 }
 
-async function modelPin($: EngineInterface, e: AgentSpawnInput, parent: Spawn | undefined): Promise<Pin | null> {
+async function modelPin($: EngineInterface, py: Python, e: AgentSpawnInput, parent: Spawn | undefined): Promise<Pin | null> {
   try {
-    const root = await agencyRoot($)
-    const ran = await $.process.run(['python3', `${root}/hooks/lib/model-pin.py`], {
+    const ran = await runPy($, py, [joinPath(await agencyRoot($), 'hooks', 'lib', 'model-pin.py')], {
       stdin: JSON.stringify({
         subagent_type: e.subagentType,
         model: e.model ?? null,
@@ -126,17 +146,18 @@ export const register: Register = on => {
   const pending = new Map<string, string>()
   // Project registry, read once per session; a failed read is not cached, so the next request retries.
   const registry: Registry = {}
+  const py = pythonRunner()
 
   on('agent.spawn', async ($, e, next) => {
     if (await isMinimal($)) return next(e)
     const parent = e.parentAgentId ? (await $.state.get({ ...SPAWNS, id: e.parentAgentId })).value : undefined
-    const pin = await modelPin($, e, parent)
+    const pin = await modelPin($, py, e, parent)
     if (pin?.action === 'deny' && pin.deny) return { deny: pin.deny } // no ledger row for a denied spawn
     if (pin?.action === 'rewrite') {
       const { model: _old, ...rest } = e
       e = pin.model ? { ...rest, model: pin.model } : rest // null = strip the param, frontmatter decides
     }
-    const spawnId = await ledger($, 'start', {
+    const spawnId = await ledger($, py, 'start', {
       tool_use_id: e.tool_use_id,
       subagent_type: e.subagentType,
       description: e.description,
@@ -155,7 +176,7 @@ export const register: Register = on => {
         parentAgentId: e.parentAgentId ?? null,
       }
       await $.state.set({ ...SPAWNS, id: result.agentId }, spawn)
-      await ledger($, 'launched', {
+      await ledger($, py, 'launched', {
         tool_use_id: e.tool_use_id,
         agent_id: result.agentId,
         resolved_model: result.model,
@@ -170,7 +191,7 @@ export const register: Register = on => {
     if (await isMinimal($)) return result
     // `end` prints a one-line warning for a silent no-op spawn (<5s, 0 tools). Foreground: it rides the
     // Agent result; background: it goes to the parent like the other warnings.
-    const warning = await ledger($, 'end', e).catch(() => '')
+    const warning = await ledger($, py, 'end', e).catch(() => '')
     const id = (e as { agent_id?: string }).agent_id
     const spawn = warning && id ? (await $.state.get({ ...SPAWNS, id })).value : undefined
     if (!warning || !spawn) return result
@@ -215,7 +236,7 @@ export const register: Register = on => {
     const spawn = (await $.state.get({ ...SPAWNS, id: e.agentId })).value
     if (!spawn) return result // an engine fork or a workflow agent: not a spawn we logged
     const report = (await $.state.get({ ...REPORT, id: e.agentId })).value || e.answer
-    const warning = await ledger($, 'verify', { text: report }).catch(() => '')
+    const warning = await ledger($, py, 'verify', { text: report }).catch(() => '')
 
     // Foreground: the parent's Agent call is still open, so the warning rides its result.
     if (open.has(spawn.toolUseId)) {
@@ -232,7 +253,7 @@ export const register: Register = on => {
         slug = null
       }
     }
-    const notes = [warning, slug ? respawnNotice(slug, spawn.description, await agencyRoot($)) : ''].filter(Boolean)
+    const notes = [warning, slug ? respawnNotice(slug, spawn.description, await agencyRoot($), isWindows(await $.env.get('OS'))) : ''].filter(Boolean)
     if (notes.length === 0) return result
     if (slug) $.ui.toast(`RESPAWN_REQUEST ${slug}: run /pd-resume ${slug}`, { timeoutMs: 10_000 })
     if (warning) $.ui.toast(`Artifact missing in "${spawn.description}" report`, { timeoutMs: 10_000 })

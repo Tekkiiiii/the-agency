@@ -2,6 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Cache, JevDown, JevView, Limit, Usage } from '../types'
+import { joinPath, pickHome, pythonRunner } from './platform'
 
 const usage = atom({ plugin: 'context-band', key: 'usage' } as const, null)
 const now = atom({ plugin: 'context-band', key: 'now' } as const, 0)
@@ -245,15 +246,20 @@ export const jevParts = (j: JevView | null): { warn: string | null; stats: strin
 // What we last read: skip re-reading the log while its mtime/size and the day are unchanged.
 const memo: { key: string; stats: JevTotals } = { key: '', stats: EMPTY_JEV }
 
-// The agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else <HOME or USERPROFILE>/.claude (hooks/lib/resolve-root.sh).
+// The agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else <home>/.claude (hooks/lib/resolve-root.sh); <home> per OS
+// (platform.ts pickHome: USERPROFILE first on Windows, HOME elsewhere).
 async function agencyRoot($: EngineInterface): Promise<string> {
-  const [agency, config, home, winHome] = await Promise.all([
+  // The names are spelled here: the loader wants literal `$.env.get('NAME')`, and follows `$` only inside this file.
+  const [agency, config, os, home, profile, drive, path] = await Promise.all([
     $.env.get('AGENCY_HOME'),
     $.env.get('CLAUDE_CONFIG_DIR'),
+    $.env.get('OS'),
     $.env.get('HOME'),
     $.env.get('USERPROFILE'),
+    $.env.get('HOMEDRIVE'),
+    $.env.get('HOMEPATH'),
   ])
-  return agency || config || `${home || winHome || ''}/.claude`
+  return agency || config || joinPath(pickHome([os, home, profile, drive, path]), '.claude')
 }
 
 // Where scripts/jev_client.py writes: <root>/memory/metrics/jev-usage.jsonl and <root>/state/skill-route/jev-down
@@ -268,17 +274,31 @@ async function jevPaths($: EngineInterface): Promise<{ log: string; flag: string
   const pick = async (primary: string, legacy: string): Promise<string> =>
     (await $.fs.exists(primary)) || !(await $.fs.exists(legacy)) ? primary : legacy
   return {
-    log: logEnv ?? (await pick(`${root}/memory/metrics/jev-usage.jsonl`, `${root}/logs/jev-usage.jsonl`)),
+    log: logEnv ?? (await pick(joinPath(root, 'memory', 'metrics', 'jev-usage.jsonl'), joinPath(root, 'logs', 'jev-usage.jsonl'))),
     flag:
       dirEnv !== undefined
-        ? `${dirEnv}/jev-down`
-        : await pick(`${root}/state/skill-route/jev-down`, `${root}/state/jev-down`),
+        ? joinPath(dirEnv, 'jev-down')
+        : await pick(joinPath(root, 'state', 'skill-route', 'jev-down'), joinPath(root, 'state', 'jev-down')),
   }
 }
 
 async function readDown($: EngineInterface, flag: string): Promise<JevDown | null> {
   if (!(await $.fs.exists(flag))) return null
   return parseDown(await $.fs.read(flag).catch(() => ''))
+}
+
+// Windows has no `tail`: when it cannot start or fails, the same bytes come from python (the runner finds one).
+const py = pythonRunner()
+const PY_TAIL = "import sys;f=open(sys.argv[1],'rb');f.seek(0,2);n=f.tell();f.seek(max(0,n-int(sys.argv[2])));sys.stdout.buffer.write(f.read())"
+
+async function readTail($: EngineInterface, log: string): Promise<string> {
+  const tail = await $.process.run(['tail', '-c', String(TAIL_BYTES), log]).then(
+    ran => (ran.exitCode === 0 ? ran : null),
+    () => null,
+  )
+  if (tail) return tail.stdout
+  const ran = await py.run(['-c', PY_TAIL, log, String(TAIL_BYTES)], {}, (argv, init) => $.process.run(argv, init), () => $.env.get('CLAUDE_PYTHON'))
+  return ran.stdout
 }
 
 async function readStats($: EngineInterface, log: string, at: number): Promise<JevTotals> {
@@ -290,10 +310,7 @@ async function readStats($: EngineInterface, log: string, at: number): Promise<J
   const st = await $.fs.stat(log)
   const key = `${from}:${st.mtimeMs}:${st.size}`
   if (key === memo.key) return memo.stats
-  const text =
-    st.size > TAIL_BYTES
-      ? (await $.process.run(['tail', '-c', String(TAIL_BYTES), log])).stdout
-      : await $.fs.read(log)
+  const text = st.size > TAIL_BYTES ? await readTail($, log) : await $.fs.read(log)
   memo.key = key
   // +26h always lands inside the next local day (a day is 23-25h with DST), so its start is the exclusive end.
   memo.stats = tally(text, from, dayStartMs(from + DAY + 2 * 3_600_000))

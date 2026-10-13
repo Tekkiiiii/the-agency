@@ -44,9 +44,23 @@ def agency_root(home):
     return root
 
 
+# ponytail: win32 paths (C:\x, C:/x, \\unc, ~\x) are folded to "/" form before any comparison; a plain POSIX string
+# (which may legally hold a backslash) is never touched. UNC case stays exact; only drive-letter paths casefold.
+_WINISH = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\|~\\)")
+_DRIVE = re.compile(r"^[A-Za-z]:/")
+
+
+def _norm(p):
+    if isinstance(p, str) and _WINISH.match(p):
+        return p.replace("\\", "/").rstrip("/")
+    return p
+
+
 def _expand(path, home):
     if path == "~" or path.startswith("~/"):
         return home + path[1:]
+    if path.startswith("~\\"):
+        return home + "/" + path[2:].replace("\\", "/")
     return path
 
 
@@ -68,7 +82,7 @@ def project_rows(home=None):
             m = re.match(r"^\|\s*([^|`]+?)\s*\|\s*`([^`]+)`", line)
             if not m:
                 continue
-            raw = _expand(m.group(2).strip(), h).rstrip("/")
+            raw = _norm(_expand(m.group(2).strip(), h)).rstrip("/")
             root = (raw[:-7] if raw.endswith("/memory") else raw).rstrip("/")
             if root:
                 rows.append((m.group(1).strip(), root))
@@ -77,10 +91,12 @@ def project_rows(home=None):
 
 def longest_prefix(path, rows):
     """Slug of the row whose root is the longest path-boundary prefix of `path` (/x/alphabet is NOT under /x/alpha)."""
-    path = (path or "").rstrip("/") or "/"
+    path = _norm(path or "").rstrip("/") or "/"
     best_len, best = 0, None
     for slug, root in rows:
-        if (path == root or path.startswith(root + "/")) and len(root) > best_len:
+        root = _norm(root)
+        p, r = (path.casefold(), root.casefold()) if _DRIVE.match(root) else (path, root)
+        if (p == r or p.startswith(r + "/")) and len(root) > best_len:
             best_len, best = len(root), slug
     return best
 
@@ -107,7 +123,7 @@ def spawn_project(data=None, prompt=None, home=None):
         slugs = set(s for s, _ in rows)
         for m in re.finditer(r"(?im)^[ \t]*project:[ \t]*(.*)$", prompt if isinstance(prompt, str) else ""):
             val = m.group(1)
-            for pm in re.finditer(r"(~?/[^\s`'\",;)\]]*)", val):
+            for pm in re.finditer(r"(~?/[^\s`'\",;)\]]*|(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\s`'\",;)\]]*|~\\[^\s`'\",;)\]]*)", val):
                 hit = longest_prefix(_expand(pm.group(1), h), rows)
                 if hit:
                     return hit

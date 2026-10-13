@@ -2,6 +2,7 @@ import { update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Fill } from '../types'
+import { joinPath, pickHome } from './platform'
 
 // Each loop's own context %, measured from the model requests this session makes. Replaces the one
 // global state/context-pct.txt (hooks/lib/context-pct-publish.sh) that every subagent read, and so
@@ -24,20 +25,25 @@ export const alertText = (pct: number): string =>
     ? `CONTEXT_PCT_ALERT: ${pct}% — MANDATORY RESPAWN THRESHOLD (80%). Run /save-state and /respawn-self now.`
     : `CONTEXT_PCT_ALERT: ${pct}% — WARNING THRESHOLD (${levelOf(pct)}%). Complete current task. No new L3s.`
 
-// The agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else <HOME or USERPROFILE>/.claude (hooks/lib/resolve-root.sh).
+// The agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else <home>/.claude (hooks/lib/resolve-root.sh); <home> per OS
+// (platform.ts pickHome: USERPROFILE first on Windows, HOME elsewhere).
 async function agencyRoot($: EngineInterface): Promise<string> {
-  const [agency, config, home, winHome] = await Promise.all([
+  // The names are spelled here: the loader wants literal `$.env.get('NAME')`, and follows `$` only inside this file.
+  const [agency, config, os, home, profile, drive, path] = await Promise.all([
     $.env.get('AGENCY_HOME'),
     $.env.get('CLAUDE_CONFIG_DIR'),
+    $.env.get('OS'),
     $.env.get('HOME'),
     $.env.get('USERPROFILE'),
+    $.env.get('HOMEDRIVE'),
+    $.env.get('HOMEPATH'),
   ])
-  return agency || config || `${home || winHome || ''}/.claude`
+  return agency || config || joinPath(pickHome([os, home, profile, drive, path]), '.claude')
 }
 
 // <root>/.hook-profile = minimal turns the alert off. A missing file means standard.
 async function isMinimal($: EngineInterface): Promise<boolean> {
-  const profile = await $.fs.read(`${await agencyRoot($)}/.hook-profile`).catch(() => '')
+  const profile = await $.fs.read(joinPath(await agencyRoot($), '.hook-profile')).catch(() => '')
   return String(profile).trim() === 'minimal'
 }
 

@@ -1,6 +1,8 @@
 import { update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
+import { joinPath, pickHome } from './platform'
+
 // Counterpart of hooks/loop-detector.sh (see mods/README.md for running both). Its one tracker file mixed every loop's calls,
 // so parallel subagents tripped (or masked) each other; history is per agentId now.
 
@@ -30,19 +32,24 @@ export const warning = (tool: string): string =>
 // Python's datetime.now().isoformat(): local time, no zone, as check-session-state.sh prints it.
 const localIso = (ms: number): string => new Date(ms - new Date(ms).getTimezoneOffset() * 60_000).toISOString().slice(0, -1)
 
-// The agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else <HOME or USERPROFILE>/.claude (hooks/lib/resolve-root.sh).
+// The agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else <home>/.claude (hooks/lib/resolve-root.sh); <home> per OS
+// (platform.ts pickHome: USERPROFILE first on Windows, HOME elsewhere).
 async function agencyRoot($: EngineInterface): Promise<string> {
-  const [agency, config, home, winHome] = await Promise.all([
+  // The names are spelled here: the loader wants literal `$.env.get('NAME')`, and follows `$` only inside this file.
+  const [agency, config, os, home, profile, drive, path] = await Promise.all([
     $.env.get('AGENCY_HOME'),
     $.env.get('CLAUDE_CONFIG_DIR'),
+    $.env.get('OS'),
     $.env.get('HOME'),
     $.env.get('USERPROFILE'),
+    $.env.get('HOMEDRIVE'),
+    $.env.get('HOMEPATH'),
   ])
-  return agency || config || `${home || winHome || ''}/.claude`
+  return agency || config || joinPath(pickHome([os, home, profile, drive, path]), '.claude')
 }
 
 async function markStall($: EngineInterface, root: string, tool: string): Promise<void> {
-  const path = `${root}/session-state.json`
+  const path = joinPath(root, 'session-state.json')
   let state: Record<string, unknown> = {}
   try {
     state = JSON.parse(String(await $.fs.read(path))) as Record<string, unknown>
@@ -60,7 +67,7 @@ export const register: Register = on => {
     const ran = await next(e)
     if (ran.deny !== undefined) return ran
     const root = await agencyRoot($)
-    const profile = await $.fs.read(`${root}/.hook-profile`).catch(() => '')
+    const profile = await $.fs.read(joinPath(root, '.hook-profile')).catch(() => '')
     if (String(profile).trim() === 'minimal') return ran
 
     const ref = { ...HISTORY, id: e.agentId ?? 'main' }

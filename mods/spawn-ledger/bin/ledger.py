@@ -24,6 +24,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -99,13 +100,13 @@ def append(log_file, entry):
     d = os.path.dirname(log_file)
     if d:
         os.makedirs(d, exist_ok=True)
-    with open(log_file, "a") as f:
+    with open(log_file, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
 
 
 def read_lines(log_file):
     try:
-        with open(log_file) as f:
+        with open(log_file, encoding="utf-8") as f:
             return f.readlines()
     except Exception:
         return []
@@ -126,6 +127,9 @@ def other_logs(primary):
 
 
 def reconcile(log_file):
+    # ponytail: win32 without bash/Git for Windows: stale-spawn reconcile skipped
+    if not shutil.which("bash"):
+        return
     try:
         subprocess.run(["bash", os.path.join(ROOT, "hooks", "lib", "reconcile-stale-spawns.sh"), log_file],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
@@ -145,7 +149,7 @@ def agent_def_model(subagent_type):
             for fn in files:
                 if not fn.endswith(".md"):
                     continue
-                with open(os.path.join(root, fn), errors="ignore") as af:
+                with open(os.path.join(root, fn), encoding="utf-8", errors="ignore") as af:
                     head = af.read(2000)
                 if not head.startswith("---"):
                     continue
@@ -174,7 +178,7 @@ def fire_shadow(spawn_id, d, subagent_type, prompt):
         if os.path.exists(os.path.join(state_dir, "skill-route-shadow.off")):
             return
         try:
-            with open(os.path.join(ROOT, ".hook-profile")) as pf:
+            with open(os.path.join(ROOT, ".hook-profile"), encoding="utf-8") as pf:
                 if pf.read().strip() == "minimal":
                     return
         except Exception:
@@ -189,9 +193,13 @@ def fire_shadow(spawn_id, d, subagent_type, prompt):
             "description": d.get("description", "") or "",
             "prompt": prompt[:8000],
         })
+        # Detach so the child outlives this process: POSIX new session, Windows detached process group.
+        detach = ({"creationflags": getattr(subprocess, "DETACHED_PROCESS", 0x8)
+                   | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x200)}
+                  if os.name == "nt" else {"start_new_session": True})
         p = subprocess.Popen([sys.executable or "python3", script, "--shadow"],
                              stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
-                             stderr=subprocess.DEVNULL, start_new_session=True)
+                             stderr=subprocess.DEVNULL, **detach)
         p.stdin.write(payload.encode())
         p.stdin.close()
     except Exception:
@@ -398,7 +406,7 @@ def emit_metric(event, **fields):
         path = os.environ.get("SPAWN_LEDGER_METRICS_FILE") or os.path.join(ROOT, "memory", "metrics", "events.jsonl")
         rec = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "event": event}
         rec.update(fields)
-        with open(path, "a") as f:
+        with open(path, "a", encoding="utf-8") as f:
             f.write(json.dumps(rec) + "\n")
     except Exception:
         pass
@@ -486,10 +494,15 @@ def verify(d):
                            text, re.IGNORECASE | re.MULTILINE))
     paths.update(re.findall(r'(~/[^\s"\'<>(){}|,;]+\.' + EXTS + r'(?=[\s"\'<>(){}|,;]|$)',
                             text, re.IGNORECASE | re.MULTILINE))
+    if os.name == "nt":  # also C:\x\y.pdf, C:/x/y.pdf and ~\x.pdf; POSIX regexes and results stay as they were
+        paths.update(re.findall(r'(?:^|[\s`"\'])([A-Za-z]:[\\/][^\s"\'<>(){}|,;]+\.' + EXTS + r'(?=[\s"\'<>(){}|,;]|$)',
+                                text, re.IGNORECASE | re.MULTILINE))
+        paths.update(re.findall(r'(~\\[^\s"\'<>(){}|,;]+\.' + EXTS + r'(?=[\s"\'<>(){}|,;]|$)',
+                                text, re.IGNORECASE | re.MULTILINE))
     missing, found = [], []
     for p in paths:
         p = p.strip()
-        ap = os.path.join(HOME, p[2:]) if p.startswith("~/") else p
+        ap = os.path.join(HOME, p[2:]) if p.startswith(("~/", "~\\")) else p
         (found if os.path.isfile(ap) else missing).append(ap)
     if not missing:
         return
@@ -502,12 +515,23 @@ def verify(d):
     print("\n".join(out))
     log_dir = os.path.join(ROOT, "logs")
     os.makedirs(log_dir, exist_ok=True)
-    with open(os.path.join(log_dir, "artifact-verify.jsonl"), "a") as f:
+    with open(os.path.join(log_dir, "artifact-verify.jsonl"), "a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": ts, "event": "ARTIFACT_MISSING", "missing": missing,
                             "found": found, "agent_excerpt": text[:500]}) + "\n")
 
 
+def _utf8_stdio():
+    """Node sends UTF-8 JSON (Vietnamese included); Windows' default stdio codec is the locale code page."""
+    for s in (sys.stdin, sys.stdout, sys.stderr):
+        try:
+            if hasattr(s, "reconfigure"):
+                s.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+
+
 if __name__ == "__main__":
+    _utf8_stdio()
     try:
         cmd = sys.argv[1]
         payload = json.loads(sys.stdin.read() or "{}")

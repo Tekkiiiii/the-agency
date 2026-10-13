@@ -16,17 +16,27 @@ import glob
 import hashlib
 import json
 import os
-import pwd
+try:
+    import pwd
+except ImportError:  # win32: no pwd; REAL_HOME falls back to expanduser below
+    pwd = None
 import unittest
 
 # The real home from the passwd entry, not $HOME: tests patch HOME to a temp tree.
 # SPAWN_LEDGER_GUARD_HOME points the guard at a stand-in tree (used only to demonstrate the guard failing).
-REAL_HOME = os.environ.get("SPAWN_LEDGER_GUARD_HOME") or pwd.getpwuid(os.getuid()).pw_dir
+REAL_HOME = os.environ.get("SPAWN_LEDGER_GUARD_HOME") or (pwd.getpwuid(os.getuid()).pw_dir if pwd else os.path.expanduser("~"))
+
+
+# The agency root as ledger.py resolves it (AGENCY_HOME, else CLAUDE_CONFIG_DIR, else ~/.claude), read at import,
+# before any test patches the environment. The default <home>/.claude is always watched too.
+REAL_ROOT = os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(REAL_HOME, ".claude")
 
 
 def real_ledgers():
-    paths = [os.path.join(REAL_HOME, ".claude", "logs", "spawns.jsonl")]
-    paths += glob.glob(os.path.join(REAL_HOME, ".claude", "projects", "*", "memory", "spawns.jsonl"))
+    paths = []
+    for root in {REAL_ROOT, os.path.join(REAL_HOME, ".claude")}:
+        paths.append(os.path.join(root, "logs", "spawns.jsonl"))
+        paths += glob.glob(os.path.join(root, "projects", "*", "memory", "spawns.jsonl"))
     paths += glob.glob(os.path.join(REAL_HOME, "projects", "*", "memory", "spawns.jsonl"))
     paths += glob.glob(os.path.join(REAL_HOME, "projects", "*", "*", "memory", "spawns.jsonl"))
     return sorted(set(paths))
