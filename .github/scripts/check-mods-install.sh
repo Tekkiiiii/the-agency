@@ -7,7 +7,8 @@
 #   A merge-with-existing  a user plugin dir named loop-guard + a pre-existing
 #                          <root>/mods/context-band: both are skipped, the other
 #                          three mods are appended AFTER the user's entry, other
-#                          settings keys survive, hooks/lib/*.py|json deployed
+#                          settings keys survive, hooks/lib/*.py|json deployed,
+#                          mods/_shared (dev-only) neither copied nor wired
 #   B idempotent           a second install leaves settings.json byte-identical
 #   C uninstall            `mods-merge.js remove` restores the user's value
 #                          exactly and deletes only the dirs it made
@@ -100,10 +101,13 @@ check "env.OTHER still x" [ "$(jget "$H/settings.json" env.OTHER)" = x ]
 check "hooks/lib/model-pin.py deployed"        [ -f "$H/hooks/lib/model-pin.py" ]
 check "hooks/lib/claude_pricing.py deployed"   [ -f "$H/hooks/lib/claude_pricing.py" ]
 check "hooks/lib/exec-model-map.json deployed" [ -f "$H/hooks/lib/exec-model-map.json" ]
+check "hooks/lib/spawn_project.py deployed (model-pin.py and ledger.py import it)" [ -f "$H/hooks/lib/spawn_project.py" ]
 check "no __pycache__ under hooks/lib"         [ ! -e "$H/hooks/lib/__pycache__" ]
 check "state file records mods.installed of 3" [ "$(jget "$H/hooks/.agency-hooks-state.json" mods.installed.length)" = 3 ]
 check "mod dirs copied: agent-ctx spawn-ledger voice-compact" bash -c '[ -d "$1/mods/agent-ctx" ] && [ -d "$1/mods/spawn-ledger" ] && [ -d "$1/mods/voice-compact" ]' _ "$H"
 check "no loop-guard copy made" [ ! -e "$H/mods/loop-guard" ]
+check "mods/_shared (dev-only) not copied to the root" [ ! -e "$H/mods/_shared" ]
+check "mods/_shared not in CLAUDE_CODE_PLUGIN_DIRS" lacks "$VAL" "_shared"
 
 # ── case B: idempotent ───────────────────────────────────────────────────────
 echo "case B: a second install.sh leaves settings.json byte-identical"
@@ -162,6 +166,8 @@ for m in agent-ctx context-band loop-guard spawn-ledger voice-compact; do
   check "upgrade copied $m" [ -f "$H/mods/$m/.claude-plugin/plugin.json" ]
 done
 check "state file records mods.installed of 5" [ "$(jget "$H/hooks/.agency-hooks-state.json" mods.installed.length)" = 5 ]
+check "mods/_shared (dev-only) not copied to the root" [ ! -e "$H/mods/_shared" ]
+check "mods/_shared not in CLAUDE_CODE_PLUGIN_DIRS" lacks "$VAL" "_shared"
 check "restart reminder in the upgrade summary" grep -q 'Restart Claude Code to load the mods' "$W/e2.log"
 
 echo

@@ -27,6 +27,7 @@
 //  11.  malformed settings.json -> error, nothing written
 //  12.  prune: a mod the repo stopped shipping leaves value and disk
 //  13+. extras: ~ expansion, copy filter, content refresh, CLI json, status, autoSyncMods
+//   s.  mods/_shared (dev-only canonical platform.ts) is never copied or wired, in a fake and in the real repo
 'use strict';
 
 const fs = require('fs');
@@ -86,6 +87,8 @@ function makeRepo() {
   write(path.join(repo, 'mods', 'alpha', '__pycache__', 'a.pyc'), 'x');
   write(path.join(repo, 'mods', 'alpha', 'types', 'index.d.ts'), 'export {};\n');
   write(path.join(repo, 'mods', 'nomanifest', 'file.txt'), 'x');
+  write(path.join(repo, 'mods', '_shared', 'platform.ts'), '// canonical copy\n'); // dev-only, like the real mods/_shared
+  write(path.join(repo, 'mods', '_shared', 'test_copies_identical.py'), '# x\n');
   write(path.join(repo, 'mods', 'README.md'), '# mods\n');
   return repo;
 }
@@ -575,6 +578,29 @@ const OWNED = root => ['alpha', 'beta-dir', 'gamma'].map(d => modEntry(root, d))
   eq('p7 providedNames: ~/ entry expanded onto a Windows home provides its basename', pn('~/plugs/alpha-user', () => true), ['alpha-user']);
   eq('p8 providedNames: C:\\ dir that does not exist provides nothing', pn(U, () => false), []);
   eq('p9 providedNames: relative entry still provides nothing', pn('rel/plug', () => true), []);
+}
+
+{
+  // s. mods/_shared is dev-only (the canonical platform.ts every mod carries a byte-identical copy of): it has no
+  //    plugin manifest, so it must never be copied to <root>/mods or land in CLAUDE_CODE_PLUGIN_DIRS.
+  const repo = makeRepo();
+  const root = tmp('s1');
+  const r = lib.syncMods(opts(root, repo));
+  const v = readJson(path.join(root, 'settings.json')).env.CLAUDE_CODE_PLUGIN_DIRS;
+  eq('s1 fake repo with a _shared dir: still exactly the 3 mods wired', [r.status, v], ['changed', OWNED(root).join(':')]);
+  check('s1 _shared is not copied to <root>/mods', !fs.existsSync(path.join(root, 'mods', '_shared')));
+  eq('s1 _shared is not recorded as an owned mod', readStateFile(root).mods.installed.slice().sort(), ['alpha', 'beta', 'gamma']);
+
+  // the real repo: 5 mods wired, _shared absent from the value and from disk, and it carries no manifest
+  const real = tmp('s2');
+  const rr = lib.syncMods(opts(real, REPO));
+  const rv = readJson(path.join(real, 'settings.json')).env.CLAUDE_CODE_PLUGIN_DIRS;
+  const wired = lib.splitValue(rv, ':').map(e => path.basename(e)).sort(); // drive-letter safe, like the engine
+  eq('s2 real repo: the 5 shipped mods are wired, nothing else', [rr.status, wired], ['changed', ['agent-ctx', 'context-band', 'loop-guard', 'spawn-ledger', 'voice-compact']]);
+  check('s2 real repo: no _shared in the value', !/_shared/.test(rv));
+  check('s2 real repo: _shared not copied', !fs.existsSync(path.join(real, 'mods', '_shared')));
+  check('s2 real repo: mods/_shared has no plugin manifest (it would be wired as a plugin)',
+    !fs.existsSync(path.join(REPO, 'mods', '_shared', '.claude-plugin')));
 }
 
 for (const d of cleanup) {

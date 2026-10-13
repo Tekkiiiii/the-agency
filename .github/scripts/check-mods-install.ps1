@@ -107,10 +107,13 @@ Check "env.OTHER still x" ($s.env.OTHER -eq 'x')
 Check "hooks\lib\model-pin.py deployed" (Test-Path (Join-Path $H 'hooks\lib\model-pin.py'))
 Check "hooks\lib\claude_pricing.py deployed" (Test-Path (Join-Path $H 'hooks\lib\claude_pricing.py'))
 Check "hooks\lib\exec-model-map.json deployed" (Test-Path (Join-Path $H 'hooks\lib\exec-model-map.json'))
+Check "hooks\lib\spawn_project.py deployed (model-pin.py and ledger.py import it)" (Test-Path (Join-Path $H 'hooks\lib\spawn_project.py'))
 Check "no __pycache__ under hooks\lib" (-not (Test-Path (Join-Path $H 'hooks\lib\__pycache__')))
 Check "state file records mods.installed of 3" ((Count-Installed $H) -eq 3)
 Check "mod dirs copied: agent-ctx spawn-ledger voice-compact" ((Test-Path (Join-Path $H 'mods\agent-ctx')) -and (Test-Path (Join-Path $H 'mods\spawn-ledger')) -and (Test-Path (Join-Path $H 'mods\voice-compact')))
 Check "no loop-guard copy made" (-not (Test-Path (Join-Path $H 'mods\loop-guard')))
+Check "mods\_shared (dev-only) not copied to the root" (-not (Test-Path (Join-Path $H 'mods\_shared')))
+Check "mods\_shared not in CLAUDE_CODE_PLUGIN_DIRS" (-not ($val -like '*_shared*'))
 
 # -- case B: idempotent -------------------------------------------------------
 Write-Host "case B: a second install.ps1 leaves settings.json byte-identical"
@@ -195,6 +198,8 @@ foreach ($m in @('agent-ctx', 'context-band', 'loop-guard', 'spawn-ledger', 'voi
     Check "upgrade copied $m" (Test-Path (Join-Path $H "mods\$m\.claude-plugin\plugin.json"))
 }
 Check "state file records mods.installed of 5" ((Count-Installed $H) -eq 5)
+Check "mods\_shared (dev-only) not copied to the root" (-not (Test-Path (Join-Path $H 'mods\_shared')))
+Check "mods\_shared not in CLAUDE_CODE_PLUGIN_DIRS" (-not ($val -like '*_shared*'))
 Check "restart reminder in the upgrade summary" ($eOut -match 'Restart Claude Code to load the mods')
 
 Remove-Item -Recurse -Force $W -ErrorAction SilentlyContinue
