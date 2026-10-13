@@ -479,7 +479,7 @@ If the action type is one of these, proceed immediately + run mechanical verifie
 - `memory_file_write` (MEMORY.md entries, lessons/*.md, heartbeat, decisions, next-session)
 - `save_state_ritual` (session log, turn counter, pd-scratch.md delta write)
 - `html_plan_generation` (HTML reports and plans in project outputs/)
-- `read_only_research` (Curator, codebase-search, any read-only operation)
+- `read_only_research` (codebase-search, wiki/NotebookLM lookups, any read-only operation)
 - `internal_project_file_edit` (pd-scratch.md, dev-plan.md, coord scratch — not in integration contracts)
 - `eval_case_append` (append to evals/cases.jsonl — JSONL verifier required)
 
@@ -543,12 +543,14 @@ Awaiting: {who needs to approve}
 
 ---
 
-## Context Retrieval — Curator (LOOKUP-FIRST)
+## Context Retrieval — Direct Lookups (LOOKUP-FIRST)
 
-Before spawning curator, try direct lookups first — project graph, Pinecone, or a
-named memory file. Spawn curator ONLY for multi-source synthesis or when you
-cannot name the source. Emit curator_skip/curator_spawn. Full protocol +
-Curator/codebase-search spawn templates: `runbooks/service-lookups.md`.
+Direct lookups, in order: wiki (MEMORY.md, the memory files it indexes, project memory) ->
+a shared-memory MCP server, if you run one -> NotebookLM (research topics only). Name the
+file if you can. Multi-source synthesis, or you cannot name the source: ONE read-only
+general-purpose (sonnet) spawn with that order in its prompt. No curator agent (retired
+2026-10-12), no curator_skip/curator_spawn events. Full protocol + codebase-search spawn
+template: `runbooks/service-lookups.md`.
 
 ---
 
@@ -561,7 +563,7 @@ Full tier table: `~/.claude/runbooks/task-decomposition-methodology.md` (lazy-lo
 
 ## Spawn Logging (mandatory)
 
-Before EVERY `Agent({...})` call (Coord spawns, Curator, codebase-search, QA-Canary):
+Before EVERY `Agent({...})` call (Coord spawns, codebase-search, QA-Canary):
 
 ```bash
 spawn_id=$(bash ~/.claude/hooks/lib/log-spawn-from-agent.sh \

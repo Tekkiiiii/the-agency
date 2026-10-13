@@ -150,7 +150,7 @@ redundant once tool search exists — the two mechanisms fail independently.
 
 The Delegator is a stateless Sonnet agent that routes work to the correct agent, skill, pipeline, or protocol. Any agent (PD or Coord) can spawn the Delegator when the right route is not obvious.
 
-Since the generalist switch (2026-10-06) the member-level specialist roles are archived. The Delegator does not pick a specialist agent for them. It returns `general-purpose` plus 1-3 skills, and names the role file to read first. Role files live in `{agency-root}/agents-archive/` (deployed by all four installers), and `agents-archive/ROLE-MAP.md` maps each archived role to its skills. Coords, PDs, critics, council seats, and service agents (curator, codebase-search) stay registered and are still returned by name.
+Since the generalist switch (2026-10-06) the member-level specialist roles are archived. The Delegator does not pick a specialist agent for them. It returns `general-purpose` plus 1-3 skills, and names the role file to read first. Role files live in `{agency-root}/agents-archive/` (deployed by all four installers), and `agents-archive/ROLE-MAP.md` maps each archived role to its skills. Coords, PDs, critics, council seats, and service agents (codebase-search) stay registered and are still returned by name.
 
 ```
 Agent({
@@ -168,7 +168,7 @@ The Delegator:
 
 **Routing exceptions** — spawn Delegator is NOT required when:
 - The correct agent or skill is already known (e.g. `general-purpose` + `/frontend` for a UI task)
-- The task is a curator spawn (memory retrieval — always fire-and-forget)
+- The task is a `codebase-search` spawn (read-only file lookup — always fire-and-forget)
 
 Definition: `agents/specialized/delegator.md`
 

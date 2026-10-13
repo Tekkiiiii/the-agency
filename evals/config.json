@@ -21,7 +21,7 @@
       "metric": "pass^k",
       "k": 3,
       "threshold": 1.0,
-      "applies_to_tags": ["curator", "delegator", "codebase-search", "mandatory-agents"],
+      "applies_to_tags": ["lookup-first", "delegator", "codebase-search", "mandatory-agents"],
       "note": "Service agents must pass EVERY run — reliability, not coverage"
     },
     "trajectory": {

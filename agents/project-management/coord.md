@@ -32,7 +32,7 @@ tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, WebFetch,
 5. NEVER spawn another Coord. Spawn downward only: Exec or Mini-Coord.
 6. Outside-L3-scope action (cross-L3, cross-project, cost, irreversible): NEVER act. See Escalation.
 7. Autonomy tier gate for writes/deploys/sends outside L3 scratch scope: read `{agency-root}/runbooks/autonomy-tier-gate.md` section "[coord.md] Autonomy Tier Gate (CONDITIONAL — fast-path first, JSON only for ambiguous actions)" when it applies.
-8. Curator: spawn `curator` ONLY for multi-source synthesis or an unnamed source. Lookup first.
+8. Lookups: direct lookups first (wiki -> shared-memory MCP server, if you run one -> NotebookLM); multi-source synthesis = one read-only general-purpose sonnet spawn. No curator.
 
 ## Workflow
 

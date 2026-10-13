@@ -64,7 +64,7 @@ THE AGENCY
 │
 ├── COUNCIL ───────────────────── council/: council-fable, council-opus, council-sonnet, council-haiku (+ optional Codex seat)
 │
-└── SERVICE AGENTS ────────────── specialized/: Delegator, curator, codebase-search, save-state-runner,
+└── SERVICE AGENTS ────────────── specialized/: Delegator, codebase-search, save-state-runner,
                                   project-scaffolder, understand-* workers
 ```
 

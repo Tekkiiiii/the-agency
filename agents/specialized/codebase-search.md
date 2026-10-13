@@ -37,7 +37,7 @@ You are NOT a task executor. You do NOT implement anything. You do NOT analyze c
 │   ├── {dept}/               Department agents (engineering, design, etc.)
 │   │   ├── INDEX.md          Department member list
 │   │   └── {agent-name}.md  Agent definition file
-│   ├── specialized/          Cross-department agents (delegator, curator, etc.)
+│   ├── specialized/          Cross-department agents (delegator, etc.)
 │   └── runbooks/             Cross-dept protocols and pipelines
 ├── skills/                    Skill library
 │   ├── {skill-name}/

@@ -26,7 +26,7 @@ If a protocol matches → route through the PD -> Coord chain following the prot
 
 No cache hit → spawn the Delegator (`agents/specialized/delegator.md`, haiku). It reads the full agency catalog, org chart, protocol registry, and skill index, and returns a structured routing recommendation. It is a one-shot service agent — spawn, get answer, it dies. Append its answer to the cache and emit `delegator_spawn`.
 
-Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, Curator spawns, codebase-search spawns.
+Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, codebase-search spawns.
 
 ## Step 1 — Agency catalog reference (use with Delegator, or for fast-path only)
 
@@ -42,7 +42,7 @@ Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, Cura
 | Deployment, DevOps, infra | general-purpose + /pipeline-deploy, /vercel-deploy, /railway-deploy (role file: agents-archive/generalist-2026-10-06/engineering/engineering-devops-automator.md) |
 | QA, testing, verification | general-purpose + /qa-only, /browse, /webapp-testing (role file: agents-archive/generalist-2026-10-06/testing/testing-evidence-collector.md), `qa` skill |
 | Experiment design, A/B | general-purpose + /content-experimentation-best-practices, /project-status (role file: agents-archive/generalist-2026-10-06/project-management/project-management-experiment-tracker.md) |
-| Knowledge retrieval, project context, history lookup | `curator` |
+| Knowledge retrieval, project context, history lookup | direct lookups (wiki -> shared-memory MCP server, if you run one -> NotebookLM); multi-source synthesis = one read-only general-purpose (sonnet) spawn (curator retired 2026-10-12) |
 | Task planning, decomposition, DAG structuring, sprint planning | general-purpose + /superpowers-writing-plans (role file: agents-archive/generalist-2026-10-06/specialized/task-planner.md) |
 | Voice cloning, TTS, voice generation, text-to-speech, dubbing, voice design | general-purpose (no skill; role file: agents-archive/generalist-2026-10-06/video-studio/vs-voice-director.md) via OmniVoice Studio (default tool) — MCP: `mcp__omnivoice__generate_speech` |
 | Video editing, transcription, color grade, subtitles, overlays, raw footage | `/video-use` skill (default); strategy: general-purpose + /content-strategy |
@@ -75,7 +75,6 @@ The Delegator was already made mandatory in Step 0.5. This section defines the O
 | `pd-coordinator` | PD spawns via /pd-resume or /pd-spawn only |
 | `coord` | Spawned by a PD as part of PD-Coord architecture |
 | `mini-coord` | Spawned by a Coord as part of PD-Coord architecture |
-| `curator` | Any session — mandatory service agent, spawn freely |
 | `codebase-search` | Any session — mandatory service agent, spawn freely |
 | `Delegator` | Any session — this IS Delegator |
 | `Explore` | Read-only research (no writes, no agent spawns from within) |

@@ -67,7 +67,7 @@ Pick skills yourself only when it returns `low_confidence`.
    NO  → step 2
 
 2. Is it a structural role ({slug}-pd, pd-coordinator, coord, mini-coord,
-   critique-* critic, Delegator, curator, codebase-search,
+   critique-* critic, Delegator, codebase-search,
    save-state-runner, project-scaffolder)?
    YES → spawn that agent by name
    NO  → step 3

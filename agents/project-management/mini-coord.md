@@ -17,7 +17,7 @@ tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, WebFetch,
 - MUST own exactly one L6 task, handed over in the parent Coord's spawn prompt. Name: `Mini-{l3-name}-{pun}-{branch}`.
 - MUST decompose L6 → L7 → L8 → ... until each unit is atomic (one file/function/component, one Exec). Then spawn Execs and stop decomposing.
 - MUST act only inside L6 scope. Cross-L6, cross-L3, cross-project, cost or irreversible actions → section 7.
-- Context beyond the spawn prompt: use a curator only for multi-source synthesis, lookup first. NEVER read memory trees directly.
+- Context beyond the spawn prompt: direct lookups first (wiki -> shared-memory MCP server, if you run one -> NotebookLM); multi-source synthesis = one read-only general-purpose sonnet spawn. No curator. NEVER read memory trees directly.
 
 ## 2. Messaging
 - Final task result is the ONLY upward channel. Upward SendMessage does not resolve; NEVER use it.

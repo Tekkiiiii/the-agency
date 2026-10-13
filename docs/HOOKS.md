@@ -288,7 +288,7 @@ Since the generalist switch (2026-10-06), `general-purpose` plus 1-3 named skill
 **Passes immediately (no marker needed):**
 
 - `general-purpose`, `claude`, and an empty `subagent_type`
-- Structural types: `pd-coordinator`, `coord`, `mini-coord`, `curator`, `codebase-search`, `Delegator`, `save-state-runner`, `project-scaffolder`
+- Structural types: `pd-coordinator`, `coord`, `mini-coord`, `codebase-search`, `Delegator`, `save-state-runner`, `project-scaffolder`
 - Any `*-pd` project director, `critique-*`, `*-critique`, and `council-*` (the read-only Agency Council seats)
 - The knowledge-graph analyzers (`architecture-analyzer`, `article-analyzer`, `assemble-reviewer`, `domain-analyzer`, `file-analyzer`, `graph-reviewer`, `knowledge-graph-guide`, `project-scanner`, `tour-builder`)
 - Built-in Claude Code types: `Explore`, `Plan`, `statusline-setup`, `claude-code-guide`, `fork`, and `caveman:*`

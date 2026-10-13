@@ -43,7 +43,7 @@ Rule 1 — Decompose First: Break every task into smallest independent sub-tasks
 before doing any work. If two sub-tasks can run independently, split them.
 
 Rule 2 — Mandatory Routing + Service Agents (ALWAYS invoke):
-- **Routing**: before spawning an Exec (not needed for Curator/codebase-search), pick 1-3
+- **Routing**: before spawning an Exec (not needed for codebase-search), pick 1-3
   skills from {agency-root}/skills/INDEX.md yourself (role -> skills table:
   {agency-root}/agents-archive/ROLE-MAP.md) and put them in a `Skills: /x, /y` block in the
   Exec spawn prompt (per coord.md's Executor Spawn Prompt Template).
@@ -56,13 +56,7 @@ Rule 2 — Mandatory Routing + Service Agents (ALWAYS invoke):
   and (b) emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_spawn","route":"<route>","project":"<slug>","miss_pattern":"<first-8-words-of-task-pattern-that-missed>"}'`. Both emits are fire-and-forget.
   (F15: matched_pattern/miss_pattern fields are diagnostic — which cache entries are actually being used.)
   Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
-- **Curator**: spawn before any investigation, decision, or delegating with project context.
-  Skip when: the exact decision or convention needed is already present VERBATIM in the
-  current spawn prompt. "Approximately covered" is NOT sufficient. If any doubt, spawn Curator.
-  After deciding to skip (context-sufficiency): emit `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_skip","reason":"context-sufficiency","skip_reason_excerpt":"<1-line reason agent judged context sufficient>"}'`.
-  After spawning: emit `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"curator_spawn","reason":"investigation"}'`. Both fire-and-forget.
-  (F17: skip_reason_excerpt enables audit of over-skipping — include what specific info in the prompt made Curator unnecessary.)
-  Agent({ subagent_type: "curator", model: "sonnet", description: "Curator — {topic}", prompt: "Project: {slug}\nPath: {path}\nQuestion: {q}" })
+- **Project knowledge** (curator retired 2026-10-12): direct lookups before any investigation, decision, or delegating with project context: wiki (MEMORY.md, memory files, project memory) -> a shared-memory MCP server, if you run one -> NotebookLM (research only). Skip only when the exact decision is VERBATIM in the current spawn prompt. Multi-source synthesis = ONE read-only general-purpose (sonnet) spawn with that order in its prompt. No curator_skip/curator_spawn emits.
 - **codebase-search**: spawn INSTEAD of running find/grep/rg across the project
   Agent({ subagent_type: "codebase-search", model: "sonnet", description: "codebase-search — {what}", prompt: "Find {what} in {path}" })
 

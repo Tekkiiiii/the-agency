@@ -34,7 +34,7 @@ PROMPT=$(printf '%s' "$INPUT" | python3 -c \
 # --- Default + structural types (exact or pattern match) ---
 case "$SUBAGENT_TYPE" in
   general-purpose|claude|"" \
-  | pd-coordinator|coord|mini-coord|curator|codebase-search|Delegator|save-state-runner|project-scaffolder \
+  | pd-coordinator|coord|mini-coord|codebase-search|Delegator|save-state-runner|project-scaffolder \
   | *-pd|critique-*|*-critique|council-* \
   | architecture-analyzer|article-analyzer|assemble-reviewer|domain-analyzer|file-analyzer|graph-reviewer|knowledge-graph-guide|project-scanner|tour-builder \
   | Explore|Plan|statusline-setup|claude-code-guide|fork|caveman:*)

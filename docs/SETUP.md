@@ -139,8 +139,8 @@ for the full directory structure and setup instructions.
 
 ## 9. Enable graphify knowledge-graph MCP (optional)
 
-graphify builds a per-project knowledge graph that the Curator agent queries for project context.
-It is optional but strongly recommended — without it, Curator falls back to raw file reads.
+graphify builds a per-project knowledge graph that the `/graphify` skill queries on demand.
+It is optional. Project-knowledge lookups do not use it (they read your memory files first), so nothing breaks without it.
 
 ```bash
 bash ~/.claude/scripts/setup-graphify.sh

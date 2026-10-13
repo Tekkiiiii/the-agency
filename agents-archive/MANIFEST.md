@@ -60,3 +60,6 @@ Kept in `agents/`: Coord definitions (`coord`, `mini-coord`, `pd-coordinator`), 
 (data files: `git mv $A/content-creation/protocols agents/content-creation/protocols`, same for `content-creation/social-media`, `specialized/audit`, `specialized/infra`; restore `ORG.md.pre-sunset` over `agents/ORG.md`; skills: `git mv $A/skills/<name> skills/<name>`; runbooks: `git mv $A/runbooks/<file> runbooks/` and `$A/core/runbooks/<file> core/runbooks/`).
 Restore one: `git mv {agency-root}/agents-archive/dept-sunset-2026-10-08/<dept>/<dept>-lead.md agents/<dept>/`.
 Then re-add the routing rows in `core/memory/agency-dispatch.md`; registration takes effect next session.
+
+## curator-retire-2026-10-12
+The curator agent is retired (memory consolidation, 2026-10-12). `agents/specialized/curator.md` and its `core/agents/curator.md` mirror moved to `agents-archive/curator-retire-2026-10-12/` (`curator.specialized.md`, `curator.core.md`, plus `ARCHIVED.md` with the why and the restore steps). Nothing deleted. Project knowledge is now direct lookups (wiki, then a shared-memory MCP server if you run one, then NotebookLM for research topics); multi-source synthesis is one read-only `general-purpose` spawn. The `curator_skip` / `curator_spawn` metric events are retired. Not spawnable.

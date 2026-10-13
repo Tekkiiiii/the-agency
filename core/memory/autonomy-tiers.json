@@ -48,7 +48,7 @@
       "tier": "auto_ack",
       "verifier": "n/a_read_only",
       "rationale": "No writes. Cannot cause harm.",
-      "examples": ["Curator spawn", "codebase-search", "Read tool call", "Bash read-only command"]
+      "examples": ["codebase-search", "Read tool call", "Bash read-only command"]
     },
     "internal_project_file_edit": {
       "tier": "auto_ack",

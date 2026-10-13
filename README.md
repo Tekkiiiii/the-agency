@@ -110,7 +110,7 @@ You didn't explain anything the second day. The agent remembered.
 - **Agency Rooms** — file-based inter-agent chat with persistent rooms and NEXUS JSON handoffs, written through `room-utils.sh` and read on demand (no polling process).
 - **Inter-PD Protocol** — PDs coordinate via filesystem, not messaging. Delegation through `inter-spawn-tasks/` directories with completion tracking.
 - **Delegator Agent** — routing-as-a-service. When the right route is not obvious, an agent spawns the Delegator; it reads the agency catalog and returns the route. Worker roles run as `general-purpose` plus 1-3 skills (archived role files live in `agents-archive/`). No hardcoded selection hierarchies.
-- **Curator Agent** — context retrieval on demand. PDs and Coords spawn curator to query per-project knowledge graphs, Pinecone, and NotebookLM. Never reads full memory files into context.
+- **Direct memory lookups** — project knowledge is looked up in order: your memory files (`MEMORY.md` index, project memory), then a shared-memory MCP server if you run one, then NotebookLM for research topics. A question that spans several sources is one read-only `general-purpose` spawn. No retrieval agent sits in between.
 - **PD → Coord → Exec routing** — a Project Director decomposes, a Coord owns one task, an Exec (`general-purpose` plus 1-3 named skills) does the work, and critics review it. Quality gates sit on every handoff.
 - **Agency Council** — one seat per Claude model tier plus an optional Codex seat, asked the same question in one wave. See [Agency Council and Governance](#agency-council-and-governance).
 - **PD Boot Sequence** — lazy-loading spawn targeting <500 tokens. Per-project PD-BRIEFING.md for instant routing.
@@ -164,7 +164,7 @@ The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. 
 │   ├── frontend/SKILL.md
 │   ├── ship/SKILL.md
 │   └── ...
-├── agents/              ← 35+ agents in agent folders
+├── agents/              ← 34+ agents in agent folders
 │   ├── engineering/
 │   ├── design/
 │   ├── content-creation/
@@ -424,7 +424,7 @@ After this walkthrough:
 
 - **`~/.agency/projects/`** — project state that persists across sessions
 - **`~/.agency/skills/`** — 235+ skills ready to invoke
-- **`~/.agency/agents/`** — 35+ agents in agent folders
+- **`~/.agency/agents/`** — 34+ agents in agent folders
 - **`~/.agency/task-store.db`** — SQLite task pipeline with gate tracking
 
 The PD handles decomposition, delegation, QA gating, and state persistence. You give direction and review results.
@@ -543,7 +543,7 @@ Full categorized registry: [`skills/INDEX.md`](skills/INDEX.md)
 ```
 the-agency/
 ├── core/
-│   ├── agents/          # PD/Coord/Mini-Coord/Exec/Delegator/Curator templates
+│   ├── agents/          # PD/Coord/Mini-Coord/Exec/Delegator templates
 │   ├── runbooks/        # Boot, escalation, kickoff, quality loop, content pipeline
 │   ├── ORG.md           # Org chart, authority model
 │   ├── PD_PROTOCOL.md   # PD quick reference
@@ -567,7 +567,7 @@ the-agency/
 │   ├── cost-tracker.sh  # Stop: compute session token cost
 │   ├── fable-on-opus.sh # UserPromptSubmit: inject Fable reasoning discipline on Opus
 │   └── fable/           # Fable playbook modules read by fable-on-opus.sh
-├── agents/              # 35+ agent definitions (PD/Coord/critic/council + project PDs)
+├── agents/              # 34+ agent definitions (PD/Coord/critic/council + project PDs)
 ├── skills/              # 235+ reusable workflow skills
 └── plans/               # Architecture decision records
 ```
@@ -752,20 +752,9 @@ The Delegator reads the agency catalog (`memory/agency-dispatch.md`), org chart,
 
 **Routing rules:** Skills before agents (cheaper), PDs for project deliverables, Coords for one gated task, an Exec (`general-purpose` plus 1-3 skills) for the work itself, inter-spawn for cross-authority tasks.
 
-### Curator — Context Retrieval
+### Project Knowledge — Direct Lookups
 
-The Curator is a read-only retrieval agent. PDs and Coords spawn it when they need project context not available in their briefing.
-
-```
-Agent({
-  subagent_type: "curator",
-  model: "sonnet",
-  description: "Curator — {topic}",
-  prompt: "Project: {slug}\nPath: {project_path}\nQuestion: {your question}"
-})
-```
-
-Retrieval order: per-project graph → unified graph (MCP) → NotebookLM → Pinecone → raw file reads. Returns a `CURATOR ANSWER` block with source references and confidence level. Never fabricates. Never appears in Children tables — it's a service call.
+PDs and Coords look project context up themselves, in this order: (1) the wiki: `MEMORY.md`, the memory files it indexes, and the project's own `memory/` files; (2) a shared-memory MCP server, if you run one; (3) NotebookLM, for research topics only. When a question spans several of these or you cannot name the source, spawn ONE read-only `general-purpose` agent (sonnet) with that order in its prompt. The earlier Curator agent was retired on 2026-10-12 (archived in `agents-archive/curator-retire-2026-10-12/`). Pinecone, the Obsidian MCP and the graph builder are no longer lookup steps. Full protocol: `runbooks/service-lookups.md`.
 
 ### PD → Coord → Exec Routing
 

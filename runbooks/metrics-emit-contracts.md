@@ -7,9 +7,11 @@ SSOT: `{agency-root}/hooks/emit-metric.sh` — fire-and-forget, non-blocking.
 
 ---
 
-## Event 1 — curator_skip
+## Event 1 — curator_skip (RETIRED 2026-10-12, no longer emitted; history only)
 
-**Trigger:** After deciding to skip Curator (context-sufficiency skip).
+**RETIRED 2026-10-12:** the curator agent is retired; do not emit. Historical rows remain in events.jsonl.
+
+**Trigger (historical):** After deciding to skip Curator (context-sufficiency skip).
 
 ```bash
 bash {agency-root}/hooks/emit-metric.sh \
@@ -22,9 +24,11 @@ F24 audit (2026-06-23): 23 skips / 10 spawns = 70% skip rate. Of the 5 auditable
 
 ---
 
-## Event 2 — curator_spawn
+## Event 2 — curator_spawn (RETIRED 2026-10-12, no longer emitted; history only)
 
-**Trigger:** After spawning Curator for an investigation.
+**RETIRED 2026-10-12:** the curator agent is retired; do not emit. Historical rows remain in events.jsonl.
+
+**Trigger (historical):** After spawning Curator for an investigation.
 
 ```bash
 bash {agency-root}/hooks/emit-metric.sh \
@@ -129,8 +133,8 @@ dead one. Add a row here whenever a new event is introduced.
 
 | Event | Measures | Fires when | Silence is OK when |
 |---|---|---|---|
-| `curator_skip` | Lookup-first compliance (skip side) | A direct lookup (graph/Pinecone/file) answered a project-knowledge question instead of spawning Curator | Never fully OK — see F25 note above; a long gap during active lookup-heavy work is drift, not health |
-| `curator_spawn` | Lookup-first compliance (spawn side) | Curator was spawned for multi-source synthesis | No project-knowledge investigations happened |
+| `curator_skip` (RETIRED 2026-10-12) | Lookup-first compliance (skip side) | A direct lookup (file/wiki) answered a project-knowledge question instead of spawning Curator | Never fully OK — see F25 note above; a long gap during active lookup-heavy work is drift, not health |
+| `curator_spawn` (RETIRED 2026-10-12) | Lookup-first compliance (spawn side) | Curator was spawned for multi-source synthesis | No project-knowledge investigations happened |
 | `delegator_cache_hit` | Routing lookup-first (cache side) | `delegator-cache.md` exact match used | No ambiguous routing decisions happened |
 | `delegator_spawn` | Routing lookup-first (spawn side) | Delegator spawned for ambiguous/cross-domain routing | No ambiguous routing decisions happened |
 | `bg_agent_verified` | Background-agent completion-gate compliance | Verified all deliverables of a `run_in_background:true` spawn | No background agents returned |
@@ -150,8 +154,8 @@ dead one. Add a row here whenever a new event is introduced.
 
 | Event | When |
 |-------|------|
-| `curator_skip` | decided NOT to spawn Curator (context-sufficiency) |
-| `curator_spawn` | spawned Curator for investigation |
+| `curator_skip` (RETIRED 2026-10-12) | decided NOT to spawn Curator (context-sufficiency) |
+| `curator_spawn` (RETIRED 2026-10-12) | spawned Curator for investigation |
 | `delegator_cache_hit` | skipped Delegator — cache hit |
 | `delegator_spawn` | spawned Delegator — cache miss |
 | `bg_agent_verified` | verified background agent deliverables |

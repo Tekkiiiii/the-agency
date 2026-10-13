@@ -10,11 +10,12 @@ Specialist roles are archived; spawn general-purpose + skills — see {agency-ro
 |---|---|
 | Example Project PD | Project Director for a specific product/app — one PD is spawned per active project via `/new-project` (see Project Scaffolder) |
 | Delegator | Routing agent: knows the agents, skills, protocols and pipelines; guides a caller to the right agent and skills. Read-only |
-| Curator | Project knowledge retrieval across memory files and research notebooks. Read-only |
 | Save-State Runner | One-project save-state reconstructor for subagent mode (`/save-state all`, crash recovery) |
 | Project Scaffolder | Autonomous project + PD scaffolding agent — creates all files and registries for /new-project |
 | Codebase Search | Fast read-only file/symbol search across {agency-root}/, projects, and skill library — replaces Explore for system searches |
 | Overseer PD | Meta-overseer PD — monitors all other PDs, reads heartbeat/next-session/dept-state files, flags STALE (>3 days) and BLOCKED, ships daily digest. Reports only — no auto-poke. |
+
+Retired: `curator` (2026-10-12). Archived in `{agency-root}/agents-archive/curator-retire-2026-10-12/`; do not spawn. Project knowledge is direct lookups (see `runbooks/service-lookups.md`).
 
 ## Understand-Anything Sub-team
 
