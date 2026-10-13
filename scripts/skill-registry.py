@@ -32,7 +32,7 @@ overlay and descriptions from SKILL.md), and a second generated file is a second
   body-lines>500       SKILL.md body longer than 500 lines
   description>400      frontmatter description + when_to_use longer than 400 chars (the menu budget)
   refs-two-deep        a references/ file that links to another references/ file (one level deep only)
-  hardcoded-self-path  SKILL.md names its own dir under a machine path (a home-dir, $HOME or /Users/... path to
+  hardcoded-self-path  SKILL.md names its own dir under a machine path (a home-dir or $HOME path to
                        skills/<dir>/); use {agency-root}/skills/<dir>/ or ${CLAUDE_SKILL_DIR}
   non-spec-key:<key>   top-level frontmatter key outside the Agent Skills spec set; custom keys go under `metadata:`
                        with string values
@@ -341,7 +341,7 @@ def lint_skill(d, p):
     refs = lint_refs_two_deep(p)
     if refs:
         out["refs-two-deep"] = "; ".join(refs[:3]) + (" (+%d more)" % (len(refs) - 3) if len(refs) > 3 else "")
-    hp = re.findall(r"(?:~|\$\{?HOME\}?|/Users/[^/\s]+|/home/[^/\s]+)/\.claude/skills/%s/" % re.escape(d), text)
+    hp = re.findall(r"(?:~|\$\{?HOME\}?|/[Uu]sers/[^/\s]+|/home/[^/\s]+)/\.claude/skills/%s/" % re.escape(d), text)
     if hp:
         out["hardcoded-self-path"] = "%d use(s) of a machine path to skills/%s/" % (len(hp), d)
     for k in fm_keys(fm):
