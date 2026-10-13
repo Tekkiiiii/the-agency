@@ -486,7 +486,7 @@ Full catalog: `skills/INDEX.md`
 
 ### Skill router (optional, off by default)
 
-`scripts/skill-route.py` can pick 1-3 skills for a task text, plus a model tier and a tool profile, using Jev (TypeSafe SystemOne) with a Haiku and a local grep fallback. **It is off.** Nothing calls it, it makes no network request while off, and routing stays "pick 1-3 skills from `skills/INDEX.md`". The Agency ships no key.
+`scripts/skill-route.py` can pick 1-3 skills for a task text, plus a model tier and a tool profile, using Jev (TypeSafe SystemOne) with a Haiku and a local grep fallback. **It is off.** Nothing calls it, it makes no network request while off, and routing stays "pick 1-3 skills from `skills/INDEX.md`". The Agency ships no key. With it on, spawners run it before each spawn and put a `Jev[r=<route_id>]: accept|modify|reject — <reason>` line in the spawn prompt (rules JB1-JB9 in `runbooks/service-lookups.md`, section Routing); with it off there is no such line.
 
 To enable: get your own key from TypeSafe, put `TYPESAFE_API_KEY=...` in `~/.config/typesafe/.env`, set `AGENCY_SKILL_ROUTER=1` (the `env` block of `settings.json` works), rebuild the menu with `skill-route.py --rebuild-menu`. Exact steps for macOS, Linux and Windows, the output contract, fallback and cost logging: [`scripts/skill-route/README.md`](scripts/skill-route/README.md).
 

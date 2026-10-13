@@ -80,11 +80,11 @@ The Delegator was already made mandatory in Step 0.5. This section defines the O
 | `Explore` | Read-only research (no writes, no agent spawns from within) |
 | `Plan` | Planning mode (no writes, no agent spawns from within) |
 | `statusline-setup` | System setup only |
-| `general-purpose` | DEFAULT since 2026-10-06 — name 1-3 skills (and a role file from ROLE-MAP when the role matters) in the prompt; the spawner picks the skills |
+| `general-purpose` | DEFAULT since 2026-10-06 — name 1-3 skills (and a role file from ROLE-MAP when the role matters) in the prompt; the spawner picks the skills from `skills/INDEX.md`. With the router on (`AGENCY_SKILL_ROUTER=1`), `skill-route.py` routes and the spawner writes the `Jev[r=id]` verdict line |
 
 **Other agent types** need a `DELEGATOR ROUTING:` / `HARDCODED ROUTING:` marker in the prompt. spawn-gate.sh asks (never blocks) on an unknown `subagent_type`, which catches typos and stale archived specialist names.
 
-If unsure which skills fit, use `agents-archive/ROLE-MAP.md` / skills/INDEX.md; spawn Delegator only for ambiguous or cross-domain tasks.
+If unsure which skills fit, use `agents-archive/ROLE-MAP.md` / skills/INDEX.md; spawn Delegator only for ambiguous or cross-domain tasks. Router on (`AGENCY_SKILL_ROUTER=1`, off by default): run `python3 {agency-root}/scripts/skill-route.py --role exec "<task>"` before every spawn and write the `Jev[r=<route_id>]: accept|modify|reject — <reason>` line (JB1-JB9, `runbooks/service-lookups.md`); on low_confidence use ROLE-MAP / INDEX.md only to pick alternatives for the verdict.
 
 ## Step 2 — Pick skills from the role map.
 Use `Explore` for research; for domain work spawn general-purpose + the skills listed in `agents-archive/ROLE-MAP.md` (role file when expertise matters). Kept named agents (`*-pd`, Coords, critique-*) stay spawnable by name.

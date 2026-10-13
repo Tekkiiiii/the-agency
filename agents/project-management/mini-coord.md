@@ -26,7 +26,7 @@ tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, WebFetch,
 ## 3. Lifecycle
 1. Read the L6 task. Create scratch (section 8). Write `## Status` row IN_PROGRESS to scratch (interim status goes to scratch, never to a final result).
 2. Decompose to atomic units. Group into batches of independent units.
-3. Pick skills per Exec: `python3 {agency-root}/scripts/skill-route.py "<task>"`. Fallback: `{agency-root}/agents-archive/ROLE-MAP.md`. Use its model verdict (default sonnet).
+3. Per Exec (router OFF by default, `AGENCY_SKILL_ROUTER=1` turns it on; rules JB1-JB9 in `{agency-root}/runbooks/service-lookups.md` §Routing). Router off: pick 1-3 skills yourself from `{agency-root}/skills/INDEX.md` (fallback table: `{agency-root}/agents-archive/ROLE-MAP.md`), model default sonnet, `Skills: /a, /b` and no Jev line. Router on: run `python3 {agency-root}/scripts/skill-route.py --role exec "<task>"` before the spawn; use its model (default sonnet). Prompt carries `Skills: /a, /b` plus ONE line `Jev[r=<route_id>]: accept|modify|reject — <reason>`. gate=pass: Jev's skills are the default (accept; reason optional); deviating = modify/reject + reason. gate=low_confidence or no skills: explicit verdict + reason, always (ROLE-MAP.md only helps pick alternatives). Zero named skills = reject + reason. Jev down: still spawn, still write the line. Recording is automatic when a recorder is wired to your spawn hook; NEVER run `jev-feedback.py add`. The jev gate (when enabled) denies a spawn missing the line up to twice (same spawner + task or route id), with Jev's result inline: re-issue with the line; the 3rd attempt passes as `deny_cap`, recorded.
 4. Spawn Execs (section 4). Poll gates (section 5) after every spawn batch and before/after every completion.
 5. QA each Exec report (section 6). Update scratch `## Status` and `## Children` on every transition.
 6. All Execs ACKed → State QA_GATE → L6-level check → State DONE in scratch → deliver completion report (section 9) as final task result → stop. Do NOT wait for ACK/NACK.
@@ -47,6 +47,7 @@ Do NOT touch: {list or "anything else"}
 Acceptance check: {command or observable result}
 Constraints: {constraints}
 Skills: /x, /y
+Jev[r={route_id}]: {accept|modify|reject} — {reason; optional only when gate=pass and accept}
 Context: {facts you need; Coord inlines them, you do not look them up via agents}
 Gates: {TIER_A | TIER_B}. TIER_B: write an APPROACH request to the checkpoint file before any edit. Both tiers: write a CHECKPOINT at ~50% effort. Follow {agency-root}/runbooks/checkpoint-handshake-protocol.md "Exec/Member side". Checkpoint file: {project}/memory/agents/execs/exec-{task}-{pun}-checkpoint.md
 Turn cap: {N, default 20 tool calls}

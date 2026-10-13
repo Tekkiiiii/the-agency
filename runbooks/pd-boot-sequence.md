@@ -49,11 +49,11 @@ hours of cross-L3 conflict resolution later.
 
 **Step 1:** Check the PD-BRIEFING doc for a pre-written routing entry for this task type.
 
-**Step 2:** If not in briefing, pick skills with the router (no catalog loads):
+**Step 2:** If not in briefing, pick skills. The skill router is OFF by default: pick 1-3 skills yourself from `{agency-root}/skills/INDEX.md`, no Jev line. With the router on (`AGENCY_SKILL_ROUTER=1`), pick them with the router (no catalog loads):
 ```
-python3 {agency-root}/scripts/skill-route.py "<task>"
+python3 {agency-root}/scripts/skill-route.py --role exec "<task>"   # --role lead for Coord spawns
 ```
-Pick skills yourself only when it returns `low_confidence`.
+Router on is binding on every spawn (rules JB1-JB9, runbooks/service-lookups.md §Routing): the prompt carries `Skills: /a, /b` + `Jev[r=<route_id>]: accept|modify|reject — <reason>`. gate=pass: Jev's skills are the default; `low_confidence` or zero skills: explicit verdict + reason, you pick alternatives yourself.
 
 **Step 3:** Delegate per Agent Dispatch Priority below. Spawn `general-purpose` (model sonnet) with 1-3 named skills in the prompt (`Skills: /x, /y`). Only structural agents spawn by name (see Agent Dispatch Priority step 2 below).
 

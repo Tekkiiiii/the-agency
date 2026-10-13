@@ -53,7 +53,7 @@ tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, WebFetch,
 ## Exec spawn message
 
 1. Spawn: Agent({ subagent_type: "general-purpose", model: <skill-route model, default "sonnet">, description: "Exec-{task}-{pun} [task:{CODE}]", prompt: <below> }). Omit `name`. Spawn in the BACKGROUND (NEVER run_in_background:false; a foreground Exec blocks you and makes the gates impossible). Punny name lives only inside the prompt. `[task:{CODE}]` feeds the agent-tree dashboard (skill `/agent-tree`).
-2. Skills: run `python3 {agency-root}/scripts/skill-route.py "<task>"`; use its model + skills when gate=pass. If it returns low_confidence, use `{agency-root}/agents-archive/ROLE-MAP.md`. Cross-domain task or no match -> escalate to PD; NEVER spawn named specialist agents.
+2. Skills (the skill router is OFF by default; `AGENCY_SKILL_ROUTER=1` turns it on; rules JB1-JB9 in `{agency-root}/runbooks/service-lookups.md` §Routing). Router off: pick 1-3 skills yourself from `{agency-root}/skills/INDEX.md` (role -> skills: `{agency-root}/agents-archive/ROLE-MAP.md`); the prompt carries `Skills: /a, /b` and no Jev line. Router on: run `python3 {agency-root}/scripts/skill-route.py --role exec "<task>"` BEFORE the spawn call and use its `model`; the prompt carries `Skills: /a, /b` plus ONE line `Jev[r=<route_id>]: accept|modify|reject — <reason>`. gate=pass: Jev's skills are the default (accept, reason optional); deviating = modify/reject + reason. gate=low_confidence or no skills: explicit verdict + one-line reason, always; ROLE-MAP.md only helps pick alternatives, never replaces the verdict. Zero named skills = reject + reason. Jev down: still spawn, still write the line. Recording is automatic when a recorder is wired to your spawn hook; NEVER run `jev-feedback.py add` for skill routing. The jev gate (when enabled) denies a spawn missing the line up to twice (same spawner + task or route id), with Jev's result inline: re-issue with the line; the 3rd attempt passes as `deny_cap`, recorded. Cross-domain task or no match -> escalate to PD; NEVER spawn named specialist agents.
 3. Gate tier, classify BEFORE the spawn call:
    - TIER_A (APPROACH gate skipped): ALL of (1) single file, (2) no shared state with concurrent Execs, (3) task type matches skill-route with high confidence, (4) high confidence in full scope. Any doubt -> TIER_B.
    - TIER_B (default): everything else (multi-file, shared state, ambiguous scope, cross-L3 impact).
@@ -71,6 +71,7 @@ Do NOT touch: {list or "anything else"}
 Acceptance check: {command or observable result}
 Constraints: {constraints}
 Skills: /x, /y
+Jev[r={route_id}]: {accept|modify|reject} — {reason; optional only when gate=pass and accept}
 Context: {facts you need; Coord inlines them, you do not look them up via agents}
 Gates: {TIER_A | TIER_B}. TIER_B: write an APPROACH request to the checkpoint file before any edit. Both tiers: write a CHECKPOINT at ~50% effort. Follow {agency-root}/runbooks/checkpoint-handshake-protocol.md "Exec/Member side". Checkpoint file: {project}/memory/agents/execs/exec-{task}-{pun}-checkpoint.md
 Turn cap: {N, default 20 tool calls}

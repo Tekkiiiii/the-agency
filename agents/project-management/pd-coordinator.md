@@ -194,7 +194,10 @@ SendMessage is the fast path; the flag is the guarantee.
    **Delegation test (§2.6, set by the operator 2026-10-06; replaces the old SMALL BATCH FAST PATH /
    PARALLEL DIRECT-EXEC wording).** The operator authorizes and requests delegation for independent
    tasks; this line is that request, so the harness's "spawn only when the user asks" is met.
-   Pick 1-3 skills per task from skills/INDEX.md.
+   Pick 1-3 skills per task from skills/INDEX.md (router off, the default). With the router on
+   (`AGENCY_SKILL_ROUTER=1`), each direct-Exec and Coord spawn is consulted first (`skill-route.py --role exec`
+   for Execs, `--role lead` for Coords) and its prompt carries `Skills:` + the
+   `Jev[r=<route_id>]` line (rules JB1-JB9, runbooks/service-lookups.md §Routing).
    The two-condition rule and the N_global fan-out cap (5 running Execs per PD tree) remain hard limits;
    if you override a dispatch choice, log why.
    - 2+ independent tasks (no dependency edge, disjoint `writes-to[]`) → spawn one

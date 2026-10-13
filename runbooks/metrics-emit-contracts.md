@@ -126,6 +126,24 @@ methodology genuinely does not touch `emit-metric.sh`, so their absence from
 
 ---
 
+## Event 13 — skill_route
+
+**Router on only** (`AGENCY_SKILL_ROUTER=1`; the router is off by default and then there is nothing to emit).
+
+**Trigger:** the spawner (main session, PD, Coord) emits it once per `python3 {agency-root}/scripts/skill-route.py --role exec "<task>"` call it acts on, AFTER routing. `skill-route.py` itself does NOT emit it.
+
+```bash
+bash {agency-root}/hooks/emit-metric.sh \
+  '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"skill_route","gate":"pass|low_confidence","router":"jev|haiku|grep|passthrough","top1":"<skill or none>","caller":"main|pd|coord"}'
+```
+
+- `gate`: `pass` = the router's result was confident enough to use; `low_confidence` = it was not, and the spawner evaluated Jev's result (explicit `Jev[r=<id>]: accept|modify|reject — <reason>` verdict, never a silent fallback).
+- `router`: which router answered: `jev`, `haiku` (fallback), `grep` (deterministic fallback), or `passthrough` (explicit `/name` in the task text).
+- `top1`: the top-ranked skill name, or `none` when no skill fit.
+- `caller`: who acted on the result: `main` (main session), `pd`, or `coord`.
+
+---
+
 ## Event Reference — what each event measures, what should trigger it
 
 Kills the false-alarm class where a silent event is indistinguishable from a
@@ -135,6 +153,7 @@ dead one. Add a row here whenever a new event is introduced.
 |---|---|---|---|
 | `curator_skip` (RETIRED 2026-10-12) | Lookup-first compliance (skip side) | A direct lookup (file/wiki) answered a project-knowledge question instead of spawning Curator | Never fully OK — see F25 note above; a long gap during active lookup-heavy work is drift, not health |
 | `curator_spawn` (RETIRED 2026-10-12) | Lookup-first compliance (spawn side) | Curator was spawned for multi-source synthesis | No project-knowledge investigations happened |
+| `skill_route` | Jev skill-router adoption and confidence (router on only; emitted by the spawner after acting on `skill-route.py`, not by the script) | A spawner routed a task through `skill-route.py` and acted on the result | The router is off (default), or no spawns needed skill routing this window |
 | `delegator_cache_hit` | Routing lookup-first (cache side) | `delegator-cache.md` exact match used | No ambiguous routing decisions happened |
 | `delegator_spawn` | Routing lookup-first (spawn side) | Delegator spawned for ambiguous/cross-domain routing | No ambiguous routing decisions happened |
 | `bg_agent_verified` | Background-agent completion-gate compliance | Verified all deliverables of a `run_in_background:true` spawn | No background agents returned |
@@ -156,6 +175,7 @@ dead one. Add a row here whenever a new event is introduced.
 |-------|------|
 | `curator_skip` (RETIRED 2026-10-12) | decided NOT to spawn Curator (context-sufficiency) |
 | `curator_spawn` (RETIRED 2026-10-12) | spawned Curator for investigation |
+| `skill_route` | spawner acted on a skill-route.py result (router on only; spawner-emitted, after routing) |
 | `delegator_cache_hit` | skipped Delegator — cache hit |
 | `delegator_spawn` | spawned Delegator — cache miss |
 | `bg_agent_verified` | verified background agent deliverables |
