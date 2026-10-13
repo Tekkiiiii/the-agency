@@ -1,5 +1,5 @@
 export type Spawn = {
-  /** spawn_id written to spawns.jsonl by ledger.py start. */
+  /** spawn_id written by ledger.py start to the spawn's project log <project>/memory/spawns.jsonl (the agency root logs/spawns.jsonl only when unhinted). */
   spawnId: string
   /** The Agent call that started it. */
   toolUseId: string

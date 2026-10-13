@@ -138,6 +138,16 @@ test('tally sums today only, skips malformed and foreign lines', async () => {
   expect(tally('', FROM, TO)).toEqual({ calls: 0, inputTokens: 0, usd: 0, fbCalls: 0, fbUsd: 0 })
 })
 
+test('tally skips purpose=drill rows (drill Haiku fallbacks must not inflate Haiku-fb); eval/replay stay', async () => {
+  const t = tally([
+    row({ ts: '2026-10-07T01:00:00Z', purpose: 'drill', router: 'haiku', input_tokens: 900, usd: 0.004 }),
+    row({ ts: '2026-10-07T01:00:00Z', purpose: 'drill', router: 'jev', input_tokens: 700, usd: 0.001 }),
+    row({ ts: '2026-10-07T01:00:00Z', purpose: 'eval', router: 'jev', input_tokens: 1_000, usd: 0.002 }),
+    row({ ts: '2026-10-07T01:00:00Z', purpose: 'replay', router: 'haiku', input_tokens: 100, usd: 0.003 }),
+  ].join('\n'), FROM, TO)
+  expect(t).toEqual({ calls: 1, inputTokens: 1_000, usd: 0.002, fbCalls: 1, fbUsd: 0.003 })
+})
+
 test('jev text: stats, fallback part only when used, outage in its own part', async () => {
   const j = { calls: 12, inputTokens: 34_500, usd: 0.0015, fbCalls: 2, fbUsd: 0.004, down: null }
   expect(jevParts(j)).toEqual({ warn: null, stats: 'Jev 12 · 35k in · $0.0015 | Haiku-fb 2 · $0.0040' })

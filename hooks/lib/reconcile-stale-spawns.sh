@@ -61,6 +61,7 @@ touch "$MARKER" 2>/dev/null || true
 # bash -> python3 boundary on Windows.
 LOG_DIR=$(dirname "$LOG_FILE")
 LOG_BASE=$(basename "$LOG_FILE")
+LIB_DIR=$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)
 
 ( cd "$LOG_DIR" 2>/dev/null || exit 0
 python3 -c '
@@ -98,6 +99,35 @@ for line in lines:
         has_end.add(sid)
     elif ev == "spawn_launched" and e.get("resolved_model"):
         launched_model[sid] = re.sub(r"\[[^\]]*\]$", "", e["resolved_model"])
+
+# Cross-log guard: this spawn_start may have its spawn_end/spawn_launched in another spawns.jsonl; a
+# one-log sweep would write a false ABANDONED. Discovery = hooks/lib/spawn_project.py all_logs (the same list
+# ledger.py other_logs and model-pin.py use; it resolves the agency root, so AGENCY_HOME / CLAUDE_CONFIG_DIR
+# are honoured; SPAWN_LOG_FILE set => only SPAWN_LEDGER_EXTRA_LOGS, an os.pathsep list). Module missing => this
+# sweep stays one-log, like before.
+import os
+cands = []
+try:
+    sys.path.insert(0, sys.argv[3])
+    import spawn_project
+    cands = spawn_project.all_logs(os.path.abspath(log_file))
+except Exception:
+    pass
+for c in cands:
+    try:
+        olines = open(c).readlines()
+    except Exception:
+        continue
+    for oline in olines:
+        try:
+            oe = json.loads(oline) if ("spawn_end" in oline or "spawn_launched" in oline) else {}
+        except Exception:
+            continue
+        osid = oe.get("spawn_id")
+        if osid in starts and oe.get("event") == "spawn_end":
+            has_end.add(osid)
+        elif osid in starts and oe.get("event") == "spawn_launched" and oe.get("resolved_model"):
+            launched_model.setdefault(osid, re.sub(r"\[[^\]]*\]$", "", oe["resolved_model"]))
 
 try:
     now = datetime.now().astimezone()
@@ -152,7 +182,7 @@ if new_lines:
                 f.write(l + "\n")
     except Exception:
         pass
-' "$LOG_BASE" "$STALE_THRESHOLD_SEC" 2>/dev/null || true
+' "$LOG_BASE" "$STALE_THRESHOLD_SEC" "$LIB_DIR" 2>/dev/null || true
 )
 
 exit 0

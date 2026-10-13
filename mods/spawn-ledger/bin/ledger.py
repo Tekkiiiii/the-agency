@@ -11,6 +11,11 @@ spawn-completion.sh, artifact-verify.sh). Field names, field order and value for
   ledger.py end       stdin: the classic SubagentStop hook input, verbatim
   ledger.py verify    stdin {text}  -> prints the ARTIFACT_MISSING warning, if any
 
+WHERE THE ROWS GO: a spawn's rows land in {project root}/memory/spawns.jsonl (hooks/lib/spawn_project.py), e.g.
+~/projects/my-app/memory/spawns.jsonl, where the project root comes from the Active Projects table in
+{agency-root}/memory/medium-term.md. {agency-root}/logs/spawns.jsonl holds ONLY spawns with no project hint, so
+looking there alone makes a healthy ledger look empty. Read them all: hooks/lib/spawn_project.all_logs.
+
 Why Python and not the mod: $.fs has no append (read+write would race the other
 writers of spawns.jsonl), and cost comes from the shipped hooks/lib/claude_pricing.py, the
 rate table cost-tracker.sh shares. FAILURE ISOLATION: always exits 0.
@@ -21,6 +26,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import uuid
 from datetime import datetime, timezone
 
@@ -45,37 +51,51 @@ def agency_root(home):
 # HOME only expands "~" in project paths; everything agency-owned lives under ROOT.
 ROOT = agency_root(HOME)
 sys.path.insert(0, os.path.join(ROOT, "hooks", "lib"))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "hooks", "lib"))
+try:
+    import spawn_project  # shared project -> spawns.jsonl resolution (also used by hooks/lib/model-pin.py)
+except Exception:  # fail open: without it every spawn lands in the global log
+    spawn_project = None
 
 
-def resolve_log_file():
-    """spawns.jsonl via medium-term.md longest-prefix match (resolve-project.sh)."""
+def resolve_log_file(d=None):
+    """spawns.jsonl for a spawn: SPAWN_LOG_FILE, else the project from the payload hint (Project: line in the prompt,
+    parent_agent / subagent_type {slug}-pd), else CLAUDE_PROJECT_DIR/cwd, else logs/spawns.jsonl.
+    See hooks/lib/spawn_project.py. Without a payload (end, whose hook input carries no hint) it is cwd-only."""
     override = os.environ.get("SPAWN_LOG_FILE", "")
     if override:
         return override
-    fallback = os.path.join(ROOT, "logs", "spawns.jsonl")
-    medium_term = os.path.join(ROOT, "memory", "medium-term.md")
-    cwd = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
-    if not os.path.exists(medium_term):
-        return fallback
-    best_len, best_path = 0, ""
-    try:
-        with open(medium_term) as f:
-            for line in f:
-                m = re.match(r"^\|[^|]+\|\s*`([^`]+)`", line)
-                if not m:
-                    continue
-                raw = m.group(1).replace("~", HOME).rstrip("/")
-                root = (raw[:-7] if raw.endswith("/memory") else raw).rstrip("/")
-                if root and cwd.startswith(root) and len(root) > best_len:
-                    best_len, best_path = len(root), root
-    except Exception:
-        pass
-    if best_path:
-        return os.path.join(best_path, "memory", "spawns.jsonl")
-    return fallback
+    if spawn_project is not None:
+        try:
+            return spawn_project.resolve_log_file(d if isinstance(d, dict) else None)
+        except Exception:
+            pass
+    return os.path.join(ROOT, "logs", "spawns.jsonl")
+
+
+def under_test():
+    """True inside a test run: unittest/pytest imported in-process (the production hook runs `python3 ledger.py` and
+    imports neither), or SPAWN_LEDGER_TEST=1 for subprocess-driven tests."""
+    return os.environ.get("SPAWN_LEDGER_TEST") == "1" or "unittest" in sys.modules or "pytest" in sys.modules
+
+
+def refuses_real_ledger(log_file):
+    """A test run must never write a REAL ledger (global logs/spawns.jsonl or any project memory/spawns.jsonl): 2026-10-12
+    an un-isolated test wrote tu-1/tu-2 rows there and the reconcile sweep later closed them as today's rows. A real
+    ledger = a file named spawns.jsonl outside the system temp dir. Isolated tests (SPAWN_LOG_FILE in a tmp dir, a tmp HOME)
+    are unaffected. Backstop only: scripts/tests + mods tests carry test_zz_real_ledger_guard.py, which catches any writer."""
+    if not under_test() or os.path.basename(log_file) != "spawns.jsonl":
+        return False
+    tmp = os.path.realpath(tempfile.gettempdir())
+    real = os.path.realpath(log_file)
+    return not (real == tmp or real.startswith(tmp + os.sep))
 
 
 def append(log_file, entry):
+    if refuses_real_ledger(log_file):
+        print("ledger.py: refusing to write real ledger %s from a test run (set SPAWN_LOG_FILE to a temp file)" % log_file,
+              file=sys.stderr)
+        return
     d = os.path.dirname(log_file)
     if d:
         os.makedirs(d, exist_ok=True)
@@ -95,32 +115,14 @@ def other_logs(primary):
     """Other spawns.jsonl files a spawn may have been logged to (log-file split: the SubagentStop hook
     resolves its log from the hook process cwd, which differs from the spawning session's cwd, so
     spawn_launched can sit in a project log while the end resolves the global one). Existing files only.
-    With SPAWN_LOG_FILE set (tests) only SPAWN_LEDGER_EXTRA_LOGS (os.pathsep list) is searched."""
-    cands = []
-    if os.environ.get("SPAWN_LOG_FILE"):
-        cands += [x for x in os.environ.get("SPAWN_LEDGER_EXTRA_LOGS", "").split(os.pathsep) if x]
-    else:
-        cands.append(os.path.join(ROOT, "logs", "spawns.jsonl"))
-        try:
-            with open(os.path.join(ROOT, "memory", "medium-term.md")) as f:
-                for line in f:
-                    m = re.match(r"^\|[^|]+\|\s*`([^`]+)`", line)
-                    if m:
-                        raw = m.group(1).replace("~", HOME).rstrip("/")
-                        root = (raw[:-7] if raw.endswith("/memory") else raw).rstrip("/")
-                        if root:
-                            cands.append(os.path.join(root, "memory", "spawns.jsonl"))
-        except Exception:
-            pass
-        import glob
-        cands += sorted(glob.glob(os.path.join(ROOT, "projects", "*", "memory", "spawns.jsonl")))
-    seen, out = {os.path.abspath(primary)}, []
-    for c in cands:
-        a = os.path.abspath(c)
-        if a not in seen and os.path.isfile(a):
-            seen.add(a)
-            out.append(a)
-    return out
+    With SPAWN_LOG_FILE set (tests) only SPAWN_LEDGER_EXTRA_LOGS (os.pathsep list) is searched.
+    The list is built by hooks/lib/spawn_project.py all_logs (also used by model-pin.py's cap)."""
+    if spawn_project is None:
+        return []
+    try:
+        return spawn_project.all_logs(primary)
+    except Exception:
+        return []
 
 
 def reconcile(log_file):
@@ -209,7 +211,7 @@ def start(d):
     for sl in re.findall(r"^\s*SKILLS:\s*(.+)$", prompt, re.M):
         skills += [x.strip(" `/") for x in re.split(r"[,\s]+", sl) if x.strip(" `/")]
     skills += re.findall(r"Skill\(\{\s*skill:\s*[\"\x27]([\w:.-]+)", prompt)
-    log_file = resolve_log_file()
+    log_file = resolve_log_file(d)
     spawn_id = str(uuid.uuid4())
     append(log_file, {
         "event": "spawn_start",
@@ -344,10 +346,22 @@ def iso_ms(a, b):
 
 
 def launched(d):
+    """spawn_launched row, appended NEXT TO the spawn_start row it belongs to. The payload carries only the
+    tool_use_id (no prompt), so the start row is looked up in the resolved log, then in every other known log;
+    not found anywhere -> the resolved log (spawn_id empty), as before."""
     log_file = resolve_log_file()
-    reconcile(log_file)
     tool_use_id = d.get("tool_use_id", "")
     spawn_id, _ = find_start(read_lines(log_file), tool_use_id=tool_use_id)
+    if not spawn_id and tool_use_id:
+        for other in other_logs(log_file):
+            olines = read_lines(other)
+            if not any(tool_use_id in l for l in olines):
+                continue
+            spawn_id, _ = find_start(olines, tool_use_id=tool_use_id)
+            if spawn_id:
+                log_file = other
+                break
+    reconcile(log_file)
     append(log_file, {
         "event": "spawn_launched",
         "spawn_id": spawn_id,
@@ -397,7 +411,10 @@ def end(d):
     agent_id = d.get("agent_id", "")
     tpath = d.get("agent_transcript_path", "")
     # The start may live in another log (split by cwd): write the end next to it so they join per file.
+    resolved = log_file
     log_file, lines, spawn_id, tool_use_id = locate_start(log_file, lines, agent_id)
+    if log_file != resolved:
+        reconcile(log_file)  # the sweep is per log: keep it running for the log actually written
     # Harness-internal subagents (summarizers, classifiers) also stop: no agent_type,
     # no Agent-tool launch. Not spawns; skip so spawn_end stays 1:1 with spawns.
     if not spawn_id and not d.get("agent_type"):

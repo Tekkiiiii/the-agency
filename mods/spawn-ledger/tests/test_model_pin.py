@@ -735,6 +735,104 @@ class PdTreeCapTests(Base):
         self.assertEqual(self.events("spawn_denied")[0]["root"], "pd:solo-pd")
 
 
+class SplitLogCapTests(Base):
+    """Project resolution splits one PD tree's start rows over several spawns.jsonl files (PD in the global log,
+    coords/Execs in project logs). The cap must walk the chain and count across ALL known logs, not fail open."""
+
+    def setUp(self):
+        super().setUp()
+        self.map_with(exec_cap={"max": 2})
+        self.p1 = os.path.join(self.tmp, "proj1", "memory", "spawns.jsonl")
+        self.p2 = os.path.join(self.tmp, "proj2", "memory", "spawns.jsonl")
+
+    def senv(self, *extra, **kw):
+        logs = [self.p1, self.p2] + list(extra)
+        return self.env(SPAWN_LEDGER_EXTRA_LOGS=os.pathsep.join(logs), **kw)
+
+    def spawn(self, env=None, **kw):
+        return self.run_pin(env=env or self.senv(), parent_spawn_id="CA", parent_agent="coord", model="sonnet", **kw)
+
+    def coord_in_p1(self):  # P1 (PD) sits in the global log (Base); the coord in project log p1
+        self.put(self.start("CA", parent="P1", typ="coord"), path=self.p1)
+
+    def test_split_chain_two_running_across_logs_denied_at_cap(self):
+        self.coord_in_p1()
+        self.put(self.start("e1", parent="CA", pa="coord"), path=self.p1)
+        self.put(self.start("e2", parent="CA", pa="coord"), path=self.p2)
+        o = self.spawn(tool_use_id="tu-third")
+        self.assertEqual(o["action"], "deny")
+        self.assertEqual(self.events("model_pin_error"), [])
+        denied = self.events("spawn_denied")
+        self.assertEqual((denied[0]["running"], denied[0]["cap"], denied[0]["root"]), (2, 2, "pd:test-pd"))
+
+    def test_split_chain_exec_in_global_and_projects(self):
+        self.coord_in_p1()
+        self.put(self.start("e1", parent="CA", pa="coord"), path=self.glog)
+        self.put(self.start("e2", parent="CA", pa="coord"), path=self.p2)
+        self.assertEqual(self.spawn()["action"], "deny")
+
+    def test_split_chain_below_cap_passes_without_error_row(self):
+        self.coord_in_p1()
+        self.put(self.start("e1", parent="CA", pa="coord"), path=self.p2)
+        self.assertEqual(self.spawn()["action"], "pass")
+        self.assertEqual(self.events("model_pin_error"), [])
+
+    def test_split_chain_unreachable_logs_still_fail_open(self):
+        # same fixture but the project log is not a known log: the broken-chain fail-open (one error row) is unchanged
+        self.coord_in_p1()
+        o = self.run_pin(env=self.env(), parent_spawn_id="CA", parent_agent="coord", model="sonnet")
+        self.assertEqual(o["action"], "pass")
+        self.assertEqual(len(self.events("model_pin_error")), 1)
+
+    def test_end_row_in_another_log_frees_the_slot(self):
+        self.coord_in_p1()
+        self.put(self.start("e1", parent="CA", pa="coord"), path=self.p2)
+        self.put(self.end(sid="e1"), path=self.p1)
+        self.put(self.start("e2", parent="CA", pa="coord"), path=self.p1)
+        self.assertEqual(self.spawn()["action"], "pass")
+
+    def test_duplicate_log_paths_not_double_counted(self):
+        self.coord_in_p1()
+        self.put(self.start("e1", parent="CA", pa="coord"), path=self.p1)
+        env = self.senv(self.log, self.glog, self.p1)  # primary, global (MODEL_PIN_GLOBAL_LOG) and p1 again
+        self.assertEqual(self.spawn(env=env)["action"], "pass")
+
+    def test_all_rows_in_primary_log_behave_as_before(self):
+        self.put(self.start("CA", parent="P1", typ="coord"), self.start("e1", parent="CA", pa="coord"))
+        env = self.env()  # no extra logs at all
+        self.assertEqual(self.run_pin(env=env, parent_spawn_id="CA", parent_agent="coord", model="sonnet")["action"], "pass")
+        self.put(self.start("e2", parent="CA", pa="coord"))
+        o = self.run_pin(env=env, parent_spawn_id="CA", parent_agent="coord", model="sonnet")
+        self.assertEqual(o["action"], "deny")
+        self.assertEqual(len(self.events("spawn_denied")), 1)
+        self.assertEqual(self.events("model_pin_error"), [])
+
+    def test_missing_shared_module_fails_open_with_error_row(self):
+        iso_dir = os.path.join(self.tmp, "isolated")
+        os.makedirs(iso_dir)
+        shutil.copy(SCRIPT, os.path.join(iso_dir, "model-pin.py"))  # no spawn_project.py next to it
+        r = subprocess.run([sys.executable, os.path.join(iso_dir, "model-pin.py")], capture_output=True, text=True,
+                           input=json.dumps(self.payload(model="opus")), env=self.env(), timeout=30)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout)["action"], "rewrite")  # the policy still applies
+        errs = self.events("model_pin_error")
+        self.assertEqual(len(errs), 1)
+        self.assertIn("spawn_project import", errs[0]["error"])
+
+    def test_rows_follow_the_spawn_hint_like_the_ledger(self):
+        # no SPAWN_LOG_FILE: model_override goes to the project log the ledger would pick for this payload
+        mt = os.path.join(self.tmp, "medium-term.md")
+        root = os.path.join(self.tmp, "projx")
+        with open(mt, "w") as f:
+            f.write("| Project | Memory Path | PD | Flag |\n|---|---|---|---|\n| projx | `%s/memory/` | projx-pd | active |\n" % root)
+        env = self.env(SPAWN_MEDIUM_TERM=mt)
+        del env["SPAWN_LOG_FILE"]
+        o = self.run_pin(env=env, model="opus", prompt="Project: projx -- body")
+        self.assertEqual(o["action"], "rewrite")
+        self.assertEqual(len(self.events("model_override", os.path.join(root, "memory", "spawns.jsonl"))), 1)
+        self.assertEqual(self.events("model_override", os.path.join(self.home, ".claude", "logs", "spawns.jsonl")), [])
+
+
 class RealMapTests(unittest.TestCase):
     def test_shipped_map_is_valid_and_empty(self):
         with open(REAL_MAP) as f:

@@ -32,10 +32,13 @@ Why: the Agent tool's `model` param overrides an agent file's frontmatter
      Chain broken (a parent has no spawn_start row) = FAIL OPEN: pass + one model_pin_error row; never a
      per-parent count. Count + reserve (state/spawn-slots.jsonl, keyed by root) under flock so parallel
      spawns in one message cannot all slip through.
-  5. LOGGING: `model_override` / `spawn_denied` rows go to the spawn log (same file ledger.py writes).
+  5. LOGGING: `model_override` / `spawn_denied` rows go to the spawn log ledger.py picks for the same spawn
+     (hooks/lib/spawn_project.py: Project: line, {slug}-pd parent/type, cwd, global). The cap reads ALL known logs
+     (the PD tree's start rows split over project + global logs). spawn_project.py missing -> global log only +
+     one model_pin_error row (fail open).
 
 Config: exec-model-map.json next to this file (override: env MODEL_PIN_MAP). Test overrides:
-SPAWN_LOG_FILE, MODEL_PIN_MAP, MODEL_PIN_AGENTS_DIR, MODEL_PIN_STATE_DIR, MODEL_PIN_NOW (epoch),
+SPAWN_LOG_FILE, SPAWN_LEDGER_EXTRA_LOGS (the only extra logs the cap reads when SPAWN_LOG_FILE is set), SPAWN_MEDIUM_TERM, MODEL_PIN_MAP, MODEL_PIN_AGENTS_DIR, MODEL_PIN_STATE_DIR, MODEL_PIN_NOW (epoch),
 MODEL_PIN_HOME (replaces $HOME when the root is derived: <root> = AGENCY_HOME, else CLAUDE_CONFIG_DIR, else
 $MODEL_PIN_HOME/.claude; the profile is <root>/.hook-profile),
 MODEL_PIN_GLOBAL_LOG (second log scanned by the cap; empty = none),
@@ -73,6 +76,13 @@ def agency_root(home):
 
 ROOT = agency_root(HOME)
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+try:
+    import spawn_project  # shared with mods/spawn-ledger/bin/ledger.py: one project -> spawns.jsonl resolution
+    SPAWN_PROJECT_ERROR = ""
+except Exception as _e:  # fail open: global log only (cap still reads the global log); decide() logs one error row
+    spawn_project = None
+    SPAWN_PROJECT_ERROR = "%s: %s" % (type(_e).__name__, _e)
 GP_TYPES = ("general-purpose", "claude", "")
 RESERVATION_TTL_SEC = 60
 LOG_TAIL_BYTES = 8 * 1024 * 1024
@@ -109,34 +119,43 @@ def map_path():
     return os.environ.get("MODEL_PIN_MAP") or os.path.join(HERE, "exec-model-map.json")
 
 
-def resolve_log_file():
-    """Copy of mods/spawn-ledger/bin/ledger.py resolve_log_file(): SPAWN_LOG_FILE, else the project
-    log picked by longest-prefix match of the cwd against medium-term.md, else logs/spawns.jsonl.
-    Same cwd as ledger.py (both run via $.process.run), so the cap reads the file ledger.py writes."""
+def resolve_log_file(d=None):
+    """The spawns.jsonl ledger.py would write this spawn to (hooks/lib/spawn_project.py, shared): SPAWN_LOG_FILE,
+    else the project from the payload hint d (Project: line in the prompt, parent_agent / subagent_type {slug}-pd),
+    else CLAUDE_PROJECT_DIR/cwd longest-prefix, else logs/spawns.jsonl."""
     override = os.environ.get("SPAWN_LOG_FILE", "")
     if override:
         return override
-    fallback = os.path.join(ROOT, "logs", "spawns.jsonl")
-    medium_term = os.path.join(ROOT, "memory", "medium-term.md")
-    cwd = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
-    if not os.path.exists(medium_term):
-        return fallback
-    best_len, best_path = 0, ""
-    try:
-        with open(medium_term) as f:
-            for line in f:
-                m = re.match(r"^\|[^|]+\|\s*`([^`]+)`", line)
-                if not m:
-                    continue
-                raw = m.group(1).replace("~", HOME).rstrip("/")
-                root = (raw[:-7] if raw.endswith("/memory") else raw).rstrip("/")
-                if root and cwd.startswith(root) and len(root) > best_len:
-                    best_len, best_path = len(root), root
-    except Exception:
-        pass
-    if best_path:
-        return os.path.join(best_path, "memory", "spawns.jsonl")
-    return fallback
+    if spawn_project is not None:
+        try:
+            return spawn_project.resolve_log_file(d if isinstance(d, dict) else None, home=HOME)
+        except Exception:
+            pass
+    return os.path.join(ROOT, "logs", "spawns.jsonl")
+
+
+def cap_logs(d=None):
+    """Every spawn log the cap reads: the resolved log, all other known logs (a PD tree's start rows split over
+    project + global logs; the parent chain only resolves if all are read), and MODEL_PIN_GLOBAL_LOG. Deduped by realpath."""
+    paths = [resolve_log_file(d)]
+    if spawn_project is not None:
+        try:
+            paths += spawn_project.all_logs(paths[0], home=HOME)
+        except Exception:
+            pass
+    g = global_log_file()
+    if g:
+        paths.append(g)
+    seen, out = set(), []
+    for p in paths:
+        try:
+            k = os.path.realpath(p)
+        except Exception:
+            k = p
+        if k not in seen:
+            seen.add(k)
+            out.append(p)
+    return out
 
 
 def global_log_file():
@@ -145,10 +164,11 @@ def global_log_file():
     return os.path.join(ROOT, "logs", "spawns.jsonl")
 
 
-def append_row(row):
-    """Best-effort single-write append to the spawn log."""
+def append_row(row, d=None):
+    """Best-effort single-write append to the spawn log; d = the spawn payload, so the row follows the same log
+    ledger.py picks for that spawn."""
     try:
-        path = resolve_log_file()
+        path = resolve_log_file(d)
         d = os.path.dirname(path)
         if d:
             os.makedirs(d, exist_ok=True)
@@ -429,7 +449,7 @@ def count_running(rows, root, types, stale, now, anc=None, include_root=False):
     return running, start_tuids
 
 
-def cap_check(cap, parent, parent_agent, tuid, now):
+def cap_check(cap, parent, parent_agent, tuid, now, d=None):
     """-> (status, denied, total_running_plus_reserved, root). status: "ok" (root PD found and counted),
     "exempt" (chain fully resolved, no PD) or "unresolved" (broken chain; root = the missing spawn_id).
     Count + reserve atomically under flock; exempt/unresolved spawns reserve nothing."""
@@ -444,11 +464,9 @@ def cap_check(cap, parent, parent_agent, tuid, now):
         if fcntl:
             fcntl.flock(lock, fcntl.LOCK_EX)
         try:
-            log = resolve_log_file()
-            rows = read_log_rows(log)
-            g = global_log_file()
-            if g and os.path.realpath(g) != os.path.realpath(log):
-                rows += read_log_rows(g)
+            rows = []
+            for lp in cap_logs(d):
+                rows += read_log_rows(lp)
             anc = Ancestry(rows)
             kind, root = anc.root_key({"parent_spawn_id": parent, "parent_agent": parent_agent}, include_root)
             if kind == "none":
@@ -524,6 +542,10 @@ def decide(raw):
     param = d.get("model") or None
     if d.get("fork") or d.get("is_teammate") or d.get("workflow"):
         return result(model=param, old=param, reason="untouched: fork/teammate/workflow")
+    if spawn_project is None and SPAWN_PROJECT_ERROR:  # shared module missing: global log only, say so (fail open)
+        append_row({"event": "model_pin_error", "ts": iso(now_epoch()), "tool_use_id": d.get("tool_use_id", ""),
+                    "subagent_type": d.get("subagent_type", ""),
+                    "error": "spawn_project import: %s (global log only)" % SPAWN_PROJECT_ERROR}, d)
     m = load_map()
     action, model, old, new, reason = decide_model(d, m)
     out = result(action, model, old, new, reason)
@@ -538,27 +560,27 @@ def decide(raw):
             and (parent or is_pd(parent_agent) or cap.get("include_root") is True)):
         status, denied, total, root = "ok", False, 0, None
         try:
-            status, denied, total, root = cap_check(cap, parent, parent_agent, tuid, now_epoch())
+            status, denied, total, root = cap_check(cap, parent, parent_agent, tuid, now_epoch(), d)
         except Exception as e:  # the cap fails open on its own; the rewrite below still applies
             denied, total = False, 0
             append_row({"event": "model_pin_error", "ts": iso(now_epoch()), "tool_use_id": tuid,
-                        "subagent_type": subagent_type, "error": "cap: %s: %s" % (type(e).__name__, e)})
+                        "subagent_type": subagent_type, "error": "cap: %s: %s" % (type(e).__name__, e)}, d)
         if status == "unresolved":  # exactly one best-effort row per call; pass, never a per-parent count
             append_row({"event": "model_pin_error", "ts": iso(now_epoch()), "tool_use_id": tuid,
                         "subagent_type": subagent_type, "parent_spawn_id": parent,
                         "error": "cap: ancestry unresolved (no spawn_start row for %s); no PD root found, "
-                                 "cap skipped (fail open)" % root})
+                                 "cap skipped (fail open)" % root}, d)
         if denied:
             max_n = int(cap.get("max", 5))
             append_row({"event": "spawn_denied", "ts": iso(now_epoch()), "tool_use_id": tuid,
                         "subagent_type": subagent_type, "parent_spawn_id": parent, "root": root,
-                        "running": total, "cap": max_n, "reason": "spawn_cap"})
+                        "running": total, "cap": max_n, "reason": "spawn_cap"}, d)
             return result("deny", None, param, None, "spawn_cap", cap_message(total, max_n, root))
 
     if action == "rewrite":
         append_row({"event": "model_override", "ts": iso(now_epoch()), "tool_use_id": tuid,
                     "subagent_type": subagent_type, "old": old, "new": new, "reason": reason,
-                    "parent_spawn_id": parent})
+                    "parent_spawn_id": parent}, d)
     return out
 
 
@@ -575,7 +597,7 @@ def main():
         except Exception:
             ctx = {}
         append_row({"event": "model_pin_error", "ts": iso(now_epoch()), "tool_use_id": ctx.get("tool_use_id", ""),
-                    "subagent_type": ctx.get("subagent_type", ""), "error": "%s: %s" % (type(e).__name__, e)})
+                    "subagent_type": ctx.get("subagent_type", ""), "error": "%s: %s" % (type(e).__name__, e)}, ctx)
     try:
         sys.stdout.write(json.dumps(out) + "\n")
         sys.stdout.flush()

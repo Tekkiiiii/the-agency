@@ -193,6 +193,7 @@ export const tally = (text: string, from: number, to: number): JevTotals => {
     }
     const at = toMs(o.ts)
     if (Number.isNaN(at) || at < from || at >= to) continue
+    if (o.purpose === 'drill') continue // outage-drill rows are tagged purpose=drill; not real routing traffic
     if (o.router === 'jev') {
       t.calls += 1
       t.inputTokens += num(o.input_tokens)
