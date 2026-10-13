@@ -53,7 +53,7 @@ pip3 install skill-seekers
 | No flags given | **Interactive mode** — ask what to create |
 
 **Flag: `--quality-gate off`** — bypasses the description quality gate (Step 6). Default: gate is on.
-When `--quality-gate off` is passed, `quality_gate_passed: null` is recorded in the catalog and the quality report is skipped in the final output.
+When `--quality-gate off` is passed, the quality report is skipped in the final output.
 
 Ask clarifying questions only for genuinely ambiguous intent. Infer what you can.
 
@@ -108,12 +108,12 @@ After your approval, present the full impact analysis:
 1. skill-seekers create → [source parsed]
 2. SKILL.md output → ~/.claude/skills/[name]/SKILL.md
 3. references/ subdir → ~/.claude/skills/[name]/references/
-4. INDEX.catalog.json → entry added/updated (provenance: "skill-seekers", trust_level: "agent-authored")
-5. _security/ → skill queued for trust review (agent-authored tier)
-6. obsidian-vault → skill creation logged with metadata
+4. skill lint → `skill-registry.py --lint --changed-only` on the new skill dir (no new violations)
+5. skills/INDEX.md → regenerated from disk by `skill-registry.py` (generated, never hand-edited)
+6. _security/ → skill queued for trust review (agent-authored tier)
 
 **Existing skills affected:** [list only if enhance mode]
-**Catalog entries added:** 1
+**Registry:** skills/INDEX.md regenerated (1 new skill)
 **Files created:** [2-N depending on enhancement level]
 
 Proceed? (yes / no / modify parameters)
@@ -187,36 +187,24 @@ Collect the quality gate result. It tells you:
 
 ---
 
-## Step 7: Register to INDEX.catalog.json
+## Step 7: Lint, then Register (generated INDEX.md)
 
-Run the catalog update script:
+**Lint first.** Run on the new skill dir before registering:
 ```bash
-bun ~/.claude/skills/scripts/update-catalog-from-skillseekers.ts ~/.claude/skills/[name]
+python3 {agency-root}/scripts/skill-registry.py --lint --changed-only {agency-root}/skills/[name]/SKILL.md
 ```
+Exit 1 = new lint violation (`LINT FAIL` lines: body over 5k tokens or 500 lines, description + when_to_use over 400 chars, references two levels deep, hardcoded self-path, non-spec frontmatter key). STOP registration until fixed, then re-run lint. Exit 0 = continue. Custom frontmatter keys belong under `metadata:` with string values (lists and maps as JSON strings); never add to `scripts/skill-registry/lint-baseline.json` by hand to get past a failure.
 
-Manual fallback — append to `INDEX.catalog.json` skills array:
-```json
-{
-  "name": "[name]",
-  "path": "skills/[name]/SKILL.md",
-  "scope": "global",
-  "dept": ["all"],
-  "team": "-",
-  "priority": "implementation",
-  "triggers": ["[name]"],
-  "aliases": [],
-  "description": "[from SKILL.md frontmatter]",
-  "last_updated": "[YYYY-MM-DD]",
-  "trust_level": "agent-authored",
-  "author": "skill-seekers",
-  "provenance": "skill-seekers",
-  "quality_gate_passed": [true | false | null]
-}
+`skills/INDEX.md` is GENERATED from the SKILL.md files on disk. Never append a row to it by hand. Regenerate it:
+```bash
+python3 {agency-root}/scripts/skill-registry.py          # writes skills/INDEX.md (no-op when current)
+python3 {agency-root}/scripts/skill-registry.py --check  # exit 1 if it is stale
 ```
-
-Note: `quality_gate_passed` is set to the result from Step 6 — `true` for PASS, `false` for flagged, `null` if `--quality-gate off` was used.
-
-Also append a row to `INDEX.md` table.
+The new row's text is the skill's frontmatter `description`; its table is the router domain from `scripts/skill-route/overlay.json`. A skill with no overlay entry is listed under "Unrouted" and is left out of the router menu. Add the entry (default: hidden from the router; pass `--domain D --hint H` to make it routable):
+```bash
+python3 {agency-root}/scripts/skill-route-overlay-add.py [name]
+python3 {agency-root}/scripts/skill-registry.py
+```
 
 ---
 
@@ -234,26 +222,7 @@ Do not mark the skill live until the `_security/` review completes.
 
 ---
 
-## Step 9: Obsidian Vault Logging
-
-After successful installation, log to obsidian-vault:
-
-```
-## Skill Created: [name]
-- **Date:** [YYYY-MM-DD]
-- **Tool:** Skill Seekers CLI
-- **Enhancement level:** [1-5]
-- **Target platform:** claude
-- **Framework preset:** [preset or "default"]
-- **Enhancement mode:** [api | local]
-- **Provenance:** skill-seekers
-- **Trust level:** agent-authored (pending review)
-- **Quality gate:** [PASS (C=N L=N avg=N) | FAIL flagged (C=N L=N avg=N) | skipped]
-```
-
----
-
-## Step 10: Report to User
+## Step 9: Report to User
 
 **If `--quality-gate off` was used**, report:
 ```
@@ -263,9 +232,7 @@ Skill creation complete. Quality gate bypassed (--quality-gate off).
   SKILL.md
   references/
 
-INDEX.catalog.json — entry added (quality_gate_passed: null)
-INDEX.md — row appended
-_obsidian-vault/Skills/[name].md — logged
+skills/INDEX.md — regenerated (skill-registry.py)
 _quarantine/ — pending trust review
 
 This skill is AI-enhanced. Human trust review required before live use.
@@ -280,9 +247,7 @@ Skill creation complete.
   SKILL.md
   references/
 
-INDEX.catalog.json — entry added (quality_gate_passed: [true | false])
-INDEX.md — row appended
-_obsidian-vault/Skills/[name].md — logged
+skills/INDEX.md — regenerated (skill-registry.py)
 _quarantine/ — pending trust review
 skill-quality/results/[name]-quality-results.json — written
 
@@ -296,6 +261,8 @@ skill-quality/results/[name]-quality-results.json — written
 [If flagged:] ⚠️ Description was auto-rewritten. Run /skill-creator enhance [name] --level 4 for deeper improvement.
 [If discrepancy:] ⚠️ Critics disagreed by >20 pts — see results JSON for details.
 ```
+
+End every report (both variants above) with: `New top-level skill folder: restart Claude Code (or run /reload-skills if your version has it) before it is invocable.`
 
 ---
 
@@ -373,6 +340,5 @@ When generating a new skill, include in the SKILL.md:
 - **Always present impact analysis before executing** — your approval is the gate
 - **Continue until pipeline is done after approval** — no stopping mid-execution
 - **Install skill-seekers if missing** — handle automatically, don't ask
-- **Register to catalog** — never create a skill without updating INDEX.catalog.json
-- **Log to obsidian-vault** — skill creations are long-term memory events
+- **Register via the generator** — never create a skill without Step 7 (lint, overlay entry, then `skill-registry.py`); never hand-edit skills/INDEX.md
 - **Trust level is agent-authored** — Skill Seekers output triggers quarantine

@@ -48,6 +48,16 @@ folded scalar blocks with `:` characters correctly.
 
 ---
 
+## Step 1b: Lint Gate
+
+Run BEFORE spawning critics:
+```bash
+python3 {agency-root}/scripts/skill-registry.py --lint --changed-only {agency-root}/skills/[skill]/SKILL.md
+```
+Exit 1 = new lint violation (body >5k tokens or >500 lines, description+when_to_use >400 chars, references two levels deep, hardcoded self-path, non-spec frontmatter key). Report each `LINT FAIL` line with the critic results (Step 6). Do not skip the critics on exit 1.
+
+---
+
 ## Step 2: Spawn Critics in Parallel
 
 Spawn two independent depth-1 subagents in parallel. Both read `memory/agents/critic/agent-card.md`
@@ -147,7 +157,8 @@ Write a new description that:
 3. **Names key capabilities** — specific workflows, commands, platforms, frameworks
 4. **Includes "Also for..."** coverage — adjacent use cases
 5. **Differentiates from adjacent skills** — add "Compare with [skill-x]" if relevant
-6. **Length: 600–1,000 chars** (hard cap: 1,536; minimum: 300)
+6. **Length: ≤400 chars for description + when_to_use** (skill lint rule `description>400`; hard cap 1,536; minimum: 150)
+7. **Fixes any `description>400` lint violation from Step 1b** — if lint flagged description+when_to_use >400 chars, the rewrite must bring it to ≤400
 
 ### 5b. Write the Rewritten SKILL.md
 

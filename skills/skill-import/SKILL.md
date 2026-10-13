@@ -27,12 +27,14 @@ If no URL, proceed to Step 1.
 
 Always read both:
 1. **`~/.claude/skills/INDEX.md`** — master list (name + description)
-2. **`~/.claude/skills/skill-import/INDEX.md`** — import-specific (target + stack + description)
+2. **`${CLAUDE_SKILL_DIR}/INDEX.md`** — import-specific (target + stack + description)
 
-Rebuild either if missing or stale:
+The master `skills/INDEX.md` is GENERATED from the SKILL.md files on disk; never hand-edit it. Regenerate it if missing or stale, then check:
 ```bash
-bun ~/.claude/skills/scripts/validate-index.mjs
+python3 {agency-root}/scripts/skill-registry.py
+python3 {agency-root}/scripts/skill-registry.py --check
 ```
+The import-specific `${CLAUDE_SKILL_DIR}/INDEX.md` is a separate hand-kept table (not generated).
 
 ---
 
@@ -47,7 +49,7 @@ bun ~/.claude/skills/scripts/validate-index.mjs
 ## Step 3: Match Skills to Project
 
 ### Auto-match (user said "import all relevant" or "import all skills")
-Stack-match using `dept` + `scope` from `INDEX.catalog.json` against project stack.
+Stack-match the skill descriptions and router domains in `INDEX.md` against the project stack.
 
 ### Named import (user said "import [skill-name]")
 Look up in `INDEX.md`, verify the skill exists at `~/.claude/skills/[name]/SKILL.md`.
@@ -134,25 +136,17 @@ After writing CLAUDE.md files, propagate lesson files:
 
 ---
 
-## Step 8: Update Catalog After External Import
+## Step 8: Register After External Import
 
-If Step 0 imported from an external URL, register the new skill:
+If Step 0 imported from an external URL, register the new skill. The registry is generated from disk, so there is nothing to append: add the router overlay entry (a skill with no entry is left out of the router menu), lint the skill, then regenerate `skills/INDEX.md`.
 ```bash
-bun ~/.claude/skills/scripts/update-catalog-from-skillseekers.ts ~/.claude/skills/[new-skill]
+python3 {agency-root}/scripts/skill-route-overlay-add.py [new-skill]   # default: hidden from the router; add --domain D --hint H to make it routable
+python3 {agency-root}/scripts/skill-registry.py --lint --changed-only {agency-root}/skills/[new-skill]/SKILL.md
+python3 {agency-root}/scripts/skill-registry.py
 ```
+Lint: for a vendor skill you cloned or installed as-is, treat `LINT FAIL` as report-only; never edit vendor files to satisfy it, accept them instead with `python3 {agency-root}/scripts/skill-registry.py --lint --update-baseline --changed-only {agency-root}/skills/[new-skill]/SKILL.md`. For a skill you own, exit 1 means STOP until fixed, then re-run.
 
----
-
-## Step 9: Obsidian Vault Logging
-
-After each import session, log to obsidian-vault:
-```
-## Skills Imported: [date]
-- **Skills imported:** [list]
-- **Target project:** [project path]
-- **Conflicts resolved:** [list or "none"]
-- **Lesson files propagated:** [list or "none"]
-```
+End the import report with: `New top-level skill folder: restart Claude Code (or run /reload-skills if your version has it) before it is invocable.`
 
 ---
 
@@ -163,4 +157,3 @@ After each import session, log to obsidian-vault:
 - Always split multi-domain skills into the correct folders
 - Always run conflict detection before writing
 - External URLs use Skill Seekers `install-agent` — do not manually fetch and parse
-- Log imports to obsidian-vault — import sessions are long-term memory events
