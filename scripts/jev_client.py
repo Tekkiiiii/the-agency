@@ -79,7 +79,7 @@ else the CLI envelope's total_cost_usd. The Haiku input_tokens figure = input + 
 tokens from the envelope.
 
 Haiku fallback (used when Jev fails, or when the caller passes allow_jev=False)
-    claude -p --model haiku --output-format json --no-session-persistence
+    claude -p --model claude-haiku-5-5 --output-format json --no-session-persistence
            --setting-sources "" --strict-mcp-config --mcp-config '{"mcpServers":{}}'
            --tools "" --disable-slash-commands --system-prompt <router prompt>
     run with cwd = an empty temp dir, prompt on stdin, env = parent env MINUS
@@ -724,7 +724,7 @@ def _haiku_cwd():
 
 def _haiku_cmd():
     return [
-        os.environ.get("JEV_HAIKU_CMD") or "claude", "-p", "--model", "haiku",
+        os.environ.get("JEV_HAIKU_CMD") or "claude", "-p", "--model", "claude-haiku-5-5",
         "--output-format", "json", "--no-session-persistence",
         "--setting-sources", "", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
         "--tools", "", "--disable-slash-commands", "--system-prompt", _HAIKU_SYSTEM,
