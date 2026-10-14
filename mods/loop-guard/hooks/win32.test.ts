@@ -1,18 +1,19 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
+import { seenPosix, seenWin } from './testpaths'
+
 type On = Parameters<TestBody>[1]
 
-// The kit resolves a path that is not absolute on this (POSIX) host against the plugin folder before a stub sees it;
-// a real Windows drive path is absolute there. Stubs strip that prefix back off.
-const norm = (p: string): string => p.replace(/^.*?(?=[A-Z]:\\)/, '')
-const WIN = { OS: 'Windows_NT', USERPROFILE: 'C:\\Users\\t' }
+// The kit path.resolve()s every path on the HOST before a stub sees it (see testpaths.ts); stubs and expectations
+// speak the canonical spelling: 'C:/Users/x/.claude/x' for a Windows path, '/home/t/.claude/x' for a POSIX one.
+const WIN = { OS: 'Windows_NT', USERPROFILE: 'C:\\Users\\x' }
 
 // `profile` is what ONLY the expected hook-profile path holds; any other path reads as 'standard'.
-function engine(on: On, env: Record<string, string>, profile: string, files: Map<string, string>, reads: string[], profilePath = 'C:\\Users\\t/.claude/.hook-profile') {
+function engine(on: On, env: Record<string, string>, profile: string, files: Map<string, string>, reads: string[], profilePath = 'C:/Users/x/.claude/.hook-profile', seen = seenWin) {
   mock.env(on, env)
   on('fs.read', (_$, e) => {
-    const path = norm(e.path)
+    const path = seen(e.path)
     reads.push(path)
     if (path.endsWith('.hook-profile')) return { value: path === profilePath ? profile : 'standard' }
     const text = files.get(path)
@@ -20,7 +21,7 @@ function engine(on: On, env: Record<string, string>, profile: string, files: Map
     return { value: text }
   })
   on('fs.write', (_$, e) => {
-    files.set(norm(e.path), e.text)
+    files.set(seen(e.path), e.text)
     return { value: undefined }
   })
   on('clock.now', () => ({ value: Date.UTC(2026, 9, 6, 2, 0, 0) }))
@@ -38,10 +39,10 @@ test('win32: profile and stall marker live under USERPROFILE/.claude', async ($,
   const reads: string[] = []
   engine(on, WIN, 'standard', files, reads)
   const fifth = await five($)
-  expect(reads).toContain('C:\\Users\\t/.claude/.hook-profile')
+  expect(reads).toContain('C:/Users/x/.claude/.hook-profile')
   expect(fifth?.context?.[0]).toContain('STALL DETECTED')
-  expect(JSON.parse(files.get('C:\\Users\\t/.claude/session-state.json') ?? '{}')).toMatchObject({ stall_detected: true, stall_tool: 'Bash' })
-  expect([...files.keys()]).toEqual(['C:\\Users\\t/.claude/session-state.json'])
+  expect(JSON.parse(files.get('C:/Users/x/.claude/session-state.json') ?? '{}')).toMatchObject({ stall_detected: true, stall_tool: 'Bash' })
+  expect([...files.keys()]).toEqual(['C:/Users/x/.claude/session-state.json'])
 })
 
 test('win32: hook profile minimal under USERPROFILE turns the guard off', async ($, on) => {
@@ -55,7 +56,7 @@ test('win32: hook profile minimal under USERPROFILE turns the guard off', async 
 test('mac: paths stay under HOME', async ($, on) => {
   const files = new Map<string, string>()
   const reads: string[] = []
-  engine(on, { HOME: '/home/t' }, 'standard', files, reads, '/home/t/.claude/.hook-profile')
+  engine(on, { HOME: '/home/t' }, 'standard', files, reads, '/home/t/.claude/.hook-profile', seenPosix)
   await five($)
   expect(reads).toContain('/home/t/.claude/.hook-profile')
   expect([...files.keys()]).toEqual(['/home/t/.claude/session-state.json'])

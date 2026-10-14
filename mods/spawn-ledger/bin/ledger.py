@@ -57,6 +57,21 @@ try:
     import spawn_project  # shared project -> spawns.jsonl resolution (also used by hooks/lib/model-pin.py)
 except Exception:  # fail open: without it every spawn lands in the global log
     spawn_project = None
+try:
+    import find_bash  # the bash to exec: never the Windows WSL launcher (System32\\bash.exe)
+except Exception:  # fail open: reconcile then runs only where the old shutil.which("bash") check passed, off Windows
+    find_bash = None
+
+
+def find_bash_cmd():
+    """argv[0] for the stale-spawn sweep, or None to skip it. POSIX: the bare name "bash". Windows: Git for Windows'
+    bash.exe by full path (hooks/lib/find_bash.py): a bare "bash" there is the WSL launcher, which exits 1 silently."""
+    try:
+        if find_bash is not None:
+            return find_bash.find_bash()
+    except Exception:
+        return None
+    return None if os.name == "nt" else ("bash" if shutil.which("bash") else None)
 
 
 def resolve_log_file(d=None):
@@ -68,7 +83,11 @@ def resolve_log_file(d=None):
         return override
     if spawn_project is not None:
         try:
-            return spawn_project.resolve_log_file(d if isinstance(d, dict) else None)
+            # home=HOME: ONE home for the whole process. spawn_project's own default is expanduser("~"), which on
+            # Windows reads USERPROFILE, not HOME: a test (or any caller) that moved ledger.HOME then resolved the
+            # real home. The agency root itself still follows AGENCY_HOME -> CLAUDE_CONFIG_DIR -> <home>/.claude
+            # inside spawn_project. hooks/lib/model-pin.py already passes home=HOME.
+            return spawn_project.resolve_log_file(d if isinstance(d, dict) else None, home=HOME)
         except Exception:
             pass
     return os.path.join(ROOT, "logs", "spawns.jsonl")
@@ -121,17 +140,18 @@ def other_logs(primary):
     if spawn_project is None:
         return []
     try:
-        return spawn_project.all_logs(primary)
+        return spawn_project.all_logs(primary, home=HOME)
     except Exception:
         return []
 
 
 def reconcile(log_file):
-    # ponytail: win32 without bash/Git for Windows: stale-spawn reconcile skipped
-    if not shutil.which("bash"):
+    # ponytail: win32 without Git for Windows' bash: stale-spawn reconcile skipped
+    bash = find_bash_cmd()
+    if not bash:
         return
     try:
-        subprocess.run(["bash", os.path.join(ROOT, "hooks", "lib", "reconcile-stale-spawns.sh"), log_file],
+        subprocess.run([bash, os.path.join(ROOT, "hooks", "lib", "reconcile-stale-spawns.sh"), log_file],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
     except Exception:
         pass
@@ -513,9 +533,13 @@ def verify(d):
     out += ["[artifact-verify] Do NOT relay this completion to the user.",
             "[artifact-verify] Verify the agent's work before marking done."]
     print("\n".join(out))
-    log_dir = os.path.join(ROOT, "logs")
-    os.makedirs(log_dir, exist_ok=True)
-    with open(os.path.join(log_dir, "artifact-verify.jsonl"), "a", encoding="utf-8") as f:
+    # ARTIFACT_VERIFY_LOG (tests only; unset in production = the same path as always) redirects the log. The default
+    # is ROOT, computed at import (AGENCY_HOME -> CLAUDE_CONFIG_DIR -> <home>/.claude): a test that patches HOME
+    # after import does NOT move it, which is how test rows once leaked into the real log. Patch ledger.ROOT or set
+    # the env var; the isolation bootstrap (hooks/lib/test_home.py) does both before import.
+    log_path = os.environ.get("ARTIFACT_VERIFY_LOG") or os.path.join(ROOT, "logs", "artifact-verify.jsonl")
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    with open(log_path, "a", encoding="utf-8") as f:
         f.write(json.dumps({"ts": ts, "event": "ARTIFACT_MISSING", "missing": missing,
                             "found": found, "agent_excerpt": text[:500]}) + "\n")
 

@@ -58,7 +58,11 @@ class ShadowTrigger(unittest.TestCase):
         self.assertEqual(len(FakePopen.calls), 1)
         c = FakePopen.calls[0]
         self.assertEqual(c.argv[1:], [os.path.join(self.root, "scripts", "skill-route.py"), "--shadow"])
-        self.assertIs(c.kw["start_new_session"], True)
+        if os.name == "nt":  # Windows detaches via creationflags and has no start_new_session (real-host CI finding)
+            self.assertNotIn("start_new_session", c.kw)
+            self.assertEqual(c.kw["creationflags"], 0x8 | 0x200)
+        else:
+            self.assertIs(c.kw["start_new_session"], True)
         self.assertEqual(c.kw["stdout"], ledger.subprocess.DEVNULL)
         self.assertEqual(c.kw["stderr"], ledger.subprocess.DEVNULL)
         self.assertTrue(c.closed)

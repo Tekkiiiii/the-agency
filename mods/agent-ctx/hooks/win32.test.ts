@@ -3,13 +3,13 @@ import type { TestBody } from 'claude-code/testing'
 
 import { isWindows, joinPath, pickHome, pythonRunner } from './platform'
 import type { PyExec, PyInit, PyRun } from './platform'
+import { seenPosix, seenWin } from './testpaths'
 
 type On = Parameters<TestBody>[1]
 
-// The kit resolves a path that is not absolute on this (POSIX) host against the plugin folder before a stub sees it;
-// a real Windows drive path is absolute there. Stubs strip that prefix back off.
-const norm = (p: string): string => p.replace(/^.*?(?=[A-Z]:\\)/, '')
-const WIN = { OS: 'Windows_NT', USERPROFILE: 'C:\\Users\\t' }
+// The kit path.resolve()s every path on the HOST before a stub sees it (see testpaths.ts); stubs and expectations
+// speak the canonical spelling: 'C:/Users/x/.claude/x' for a Windows path, '/home/t/.claude/x' for a POSIX one.
+const WIN = { OS: 'Windows_NT', USERPROFILE: 'C:\\Users\\x' }
 // The helpers are pure (no `$`: the loader follows `$` only inside one file), so they are tested directly.
 // The mods' glue and the file paths they build are covered through the hooks below and in the other mods' win32 tests.
 const res = (exitCode: number, stdout = ''): PyRun => ({ exitCode, stdout, stderr: '' })
@@ -45,9 +45,9 @@ test('isWindows: OS=Windows_NT only', () => {
 })
 
 test('pickHome: Windows prefers USERPROFILE, then HOME, then HOMEDRIVE+HOMEPATH', () => {
-  expect(pickHome(['Windows_NT', '/c/home/t', 'C:\\Users\\t'])).toBe('C:\\Users\\t')
+  expect(pickHome(['Windows_NT', '/c/home/t', 'C:\\Users\\x'])).toBe('C:\\Users\\x')
   expect(pickHome(['Windows_NT', '/c/home/t'])).toBe('/c/home/t')
-  expect(pickHome(['Windows_NT', undefined, undefined, 'D:', '\\Users\\t'])).toBe('D:\\Users\\t')
+  expect(pickHome(['Windows_NT', undefined, undefined, 'D:', '\\Users\\x'])).toBe('D:\\Users\\x')
   expect(pickHome(['Windows_NT', undefined, undefined, 'D:'])).toBe('')
 })
 
@@ -57,12 +57,12 @@ test('pickHome: elsewhere HOME first, then USERPROFILE; nothing set is empty; no
   expect(pickHome([])).toBe('')
   expect(pickHome([undefined, '', undefined, 'D:', '\\Users'])).toBe('') // HOMEDRIVE+HOMEPATH is a Windows-only fallback
   expect(pickHome([undefined, '/home/t/'])).toBe('/home/t')
-  expect(pickHome(['Windows_NT', undefined, 'C:\\Users\\t\\'])).toBe('C:\\Users\\t')
+  expect(pickHome(['Windows_NT', undefined, 'C:\\Users\\x\\'])).toBe('C:\\Users\\x')
 })
 
 test('joinPath: joins with /, collapses separators between parts, leaves the leading prefix alone', () => {
   expect(joinPath('/home/t', '.claude', 'x.json')).toBe('/home/t/.claude/x.json')
-  expect(joinPath('C:\\Users\\t\\', '.claude', 'hooks/lib\\', 'm.py')).toBe('C:\\Users\\t/.claude/hooks/lib/m.py')
+  expect(joinPath('C:\\Users\\x\\', '.claude', 'hooks/lib\\', 'm.py')).toBe('C:\\Users\\x/.claude/hooks/lib/m.py')
   expect(joinPath('/h/', '/.claude/', '/a')).toBe('/h/.claude/a')
   expect(joinPath('\\\\srv\\share', '.claude')).toBe('\\\\srv\\share/.claude')
   expect(joinPath('', '.claude', 'a')).toBe('/.claude/a') // no home: rooted, as `${home}/.claude/a` always was
@@ -149,13 +149,13 @@ test('pythonRunner: a real python3 whose script fails returns that result, cache
 
 const usage = (tokens: number) => ({ input_tokens: 1_000, cache_read_input_tokens: tokens - 1_000, cache_creation_input_tokens: 0, output_tokens: 10 })
 
-async function warnedSubagent($: Parameters<TestBody>[0], on: On, env: Record<string, string>, profilePath: string) {
+async function warnedSubagent($: Parameters<TestBody>[0], on: On, env: Record<string, string>, profilePath: string, seen = seenWin) {
   mock.env(on, env)
   const reads: string[] = []
   on('turn.step', async function* (_$, e) {
     return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'tool_use', usage: { ...usage(150_000), model: e.model } }
   })
-  on('fs.read', (_$, e) => (reads.push(norm(e.path)), { value: norm(e.path) === profilePath ? 'minimal' : 'standard' }))
+  on('fs.read', (_$, e) => (reads.push(seen(e.path)), { value: seen(e.path) === profilePath ? 'minimal' : 'standard' }))
   on('tool.call', () => ({ result: 'ok' }) as never)
   for await (const _ of $.turn.step({ turnId: 't', index: 0, model: 'claude-sonnet-5-5', messageCount: 3, agentId: 'sub1' } as never)) {
     // drain
@@ -165,23 +165,23 @@ async function warnedSubagent($: Parameters<TestBody>[0], on: On, env: Record<st
 }
 
 test('win32: the hook profile is read under USERPROFILE (minimal there silences the alert)', async ($, on) => {
-  const { reads, context } = await warnedSubagent($, on, WIN, 'C:\\Users\\t/.claude/.hook-profile')
-  expect(reads).toEqual(['C:\\Users\\t/.claude/.hook-profile'])
+  const { reads, context } = await warnedSubagent($, on, WIN, 'C:/Users/x/.claude/.hook-profile')
+  expect(reads).toEqual(['C:/Users/x/.claude/.hook-profile'])
   expect(context).toEqual([])
 })
 
 test('win32: a POSIX-style HOME (Git Bash) does not beat USERPROFILE; HOMEDRIVE+HOMEPATH is the last resort', async ($, on) => {
-  const a = await warnedSubagent($, on, { ...WIN, HOME: '/c/home/t' }, 'C:\\Users\\t/.claude/.hook-profile')
-  expect(a.reads).toEqual(['C:\\Users\\t/.claude/.hook-profile'])
+  const a = await warnedSubagent($, on, { ...WIN, HOME: '/c/home/t' }, 'C:/Users/x/.claude/.hook-profile')
+  expect(a.reads).toEqual(['C:/Users/x/.claude/.hook-profile'])
 })
 
 test('win32: HOMEDRIVE+HOMEPATH when neither HOME nor USERPROFILE is set', async ($, on) => {
-  const a = await warnedSubagent($, on, { OS: 'Windows_NT', HOMEDRIVE: 'D:', HOMEPATH: '\\Users\\t' }, 'D:\\Users\\t/.claude/.hook-profile')
-  expect(a.reads).toEqual(['D:\\Users\\t/.claude/.hook-profile'])
+  const a = await warnedSubagent($, on, { OS: 'Windows_NT', HOMEDRIVE: 'D:', HOMEPATH: '\\Users\\x' }, 'D:/Users/x/.claude/.hook-profile')
+  expect(a.reads).toEqual(['D:/Users/x/.claude/.hook-profile'])
 })
 
 test('mac: the hook profile is read under HOME, alert unchanged', async ($, on) => {
-  const { reads, context } = await warnedSubagent($, on, { HOME: '/home/t' }, '/nowhere')
+  const { reads, context } = await warnedSubagent($, on, { HOME: '/home/t' }, '/nowhere', seenPosix)
   expect(reads).toEqual(['/home/t/.claude/.hook-profile'])
   expect(context).toEqual(['CONTEXT_PCT_ALERT: 75% — WARNING THRESHOLD (75%). Complete current task. No new L3s.'])
 })

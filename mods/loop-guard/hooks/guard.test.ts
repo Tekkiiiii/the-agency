@@ -1,16 +1,19 @@
 import { expect, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
+import { seenPosix } from './testpaths'
+
 function engine(on: Parameters<TestBody>[1], files: Map<string, string>, env: Record<string, string> = { HOME: '/home/t' }) {
   on('env.get', (_$, e) => ({ value: env[e.name] }))
+  // The kit path.resolve()s paths on the host (a real Windows host rewrites '/home/t/x' to 'D:\\home\\t\\x'): see testpaths.ts.
   on('fs.read', (_$, e) => {
     if (e.path.endsWith('.hook-profile')) return { value: 'standard' }
-    const text = files.get(e.path)
+    const text = files.get(seenPosix(e.path))
     if (text === undefined) throw new Error('ENOENT')
     return { value: text }
   })
   on('fs.write', (_$, e) => {
-    files.set(e.path, e.text)
+    files.set(seenPosix(e.path), e.text)
     return { value: undefined }
   })
   on('clock.now', () => ({ value: Date.UTC(2026, 9, 6, 2, 0, 0) }))

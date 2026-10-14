@@ -348,6 +348,20 @@ def _log_usage(purpose, router, model, in_tok, out_tok, usd, latency_ms, ok, sha
     _append_line(_usage_log_path(), json.dumps(rec, ensure_ascii=False))
 
 
+def _bash():
+    """argv[0] for a bash child: "bash" on POSIX (argv byte-identical to before), Git's bash.exe by full path on Windows
+    (hooks/lib/find_bash.py; a bare "bash" there is System32's WSL launcher: rc 1, empty stderr). None = no usable bash: skip."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("find_bash", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "hooks", "lib", "find_bash.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        found = mod.find_bash()
+    except Exception:  # fail open: the old behaviour
+        found = None
+    return found or ("bash" if os.name != "nt" else None)
+
+
 def _emit(event, **fields):
     """Fire-and-forget metrics event via {root}/hooks/emit-metric.sh. Never raises."""
     if os.environ.get("JEV_EMIT") == "0":
@@ -358,7 +372,10 @@ def _emit(event, **fields):
         script = os.path.join(_root(), "hooks", "emit-metric.sh")
         if not os.path.exists(script):
             return
-        subprocess.run(["bash", script, json.dumps(rec, ensure_ascii=False)],
+        bash = _bash()
+        if bash is None:
+            return
+        subprocess.run([bash, script, json.dumps(rec, ensure_ascii=False)],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
     except Exception:
         pass

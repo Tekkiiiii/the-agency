@@ -6,6 +6,7 @@ CLAUDE_PROJECT_DIR, an explicit home=); the real logs and the real medium-term.m
 Run from the repo root: python3 -m unittest discover -s hooks/tests -p 'test_spawn_project.py'
 """
 import importlib.util
+import ntpath
 import os
 import shutil
 import tempfile
@@ -147,16 +148,51 @@ class PathBoundary(Base):
 
     def test_non_leading_tilde_not_mangled(self):
         rows = dict(sp.project_rows(home=self.home))
-        self.assertEqual(rows["tilde"], self.tilde_root)
+        self.assertEqual(rows["tilde"], self.tilde_root.replace(os.sep, "/"))  # project_rows contract: "/"-folded
         with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": self.tilde_root + "/sub"}):
             self.assertEqual(self.slug({}, ""), "tilde")
             self.assertEqual(self.log({}), os.path.join(self.tilde_root, "memory", "spawns.jsonl"))
 
     def test_leading_tilde_expanded_with_given_home(self):
         rows = dict(sp.project_rows(home=self.home))
-        self.assertEqual(rows["beta"], os.path.join(self.home, ".claude", "projects", "beta"))
-        self.assertEqual(rows["bare"], os.path.join(self.home, ".claude", "projects", "bare"))
+        self.assertEqual(rows["beta"], os.path.join(self.home, ".claude", "projects", "beta").replace(os.sep, "/"))
+        self.assertEqual(rows["bare"], os.path.join(self.home, ".claude", "projects", "bare").replace(os.sep, "/"))
         self.assertNotIn("tracked", rows)
+
+
+class NativeSeparators(Base):
+    """Regression (real windows-latest, win-ci run 38511781684): roots are "/"-folded for matching (project_rows contract,
+    test_win32_model_pin) and were then os.path.join'ed with "\\", so a log path came out as C:/x/alpha\\memory\\spawns.jsonl
+    (two spellings of one file). Every file path the module returns is now in native spelling; ntpath.join stands in for
+    Windows' os.path.join on any OS."""
+
+    def test_native_folds_to_backslash_only_where_the_separator_is_a_backslash(self):
+        with mock.patch.object(sp, "_SEP", "\\"):
+            self.assertEqual(sp._native("C:/a/b"), "C:\\a\\b")
+        with mock.patch.object(sp, "_SEP", "/"):
+            self.assertEqual(sp._native("/a\\b/c"), "/a\\b/c")  # a POSIX path may legally hold a backslash
+
+    def test_resolve_log_file_is_one_spelling_on_windows(self):
+        with mock.patch.object(sp, "_SEP", "\\"), mock.patch("os.path.join", ntpath.join):
+            out = sp.resolve_log_file({"prompt": "Project: alpha"}, home=self.home)
+        self.assertNotIn("/", out)
+        self.assertTrue(out.endswith("\\alpha\\memory\\spawns.jsonl"), out)
+
+    def test_all_logs_candidates_are_one_spelling_on_windows(self):
+        seen = []
+        with mock.patch.object(sp, "_SEP", "\\"), mock.patch("os.path.join", ntpath.join), \
+                mock.patch("os.path.isfile", lambda p: seen.append(p) or False):
+            sp.all_logs(os.path.join(self.tmp, "none.jsonl"), home=self.home)
+        alpha = [p for p in seen if "alpha" in p]
+        self.assertTrue(alpha, seen)
+        self.assertTrue(any(p.endswith("\\alpha\\memory\\spawns.jsonl") for p in alpha), alpha)
+        self.assertFalse(any("alpha/memory" in p for p in alpha), alpha)
+
+    def test_native_roots_still_match_by_longest_prefix(self):
+        rows = [("a", "C:\\x\\alpha"), ("ab", "C:\\x\\alpha\\sub")]
+        self.assertEqual(sp.longest_prefix("C:\\x\\alpha\\sub\\deep", rows), "ab")
+        self.assertEqual(sp.longest_prefix("c:/x/ALPHA/file", rows), "a")
+        self.assertIsNone(sp.longest_prefix("C:\\x\\alphabet", rows))
 
 
 class AllLogs(Base):
@@ -175,8 +211,9 @@ class AllLogs(Base):
         self.assertIn(os.path.abspath(g), out)
         self.assertIn(os.path.abspath(b), out)  # table AND glob hit: once
         self.assertEqual(len(out), len(set(out)))
-        self.assertTrue(any(p.endswith("/other/memory/spawns.jsonl") for p in out))
-        self.assertFalse(any(p.endswith("/nested/memory/spawns.jsonl") for p in out))  # missing files skipped
+        # os.sep, not "/": on Windows abspath yields backslashes (the-agency run 38510443081 style real-host failure)
+        self.assertTrue(any(p.endswith(os.sep.join(["", "other", "memory", "spawns.jsonl"])) for p in out))
+        self.assertFalse(any(p.endswith(os.sep.join(["", "nested", "memory", "spawns.jsonl"])) for p in out))  # missing files skipped
 
     def test_all_logs_spawn_log_file_set_uses_extra_logs_only(self):
         g = self.touch(self.glog())

@@ -29,6 +29,10 @@ spec.loader.exec_module(ledger)
 ledger.ROOT = REPO  # not whatever AGENCY_HOME / ~/.claude the caller has
 sys.path.insert(0, os.path.join(REPO, "hooks", "lib"))
 import claude_pricing  # noqa: E402
+import find_bash  # noqa: E402  (never the Windows WSL launcher)
+import test_home  # noqa: E402  (HOME + USERPROFILE: expanduser ignores HOME on Windows)
+
+BASH = find_bash.find_bash()
 
 OLD_FIELDS = {"event", "spawn_id", "tool_use_id", "agent_id", "agent_type", "outcome", "duration_ms",
               "tokens", "tokens_breakdown", "cost_usd", "final_context_tokens", "output_estimated_messages",
@@ -193,6 +197,7 @@ needs_start_c4 = unittest.skipUnless(_ported("log-spawn-from-agent.sh", "model_s
 needs_end_c4 = unittest.skipUnless(_ported("log-spawn-end-from-agent.sh", "cost_source"), "C4 not in log-spawn-end-from-agent.sh yet")
 
 
+@unittest.skipUnless(BASH, "no usable bash (on Windows: Git for Windows)")
 class ShellWriters(unittest.TestCase):
     """The legacy manual convention + the reconciliation sweep, run as real subprocesses."""
 
@@ -205,12 +210,12 @@ class ShellWriters(unittest.TestCase):
         with open(os.path.join(self.home, ".claude", "agents", "x", "fake-coord.md"), "w") as f:
             f.write("---\nname: fake-coord\nmodel: opus\n---\nbody\n")
         self.log = os.path.join(self.tmp, "spawns.jsonl")
-        # The children resolve the agency root from HOME: a CI-exported AGENCY_HOME / CLAUDE_CONFIG_DIR must not win.
-        self.env = {k: v for k, v in os.environ.items() if k not in ("AGENCY_HOME", "CLAUDE_CONFIG_DIR")}
-        self.env.update(HOME=self.home, SPAWN_LOG_FILE=self.log)
+        # The children resolve the agency root from the home: a CI-exported AGENCY_HOME / CLAUDE_CONFIG_DIR must not win,
+        # and on Windows expanduser reads USERPROFILE, not HOME (shell_env sets all four and drops the root overrides).
+        self.env = test_home.shell_env(self.home, SPAWN_LOG_FILE=self.log)
 
     def sh(self, script, *args, env=None):
-        r = subprocess.run(["bash", os.path.join(LIB_DIR, script), *args], env=env or self.env,
+        r = subprocess.run([BASH, os.path.join(LIB_DIR, script), *args], env=env or self.env,
                            capture_output=True, text=True, timeout=60)
         self.assertEqual(r.returncode, 0, r.stderr)
         return r.stdout

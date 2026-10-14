@@ -2,11 +2,18 @@
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timedelta
 
-SCRIPT = os.environ.get("RECONCILE_SCRIPT") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "hooks", "lib", "reconcile-stale-spawns.sh")
+LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "hooks", "lib")
+sys.path.insert(0, LIB)
+import find_bash  # noqa: E402  (never the Windows WSL launcher: hooks/lib/find_bash.py)
+import test_home  # noqa: E402
+
+SCRIPT = os.environ.get("RECONCILE_SCRIPT") or os.path.join(LIB, "reconcile-stale-spawns.sh")
+BASH = find_bash.find_bash()
 OLD = (datetime.now().astimezone() - timedelta(hours=10)).isoformat(timespec="seconds")
 
 
@@ -15,6 +22,7 @@ def rows(path):
         return [json.loads(l) for l in f if l.strip()]
 
 
+@unittest.skipUnless(BASH, "no usable bash (on Windows: Git for Windows)")
 class CrossLog(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -30,8 +38,8 @@ class CrossLog(unittest.TestCase):
             f.write(json.dumps({"event": "spawn_end", "spawn_id": "split-1", "outcome": "DONE", "ts": OLD}) + "\n")
 
     def sweep(self, extra):
-        env = dict(os.environ, SPAWN_LOG_FILE=self.a, SPAWN_LEDGER_EXTRA_LOGS=extra)
-        r = subprocess.run(["bash", SCRIPT, self.a], env=env, capture_output=True, text=True, timeout=60)
+        env = test_home.shell_env(os.path.join(self.tmp, "home"), SPAWN_LOG_FILE=self.a, SPAWN_LEDGER_EXTRA_LOGS=extra)
+        r = subprocess.run([BASH, SCRIPT, self.a], env=env, capture_output=True, text=True, timeout=60)
         self.assertEqual(r.returncode, 0, r.stderr)
 
     def test_end_in_other_log_is_not_abandoned(self):

@@ -1,5 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 
+import { seenPosix, seenWin } from './testpaths'
+
 type On = Parameters<typeof mock.env>[0]
 
 // Fixtures are machine-local times (the band's day is the local day), so the suite passes in any time zone.
@@ -9,14 +11,14 @@ const ROWS = [
   JSON.stringify({ ts: at(7, 1).toISOString(), purpose: 'skill-route', router: 'jev', input_tokens: 20_000, usd: 0.00084 }),
   JSON.stringify({ ts: at(7, 3).toISOString(), purpose: 'skill-route', router: 'haiku', input_tokens: 900, usd: 0.004 }),
 ].join('\n')
-const WIN_LOG = 'C:\\Users\\t/.claude/memory/metrics/jev-usage.jsonl'
-// The kit resolves a path that is not absolute on this (POSIX) host against the plugin folder before a stub sees it;
-// a real Windows drive path is absolute there. Stubs strip that prefix back off.
-const norm = (p: string): string => p.replace(/^.*?(?=[A-Z]:\\)/, '')
-const WIN = { OS: 'Windows_NT', USERPROFILE: 'C:\\Users\\t' }
+const WIN_LOG_ARG = 'C:\\Users\\x/.claude/memory/metrics/jev-usage.jsonl' // as the hook builds it: what the tail/python argv carry (never path-resolved)
+// The kit path.resolve()s every fs path on the HOST before a stub sees it (see testpaths.ts); fixtures are keyed by the
+// canonical spelling: 'C:/Users/x/.claude/x' for a Windows path, '/home/t/.claude/x' for a POSIX one.
+const WIN_LOG = 'C:/Users/x/.claude/memory/metrics/jev-usage.jsonl'
+const WIN = { OS: 'Windows_NT', USERPROFILE: 'C:\\Users\\x' }
 
 // The file system beneath the mod: only `files` exist; `sizes` makes a file big enough to need its tail.
-function world(on: On, env: Record<string, string>, files: Record<string, string>, sizes: Record<string, number> = {}) {
+function world(on: On, env: Record<string, string>, files: Record<string, string>, sizes: Record<string, number> = {}, norm = seenWin) {
   mock.env(on, env)
   mock.clock(on, { now: NOW })
   const reads: string[] = []
@@ -66,12 +68,12 @@ test('win32: the Jev log is found under USERPROFILE when JEV_USAGE_LOG is unset'
 })
 
 test('win32: the outage flag is found under USERPROFILE/.claude/state/skill-route', async ($, on) => {
-  world(on, WIN, { 'C:\\Users\\t/.claude/state/skill-route/jev-down': JSON.stringify({ since: at(7, 14, 5).toISOString() }) })
+  world(on, WIN, { 'C:/Users/x/.claude/state/skill-route/jev-down': JSON.stringify({ since: at(7, 14, 5).toISOString() }) })
   expect(await draw($)).toContain('JEV DOWN since 14:05 → Haiku')
 })
 
 test('mac: the Jev log is still found under HOME', async ($, on) => {
-  world(on, { HOME: '/home/t' }, { '/home/t/.claude/memory/metrics/jev-usage.jsonl': ROWS })
+  world(on, { HOME: '/home/t' }, { '/home/t/.claude/memory/metrics/jev-usage.jsonl': ROWS }, {}, seenPosix)
   expect(await draw($)).toContain('Jev 1 · 20k in · $0.0008')
 })
 
@@ -88,10 +90,10 @@ test('win32: tail cannot start -> the python one-liner reads the log tail', asyn
     return runResult(0, `partial-first-line\n${ROWS}\n`)
   })
   expect(await draw($)).toContain('Jev 1 · 20k in · $0.0008 | Haiku-fb 1 · $0.0040')
-  expect(argvs[0]).toEqual(['tail', '-c', '1048576', WIN_LOG])
+  expect(argvs[0]).toEqual(['tail', '-c', '1048576', WIN_LOG_ARG])
   expect(argvs[1]?.slice(0, 2)).toEqual(['python3', '-c'])
   expect(argvs[1]?.[2]).toContain('f.seek(max(0,n-int(sys.argv[2])))')
-  expect(argvs[1]?.slice(3)).toEqual([WIN_LOG, '1048576'])
+  expect(argvs[1]?.slice(3)).toEqual([WIN_LOG_ARG, '1048576'])
 })
 
 test('tail exits non-zero -> the python one-liner takes over', async ($, on) => {

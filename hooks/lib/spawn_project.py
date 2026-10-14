@@ -56,6 +56,17 @@ def _norm(p):
     return p
 
 
+_SEP = os.sep
+
+
+def _native(p):
+    """File-path spelling of a root: backslashes where the OS separator is one, else untouched (POSIX is byte-identical).
+    project_rows() keeps the "/"-folded form (its documented contract, hooks/tests/test_win32_model_pin.py) and matching
+    folds the same way; joining that onto "memory", "spawns.jsonl" with os.path.join built C:/x/alpha\\memory\\spawns.jsonl on
+    Windows (two spellings of one file). Every path this module RETURNS for a file goes through here."""
+    return p.replace("/", "\\") if _SEP == "\\" else p
+
+
 def _expand(path, home):
     if path == "~" or path.startswith("~/"):
         return home + path[1:]
@@ -150,7 +161,7 @@ def resolve_log_file(data=None, home=None):
         if slug:
             root = dict(project_rows(h)).get(slug)
             if root:
-                return os.path.join(root, "memory", "spawns.jsonl")
+                return os.path.join(_native(root), "memory", "spawns.jsonl")
         return global_log(h)
     except Exception:
         return global_log(home)
@@ -168,7 +179,7 @@ def all_logs(primary, home=None):
             h = _home(home)
             cands.append(global_log(h))
             try:
-                cands += [os.path.join(root, "memory", "spawns.jsonl") for _slug, root in project_rows(h)]
+                cands += [os.path.join(_native(root), "memory", "spawns.jsonl") for _slug, root in project_rows(h)]
             except Exception:
                 pass
             cands += sorted(glob.glob(os.path.join(agency_root(h), "projects", "*", "memory", "spawns.jsonl")))

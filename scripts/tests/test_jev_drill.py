@@ -13,11 +13,14 @@ import io
 import json
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import test_00_isolation  # noqa: E402,F401  (run alone, inputs_fingerprint -> skill-route load_menu wrote the REAL state/skill-route-menu.json; no-op under discover)
 SCRIPT = os.path.join(os.path.dirname(HERE), "jev-drill.py")
 
 _spec = importlib.util.spec_from_file_location("jev_drill_under_test", SCRIPT)

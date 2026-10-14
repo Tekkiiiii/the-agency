@@ -4,7 +4,8 @@ PD sessions run with cwd ~/.claude, so a cwd-only resolution put nearly every ro
 from the payload (Project: line, parent_agent/subagent_type {slug}-pd, then cwd); launched (tool_use_id only) and end
 (agent_id only) follow the start row wherever it sits.
 
-Hermetic: HOME, SPAWN_MEDIUM_TERM, CLAUDE_PROJECT_DIR point at a temp tree; SKILL_ROUTE_CHILD=1 keeps fire_shadow quiet;
+Hermetic: HOME + USERPROFILE (+ HOMEDRIVE/HOMEPATH: hooks/lib/test_home.py, so it is hermetic on Windows too, where
+expanduser ignores HOME), SPAWN_MEDIUM_TERM, CLAUDE_PROJECT_DIR point at a temp tree; SKILL_ROUTE_CHILD=1 keeps fire_shadow quiet;
 SPAWN_LEDGER_METRICS_FILE is a temp file; reconcile (a shell sweep) is patched out in-process. Nothing real is written.
 Run from the repo root: python3 -m unittest discover -s mods/spawn-ledger/tests -v"""
 import contextlib
@@ -25,6 +26,7 @@ spec = importlib.util.spec_from_file_location("ledger", LEDGER)
 ledger = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ledger)
 import claude_pricing  # noqa: E402  (ledger.py put hooks/lib on sys.path)
+import test_home  # noqa: E402  (shared hermetic-home helper, hooks/lib/test_home.py)
 
 
 class Base(unittest.TestCase):
@@ -43,10 +45,11 @@ class Base(unittest.TestCase):
         self.metrics = os.path.join(self.tmp, "events.jsonl")
         self.transcript = os.path.join(self.tmp, "t.jsonl")
         open(self.transcript, "w").close()
-        self.env = mock.patch.dict(os.environ, {
-            "HOME": self.home, "SPAWN_MEDIUM_TERM": self.mt, "CLAUDE_PROJECT_DIR": self.cwd,
-            "SPAWN_LEDGER_METRICS_FILE": self.metrics, "SKILL_ROUTE_CHILD": "1",
-            "SKILL_ROUTE_STATE_DIR": os.path.join(self.tmp, "state")})
+        env = {"SPAWN_MEDIUM_TERM": self.mt, "CLAUDE_PROJECT_DIR": self.cwd,
+               "SPAWN_LEDGER_METRICS_FILE": self.metrics, "SKILL_ROUTE_CHILD": "1",
+               "SKILL_ROUTE_STATE_DIR": os.path.join(self.tmp, "state")}
+        env.update({k: test_home.home_env(self.home, base={})[k] for k in ("HOME", "USERPROFILE", "HOMEDRIVE", "HOMEPATH")})
+        self.env = mock.patch.dict(os.environ, env)
         self.env.start()
         self.home_patch = mock.patch.object(ledger, "HOME", self.home)  # ledger.HOME is read at import: never the real one
         self.home_patch.start()
@@ -191,6 +194,48 @@ class LaunchedAndEndFollowStart(Base):
         out = ledger.other_logs(self.dl_log)
         self.assertIn(os.path.abspath(self.gamma_log), out)
         self.assertNotIn(os.path.abspath(self.dl_log), out)
+
+
+class WindowsHomeSemantics:
+    """Mixin, regression for a real windows-latest CI run (15F+1E): on Windows
+    os.path.expanduser("~") reads USERPROFILE and ignores HOME, and ledger.py called spawn_project WITHOUT home=,
+    so spawn_project resolved the REAL runner home while the test (HOME only) thought it was in a temp tree; the
+    write then hit refuses_real_ledger(). Re-runs every resolution test with expanduser = ntpath.expanduser and a
+    DECOY USERPROFILE: the rows must still land in the ledger.HOME tree, and nothing may appear under the decoy."""
+
+    def setUp(self):
+        super().setUp()
+        self.decoy = os.path.join(self.tmp, "decoy-userprofile")
+        os.makedirs(os.path.join(self.decoy, ".claude", "memory"))
+        self.win_env = mock.patch.dict(os.environ, {"USERPROFILE": self.decoy, "HOMEDRIVE": "", "HOMEPATH": self.decoy})
+        self.win_env.start()
+        self.win = test_home.windows_expanduser()
+        self.win.__enter__()
+
+    def tearDown(self):
+        self.win.__exit__(None, None, None)
+        self.win_env.stop()
+        super().tearDown()
+
+    def assertNothingUnderDecoy(self):
+        for root, _d, files in os.walk(self.decoy):
+            self.assertNotIn("spawns.jsonl", files, root)
+
+
+class StartResolutionWinHome(WindowsHomeSemantics, StartResolution):
+    def tearDown(self):
+        try:
+            self.assertNothingUnderDecoy()
+        finally:
+            super().tearDown()
+
+
+class LaunchedAndEndFollowStartWinHome(WindowsHomeSemantics, LaunchedAndEndFollowStart):
+    def tearDown(self):
+        try:
+            self.assertNothingUnderDecoy()
+        finally:
+            super().tearDown()
 
 
 class CliExitZero(Base):

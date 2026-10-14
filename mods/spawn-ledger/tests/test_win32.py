@@ -41,19 +41,51 @@ class Home(unittest.TestCase):
 
 
 class Reconcile(Home):
+    SCRIPT_PARTS = (".claude", "hooks", "lib", "reconcile-stale-spawns.sh")
+
     def test_no_bash_skips_cleanly(self):
-        with mock.patch("shutil.which", return_value=None), \
+        with mock.patch.object(ledger, "find_bash_cmd", return_value=None), \
                 mock.patch.object(ledger.subprocess, "run") as run:
             ledger.reconcile(self.log)
         run.assert_not_called()
 
     def test_bash_present_argv_unchanged(self):
-        with mock.patch("shutil.which", return_value="/bin/bash"), \
+        # Built from components, not a literal "a/b/c": on Windows os.path.join yields backslashes only, and the
+        # old mixed literal ("...\\.claude/hooks/lib/x.sh") never matched there (the-agency run 38510443081).
+        with mock.patch.object(ledger, "find_bash_cmd", return_value="bash"), \
                 mock.patch.object(ledger.subprocess, "run") as run:
             ledger.reconcile(self.log)
         run.assert_called_once()
-        self.assertEqual(run.call_args[0][0],
-                         ["bash", os.path.join(self.home, ".claude/hooks/lib/reconcile-stale-spawns.sh"), self.log])
+        self.assertEqual(run.call_args[0][0], ["bash", os.path.join(self.home, *self.SCRIPT_PARTS), self.log])
+
+    @unittest.skipIf(os.name == "nt", "posix argv contract")
+    def test_posix_argv_is_the_bare_name_via_the_real_finder(self):
+        with mock.patch("shutil.which", return_value="/bin/bash"), \
+                mock.patch.object(ledger.subprocess, "run") as run:
+            ledger.reconcile(self.log)
+        self.assertEqual(run.call_args[0][0][0], "bash")
+
+
+class FinderMissingFailsOpen(Home):
+    """A half-deployed tree (hooks/lib/find_bash.py absent) must never break a live session."""
+
+    def test_posix_falls_back_to_which(self):
+        with mock.patch.object(ledger, "find_bash", None), mock.patch.object(os, "name", "posix"), \
+                mock.patch("shutil.which", return_value="/bin/bash"):
+            self.assertEqual(ledger.find_bash_cmd(), "bash")
+
+    def test_nt_skips_rather_than_risk_the_wsl_launcher(self):
+        with mock.patch.object(ledger, "find_bash", None), mock.patch.object(os, "name", "nt"), \
+                mock.patch("shutil.which", return_value=r"C:\Windows\System32\bash.exe"):
+            self.assertIsNone(ledger.find_bash_cmd())
+
+    def test_finder_exception_means_skip(self):
+        class Boom:
+            @staticmethod
+            def find_bash():
+                raise RuntimeError("x")
+        with mock.patch.object(ledger, "find_bash", Boom):
+            self.assertIsNone(ledger.find_bash_cmd())
 
 
 class ShadowPopen(Home):
@@ -80,6 +112,17 @@ class VerifyPaths(Home):
         with mock.patch.object(os, "name", name), contextlib.redirect_stdout(out):
             ledger.verify({"text": text})
         return out.getvalue()
+
+    def test_log_row_lands_under_the_patched_home_or_the_override_never_the_real_log(self):
+        """2026-10-13: 4 test rows leaked into the REAL logs/artifact-verify.jsonl (a port whose verify() ignored the patched HOME)."""
+        default = os.path.join(self.home, ".claude", "logs", "artifact-verify.jsonl")
+        self.run_verify("posix", "DONE /nope/a.pdf")
+        self.assertEqual(len(open(default, encoding="utf-8").read().splitlines()), 1)
+        elsewhere = os.path.join(self.home, "elsewhere", "av.jsonl")
+        with mock.patch.dict(os.environ, {"ARTIFACT_VERIFY_LOG": elsewhere}):
+            self.run_verify("posix", "DONE /nope/b.pdf")
+        self.assertEqual(len(open(elsewhere, encoding="utf-8").read().splitlines()), 1)
+        self.assertEqual(len(open(default, encoding="utf-8").read().splitlines()), 1)
 
     def test_nt_flags_missing_drive_letter_backslash_path(self):
         out = self.run_verify("nt", "DONE wrote C:\\Users\\t\\out.pdf for you")

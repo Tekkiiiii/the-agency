@@ -1,5 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 
+import { seenPosix } from './testpaths'
 import { bar, cacheLine, cacheView, dayStartMs, downText, jevParts, limitParts, line, ctxParts, parseDown, rateFor, short, tally } from './register'
 
 const base = { model: 'claude-opus-5-5[1m]', cache: null, categories: [], fiveHour: null, sevenDay: null }
@@ -172,14 +173,15 @@ type On = Parameters<typeof mock.env>[0]
 const world = (on: On, files: Files, sizes: Record<string, number> = {}, env?: Record<string, string>) => {
   mock.env(on, env ?? { JEV_USAGE_LOG: LOG, SKILL_ROUTE_STATE_DIR: '/tmp/fixture-state' })
   mock.clock(on, { now: NOW })
-  on('fs.exists', (_$, e) => ({ value: (e as { path: string }).path in files }))
+  // seenPosix: a real Windows host path.resolve()s '/tmp/fixture/x' to 'D:\\tmp\\fixture\\x' before the stub sees it.
+  on('fs.exists', (_$, e) => ({ value: seenPosix((e as { path: string }).path) in files }))
   on('fs.read', (_$, e) => {
-    const path = (e as { path: string }).path
+    const path = seenPosix((e as { path: string }).path)
     if (sizes[path]) throw new Error('whole-file read of a big log')
     return { value: files[path] ?? '' }
   })
   on('fs.stat', (_$, e) => {
-    const path = (e as { path: string }).path
+    const path = seenPosix((e as { path: string }).path)
     const size = sizes[path] ?? (files[path] ?? '').length
     return { value: { kind: 'file', size, mtimeMs: size, isLink: false } } as never
   })

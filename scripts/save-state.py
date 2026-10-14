@@ -86,13 +86,30 @@ def atomic_write(path: pathlib.Path, content: str):
     os.replace(tmp, path)
 
 
+def _bash():
+    """argv[0] for a bash child: "bash" on POSIX (argv byte-identical), Git's bash.exe by full path on Windows
+    (hooks/lib/find_bash.py; a bare "bash" there is System32's WSL launcher). None = no usable bash: skip."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("find_bash", pathlib.Path(__file__).resolve().parent.parent / "hooks" / "lib" / "find_bash.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        found = mod.find_bash()
+    except Exception:  # fail open: the old behaviour
+        found = None
+    return found or ("bash" if os.name != "nt" else None)
+
+
 def emit(event: dict):
     """Fire-and-forget metric emit. Never blocks or fails the save."""
     if not EMIT.exists():
         return
+    bash = _bash()
+    if bash is None:
+        return
     try:
         subprocess.Popen(
-            ["bash", str(EMIT), json.dumps(event)],
+            [bash, str(EMIT), json.dumps(event)],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             start_new_session=True,
         )

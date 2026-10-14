@@ -1,23 +1,21 @@
-"""Run the spawn-ledger real-ledger guard inside the scripts suite too (several tests here drive spawn writers).
-The logic lives in mods/spawn-ledger/tests/test_zz_real_ledger_guard.py; loading it here snapshots the real
-ledgers at discover time, before any scripts test runs, and the test below re-checks after them (test_zz sorts last).
-Skipped when the mod tests are not next to this suite (a copy of scripts/ outside the repo)."""
-import importlib.util
+"""Fails the run if any test touched a LIVE log (logs/**, memory/**/*.jsonl, spawns ledgers). test_zz sorts last.
+The logic, the classes (SESSION append-only + test fingerprints / STATIC any change / IGNORED) and the flake tradeoff are in
+hooks/lib/live_log_guard.py; the baseline was taken by test_00_isolation.py before any test ran (or is taken at import here when
+this file is the only module loaded, e.g. `discover -p test_zz*`)."""
 import os
+import sys
 import unittest
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-_SRC = os.path.join(_HERE, "..", "..", "mods", "spawn-ledger", "tests", "test_zz_real_ledger_guard.py")
-_guard = None
-if os.path.isfile(_SRC):
-    _spec = importlib.util.spec_from_file_location("spawn_ledger_real_ledger_guard", _SRC)
-    _guard = importlib.util.module_from_spec(_spec)
-    _spec.loader.exec_module(_guard)
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../hooks/lib')))
+import live_log_guard  # noqa: E402
+
+BASELINE = live_log_guard.baseline()
 
 
-@unittest.skipIf(_guard is None, "mods/spawn-ledger/tests not present next to scripts/tests")
-class RealLedgerGuard(unittest.TestCase):
-    def test_no_test_wrote_a_real_ledger(self):
-        problems = _guard.violations(_guard.SNAPSHOT)
-        self.assertEqual(problems, [], "a test run wrote the REAL spawn ledger; isolate it with SPAWN_LOG_FILE=<tmp>:\n"
-                         + "\n".join(problems))
+class LiveLogGuard(unittest.TestCase):
+    def test_no_test_wrote_a_live_log(self):
+        problems = live_log_guard.violations(BASELINE)
+        self.assertEqual(problems, [], "a test run wrote a LIVE log; isolate the writer (see hooks/lib/test_home.py):\n" + "\n".join(problems))
+
+if __name__ == "__main__":
+    unittest.main()
