@@ -1,7 +1,8 @@
 import { expect, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
-import { parseKnownSlugs, respawnNotice, respawnSlug } from './register'
+import { parseJevGate, parseKnownSlugs, respawnNotice, respawnSlug } from './register'
+import { seenPosix } from './testpaths'
 
 type Run = { cmd: string; payload: Record<string, unknown> }
 
@@ -27,15 +28,26 @@ function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: s
   const toasts: string[] = []
   // The model-pin script (hooks/lib/model-pin.py) as a fake: `reply` is its stdout, 'THROW' makes the run fail.
   const pin = { reply: '{"action":"pass","model":null}', calls: [] as Record<string, unknown>[] }
+  // The Jev gate CLI (scripts/jev-spawn-gate.py) as a fake, so no test depends on it existing: default pass. The gate
+  // ships disabled with the skill router: `router` is AGENCY_SKILL_ROUTER as the mod reads it (undefined = unset).
+  const jev = { reply: '{"action":"pass"}', calls: [] as Record<string, unknown>[], order: [] as string[], router: undefined as string | undefined }
   let n = 0
-  on('env.get', (_$, e) => ({ value: e.name === 'HOME' ? '/home/t' : undefined }))
+  on('env.get', (_$, e) => ({ value: e.name === 'HOME' ? '/home/t' : e.name === 'AGENCY_SKILL_ROUTER' ? jev.router : undefined }))
   on('fs.read', (_$, e) => {
-    if (!e.path.endsWith('/memory/medium-term.md')) return { value: profile }
+    // seenPosix: a real Windows host path.resolve()s '/home/t/x' to 'D:\\home\\t\\x' before the stub sees it.
+    if (!seenPosix(e.path).endsWith('/memory/medium-term.md')) return { value: profile }
     if (mediumTerm === null) throw new Error('ENOENT')
     return { value: mediumTerm }
   })
   on('process.run', (_$, e) => {
+    if (String(e.argv[1]).endsWith('/jev-spawn-gate.py')) {
+      jev.order.push('jev')
+      jev.calls.push(JSON.parse(e.init?.stdin ?? '{}') as Record<string, unknown>)
+      if (jev.reply === 'THROW') throw new Error('spawn python3 ENOENT')
+      return { value: { exitCode: 0, stdout: jev.reply, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+    }
     if (String(e.argv[1]).endsWith('/model-pin.py')) {
+      jev.order.push('pin')
       pin.calls.push(JSON.parse(e.init?.stdin ?? '{}') as Record<string, unknown>)
       if (pin.reply === 'THROW') throw new Error('spawn python3 ENOENT')
       return { value: { exitCode: 0, stdout: pin.reply, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
@@ -58,7 +70,7 @@ function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: s
     return { value: undefined }
   })
   on('turn.complete', (_$, e) => ({ text: e.answer }))
-  return { runs, logs, toasts, pin }
+  return { runs, logs, toasts, pin, jev }
 }
 
 test('slug parsing', async () => {
@@ -266,4 +278,155 @@ test('model pin: hook profile minimal never runs it', async ($, on) => {
   on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
   await $.agent.spawn(spawnCall())
   expect(pin.calls).toHaveLength(0)
+})
+
+// ---- Jev routing gate: glue around scripts/jev-spawn-gate.py, faked here (the CLI has its own tests).
+// Ships DISABLED with the skill router: the mod calls the gate only when AGENCY_SKILL_ROUTER is exactly "1".
+
+test('parseJevGate: pass, rewrite and deny parse; the last stdout line wins', () => {
+  expect(parseJevGate('{"action":"pass"}')).toEqual({ action: 'pass', note: undefined, route_id: undefined })
+  expect(parseJevGate('warming up\n{"action":"pass","note":"n","route_id":"3fa9c1d2"}\n')).toEqual({ action: 'pass', note: 'n', route_id: '3fa9c1d2' })
+  expect(parseJevGate('{"action":"rewrite","prompt":"Skills: /a\\ndo it","note":"injected","route_id":"3fa9c1d2"}')).toEqual({
+    action: 'rewrite',
+    prompt: 'Skills: /a\ndo it',
+    note: 'injected',
+    route_id: '3fa9c1d2',
+  })
+  expect(parseJevGate('{"action":"deny","deny":"[jev-gate] add a Jev line","route_id":"3fa9c1d2"}')).toEqual({
+    action: 'deny',
+    deny: '[jev-gate] add a Jev line',
+    route_id: '3fa9c1d2',
+  })
+})
+
+test('parseJevGate: anything malformed is null (fail open)', () => {
+  for (const bad of ['', 'not json', 'null', '[]', '"pass"', '{}', '{"action":"weird"}', '{"action":"Pass"}']) {
+    expect(parseJevGate(bad)).toBeNull()
+  }
+})
+
+test('parseJevGate: rewrite without a prompt and deny without a message are null', () => {
+  for (const bad of ['{"action":"rewrite"}', '{"action":"rewrite","prompt":""}', '{"action":"rewrite","prompt":5}', '{"action":"deny"}', '{"action":"deny","deny":""}', '{"action":"deny","deny":7}']) {
+    expect(parseJevGate(bad)).toBeNull()
+  }
+})
+
+test('jev gate, router OFF (unset): no python process starts and the spawn is untouched even if the gate would deny', async ($, on) => {
+  const { runs, jev } = engine(on)
+  jev.reply = '{"action":"deny","deny":"[jev-gate] must never be seen"}'
+  const seen: string[] = []
+  on('agent.spawn', (_$, e) => (seen.push(e.prompt), { model: 'm', agentId: 'a1' }))
+  const res = await $.agent.spawn(spawnCall())
+  expect(res.deny).toBeUndefined()
+  expect(seen).toEqual(['do it'])
+  expect(jev.calls).toHaveLength(0)
+  expect(jev.order).toEqual(['pin']) // only the model pin ran: the gate script was never started
+  expect(runs.filter(r => r.cmd === 'start')).toHaveLength(1)
+})
+
+test('jev gate, router not exactly "1": off for "", "0", "true", "yes"', async ($, on) => {
+  const { jev } = engine(on)
+  jev.reply = '{"action":"deny","deny":"[jev-gate] must never be seen"}'
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  for (const value of ['', '0', 'true', 'yes', ' 1']) {
+    jev.router = value
+    const res = await $.agent.spawn(spawnCall())
+    expect(res.deny).toBeUndefined()
+  }
+  expect(jev.calls).toHaveLength(0)
+})
+
+test('jev gate, router ON: sends the spawn facts, parent lineage included', async ($, on) => {
+  const { jev } = engine(on)
+  jev.router = '1'
+  let id = 0
+  on('agent.spawn', () => ({ model: 'm', agentId: `a${++id}` }))
+  await $.agent.spawn(spawnCall({ subagentType: 'coord', model: undefined, tool_use_id: 't1', description: 'd1' }))
+  await $.agent.spawn(spawnCall({ tool_use_id: 't2', parentAgentId: 'a1', prompt: 'Skills: /x' }))
+  expect(jev.calls[0]).toEqual({ tool_use_id: 't1', subagent_type: 'coord', description: 'd1', prompt: 'do it', parent_agent: 'root', parent_spawn_id: '', fork: false, is_teammate: false, workflow: false })
+  expect(jev.calls[1]).toMatchObject({ tool_use_id: 't2', subagent_type: 'general-purpose', prompt: 'Skills: /x', parent_agent: 'coord', parent_spawn_id: 'sid-1' })
+})
+
+test('jev gate, router ON: deny refuses the spawn, writes no ledger row and never reaches the model pin', async ($, on) => {
+  const { runs, jev } = engine(on)
+  jev.router = '1'
+  jev.reply = '{"action":"deny","deny":"[jev-gate] Jev[r=3fa9c1d2]: accept|modify|reject — <reason>","route_id":"3fa9c1d2"}'
+  let started = 0
+  on('agent.spawn', () => (started++, { model: 'm', agentId: 'a1' }))
+  const res = await $.agent.spawn(spawnCall())
+  expect(res.deny).toContain('[jev-gate]')
+  expect(started).toBe(0)
+  expect(runs).toHaveLength(0)
+  expect(jev.order).toEqual(['jev']) // the pin (and its cap slot) was never consulted
+})
+
+test('jev gate, router ON: rewrite replaces the prompt the pin, the ledger and the subagent see', async ($, on) => {
+  const { runs, jev } = engine(on)
+  jev.router = '1'
+  jev.reply = '{"action":"rewrite","prompt":"Jev[r=3fa9c1d2]: accept — auto: Jev default (gate pass)\\nSkills: /a\\ndo it"}'
+  const seen: string[] = []
+  on('agent.spawn', (_$, e) => (seen.push(e.prompt), { model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall())
+  const rewritten = 'Jev[r=3fa9c1d2]: accept — auto: Jev default (gate pass)\nSkills: /a\ndo it'
+  expect(seen).toEqual([rewritten])
+  expect(runs[0]?.payload).toMatchObject({ prompt: rewritten })
+  expect(jev.order).toEqual(['jev', 'pin']) // gate first
+})
+
+test('jev gate, router ON: pass leaves the spawn untouched', async ($, on) => {
+  const { runs, jev } = engine(on)
+  jev.router = '1'
+  const seen: string[] = []
+  on('agent.spawn', (_$, e) => (seen.push(e.prompt), { model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall())
+  expect(seen).toEqual(['do it'])
+  expect(jev.calls).toHaveLength(1)
+  expect(runs.filter(r => r.cmd === 'start')).toHaveLength(1)
+})
+
+test('jev gate, router ON: Jev down or any failure never blocks; the spawn goes through unchanged and the reason is logged', async ($, on) => {
+  const { runs, jev, logs } = engine(on)
+  jev.router = '1'
+  const seen: string[] = []
+  on('agent.spawn', (_$, e) => (seen.push(e.prompt), { model: 'm', agentId: 'a1' }))
+  for (const reply of ['THROW', 'not json', '', '{"action":"weird"}', '{"action":"deny"}', '{"action":"rewrite"}', 'null']) {
+    jev.reply = reply
+    await $.agent.spawn(spawnCall())
+  }
+  expect(seen).toEqual(Array(7).fill('do it'))
+  expect(runs.filter(r => r.cmd === 'start')).toHaveLength(7)
+  expect(logs.some(l => l.startsWith('jev-gate skipped (fail open)'))).toBe(true)
+})
+
+test('jev gate, router ON: note rides the Agent result as context', async ($, on) => {
+  const { jev } = engine(on)
+  jev.router = '1'
+  jev.reply = '{"action":"pass","note":"[jev-gate] Jev unavailable, spawn recorded as unreviewed"}'
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  // As in the engine, the spawn happens inside the still-open Agent tool call.
+  on('tool.call', { tool: 'Agent' }, async () => {
+    await $.agent.spawn(spawnCall({ tool_use_id: 'tN' }))
+    return { result: 'agent text' } as never
+  })
+  const ran = await $.tool.call({ tool: 'Agent', tool_use_id: 'tN', prompt: 'p', description: 'exec', subagent_type: 'general-purpose' } as never)
+  expect(ran.context).toEqual(['[jev-gate] Jev unavailable, spawn recorded as unreviewed'])
+})
+
+test('jev gate, router ON: hook profile minimal never runs it', async ($, on) => {
+  const { jev } = engine(on, 'minimal\n')
+  jev.router = '1'
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall())
+  expect(jev.calls).toHaveLength(0)
+})
+
+test('jev gate, router ON: a note with no open Agent call (a workflow agent) is dropped, never leaked to a later call', async ($, on) => {
+  const { jev } = engine(on)
+  jev.router = '1'
+  jev.reply = '{"action":"pass","note":"stray"}'
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  on('tool.call', { tool: 'Agent' }, () => ({ result: 'agent text' }) as never)
+  await $.agent.spawn(spawnCall({ tool_use_id: 'tW' }))
+  const later = await $.tool.call({ tool: 'Agent', tool_use_id: 'tW', prompt: 'p', description: 'exec', subagent_type: 'general-purpose' } as never)
+  expect(later.context ?? []).toEqual([])
 })

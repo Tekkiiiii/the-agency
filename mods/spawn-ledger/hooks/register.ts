@@ -139,6 +139,69 @@ async function modelPin($: EngineInterface, py: Python, e: AgentSpawnInput, pare
   }
 }
 
+// Jev routing gate: scripts/jev-spawn-gate.py decides, this only relays, like modelPin. SHIPS DISABLED, with the skill
+// router: the mod calls the gate ONLY when AGENCY_SKILL_ROUTER is exactly "1" (routerOn below); with the router off no
+// python process starts and the spawn is untouched. The script itself also passes unchanged when the router is off.
+// pass = untouched; rewrite = the full replacement prompt (Jev line / Skills injected); deny = the spawner re-issues
+// the same call with its Jev verdict line. `note` rides the Agent result as context.
+// FAIL OPEN: any error (no python, timeout, non-JSON, unknown action, rewrite without a prompt, deny without a
+// message) = the spawn goes through unchanged; Jev down never blocks. Kill switches live in the python CLI, not here:
+// JEV_GATE_OFF=1 | <root>/state/jev-gate.off | .hook-profile=minimal.
+type JevGate =
+  | { action: 'pass'; note?: string; route_id?: string }
+  | { action: 'rewrite'; prompt: string; note?: string; route_id?: string }
+  | { action: 'deny'; deny: string; route_id?: string }
+
+export const parseJevGate = (stdout: string): JevGate | null => {
+  const line = stdout.trim().split('\n').filter(Boolean).pop() ?? ''
+  let gate: Record<string, unknown> | null
+  try {
+    gate = JSON.parse(line) as Record<string, unknown> | null
+  } catch {
+    return null
+  }
+  if (!gate || typeof gate !== 'object') return null
+  const text = (v: unknown) => (typeof v === 'string' && v ? v : undefined)
+  const note = text(gate.note)
+  const route_id = text(gate.route_id)
+  if (gate.action === 'deny') {
+    const deny = text(gate.deny)
+    return deny ? { action: 'deny', deny, route_id } : null
+  }
+  if (gate.action === 'rewrite') {
+    const prompt = text(gate.prompt)
+    return prompt ? { action: 'rewrite', prompt, note, route_id } : null
+  }
+  return gate.action === 'pass' ? { action: 'pass', note, route_id } : null
+}
+
+// The skill router opt-in, spelled exactly like skill-route.py and ledger.py read it: only "1" turns it on.
+const routerOn = async ($: EngineInterface): Promise<boolean> => (await $.env.get('AGENCY_SKILL_ROUTER')) === '1'
+
+async function jevGate($: EngineInterface, py: Python, e: AgentSpawnInput, parent: Spawn | undefined): Promise<JevGate | null> {
+  try {
+    if (!(await routerOn($))) return null // router off: no python process, nothing changes
+    const ran = await runPy($, py, [joinPath(await agencyRoot($), 'scripts', 'jev-spawn-gate.py')], {
+      stdin: JSON.stringify({
+        tool_use_id: e.tool_use_id,
+        subagent_type: e.subagentType,
+        description: e.description,
+        prompt: e.prompt,
+        parent_agent: parent?.type ?? 'root',
+        parent_spawn_id: parent?.spawnId ?? '',
+        fork: e.fork === true,
+        is_teammate: e.isTeammate === true,
+        workflow: e.workflow !== undefined,
+      }),
+      timeoutMs: 15_000,
+    })
+    return parseJevGate(ran.stdout)
+  } catch (err) {
+    $.ui.log(`jev-gate skipped (fail open): ${err instanceof Error ? err.message : String(err)}`)
+    return null
+  }
+}
+
 export const register: Register = on => {
   // Agent calls still running, and warnings waiting to ride their result.
   // ponytail: module variables, so a hot reload mid-call drops one warning; $.state if that ever bites.
@@ -151,6 +214,15 @@ export const register: Register = on => {
   on('agent.spawn', async ($, e, next) => {
     if (await isMinimal($)) return next(e)
     const parent = e.parentAgentId ? (await $.state.get({ ...SPAWNS, id: e.parentAgentId })).value : undefined
+    // Jev gate before the model pin: a deny must not consume a cap slot, and a rewritten prompt is what the pin and the ledger see.
+    // Router off (the default) = jevGate returns null without starting anything.
+    const gate = await jevGate($, py, e, parent)
+    if (gate?.action === 'deny') return { deny: gate.deny } // no ledger row for a denied spawn
+    if (gate?.action === 'rewrite') e = { ...e, prompt: gate.prompt }
+    // A workflow agent has no Agent tool call to carry the note; only stash it while one is open.
+    if (gate?.note && open.has(e.tool_use_id)) {
+      pending.set(e.tool_use_id, [pending.get(e.tool_use_id), gate.note].filter(Boolean).join('\n'))
+    }
     const pin = await modelPin($, py, e, parent)
     if (pin?.action === 'deny' && pin.deny) return { deny: pin.deny } // no ledger row for a denied spawn
     if (pin?.action === 'rewrite') {

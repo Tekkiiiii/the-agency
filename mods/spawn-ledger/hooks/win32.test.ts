@@ -2,14 +2,15 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
 import { respawnNotice } from './register'
+import { seenWin } from './testpaths'
 
 type On = Parameters<TestBody>[1]
 
-// The kit resolves a path that is not absolute on this (POSIX) host against the plugin folder before a stub sees it;
-// a real Windows drive path is absolute there. Stubs strip that prefix back off.
-const norm = (p: string): string => p.replace(/^.*?(?=[A-Z]:\\)/, '')
-const WIN = { OS: 'Windows_NT', USERPROFILE: 'C:\\Users\\t' }
-const HOME = 'C:\\Users\\t/.claude'
+// The kit path.resolve()s every path on the HOST before a stub sees it (see testpaths.ts); stubs and expectations
+// speak the canonical spelling: 'C:/Users/x/.claude/x' for a Windows path, '/home/t/.claude/x' for a POSIX one.
+const WIN = { OS: 'Windows_NT', USERPROFILE: 'C:\\Users\\x' }
+const HOME = 'C:\\Users\\x/.claude' // as the hook builds it: what process.run argv carry (argv are never path-resolved)
+const HOME_SEEN = 'C:/Users/x/.claude' // as a stub sees an fs path
 const res = (exitCode: number, stdout = '') => ({ value: { exitCode, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } })
 
 const MEDIUM_TERM = '## Active Projects\n\n| Project | Path |\n|---|---|\n| proj | x |\n'
@@ -23,8 +24,9 @@ function machine(on: On, env: Record<string, string>, works: string[], missing: 
   const logs: string[] = []
   let n = 0
   on('fs.read', (_$, e) => {
-    reads.push(norm(e.path))
-    return { value: e.path.endsWith('/memory/medium-term.md') ? MEDIUM_TERM : 'standard' }
+    const path = seenWin(e.path)
+    reads.push(path)
+    return { value: path.endsWith('/memory/medium-term.md') ? MEDIUM_TERM : 'standard' }
   })
   on('process.run', (_$, e) => {
     const argv = [...e.argv]
@@ -56,7 +58,7 @@ async function spawnOnce($: Parameters<TestBody>[0], on: On) {
 test('win32: hook profile and model-pin resolve under USERPROFILE, ledger under the plugin root', async ($, on) => {
   const m = machine(on, WIN, ['python3'])
   await spawnOnce($, on)
-  expect(m.reads).toContain(`${HOME}/.hook-profile`)
+  expect(m.reads).toContain(`${HOME_SEEN}/.hook-profile`)
   const s = scripts(m.argvs)
   expect(s.map(a => a[0]?.replace(/^.*\/\.claude\//, '<home>/'))).toEqual(['<home>/hooks/lib/model-pin.py', expect.stringMatching(/\/bin\/ledger\.py$/), expect.stringMatching(/\/bin\/ledger\.py$/)])
   expect(s[0]?.[0]).toBe(`${HOME}/hooks/lib/model-pin.py`)
@@ -65,8 +67,28 @@ test('win32: hook profile and model-pin resolve under USERPROFILE, ledger under 
 test('win32: AGENCY_HOME (a drive path) beats USERPROFILE for the profile and model-pin', async ($, on) => {
   const m = machine(on, { ...WIN, AGENCY_HOME: 'D:\\agency' }, ['python3'])
   await spawnOnce($, on)
-  expect(m.reads).toContain('D:\\agency/.hook-profile')
+  expect(m.reads).toContain('D:/agency/.hook-profile')
   expect(scripts(m.argvs)[0]?.[0]).toBe('D:\\agency/hooks/lib/model-pin.py')
+})
+
+test('win32: router ON: the Jev gate resolves under USERPROFILE and runs before the model pin', async ($, on) => {
+  const m = machine(on, { ...WIN, AGENCY_SKILL_ROUTER: '1' }, ['python3'])
+  await spawnOnce($, on)
+  const s = scripts(m.argvs)
+  expect(s.map(a => a[0]?.replace(/^.*\/\.claude\//, '<home>/'))).toEqual(['<home>/scripts/jev-spawn-gate.py', '<home>/hooks/lib/model-pin.py', expect.stringMatching(/\/bin\/ledger\.py$/), expect.stringMatching(/\/bin\/ledger\.py$/)])
+  expect(s[0]?.[0]).toBe(`${HOME}/scripts/jev-spawn-gate.py`)
+})
+
+test('win32: router ON: AGENCY_HOME (a drive path) beats USERPROFILE for the Jev gate too', async ($, on) => {
+  const m = machine(on, { ...WIN, AGENCY_HOME: 'D:\\agency', AGENCY_SKILL_ROUTER: '1' }, ['python3'])
+  await spawnOnce($, on)
+  expect(scripts(m.argvs)[0]?.[0]).toBe('D:\\agency/scripts/jev-spawn-gate.py')
+})
+
+test('win32: router OFF: the Jev gate script is never started', async ($, on) => {
+  const m = machine(on, { ...WIN, AGENCY_SKILL_ROUTER: '0' }, ['python3'])
+  await spawnOnce($, on)
+  expect(scripts(m.argvs).some(a => String(a[0]).endsWith('jev-spawn-gate.py'))).toBe(false)
 })
 
 test('win32: python3 is the Store stub (exit 9009) -> every script runs through py -3 after one probe', async ($, on) => {
@@ -121,16 +143,16 @@ test('respawn hint: the default wording is the POSIX one, byte for byte', () => 
 })
 
 test('respawn hint: win32 says PowerShell Remove-Item on the queue file under the agency root', () => {
-  expect(respawnNotice('proj', 'PD proj', 'C:\\Users\\t/.claude', true)).toBe(
+  expect(respawnNotice('proj', 'PD proj', 'C:\\Users\\x/.claude', true)).toBe(
     'RESPAWN_REQUEST proj from background agent "PD proj". Parent contract: run /pd-resume proj now, ' +
-      'then delete "C:\\Users\\t\\.claude\\state\\respawn-queue\\proj" (PowerShell Remove-Item; runbooks/respawn-contract.md).',
+      'then delete "C:\\Users\\x\\.claude\\state\\respawn-queue\\proj" (PowerShell Remove-Item; runbooks/respawn-contract.md).',
   )
 })
 
 test('respawn hint: win32 turn.complete hook says Remove-Item and reads the registry under USERPROFILE', async ($, on) => {
   const win = machine(on, WIN, ['python3'])
   await bgRespawn($, on)
-  expect(win.reads).toContain(`${HOME}/memory/medium-term.md`)
+  expect(win.reads).toContain(`${HOME_SEEN}/memory/medium-term.md`)
   expect(win.logs.find(l => l.includes('/pd-resume proj'))).toContain('Remove-Item')
 })
 
