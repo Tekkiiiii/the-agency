@@ -22,7 +22,7 @@ spec.loader.exec_module(fb)
 SYS32 = r"C:\Windows\System32\bash.exe"
 GIT_BIN = r"C:\Program Files\Git\bin\bash.exe"
 GIT_USR = r"C:\Program Files\Git\usr\bin\bash.exe"
-APPS = r"C:\Users\runneradmin\AppData\Local\Microsoft\WindowsApps\bash.exe"
+APPS = r"C:\Users\you\AppData\Local\Microsoft\WindowsApps\bash.exe"
 
 
 def nt(path, files, which=None, **env):
@@ -39,7 +39,7 @@ class WslLauncherIsNeverChosen(unittest.TestCase):
         self.assertIsNone(nt(r"C:\Windows\System32", {SYS32}))
 
     def test_windowsapps_alias_is_skipped(self):
-        self.assertIsNone(nt(r"C:\Users\runneradmin\AppData\Local\Microsoft\WindowsApps", {APPS}))
+        self.assertIsNone(nt(r"C:\Users\you\AppData\Local\Microsoft\WindowsApps", {APPS}))
 
     def test_syswow64_and_sysnative_are_skipped(self):
         for d in ("SysWOW64", "Sysnative"):
@@ -65,8 +65,8 @@ class FallbackWhenGitIsNotOnPath(unittest.TestCase):
         self.assertEqual(nt("", {x86}, **{"ProgramFiles(x86)": r"C:\Program Files (x86)"}), x86)
 
     def test_per_user_git(self):
-        usr = r"C:\Users\u\AppData\Local\Programs\Git\bin\bash.exe"
-        self.assertEqual(nt("", {usr}, LOCALAPPDATA=r"C:\Users\u\AppData\Local"), usr)
+        usr = r"C:\Users\you\AppData\Local\Programs\Git\bin\bash.exe"
+        self.assertEqual(nt("", {usr}, LOCALAPPDATA=r"C:\Users\you\AppData\Local"), usr)
 
     def test_next_to_git_exe(self):
         git = r"D:\tools\Git\cmd\git.exe"
