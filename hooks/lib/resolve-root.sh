@@ -91,9 +91,10 @@
 #
 # Carried by every python block under hooks/ AND by every scripts/*.py that
 # resolves a root (Wave 16). scripts/*.py could import it — python puts the
-# script's own directory on sys.path[0] and mem-graph-build.py already imports
-# a sibling that way — but they inline it so that exactly one form of this
-# function exists in the repo and check-hardcoded-root.sh can compare them all.
+# script's own directory on sys.path[0] and scripts/mem-scorecard.py already
+# imports a sibling (memory_scope.py) that way — but they inline it so that
+# exactly one form of this function exists in the repo and
+# check-hardcoded-root.sh can compare them all.
 #
 # Wave 15 deferred them on the grounds that a native python3 "cannot load its
 # own script path when that is handed to it in MSYS form", which would have made

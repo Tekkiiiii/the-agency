@@ -713,8 +713,15 @@ def _haiku_env():
 
 
 def _haiku_cwd():
-    uid = getattr(os, "getuid", lambda: 0)()  # os.getuid does not exist on Windows
-    d = os.path.join(tempfile.gettempdir(), "jev-haiku-cwd-%d" % uid)
+    if hasattr(os, "getuid"):
+        uid = os.getuid()
+    else:  # Windows has no os.getuid; key the dir by user name so two accounts do not share one cwd
+        import getpass
+        try:
+            uid = getpass.getuser()
+        except Exception:
+            uid = "user"
+    d = os.path.join(tempfile.gettempdir(), "jev-haiku-cwd-%s" % uid)
     try:
         os.makedirs(d, mode=0o700, exist_ok=True)
         return d

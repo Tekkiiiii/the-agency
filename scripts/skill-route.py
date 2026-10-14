@@ -1405,7 +1405,8 @@ def _spawn_project(data=None, prompt=None):
     the prompt: a path on it (longest-prefix, path-boundary check), else its first word if that is a table slug;
     (2) data.parent_agent `{slug}-pd`; (3) data.subagent_type `{slug}-pd`; (4) longest-prefix of CLAUDE_PROJECT_DIR
     (else cwd); (5) "global". Unknown slug/path falls to the next step; never raises. No-arg call = steps 4-5 only.
-    Step 4 is the same resolution as mods/spawn-ledger/bin/ledger.py resolve_log_file (that mod still has cwd only)."""
+    Step 4 is the same resolution as mods/spawn-ledger/bin/ledger.py resolve_log_file (the mod
+    resolves it through hooks/lib/spawn_project.py)."""
     try:
         rows = _project_rows()
     except Exception:
