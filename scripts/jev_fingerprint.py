@@ -5,7 +5,7 @@ skill-route.py builds. The eval/drill writers stamp it into their result files (
 gate check (jev-gate-check.py) recomputes it and counts a result only when the two are equal.
 
 Counts:  non-comment, non-docstring code of the two scripts; per routable skill name, description, triggers
-         (INDEX.catalog.json), domain, also_domains, hint; the overlay domains, vi_map and en_only.
+         (overlay skills[name].triggers), domain, also_domains, hint; the overlay domains, vi_map and en_only.
 Ignored: comments, docstrings, formatting, mtimes, built_at / sig, and every excluded skill (an `exclude` overlay
          entry never reaches the router). Same interpreter version assumed: ast.dump differs across Python versions.
 

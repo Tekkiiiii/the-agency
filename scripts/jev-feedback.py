@@ -5,16 +5,35 @@ Offline and local only: this tool appends to / rewrites one JSONL file. It never
 network connection, never starts a subprocess and works whether or not the router is enabled.
 
 One JSONL record per verdict in $JEV_FEEDBACK_LOG (default {root}/memory/metrics/jev-feedback.jsonl):
-  {ts, project, task_id, tool: skill-route, jev_verdict, router, pd_review: agree|disagree, pd_reason,
+  {ts, project, task_id, tool: skill-route, jev_verdict, router, pd_review: agree|disagree|unreviewed, pd_reason,
    outcome: null|ok|wrong_skill, outcome_mismatch: null|bool, task_text}
 Optional keys: "correct_skills" (list, for wrong_skill outcomes; lets skill-route-eval.py turn the miss into a
 regression case) and "sample" (true => ignored by every reader).
 {root} is the agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else the default config dir under $HOME.
 
+Spawn records (automatic, written per Agent spawn by scripts/jev_spawn.py via append_spawn_record). tool is
+"skill-route", jev_verdict is Jev's top-1 skill or "(none)", pd_review is agree (accept) | disagree
+(modify/reject) | unreviewed, and these optional keys are allowed:
+  source "spawn"; spawn_verdict accept|modify|reject|unreviewed; verdict_raw (str); verdict_source
+  explicit|auto_default|auto_match|inferred|jev_unavailable|deny_cap; gate (str); none_fired (bool);
+  jev_skills / spawner_skills (lists of str); subagent_type, parent_agent, role, route_id, spawn_id (str);
+  consult pre|gate|post.
+For source spawn, pd_reason may be empty on disagree. Records without "source" validate exactly as before.
+
+Importable (other scripts load this file via importlib because of the hyphen):
+  append_spawn_record(rec, path=None) -> list   validate (a task_text redact() would change is rejected), append under the lock;
+                                                returns the error list (empty = written); never raises
+  reconcile(feedback_path=None, spawn_logs=None) -> dict   fill outcome from spawn_end rows; {checked, updated_ok, updated_wrong_skill}
+
 Subcommands:
   add         record a router verdict plus the reviewer's call (agree|disagree + one-line reason)
   outcome     TASK_ID OUTCOME  - attach the observed outcome, compute outcome_mismatch
   mismatches  print confirmed mismatches (outcome_mismatch == true) as JSONL
+  reconcile   [--spawn-logs FILE ...]  join spawn records to spawn_end rows by spawn_id (skill_mismatch true ->
+              wrong_skill, outcome DONE -> ok, else left null). Default logs: {root}/logs/spawns.jsonl plus
+              every project memory/spawns.jsonl listed in {root}/memory/medium-term.md. Prints a JSON summary.
+  spawn-stats print JSON stats over source-spawn records: totals, gate x spawn_verdict, verdict_source, parent_agent,
+              agreement rate (accept share), outcomes, Jev-mismatch count
 
 Secrets: task_text is passed through jev_client.redact() before it is stored (API-key families and
 KEY=value assignments become [REDACTED]). validate_record() rejects a record whose task_text still holds
@@ -52,11 +71,18 @@ def agency_root(home):
 
 
 TOOLS = ("skill-route",)
-REVIEWS = ("agree", "disagree")
+REVIEWS = ("agree", "disagree", "unreviewed")
+CLI_REVIEWS = ("agree", "disagree")
 OUTCOMES = ("ok", "wrong_skill")
 REQUIRED = ("ts", "project", "task_id", "tool", "jev_verdict", "router",
             "pd_review", "pd_reason", "outcome", "outcome_mismatch", "task_text")
-OPTIONAL = ("correct_skills", "sample")
+SPAWN_VERDICTS = ("accept", "modify", "reject", "unreviewed")
+VERDICT_SOURCES = ("explicit", "auto_default", "auto_match", "inferred", "jev_unavailable", "deny_cap")
+CONSULTS = ("pre", "gate", "post")
+SPAWN_STR_KEYS = ("verdict_raw", "gate", "subagent_type", "parent_agent", "role", "route_id", "spawn_id")  # str or null
+SPAWN_LIST_KEYS = ("jev_skills", "spawner_skills")
+OPTIONAL = ("correct_skills", "sample", "source", "spawn_verdict", "verdict_source", "none_fired", "consult") \
+    + SPAWN_STR_KEYS + SPAWN_LIST_KEYS
 TS_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$")
 
 
@@ -147,8 +173,10 @@ def validate_record(rec):
         errs.append("outcome_mismatch must be null while outcome is null")
     if rec["tool"] == "skill-route" and not rec["jev_verdict"]:
         errs.append("skill-route jev_verdict must name the top-1 skill")
-    if rec["pd_review"] == "disagree" and not rec["pd_reason"].strip():
+    is_spawn = rec.get("source") == "spawn"
+    if rec["pd_review"] == "disagree" and not rec["pd_reason"].strip() and not is_spawn:
         errs.append("pd_reason is required when pd_review is disagree")
+    errs.extend(_validate_spawn_keys(rec))
     if "correct_skills" in rec:
         cs = rec["correct_skills"]
         if not isinstance(cs, list) or not cs or not all(isinstance(x, str) and x for x in cs):
@@ -160,11 +188,36 @@ def validate_record(rec):
     return errs
 
 
+def _validate_spawn_keys(rec):
+    errs = []
+    if "source" in rec:
+        if rec["source"] != "spawn":
+            errs.append('source must be "spawn"')
+        elif rec["tool"] != "skill-route":
+            errs.append("source spawn requires tool skill-route")
+    for k, allowed in (("spawn_verdict", SPAWN_VERDICTS), ("verdict_source", VERDICT_SOURCES), ("consult", CONSULTS)):
+        if k in rec and rec[k] not in allowed:
+            errs.append("%s must be one of %s" % (k, (allowed,)))
+    for k in SPAWN_STR_KEYS:
+        if k in rec and rec[k] is not None and not isinstance(rec[k], str):
+            errs.append("%s must be a string or null" % k)
+    for k in SPAWN_LIST_KEYS:
+        if k in rec and (not isinstance(rec[k], list) or not all(isinstance(x, str) and x for x in rec[k])):
+            errs.append("%s must be a list of non-empty strings" % k)
+    if "none_fired" in rec and not isinstance(rec["none_fired"], bool):
+        errs.append("none_fired must be a bool")
+    return errs
+
+
 def compute_mismatch(rec, outcome):
     """outcome_mismatch rules. Returns (bool, error_or_None)."""
     if outcome == "ok":
         return False, None
     if outcome == "wrong_skill":
+        if rec.get("source") == "spawn":
+            # mismatch against Jev only when Jev's pick actually ran (a Jev miss, not a spawner override)
+            jev = set(rec.get("jev_skills") or [])
+            return bool(jev) and set(rec.get("spawner_skills") or []) == jev, None
         return True, None
     return False, "unknown outcome"
 
@@ -302,6 +355,164 @@ def cmd_mismatches(a):
     return 0
 
 
+def append_spawn_record(rec, path=None):
+    """Validate and append one automatic spawn record. Returns the error list (empty == written). Never raises."""
+    try:
+        if not isinstance(rec, dict):
+            return ["record is not an object"]
+        rec = dict(rec)
+        rec.setdefault("source", "spawn")
+        rec.setdefault("ts", now_iso())
+        errs = validate_record(rec)
+        if errs:
+            return errs
+        path = path or default_log()
+        with Locked(path):
+            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+            with open(path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        return []
+    except Exception as e:  # noqa: BLE001 - the recorder must never break a spawn
+        return ["error: %s: %s" % (type(e).__name__, e)]
+
+
+def default_spawn_logs():
+    """{root}/logs/spawns.jsonl plus every project memory/spawns.jsonl in medium-term.md (backtick path column)."""
+    home = os.path.expanduser("~")
+    root = agency_root(home)
+    logs = [os.path.join(root, "logs", "spawns.jsonl")]
+    medium_term = os.path.join(root, "memory", "medium-term.md")
+    try:
+        with open(medium_term, encoding="utf-8") as f:
+            for line in f:
+                m = re.match(r"^\|[^|]+\|\s*`([^`]+)`", line)
+                if not m:
+                    continue
+                raw = m.group(1).replace("~", home).rstrip("/")
+                root = (raw[:-7] if raw.endswith("/memory") else raw).rstrip("/")
+                cand = os.path.join(root, "memory", "spawns.jsonl") if root else ""
+                if cand and cand not in logs:
+                    logs.append(cand)
+    except OSError:
+        pass
+    return logs
+
+
+def _spawn_end_index(spawn_logs):
+    """spawn_id -> last spawn_end row across the given logs."""
+    idx = {}
+    for p in spawn_logs:
+        try:
+            with open(p, encoding="utf-8") as f:
+                for line in f:
+                    if '"spawn_end"' not in line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                    except ValueError:
+                        continue
+                    if isinstance(row, dict) and row.get("event") == "spawn_end" and row.get("spawn_id"):
+                        idx[row["spawn_id"]] = row
+        except OSError:
+            continue
+    return idx
+
+
+def reconcile(feedback_path=None, spawn_logs=None):
+    """Fill outcome on open spawn records from spawn_end rows. Returns {checked, updated_ok, updated_wrong_skill}."""
+    path = feedback_path or default_log()
+    summary = {"checked": 0, "updated_ok": 0, "updated_wrong_skill": 0}
+    if not os.path.exists(path):
+        return summary
+    idx = _spawn_end_index(spawn_logs if spawn_logs is not None else default_spawn_logs())
+    with Locked(path):
+        recs = read_records(path)
+        changed = False
+        for r in recs:
+            if not isinstance(r, dict) or r.get("sample") or r.get("source") != "spawn":
+                continue
+            if r.get("outcome") is not None or not r.get("spawn_id"):
+                continue
+            summary["checked"] += 1
+            end = idx.get(r["spawn_id"])
+            if not end:
+                continue
+            if end.get("skill_mismatch") is True:
+                outcome = "wrong_skill"
+            elif end.get("outcome") == "DONE":
+                outcome = "ok"
+            else:
+                continue
+            mm, err = compute_mismatch(r, outcome)
+            if err:
+                continue
+            r["outcome"] = outcome
+            r["outcome_mismatch"] = mm
+            summary["updated_ok" if outcome == "ok" else "updated_wrong_skill"] += 1
+            changed = True
+        if changed:
+            write_all(path, recs)
+    return summary
+
+
+def cmd_reconcile(a):
+    print(json.dumps(reconcile(a.file or None, a.spawn_logs)))
+    return 0
+
+
+def _bump(d, k):
+    k = "(none)" if k is None or k == "" else str(k)
+    d[k] = d.get(k, 0) + 1
+
+
+def spawn_stats(path):
+    recs = [r for r in read_records(path)
+            if isinstance(r, dict) and not r.get("sample") and r.get("source") == "spawn"]
+    total = len(recs)
+    by_gate = {}
+    by_source, by_parent, outcomes = {}, {}, {}
+    accept = {"all": 0}
+    gate_total = {}
+    reviewed = 0
+    accept_reviewed = 0
+    mismatches = 0
+    for r in recs:
+        gate = r.get("gate") or "(none)"
+        verdict = r.get("spawn_verdict") or "(none)"
+        by_gate.setdefault(gate, {})
+        _bump(by_gate[gate], verdict)
+        gate_total[gate] = gate_total.get(gate, 0) + 1
+        _bump(by_source, r.get("verdict_source"))
+        _bump(by_parent, r.get("parent_agent"))
+        _bump(outcomes, r.get("outcome") if r.get("outcome") is not None else "pending")
+        if verdict == "accept":
+            accept["all"] += 1
+            accept[gate] = accept.get(gate, 0) + 1
+        if verdict != "unreviewed":
+            reviewed += 1
+            if verdict == "accept":
+                accept_reviewed += 1
+        if r.get("outcome_mismatch") is True:
+            mismatches += 1
+    rate = lambda n, d: round(n / float(d), 4) if d else None  # noqa: E731
+    return {
+        "total": total,
+        "by_gate_spawn_verdict": by_gate,
+        "by_verdict_source": by_source,
+        "by_parent_agent": by_parent,
+        "agreement_rate": rate(accept["all"], total),
+        "agreement_rate_reviewed": rate(accept_reviewed, reviewed),
+        "agreement_rate_by_gate": {g: rate(accept.get(g, 0), n) for g, n in gate_total.items()},
+        "outcomes": outcomes,
+        "jev_mismatch_count": mismatches,
+    }
+
+
+def cmd_spawn_stats(a):
+    print(json.dumps(spawn_stats(a.file or default_log()), ensure_ascii=False, sort_keys=True))
+    return 0
+
+
 def build_parser():
     p = argparse.ArgumentParser(description="Skill router feedback loop: add verdict + reviewer call, record outcome, list mismatches")
     p.add_argument("--file", help="feedback JSONL (default $JEV_FEEDBACK_LOG or {root}/memory/metrics/jev-feedback.jsonl)")
@@ -312,7 +523,7 @@ def build_parser():
     s.add_argument("--tool", choices=TOOLS, default="skill-route", help="always skill-route (kept so records stay self-describing)")
     s.add_argument("--verdict", required=True, help="the router's top-1 skill name")
     s.add_argument("--router", required=True, help="jev|haiku|grep|passthrough")
-    s.add_argument("--review", required=True, choices=REVIEWS, help="reviewer's call on the verdict")
+    s.add_argument("--review", required=True, choices=CLI_REVIEWS, help="reviewer's call on the verdict")
     s.add_argument("--reason", default="", help="one-line reason (required when disagree)")
     s.add_argument("--task-text", default="", help="task text (secrets are redacted before it is stored)")
     s.add_argument("--ts", default=None)
@@ -329,6 +540,12 @@ def build_parser():
     m.add_argument("--tool", choices=TOOLS, default=None)
     m.add_argument("--include-sample", action="store_true")
     m.set_defaults(fn=cmd_mismatches)
+    r = sub.add_parser("reconcile", help="fill outcome on spawn records from spawn_end rows")
+    r.add_argument("--spawn-logs", nargs="+", default=None, metavar="FILE",
+                   help="spawns.jsonl files (default: {root}/logs/spawns.jsonl + project logs from medium-term.md)")
+    r.set_defaults(fn=cmd_reconcile)
+    t = sub.add_parser("spawn-stats", help="print JSON stats over source-spawn records")
+    t.set_defaults(fn=cmd_spawn_stats)
     return p
 
 

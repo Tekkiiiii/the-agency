@@ -2,7 +2,7 @@
 
 `skill-route.py` picks 0-3 skills from the skill menu for a task text, plus a model tier and a tool profile. It asks Jev (TypeSafe SystemOne) multiple-choice questions, degrades to Haiku through the Claude Code CLI when Jev fails, and to a local grep ranker when that fails too.
 
-**It is disabled.** Nothing calls it: no hook, no `CLAUDE.md` path, no installer step. Default routing stays "pick 1-3 skills from `skills/INDEX.md`". The router runs only when the environment variable `AGENCY_SKILL_ROUTER` is exactly `1`. The Agency ships no key; you bring your own.
+**It is disabled by default.** With the switch off nothing calls it and nothing is recorded: no hook fires it, no `CLAUDE.md` path depends on it, no installer step runs it. Default routing stays "pick 1-3 skills from `skills/INDEX.md`". The router runs only when the environment variable `AGENCY_SKILL_ROUTER` is exactly `1`. The Agency ships no key; you bring your own.
 
 Stdlib only, Python 3.9+. Nothing to `pip install`.
 
@@ -120,7 +120,7 @@ If you keep your own skills in `{root}/skills`, the first command can instead pr
 ```
 skill-route.py [TEXT]                 # or the text on stdin
     [--project SLUG] [--router jev|haiku|grep] [--mode two-stage|flat]
-    [--no-log] [--rebuild-menu] [--shadow] [--shadow-report]
+    [--role exec|lead] [--no-log] [--rebuild-menu] [--shadow] [--shadow-report]
 ```
 
 | Flag | Meaning |
@@ -128,13 +128,15 @@ skill-route.py [TEXT]                 # or the text on stdin
 | `--project SLUG` | recorded in the decision log |
 | `--router` | `jev` (default), `haiku` (never calls Jev), `grep` (no model call at all) |
 | `--mode` | `two-stage` (default: domain question, then skill + model + tools questions) or `flat` (one request over the whole menu; split into chunks of 254 skills + `none`) |
+| `--role` | `exec` (default) or `lead`. `exec` = you are picking skills for an Exec spawn: the overlay `role_excludes.exec` skills (orchestration and safety toggles an Exec never needs) are left out of the menu before BOTH Jev stages, flat mode and grep. `lead` = the full menu, for Coord/PD-level routing. An explicit `/name` in the text is the caller's own choice and is never filtered. Recorded as `role` in the decision log |
 | `--no-log` | skip the decision log `skill-route.jsonl`; the cost log `jev-usage.jsonl` is still written |
 | `--rebuild-menu` | rebuild the menu cache; with no text, print menu stats and stop |
-| `--shadow`, `--shadow-report` | advanced; nothing shipped calls them |
+| `--shadow` | the spawn recorder: read one spawn JSON on stdin, append a shadow record (and, for binding spawn types, a `jev-feedback.jsonl` record); prints nothing, exit 0. See [Binding spawn routing](#binding-spawn-routing). The `mods/spawn-ledger` mod calls it for every spawn, but only while `AGENCY_SKILL_ROUTER=1` |
+| `--shadow-report` | print the agreement / cost report over the shadow log |
 
 Exit codes: `0` ok (including disabled), `2` usage error, no task text, or a broken menu/overlay (`MenuError` on stderr, stdout empty).
 
-In-process: load the file with `importlib.util.spec_from_file_location("skill_route", "<root>/scripts/skill-route.py")` and call `route(text, project=None, router=None, mode=None, log=True, cwd=None)` and `load_menu(rebuild=False)`. `route()` never prints and raises only `MenuError`; any Jev/Haiku/network failure degrades to the grep router.
+In-process: load the file with `importlib.util.spec_from_file_location("skill_route", "<root>/scripts/skill-route.py")` and call `route(text, project=None, router=None, mode=None, log=True, cwd=None, role=None)` and `load_menu(rebuild=False)`. Module callers default to `role=None` (the full menu); the CLI defaults to `--role exec`. `route()` never prints and raises only `MenuError`; any Jev/Haiku/network failure degrades to the grep router.
 
 ### Output contract
 
@@ -144,7 +146,7 @@ One JSON object on stdout:
 {"skills": ["frontend"], "model": "sonnet", "tools": "edit",
  "scores": {"frontend": 1.0, "ui-ux-pro-max": 0.0},
  "domain": "frontend-ui", "router": "jev", "gate": "pass",
- "pre_rules": [], "lang": "en", "jev_down": false}
+ "pre_rules": [], "lang": "en", "jev_down": false, "route_id": "3fa91c0d"}
 ```
 
 | Key | Values |
@@ -158,6 +160,7 @@ One JSON object on stdout:
 | `pre_rules` | rules that fired: `explicit`, `vietnamese` |
 | `lang` | `en` or `vi` |
 | `jev_down` | the `jev-down` flag is present after the call |
+| `route_id` | 8 lowercase hex id of the [route cache](#binding-spawn-routing) entry written for this call (no task text in it); `""` if the cache write failed. A spawner quotes it as `Jev[r=<route_id>]` |
 
 Pre-rules:
 
@@ -185,12 +188,12 @@ $ AGENCY_SKILL_ROUTER=1 python3 scripts/skill-route.py --no-log "/frontend /tail
 
 ## Menu
 
-Built from `{root}/skills/*/SKILL.md` (depth 1; directories starting with `_` or `.` and nested directories are not in the menu): frontmatter `description`, plus `skills/INDEX.catalog.json` triggers if present, plus the overlay (`domain`, `hint`, `exclude`), plus the overlay `synthetic` entries (harness built-ins that have no `SKILL.md`: `code-review`, `simplify`, `security-review`, `plugin-authoring`, `claude-api`, `update-config`, `keybindings-help`, `fewer-permission-prompts`, `dataviz`; a real `SKILL.md` of the same name wins).
+Built from `{root}/skills/*/SKILL.md` (depth 1; directories starting with `_` or `.` and nested directories are not in the menu): frontmatter `description` (`skills/INDEX.catalog.json`, if present, is only a description fallback and part of the cache signature), plus the overlay (`domain`, `hint`, `exclude`, `triggers`), plus the overlay `synthetic` entries (harness built-ins that have no `SKILL.md`: `code-review`, `simplify`, `security-review`, `plugin-authoring`, `claude-api`, `update-config`, `keybindings-help`, `fewer-permission-prompts`, `dataviz`; a real `SKILL.md` of the same name wins).
 
 - Every skill question ends with a `none` option ("no listed skill fits"). A question holds at most 254 skills + `none`.
 - The Jev `state` is the task text only; menu text lives in the question criteria. Question text shrinks in steps (down to 60 characters per description) before a skill would ever be dropped.
 - Cache: `{root}/state/skill-route/skill-route-menu.json` (`SKILL_ROUTE_STATE_DIR` moves it). Rebuilt when any `SKILL.md`, the overlay or the catalog is newer than the cache, when the set of skill directories changes, or with `--rebuild-menu`.
-- The shipped overlay assigns the 243 shipped skills to 16 domains or excludes them (`exclude`, for example internal session skills); 232 are routable with the 9 synthetic entries.
+- The shipped overlay assigns every shipped skill to one of 16 domains or excludes it (`exclude`, for example internal session skills), and adds 9 synthetic entries; `skill-route.py --rebuild-menu` prints the exact counts.
 
 ## Overlay maintenance
 
@@ -201,7 +204,11 @@ Built from `{root}/skills/*/SKILL.md` (depth 1; directories starting with `_` or
 "internal":  {"exclude": "internal", "why": "not offered to the router"}
 ```
 
-Optional keys on a routable entry: `also_domains` (list; also offer the skill when stage 1 picks one of those domains; two-stage only), `why`. Top-level keys: `domains` (name to description), `skills`, `synthetic`, `vi_map`, `en_only`, `notes`. The `hint` text is where near-duplicate skills are told apart ("use when X; not when Y"); do not edit `SKILL.md` for routing.
+Optional keys on a routable entry: `triggers` (list of phrases; see below), `also_domains` (list; also offer the skill when stage 1 picks one of those domains; two-stage only), `why`. Top-level keys: `domains` (name to description), `skills`, `synthetic`, `role_excludes`, `families`, `vi_map`, `en_only`, `notes`. The `hint` text is where near-duplicate skills are told apart ("use when X; not when Y"); do not edit `SKILL.md` for routing.
+
+**Triggers.** `skills[name].triggers` (a synthetic entry carries its own) is the ONLY source of the per-skill trigger phrases the menu shows the model. A `skills/INDEX.catalog.json` is read for the description fallback and the cache signature, never for triggers. A skill without `triggers` still routes on its description and hint. Changing an overlay `triggers` list rebuilds the menu cache and makes the gate's eval/drill results stale (the fingerprint covers the routable menu).
+
+**Roles and families.** `role_excludes` is `{"exec": {"reason": "...", "skills": [names]}}`: skills `--role exec` / `route(role="exec")` leaves out of the menu. `families` is `{"family": [names]}` of true substitutes; the shadow report counts a pick that shares a family with a skill the spawner named as agreement. Both lists must name routable skills: the strict loader (CI gate, `jev-gate-check.py`) raises `MenuError` on a name that is not routable, so rename or exclude a skill and update these lists in the same change. At runtime (lenient) such a name is dropped silently, so a user who deleted a shipped skill does not lose the router.
 
 Rules:
 
@@ -239,12 +246,27 @@ Output: `added: NAME` (exit 0), `exists: NAME` (exit 0, existing entries are nev
 
 `.github/scripts/check-skill-route-disabled.py` runs the real script with the switch off (several argument shapes, stdin, `--shadow`) behind a socket/subprocess guard and asserts the pinned line, zero connections, zero spawns, and no files written; a positive control with the switch on proves the guard sees traffic.
 
+## Binding spawn routing
+
+Optional, and only meaningful once you enable the router. If you want every spawn to carry the router's pick, the pieces below record it; a gate that enforces it is not shipped. Where this document says "the jev gate (when enabled)", it means an enforcer you wire yourself. With the router off, spawners pick 1-3 skills from `skills/INDEX.md` as before.
+
+The spawner rule these pieces support: before a spawn, run `skill-route.py --role exec "<task>"`; the spawn prompt then carries `Skills: /a, /b` and one line `Jev[r=<route_id>]: accept|modify|reject — <reason>`. When the result's `gate` is `pass`, Jev's skills are the default (accept, reason optional). When it is `low_confidence` or `skills` is empty, the spawner states an explicit verdict with a reason. If the router is down, spawn anyway.
+
+- **route_id.** `route()` returns `route_id` (8 lowercase hex; `""` if the cache write failed) and writes it to the decision log. The CLI JSON has the key.
+- **Route cache** (`scripts/jev_spawn.py`): `{root}/state/skill-route/jev-route-cache/<id>.json` (`SKILL_ROUTE_STATE_DIR` moves it). Entry: `{route_id, ts, skills, gate, router, domain, role, none_fired, jev_down, denies}`; no task text. TTL 48 h; pruned past 500 files. Written on every `route()` call, also with `--no-log`.
+- **Verdict line** (`jev_spawn.parse_verdict_line`): `Jev[r=<route_id>]: accept|modify|reject — <reason>` (`unavailable` is written only by a gate). Case-insensitive, first match wins, reason capped at 200 characters.
+- **Exempt spawn types.** One module constant block in `jev_spawn.py` (`EXEMPT_TYPES`, `EXEMPT_PREFIXES`, `EXEMPT_SUFFIXES`) lists the fixed-role types that need no verdict line and get no feedback record (search and save-state helpers, built-in explorer/planner types, `critique-*`, `council-*`, `*-critique`). Everything else is binding. Empty all three to make every spawn binding.
+- **Recorder.** `skill-route.py --shadow` reads one spawn JSON on stdin (`{prompt, description, spawn_id, subagent_type, parent_agent}`), reads the `Jev[r=<id>]` line, reuses the cached Jev result by `route_id` (no second Jev call; otherwise the spawn is routed), appends one record to the shadow log and, for binding spawn types, ONE `source: "spawn"` record to `jev-feedback.jsonl`. A spawn with no line is recorded as `inferred`. The `mods/spawn-ledger` mod pipes every spawn to `--shadow` (detached, fire-and-forget) while `AGENCY_SKILL_ROUTER=1`; it skips the call when the kill switch file exists, when `SKILL_ROUTE_CHILD=1` or when the hook profile is `minimal`. With the router off nothing is piped and nothing is recorded. The project slug of a spawn is resolved against the table rows in `{root}/memory/medium-term.md` (`| slug | `path` | ...`), in this order: a `Project:` line in the prompt, the parent agent `{slug}-pd`, the subagent type `{slug}-pd`, the working directory, else `global`. Kill switch: create `{root}/state/skill-route/skill-route-shadow.off`.
+- **Deny guards (for a gate).** `jev_spawn.evaluate()` is the decision table (pass / rewrite / deny). A gate denies at most twice and the third attempt passes as `deny_cap`: the loop guard is `max(route-id denies, spawner denies)`. The second counter is keyed per spawner + task (`spawner_key`, store `{root}/state/skill-route/jev-gate-denies/<key>.json`, TTL 1 h), because a spawner that re-issues WITHOUT the Jev line gets a fresh route id each time. `skill-route.gate_route()` is the helper a gate calls to route a spawn exactly as the recorder would (explicit `/name` passthrough off, live usage accounting).
+- **Cost.** At most one Jev call per spawn (pre-consult, gate or recorder) while the spawner quotes the `Jev[r=<id>]` line; a spawn with no line or a stale id is routed again by the next stage.
+- **Feedback.** `jev-feedback.py reconcile` fills the outcome of spawn records from `spawn_end` rows; `jev-feedback.py spawn-stats` prints totals and agreement rate. Records written by the recorder are never added by hand.
+
 ## Fallback, cost logging, jev-down flag
 
 Failure handling, in order:
 
 1. **Jev** (`https://api.typesafe.ai/v1/systemone`, 2 s timeout). Outage class: timeout, connection error, redirect, 401/403/408/429, 5xx, an unparseable body, or a missing key. Bad-request class: 400, 422 and other 4xx (your request or endpoint config is wrong). Both fall back to Haiku.
-2. **Haiku** through `claude -p --model haiku` (the `claude` executable on `PATH`, or `JEV_HAIKU_CMD`). The Claude Code CLI must be installed and logged in. The child runs in an empty temp directory with no tools, no MCP servers, no hooks, no settings and no session persistence, and its environment drops `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `TYPESAFE_API_KEY` and the parent-session variables, so it can only use the logged-in subscription, never a billed key. A 60 s timeout applies; malformed output is repaired once.
+2. **Haiku** through `claude -p --model claude-haiku-5-5` (the `claude` executable on `PATH`, or `JEV_HAIKU_CMD`). The Claude Code CLI must be installed and logged in. The child runs in an empty temp directory with no tools, no MCP servers, no hooks, no settings and no session persistence, and its environment drops `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `TYPESAFE_API_KEY` and the parent-session variables, so it can only use the logged-in subscription, never a billed key. A 60 s timeout applies; malformed output is repaired once.
 3. **Grep**: a local word-overlap ranker. No network. Always `gate: "low_confidence"`.
 
 `jev-down` flag: `{root}/state/skill-route/jev-down` (JSON `since`, `last_failure`, `reason`, `failures`). The first outage creates it, records a `down` line in `{root}/memory/metrics/jev-notify.log` and, on macOS, shows one desktop notification ("Jev router down"; `JEV_NOTIFY=0` suppresses it). Later outages only update the flag. The first Jev success removes it, logs `up` and notifies once ("Jev router back up"). Bad-request failures never set the flag. `jev_down` in the output reports it.
@@ -273,7 +295,9 @@ All optional except the switch.
 | `AGENCY_HOME`, `CLAUDE_CONFIG_DIR` | `~/.claude` | root, in that precedence |
 | `SKILL_ROUTE_SKILLS_DIR` | `{root}/skills` | skills directory |
 | `SKILL_ROUTE_OVERLAY` | `<scripts>/skill-route/overlay.json` | overlay file |
-| `SKILL_ROUTE_STATE_DIR` | `{root}/state/skill-route` | menu cache, `jev-down` flag, shadow kill switch |
+| `SKILL_ROUTE_STATE_DIR` | `{root}/state/skill-route` | menu cache, `jev-down` flag, shadow kill switch, `jev-route-cache/`, `jev-gate-denies/` |
+| `SKILL_ROUTE_MEDIUM_TERM` | `{root}/memory/medium-term.md` | project table the recorder uses to resolve the project slug of a spawn |
+| `JEV_FEEDBACK_LOG` | `{root}/memory/metrics/jev-feedback.jsonl` | feedback file the recorder appends to |
 | `SKILL_ROUTE_LOG` | `{root}/memory/metrics/skill-route.jsonl` | decision log |
 | `SKILL_ROUTE_SHADOW_LOG` | `{root}/memory/metrics/skill-route-shadow.jsonl` | shadow log |
 | `JEV_USAGE_LOG` | `{root}/memory/metrics/jev-usage.jsonl` | cost log |
@@ -301,7 +325,7 @@ All in `scripts/`. Stdlib only. Run them with the same root as the router.
 
 The last three only read result files written by the opt-in tools below and print `run: <command>` when absent. Results go stale by content hash (`jev_fingerprint.py`: AST of `skill-route.py` + `jev_client.py`, plus the routable menu), not by mtime. `--only NAME` evaluates just that criterion; `--only menu-build` reads no result file. Input paths: `JEV_GATE_SKILL_ROUTE_RESULTS`, `JEV_GATE_DRILL_RESULTS`, `JEV_GATE_SKILL_ROUTE_SHADOW`, `JEV_GATE_FEEDBACK`, `JEV_GATE_SKILL_ROUTE_MODE`, `JEV_GATE_NOW`, `JEV_GATE_SCRIPTS_DIR`.
 
-**`jev-drill.py`**: outage drill. Needs `AGENCY_SKILL_ROUTER=1`, calls the real endpoint with your real key in step `s4`, and needs the `claude` CLI (steps `s1`-`s3` degrade to Haiku). Four subprocess steps: `s1` bogus key gives 401, so haiku, flag created, one `down` line; `s2` repeat, flag count up, no new line; `s3` slow local server gives timeout, so haiku; `s4` real key gives `jev`, flag removed, one `up` line. Uses an isolated state dir by default (`--real-state` uses `{root}/state/skill-route` and refuses if `jev-down` exists). Dry run: `AGENCY_SKILL_ROUTER=1 python3 scripts/jev-drill.py --no-notify --notify-log /tmp/n.log --events off --results-dir /tmp/res --usage-log /tmp/u.jsonl`. Writes `{root}/evals/jev-drill/results/<date>.json`; exit 0 only if every executed step passes.
+**`jev-drill.py`**: outage drill. Needs `AGENCY_SKILL_ROUTER=1`, calls the real endpoint with your real key in step `s4`, and needs the `claude` CLI (steps `s1`-`s3` degrade to Haiku). Four subprocess steps: `s1` bogus key gives 401, so haiku, flag created, one `down` line; `s2` repeat, flag count up, no new line; `s3` slow local server gives timeout, so haiku; `s4` real key gives `jev`, flag removed, one `up` line. Safe by default: a plain run uses a fresh temp state dir (removed at exit), a temp notify log, no OS notification (`JEV_NOTIFY=0`) and no events (`JEV_EMIT=0`), so it never touches a live `jev-down` flag or your live logs. The cost log still gets real rows (the drill spends real calls), tagged `purpose=drill`. Opt-ins, each explicit: `--real-state` (use `{root}/state/skill-route`; refuses if `jev-down` exists and always restores "no flag" on exit), `--real-notify` (write the live `jev-notify.log` and fire real OS notifications; `--no-notify` still wins), `--events on` (emit/check events in the live `events.jsonl`). A `--notify-log` that resolves to the live log is refused without `--real-notify`. Dry run: `AGENCY_SKILL_ROUTER=1 python3 scripts/jev-drill.py --results-dir /tmp/res --usage-log /tmp/u.jsonl`. Writes `{root}/evals/jev-drill/results/<date>.json`; exit 0 only if every executed step passes.
 
 **`skill-route-eval.py`**: scores the router against labelled tasks. Needs `AGENCY_SKILL_ROUTER=1`; costs real Jev calls (logged with purpose `eval`).
 
@@ -311,7 +335,7 @@ AGENCY_SKILL_ROUTER=1 python3 scripts/skill-route-eval.py --router jev --mode tw
 
 **The seed is not shipped.** Write your own `{root}/evals/skill-route/seed.jsonl`, one object per line: `{"id": "t1", "task": "build a React landing page", "expected_skills": ["frontend"], "split": "dev|holdout", "lang": "en", "source": "hand"}` (`split`, `lang`, `source` optional; `"expected_none": true` with `[]` means no skill fits; `"unscored": true` excludes the row). Confirmed mismatches from `jev-feedback.jsonl` are added automatically. Optional `{root}/evals/skill-route/prerules.jsonl` assertions run against a loopback counting server and a counting `claude` stub, so they never spend money. Output: top-1, top-3, gate-pass rate, top-1 among `gate=pass`, per-split tables, cost; results in `{root}/evals/skill-route/results/`. Exit 0 ok or disabled, 1 a prerule assertion failed, 2 usage/IO error.
 
-**`jev-feedback.py`**: reviewer feedback log (offline, local file, works with the router off). Subcommands: `add --project P --task-id ID --verdict SKILL --router jev|haiku|grep|passthrough --review agree|disagree [--reason R] [--task-text T]`; `outcome TASK_ID ok|wrong_skill [--correct-skills a,b]`; `mismatches` (confirmed mismatches as JSONL). `--file` or `JEV_FEEDBACK_LOG` selects the file (default `{root}/memory/metrics/jev-feedback.jsonl`). Task text is redacted before it is stored.
+**`jev-feedback.py`**: reviewer feedback log (offline, local file, works with the router off). Subcommands: `add --project P --task-id ID --verdict SKILL --router jev|haiku|grep|passthrough --review agree|disagree [--reason R] [--task-text T]`; `outcome TASK_ID ok|wrong_skill [--correct-skills a,b]`; `mismatches` (confirmed mismatches as JSONL); `reconcile [--spawn-logs FILE ...]` (fill the outcome of spawn records from `spawn_end` rows in `{root}/logs/spawns.jsonl` and the project `memory/spawns.jsonl` logs); `spawn-stats` (JSON totals over spawn records: gate x verdict, verdict sources, agreement rate, outcomes). `--file` or `JEV_FEEDBACK_LOG` selects the file (default `{root}/memory/metrics/jev-feedback.jsonl`). Task text is redacted before it is stored.
 
 ## Files
 
@@ -319,9 +343,11 @@ AGENCY_SKILL_ROUTER=1 python3 scripts/skill-route-eval.py --router jev --mode tw
 |---|---|
 | `scripts/skill-route.py` | router CLI and module |
 | `scripts/jev_client.py` | Jev client, Haiku fallback, redaction, usage log, outage flag |
+| `scripts/jev_spawn.py` | verdict line, exempt spawn types, decision table, route cache, deny guards |
 | `scripts/jev_fingerprint.py` | content hash used by the gate |
 | `scripts/skill-route/overlay.json` | domains and per-skill routing data |
 | `scripts/skill-route-overlay-add.py` | add overlay entries |
 | `scripts/jev-gate-check.py`, `jev-drill.py`, `skill-route-eval.py`, `jev-feedback.py` | maintainer tools |
 | `.github/scripts/check-skill-route-menu.py`, `check-skill-route-disabled.py` | CI gates |
+| `scripts/tests/` | unit tests (`python3 -m unittest discover -s scripts/tests -v`; offline, temp dirs only) |
 | `cli/lib/skill-router.js` | prints the `Skill router: disabled (...)` / `enabled` line for the installers |

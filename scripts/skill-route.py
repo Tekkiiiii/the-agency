@@ -18,9 +18,27 @@ Module API (other tools load this file in-process via importlib spec_from_file_l
     router_enabled() -> bool                     # AGENCY_SKILL_ROUTER == "1"
     load_menu(rebuild=False, strict=True) -> {"skills": {name: {"description","triggers","domain","also","hint"}},
                                  "domains": {name: desc}, "excluded": {name: reason}, "unassigned": [name, ...],
-                                 "vi_map": {...}, "en_only": [...], "built_at": iso}
+                                 "vi_map": {...}, "en_only": [...],
+                                 "role_excludes": {role: [skills]}, "families": {family: [skills]},
+                                 "built_at": iso}
     menu_stats(menu) -> {"routable","excluded","excluded_names","domains"}
-    route(text, project=None, router=None, mode=None, log=True, cwd=None) -> contract dict
+    route(text, project=None, router=None, mode=None, log=True, cwd=None, role=None) -> contract dict
+    strip_boilerplate(text) -> str     pure, idempotent; drops spawn boilerplate (identity/permission/definition/
+                                       scratch lines, [task:XX], Report/Protocol sections), plain text unchanged
+    role_menu(menu, role) -> menu      menu minus overlay role_excludes[role] (None/"lead"/unknown = unchanged)
+    role_for_subagent(subagent_type) -> "exec" | "lead"   shadow: general-purpose or "" = exec (the Exec role);
+                                       a retired "task-executor" is kept as a legacy alias for old logs
+    family_agree(router_skills, actual, families=None) -> bool   overlap OR shared overlay family (agree_family)
+    gate_route(prompt, description, subagent_type, parent_agent) -> (res, meta, actual_skills)
+                                       binding-spawn gate helper (for the jev gate, when you enable one; not shipped
+                                       here): routes the spawn text exactly as the shadow recorder would (Skills
+                                       clause, /slash tokens and the Jev verdict line stripped) but with passthrough
+                                       DISABLED and LIVE (shadow=False) usage accounting; writes the route cache
+                                       (res["route_id"]); actual_skills = _actual_skills over the FULL menu.
+                                       MenuError propagates (the caller fails open).
+    shadow_run(raw)                    the automatic spawn RECORDER behind `--shadow`: logs the shadow record and, for
+                                       binding spawn types, ONE jev-feedback.jsonl record (reuses the cached Jev result
+                                       when the prompt carries `Jev[r=<id>]`, else routes). Never raises, prints nothing.
     main(argv=None) -> exit code
 load_menu() and menu_stats() work offline whether or not the switch is on (the CI menu gate uses them).
 strict (default, for importers: the CI gate, jev-gate-check.py --only menu-build): a skill dir with no overlay
@@ -30,7 +48,15 @@ route() called in-process with the switch off never reaches a model: jev_client.
 RouterUnavailable("disabled") and route() degrades to the grep router.
 
 route() returns exactly {"skills","model","tools","scores","domain","router","gate","pre_rules","lang",
-"jev_down"}. It never prints and never raises EXCEPT MenuError (a broken menu/overlay is a config bug that
+"jev_down","route_id"}. route_id is the 8-hex id of the route cache entry (jev_spawn.cache_put; no task text in it)
+the spawner quotes as `Jev[r=<id>]` in a spawn prompt; "" when the cache write failed (or jev_spawn is missing). The
+cache is written on EVERY route() call, also with log=False / --no-log. The routed text is strip_boilerplate(text) ONLY when SKILL_ROUTE_STRIP=1 (default OFF: measured to lower
+Jev's confidence, see STRIP_ROUTED_TEXT); the explicit /name passthrough always uses the
+ORIGINAL text. role="exec" (CLI --role exec, the CLI default: picking skills for an Exec spawn) removes
+the overlay role_excludes["exec"] skills from the menu before both Jev stages, flat mode and grep; role=None (module
+default) / "lead" keep the full menu. An explicit /name is never filtered. role is recorded in the decision log and
+the shadow record. Overlay role_excludes / families naming a skill that is not routable raise MenuError.
+route() never prints and never raises EXCEPT MenuError (a broken menu/overlay is a config bug that
 must fail loud; with no menu there is nothing to fall back to). Every network/Jev/Haiku failure degrades
 to the grep router. pre_rules: "explicit" (/name passthrough), "vietnamese".
 
@@ -38,10 +64,16 @@ Root: {root} = $AGENCY_HOME, else $CLAUDE_CONFIG_DIR, else <home>/.claude (hooks
 
 Environment (all optional; tests set them)
     AGENCY_SKILL_ROUTER      "1" enables the router; anything else = disabled
-    SKILL_ROUTE_SKILLS_DIR   skills dir (default {root}/skills); INDEX.catalog.json is read from it if present
-    SKILL_ROUTE_OVERLAY      overlay json (default <scripts>/skill-route/overlay.json)
+    SKILL_ROUTE_SKILLS_DIR   skills dir (default {root}/skills); INDEX.catalog.json is read from it if present, for
+                             the description fallback and the cache mtime signature only (NOT for triggers)
+    SKILL_ROUTE_OVERLAY      overlay json (default <scripts>/skill-route/overlay.json); skills[name].triggers is the
+                             ONLY source of per-skill trigger phrases (synthetic entries carry their own)
     SKILL_ROUTE_STATE_DIR    state dir (default {root}/state/skill-route): menu cache, jev-down flag,
-                             shadow kill switch (skill-route-shadow.off)
+                             shadow kill switch (skill-route-shadow.off), jev-route-cache/, jev-gate-denies/,
+                             jev-feedback-reconcile.ts (hourly in-process reconcile stamp)
+    SKILL_ROUTE_MEDIUM_TERM  medium-term.md used to resolve the project slug of a spawn record
+                             (default {root}/memory/medium-term.md)
+    JEV_FEEDBACK_LOG         jev-feedback.jsonl the recorder appends to (see jev-feedback.py)
     SKILL_ROUTE_LOG          decision log (default {root}/memory/metrics/skill-route.jsonl)
     SKILL_ROUTE_SHADOW_LOG   shadow log (default {root}/memory/metrics/skill-route-shadow.jsonl)
     SKILL_ROUTE_CHILD=1      make --shadow a no-op (recursion guard; set by the Haiku child)
@@ -52,12 +84,14 @@ from __future__ import annotations
 import argparse
 import datetime
 import hashlib
+import importlib.util
 import json
 import math
 import os
 import re
 import shlex
 import sys
+import time
 import unicodedata
 import warnings
 
@@ -89,6 +123,17 @@ def _jev():
     return _JEV
 
 
+def _jev_spawn():
+    """jev_spawn (verdict line, route cache), imported on first use with this directory on sys.path, so it also resolves
+    when this file is loaded by path from somewhere else. Importing it has no side effects. ImportError propagates:
+    every caller treats a missing jev_spawn as "no route cache / no recorder" and carries on."""
+    d = os.path.dirname(os.path.abspath(__file__))
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    import jev_spawn
+    return jev_spawn
+
+
 # --------------------------------------------------------------------------- constants (tune on DEV only)
 T1 = 0.45                 # flat gate: top1 merged prob must be >= T1
 T2 = 0.10                 # flat gate: top1 - top2 must be >= T2
@@ -109,6 +154,19 @@ NONE_KEY = "none"
 NONE_TEXT = ("No listed skill fits this task: it needs no special skill, or a skill that is not in this list. "
              "Pick only when every listed skill would be a stretch.")
 SHADOW_TEXT_CAP = 3000
+# JCR-2 MEASURED (2026-10-08, replay n=96 of real spawns, evals/skill-route/results/2026-10-08-shadow-replay-*): routing on
+# the stripped text LOWERED Jev's confidence (gate=pass 35 -> 30 rows, top-1 28.1/26.0 -> 20.8/22.9 %, 7 rows lost, 0
+# gained), because the scaffold text around the task is part of what Jev's confidence calibrates on. So stripping is
+# OFF by default; SKILL_ROUTE_STRIP=1 turns it on (kept for experiments and re-measurement). The Skills-clause fix in
+# shadow_run (only `Skills: ...` to its sentence end goes, not the rest of the line) is always on.
+STRIP_ROUTED_TEXT = os.environ.get("SKILL_ROUTE_STRIP", "").strip() == "1"
+STRIP_FLOOR = 40             # strip_boilerplate: if less than this many chars of content would be left, keep the original
+STRIP_IDENTITY_LINES = 3     # the "You are Exec-..." identity sentence is only looked for in the first non-empty lines
+STRIP_SENTENCE_MAX = 400     # an identity sentence longer than this is never dropped whole (prefix only)
+ROLES = ("exec", "lead")     # CLI --role values; module callers may pass None (no filter)
+# REV004 (2026-10-08): task-executor is retired; an Exec is general-purpose + skills. "task-executor" stays ONLY so
+# historical shadow records / transcripts (logged before the retirement) still map to the exec role.
+EXEC_SUBAGENT_TYPES = ("general-purpose", "task-executor")
 EXCERPT_CAP = 200
 MAX_QUESTION_CHARS = 90000   # per-question criteria budget (~25k tokens; Jev: state + longest question ~32k)
 MAX_TOTAL_CHARS = 150000     # all questions together (~42k tokens; Jev: all ~64k)
@@ -370,6 +428,49 @@ def _newest_source_mtime(universe, overlay_path, catalog_path):
     return newest
 
 
+def _parse_roles_and_families(overlay, skills, problems, strict=True, dropped=None):
+    """Validate the overlay's top-level `role_excludes` {role: {"reason": str, "skills": [names]}} and
+    `families` {family: [names]} against the routable menu `skills`. Appends one line per problem (MenuError
+    lists them all). strict=False (runtime): a name that is not routable is dropped (and noted in `dropped`), so a
+    user who removed a shipped skill does not take the router down; strict (CI gate, gate check) keeps it a problem.
+    Returns ({role: [names]}, {family: [names]})."""
+    role_excludes, families = {}, {}
+    raw = overlay.get("role_excludes")
+    if raw is not None:
+        if not isinstance(raw, dict):
+            problems.append("role_excludes must be an object {role: {\"reason\": str, \"skills\": [names]}}")
+        else:
+            for role, ent in raw.items():
+                if (not isinstance(ent, dict) or not isinstance(ent.get("skills"), list)
+                        or not str(ent.get("reason") or "").strip()):
+                    problems.append("role_excludes[%s] must be {\"reason\": non-empty str, \"skills\": [names]}" % role)
+                    continue
+                bad = [str(n) for n in ent["skills"] if n not in skills]
+                if bad and strict:
+                    problems.append("role_excludes[%s] names skills that are not in the routable menu: %s" % (
+                        role, ", ".join(bad)))
+                elif bad and dropped is not None:
+                    dropped.extend("role_excludes[%s]:%s" % (role, n) for n in bad)
+                role_excludes[str(role)] = [n for n in ent["skills"] if n in skills]
+    raw = overlay.get("families")
+    if raw is not None:
+        if not isinstance(raw, dict):
+            problems.append("families must be an object {family: [skill names]}")
+        else:
+            for fam, members in raw.items():
+                if not isinstance(members, list):
+                    problems.append("families[%s] must be a list of skill names" % fam)
+                    continue
+                bad = [str(n) for n in members if n not in skills]
+                if bad and strict:
+                    problems.append("families[%s] names skills that are not in the routable menu: %s" % (
+                        fam, ", ".join(bad)))
+                elif bad and dropped is not None:
+                    dropped.extend("families[%s]:%s" % (fam, n) for n in bad)
+                families[str(fam)] = [n for n in members if n in skills]
+    return role_excludes, families
+
+
 def _build_menu(skills_dir, overlay_path, universe, strict=True):
     try:
         overlay = _read_json(overlay_path)
@@ -423,7 +524,7 @@ def _build_menu(skills_dir, overlay_path, universe, strict=True):
             fm = {}
         cat = catalog.get(name) or {}
         desc = fm.get("description") or cat.get("description") or name
-        trig = cat.get("triggers") if isinstance(cat.get("triggers"), list) else []
+        trig = ov.get("triggers") if isinstance(ov.get("triggers"), list) else []  # overlay is the trigger SSOT; catalog triggers are ignored
         also = [d for d in (ov.get("also_domains") or []) if d != dom]
         bad_also = [d for d in also if d not in domains]
         if bad_also:
@@ -458,6 +559,8 @@ def _build_menu(skills_dir, overlay_path, universe, strict=True):
             "also": s_also,
             "hint": sv.get("hint") or "",
         }
+    dropped = []
+    role_excludes, families = _parse_roles_and_families(overlay, skills, problems, strict, dropped)
     if problems:
         raise MenuError("skill menu cannot be built (%d problem(s)):\n  %s\nFix: add each skill to %s "
                         "with a valid domain or an exclude reason." % (
@@ -470,8 +573,11 @@ def _build_menu(skills_dir, overlay_path, universe, strict=True):
         "domains": dict(domains),
         "excluded": excluded,
         "unassigned": sorted(unassigned),
+        "dropped": dropped,   # overlay role_excludes/families names that are not routable (lenient mode only)
         "vi_map": dict(overlay.get("vi_map") or {}),
         "en_only": list(overlay.get("en_only") or []),
+        "role_excludes": role_excludes,
+        "families": families,
         "built_at": _now_iso(),
     }
 
@@ -496,8 +602,9 @@ def load_menu(rebuild=False, strict=True):
             if cache_mtime >= _newest_source_mtime(universe, overlay_path, cat_path):
                 data = _read_json(cache)
                 if isinstance(data, dict) and data.get("sig") == sig and "skills" in data \
-                        and not (strict and data.get("unassigned")):
+                        and not (strict and (data.get("unassigned") or data.get("dropped"))):
                     data.setdefault("unassigned", [])
+                    data.setdefault("dropped", [])
                     return data
         except (OSError, ValueError):
             pass
@@ -572,6 +679,150 @@ def slash_tokens(text, names):
 def strip_slash_tokens(text, names):
     lower = set(n.lower() for n in names)
     return _SLASH_RE.sub(lambda m: "" if m.group(1).lower() in lower else m.group(0), text or "")
+
+
+# --------------------------------------------------------------------------- roles
+def role_menu(menu, role):
+    """The menu a caller of `role` may be routed to: menu["skills"] minus menu["role_excludes"][role].
+    role None / "lead" / unknown = the menu itself (no filter). The full menu is never mutated."""
+    drop = (menu.get("role_excludes") or {}).get(role) if role else None
+    if not drop:
+        return menu
+    kept = dict((n, s) for n, s in menu["skills"].items() if n not in set(drop))
+    if not kept:
+        return menu
+    out = dict(menu)
+    out["skills"] = kept
+    return out
+
+
+def role_for_subagent(subagent_type):
+    """Shadow: Agent-tool subagent_type -> "exec" (general-purpose, empty = the harness default general-purpose,
+    or the retired task-executor kept for old log records) | "lead" (coords, PDs, dept heads, every other type: no filter)."""
+    t = (subagent_type or "").strip().lower()
+    return "exec" if (not t or t in EXEC_SUBAGENT_TYPES) else "lead"
+
+
+def family_agree(router_skills, actual, families=None):
+    """agree_family: True when ANY router skill is in `actual`, or shares an overlay family with any actual
+    skill (families = overlay `families` {name: [skills]}; None = plain overlap). Pure."""
+    rs, act = list(router_skills or []), set(actual or [])
+    if not rs or not act:
+        return False
+    if any(s in act for s in rs):
+        return True
+    for members in (families or {}).values():
+        m = set(members or [])
+        if m & set(rs) and m & act:
+            return True
+    return False
+
+
+# --------------------------------------------------------------------------- boilerplate stripper
+_L = r"^[ \t>*\-]*"
+_SENT_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z\[\"'(`~/<{])")
+_TASK_TAG_RE = re.compile(r"\[task:[^\]\n]*\][ \t]*")
+_IDENT_RE = re.compile(_L + r"You are (?:an? |the )?(?:[A-Za-z-]+ )?(?:Exec|Coord|PD|Mini-Coord|Task-Executor|[\w-]+-pd)\b",
+                       re.I)
+_IDENT_PREFIX_RE = re.compile(_L + r"You are (?:an? |the )?(?:[A-Za-z-]+ )?(?:Exec|Coord|PD|Mini-Coord|Task-Executor|[\w-]+-pd)"
+                              r"(?:-[\w-]+|[ \t]+\"[^\"\n]*\")?(?:[ \t]*\([^)\n]*\))?[,;:]?[ \t]*", re.I)
+_PATHVAL = r"(?:[\w.-]+[ \t]+--[ \t]+)?[^\s]*[/~][^\s]*"
+_LABEL_PATH_RE = re.compile(_L + r"(?:project|system root|project dir|project root)[ \t]*:?[ \t]*" + _PATHVAL + r"[ \t]*", re.I)
+_BP_SENTENCE_RES = [re.compile(p, re.I) for p in (
+    _L + r"(?:you are a )?team member,? not (?:a )?contractor\b",
+    _L + r"you are a team lead\b",
+    _L + r"your (?:executors|execs) are team members\b",
+    _L + r"your (?:spawner|lead)\b",
+    _L + r"spawner[ \t]*[:=]",
+    _L + r"(?:you must )?write an? approach\b",
+    _L + r"[^\n]*checkpoint-handshake-protocol",
+    _L + r"(?:task )?tier[ \t]*:?[ \t]*tier_[ab]\b",
+    _L + r"tier_[ab]\b",
+    _L + r"(?:checkpoint|approach)\b[^\n]{0,60}\b(?:gate|mandatory|skipped|waived)\b",
+    _L + r"poll (?:it|the)\b",
+    _L + r"skills?[ \t]*:[ \t,.;]*$",
+    _L + r"you have (?:full )?read(?:/| \+ )write(?:/| \+ )create\b",
+    _L + r"use (?:read|bash)\b[^\n]{0,80}\bfreely\b",
+    _L + r"no permission needed\b",
+    _L + r"set it up now\b",
+    _L + r"decompose your l\d task\b",
+    _L + r"(?:your )?(?:coord|executor|exec|mini-coord|pd|task-executor) definition[ \t]*:",
+    _L + r"(?:your )?(?:(?:coord|executor|exec|mini-coord|pd) )?(?:scratch|checkpoint) file[ \t]*:",
+    _L + r"execute (?:the task )?exactly as given\b",
+    _L + r"do not decompose (?:it |this )?further\b",
+    _L + r"if (?:blocked|out of scope|an action exceeds scope)\b[^\n]{0,60}\b(?:blocked|escalate)\b",
+    _L + r"when done,? (?:report|deliver)\b",
+    _L + r"then archive your scratch file\b",
+    _L + r"report back[ \t]*:",
+    _L + r"(?:project|system root|tasks|inter-spawn tasks|project dir|project root)[ \t]*:?[ \t]*" + _PATHVAL + r"\.?[ \t]*$",
+    _L + r"project[ \t]*:[ \t]*[\w.-]+\.?[ \t]*$",
+)]
+_BP_HEADING_RE = re.compile(
+    r"^[ ]{0,3}#{1,6}[ \t]+(?:pd standard protocol\b|spawn logging\b|final digest\b|completion report\b|qa gate\b"
+    r"|report(?:[ \t]*\(.*\)|[ \t]+back\b.*|[ \t]+to[ \t]+(?:coord|spawner)\b.*|[ \t]*$))", re.I)
+_ANY_HEADING_RE = re.compile(r"^[ ]{0,3}#{1,6}[ \t]")
+
+
+def _routed_text(text):
+    """What Jev / grep see: strip_boilerplate(text) when STRIP_ROUTED_TEXT (off by default, see its comment), else text."""
+    return strip_boilerplate(text) if STRIP_ROUTED_TEXT else text
+
+
+def strip_boilerplate(text):
+    """Spawn-prompt boilerplate removed, task text kept (pure, idempotent). Routing should see the task, not the
+    protocol around it. Removes: `[task:XX]` tags; the head identity sentence ("You are Exec-x, executing a
+    sub-task for y." / "You are a direct Exec ... spawned by z-pd."; with no sentence end only the "You are
+    Exec-x" prefix goes); role/permission/definition/scratch/checkpoint-file/Project:/System root: lines;
+    team-member / APPROACH-CHECKPOINT / "Execute EXACTLY as given" / "When done, report to Coord" sentences;
+    "## Report ...", "## PD Standard Protocol", "## Spawn Logging" sections up to the next heading.
+    `Skills:` lines are NOT touched here (shadow strips them itself). Plain task text is returned unchanged;
+    if fewer than STRIP_FLOOR chars of content would be left the ORIGINAL text is returned."""
+    if not isinstance(text, str) or not text.strip():
+        return text
+    work = _TASK_TAG_RE.sub("", text)
+    changed = work != text
+    out = []
+    skipping = False
+    seen_nonempty = 0
+    for line in work.split("\n"):
+        if _BP_HEADING_RE.match(line):
+            skipping, changed = True, True
+            continue
+        if skipping:
+            if _ANY_HEADING_RE.match(line):
+                skipping = False
+            else:
+                changed = True
+                continue
+        if not line.strip():
+            out.append(line)
+            continue
+        seen_nonempty += 1
+        sents = _SENT_SPLIT_RE.split(line.strip())
+        kept = []
+        for i, sent in enumerate(sents):
+            if i == 0 and seen_nonempty <= STRIP_IDENTITY_LINES and _IDENT_RE.match(sent):
+                if sent.rstrip().endswith((".", "!")) and len(sent) <= STRIP_SENTENCE_MAX:
+                    continue
+                sent = _IDENT_PREFIX_RE.sub("", sent, count=1)
+                if not sent.strip():
+                    continue
+            if any(r.match(sent) for r in _BP_SENTENCE_RES):
+                continue
+            m = _LABEL_PATH_RE.match(sent)
+            if m and sent[m.end():].strip(" ."):
+                sent = sent[m.end():]
+            kept.append(sent)
+        if len(kept) == len(sents) and kept == sents:
+            out.append(line)
+        else:
+            changed = True
+            if kept:
+                out.append(" ".join(kept))
+    if not changed:
+        return text
+    res = re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip()
+    return res if len(_squash(res)) >= STRIP_FLOOR else text
 
 
 # --------------------------------------------------------------------------- grep router
@@ -908,21 +1159,27 @@ def _jev_flat(text, menu, allow_jev, shadow, meta):
 def _new_meta(mode):
     return {"input_tokens": 0, "output_tokens": 0, "usd": 0.0, "latency_ms": 0, "calls": 0, "routers": [],
             "mode": mode, "domain_p": None, "skill_p": None, "p_combined": None, "none_p": None,
-            "none_fired": False}
+            "none_fired": False, "role": None}
 
 
-def _core(text, menu, router, mode, shadow, meta):
-    """The routing pipeline. Returns the contract dict (never raises except via MenuError upstream)."""
-    names = list(menu["skills"])
+def _core(text, menu, router, mode, shadow, meta, detect_text=None, full_menu=None, passthrough=True):
+    """The routing pipeline. Returns the contract dict (never raises except via MenuError upstream).
+    `text` is what Jev/grep see (boilerplate stripped), `detect_text` the ORIGINAL text for the explicit /name
+    passthrough, `menu` the role-filtered menu, `full_menu` the unfiltered one (explicit /name passthrough is the
+    caller's own choice: never filtered by role). passthrough=False (gate_route) skips the explicit /name branch
+    without touching usage accounting (`shadow`)."""
+    full_menu = full_menu or menu
+    orig = text if detect_text is None else detect_text
     lang = detect_lang(text)
     pre_rules = []
-    # 1. explicit /name passthrough (disabled in shadow: slash tokens are the answer there)
-    if not shadow:
-        explicit = slash_tokens(text, names)
+    # 1. explicit /name passthrough (disabled in shadow: slash tokens are the answer there; disabled by
+    #    passthrough=False for the spawn gate, which must consult Jev on a prompt that names skills)
+    if passthrough and not shadow:
+        explicit = slash_tokens(orig, list(full_menu["skills"]))
         if explicit:
             explicit = explicit[:MAX_SKILLS]
             pre_rules.append("explicit")
-            first = menu["skills"][explicit[0]]
+            first = full_menu["skills"][explicit[0]]
             return {"skills": explicit, "model": PASSTHROUGH_MODEL, "tools": PASSTHROUGH_TOOLS,
                     "scores": dict((n, 1.0) for n in explicit), "domain": first["domain"],
                     "router": "passthrough", "gate": "pass", "pre_rules": pre_rules, "lang": lang,
@@ -962,7 +1219,9 @@ def _core(text, menu, router, mode, shadow, meta):
 
 def _contract_order(d):
     keys = ("skills", "model", "tools", "scores", "domain", "router", "gate", "pre_rules", "lang", "jev_down")
-    return dict((k, d[k]) for k in keys)
+    out = dict((k, d[k]) for k in keys)
+    out["route_id"] = d.get("route_id", "")
+    return out
 
 
 def _excerpt(text):
@@ -978,16 +1237,34 @@ def _log_decision(text, project, res, meta):
            "skills": res["skills"], "scores": res["scores"], "model": res["model"], "tools": res["tools"],
            "gate": res["gate"], "lang": res["lang"], "pre_rules": res["pre_rules"],
            "jev_down": res["jev_down"], "calls": meta["calls"], "input_tokens": meta["input_tokens"],
-           "usd": round(meta["usd"], 8), "latency_ms": meta["latency_ms"]}
+           "usd": round(meta["usd"], 8), "latency_ms": meta["latency_ms"],
+           "role": meta.get("role"), "route_id": res.get("route_id", "")}
     _append_jsonl(_decision_log_path(), rec)
 
 
-def _route_full(text, project, router, mode, log, shadow=False):
-    menu = load_menu(strict=False)  # MenuError propagates (fail loud); unassigned skills are not fatal here
-    meta = _new_meta(mode if mode in MODES else DEFAULT_MODE)
-    text = text if isinstance(text, str) else str(text or "")
+def _cache_put(res, meta):
+    """Write the route cache entry (jev_spawn.cache_put) and return its route_id. "" on ANY failure, also when
+    jev_spawn is missing: skill-route must keep working without it. Lazy import: importing skill-route stays
+    side-effect free."""
     try:
-        res = _core(text, menu, router, mode, shadow, meta)
+        jev_spawn = _jev_spawn()
+        return jev_spawn.cache_put(res, {"role": meta.get("role"), "none_fired": bool(meta.get("none_fired")),
+                                         "jev_down": bool(res.get("jev_down"))}) or ""
+    except Exception:
+        return ""
+
+
+def _route_full(text, project, router, mode, log, shadow=False, role=None, cache=True, passthrough=True,
+                detect_text=None):
+    full_menu = load_menu(strict=False)  # MenuError propagates (fail loud); unassigned skills are not fatal here
+    menu = role_menu(full_menu, role)
+    meta = _new_meta(mode if mode in MODES else DEFAULT_MODE)
+    meta["role"] = role
+    text = text if isinstance(text, str) else str(text or "")
+    orig = text if detect_text is None else detect_text   # the ORIGINAL text: explicit /name passthrough
+    text = _routed_text(text)                             # what Jev / grep / the log excerpt see
+    try:
+        res = _core(text, menu, router, mode, shadow, meta, orig, full_menu, passthrough)
     except MenuError:
         raise
     except Exception:
@@ -996,20 +1273,30 @@ def _route_full(text, project, router, mode, log, shadow=False):
         if res["skills"]:
             res["domain"] = menu["skills"][res["skills"][0]]["domain"]
     res = _contract_order(res)
+    res["route_id"] = _cache_put(res, meta) if cache else ""
     if log:
         _log_decision(text, project, res, meta)
     return res, meta
 
 
-def route(text, project=None, router=None, mode=None, log=True, cwd=None):
+def route(text, project=None, router=None, mode=None, log=True, cwd=None, role=None):
     """Route a task text. Returns the contract dict. Never prints; raises only MenuError.
+    role: None / "lead" = the full menu (module default); "exec" = the menu minus overlay role_excludes["exec"]
+    (orchestration/safety skills an Exec never needs). Boilerplate is stripped from the routed text
+    (strip_boilerplate); the explicit /name passthrough uses the original text.
     `project` is recorded in the decision log; `cwd` is accepted for API compatibility and unused."""
-    res, _meta = _route_full(text, project, router, mode, log)
+    res, _meta = _route_full(text, project, router, mode, log, role=role)
     return res
 
 
 # --------------------------------------------------------------------------- shadow
 _SKILLS_LINE_RE = re.compile(r"(?im)^[ \t>*-]*skills?(?:[ \t]+to[ \t]+(?:load|use))?[ \t]*:[ \t]*(.*)$")
+
+
+# shadow routing text: remove only the `Skills: ...` CLAUSE (to its first sentence end or the line end). Real prompts
+# often open `Skills: /x. You are an Exec ... Task: ...` on one line; removing the whole line ate the task.
+_SKILLS_CLAUSE_RE = re.compile(r"(?im)(?:^|(?<=[.!?] ))[ \t>*-]*skills?(?:[ \t]+(?:to[ \t]+(?:load|use)|for[ \t]+execs?))?[ \t]*:"
+                               r"[^\n]*?(?:\.(?=[ \t]|$)|$)")
 
 
 def _actual_skills(prompt, names):
@@ -1027,9 +1314,190 @@ def _actual_skills(prompt, names):
     return out
 
 
+def _spawn_text(prompt, description, names):
+    """The text a spawn is routed on, shared by the recorder (shadow_run) and the gate (gate_route) so both see the
+    same thing. Returns (full, text): full = description + body with the Jev verdict line, the `Skills: ...` clause
+    and every /skill token removed (the detector scans THIS, past the routing cap too); text = the routed text
+    (strip_boilerplate only when STRIP_ROUTED_TEXT; stripped BEFORE the cap) capped at SHADOW_TEXT_CAP.
+    Without a Jev line the result is identical to the pre-binding shadow text."""
+    prompt = prompt or ""
+    try:
+        prompt = _jev_spawn().strip_verdict_line(prompt)
+    except Exception:
+        pass  # jev_spawn missing: plain prompt
+    body = _SKILLS_CLAUSE_RE.sub("", prompt)
+    full = strip_slash_tokens((description or "") + "\n" + body, names).strip()
+    return full, _routed_text(full)[:SHADOW_TEXT_CAP]
+
+
+def gate_route(prompt, description, subagent_type, parent_agent):
+    """Route a spawn for the binding gate (the jev gate, when you enable one; this repo does not ship it).
+    Returns (res, meta, actual_skills): res is the route() contract dict incl. route_id (the route cache is written), meta the routing meta (none_fired, calls,
+    ...), actual_skills the spawner's own skills (Skills line + /slash tokens, FULL menu names). Same routed text as
+    the recorder; explicit /name passthrough is DISABLED (a prompt naming /frontend still goes to Jev) and usage
+    accounting is LIVE (shadow=False). MenuError propagates: the caller fails open."""
+    menu = load_menu()  # MenuError propagates
+    names = list(menu["skills"])
+    actual = _actual_skills(prompt, names)
+    full, text = _spawn_text(prompt, description, names)
+    role = role_for_subagent(subagent_type)
+    res, meta = _route_full(text, None, None, None, False, shadow=False, detect_text=full, role=role,
+                            cache=True, passthrough=False)
+    return res, meta, actual
+
+
+# --------------------------------------------------------------------------- recorder helpers
+RECONCILE_EVERY = 3600       # seconds between in-process jev-feedback reconcile runs
+_FEEDBACK_MOD = None         # jev-feedback.py once loaded; False = tried and failed (silent forever)
+
+
+def _feedback_module():
+    """jev-feedback.py (hyphenated name: importlib), loaded lazily and cached. None when absent/broken."""
+    global _FEEDBACK_MOD
+    if _FEEDBACK_MOD is None:
+        try:
+            spec = importlib.util.spec_from_file_location(
+                "jev_feedback_recorder", os.path.join(_scripts_dir(), "jev-feedback.py"))
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            _FEEDBACK_MOD = mod
+        except Exception:
+            _FEEDBACK_MOD = False
+    return _FEEDBACK_MOD or None
+
+
+def _project_rows():
+    """Medium-term Active Projects rows `| slug | `path` | ...` as [(slug, root)] (trailing / and /memory stripped,
+    ~ expanded). Raises on a missing/unreadable table; callers catch."""
+    mt = os.environ.get("SKILL_ROUTE_MEDIUM_TERM") or os.path.join(_root(), "memory", "medium-term.md")
+    rows = []
+    with open(mt, encoding="utf-8") as f:
+        for line in f:
+            m = re.match(r"^\|\s*([^|`]+?)\s*\|\s*`([^`]+)`", line)
+            if not m:
+                continue
+            raw = os.path.expanduser(m.group(2).strip()).rstrip("/")
+            root = (raw[:-7] if raw.endswith("/memory") else raw).rstrip("/")
+            if root:
+                rows.append((m.group(1).strip(), root))
+    return rows
+
+
+def _longest_prefix(path, rows):
+    """Slug of the row whose root is the longest path-boundary prefix of `path`, else None."""
+    path = (path or "").rstrip("/") or "/"
+    best_len, best = 0, None
+    for slug, root in rows:
+        if (path == root or path.startswith(root + "/")) and len(root) > best_len:
+            best_len, best = len(root), slug
+    return best
+
+
+def _pd_slug(name, slugs):
+    """`{slug}-pd` -> slug when slug is in the table, else None."""
+    if isinstance(name, str) and name.endswith("-pd") and name[:-3] in slugs:
+        return name[:-3]
+    return None
+
+
+def _spawn_project(data=None, prompt=None):
+    """Project slug of a spawn, against the medium-term table rows (see _project_rows). Order: (1) a `Project:` line in
+    the prompt: a path on it (longest-prefix, path-boundary check), else its first word if that is a table slug;
+    (2) data.parent_agent `{slug}-pd`; (3) data.subagent_type `{slug}-pd`; (4) longest-prefix of CLAUDE_PROJECT_DIR
+    (else cwd); (5) "global". Unknown slug/path falls to the next step; never raises. No-arg call = steps 4-5 only.
+    Step 4 is the same resolution as mods/spawn-ledger/bin/ledger.py resolve_log_file (that mod still has cwd only)."""
+    try:
+        rows = _project_rows()
+    except Exception:
+        return "global"
+    slugs = set(s for s, _ in rows)
+    data = data if isinstance(data, dict) else {}
+    try:
+        for m in re.finditer(r"(?im)^[ \t]*project:[ \t]*(.*)$", prompt if isinstance(prompt, str) else ""):
+            val = m.group(1)
+            for pm in re.finditer(r"(~?/[^\s`'\",;)\]]*)", val):
+                hit = _longest_prefix(os.path.expanduser(pm.group(1)), rows)
+                if hit:
+                    return hit
+            first = (val.split() or [""])[0].strip("`'\",;")
+            if first in slugs:
+                return first
+    except Exception:
+        pass
+    for key in ("parent_agent", "subagent_type"):
+        try:
+            hit = _pd_slug(data.get(key), slugs)
+            if hit:
+                return hit
+        except Exception:
+            pass
+    try:
+        cwd = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+        return _longest_prefix(cwd, rows) or "global"
+    except Exception:
+        return "global"
+
+
+def _maybe_reconcile(mod):
+    """In-process jev-feedback reconcile at most once an hour. The stamp is written FIRST (atomic) so concurrent
+    recorders do not pile up; no work at all while the hour has not elapsed. Fail silent."""
+    try:
+        stamp = os.path.join(_state_dir(), "jev-feedback-reconcile.ts")
+        try:
+            if time.time() - os.path.getmtime(stamp) < RECONCILE_EVERY:
+                return
+        except OSError:
+            pass
+        os.makedirs(os.path.dirname(stamp), exist_ok=True)
+        tmp = "%s.%d.tmp" % (stamp, os.getpid())
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write("%s\n" % _now_iso())
+        os.replace(tmp, stamp)
+        mod.reconcile()
+    except Exception:
+        pass
+
+
+def _record_spawn_feedback(data, text, line, cached, rid, actual, rs, res, none_fired, consult,
+                           spawn_verdict, verdict_source, role):
+    """ONE jev-feedback.jsonl record for a binding spawn (spec 'jev-feedback.jsonl record for spawns'). Silent on any
+    failure: the module absent, an error list from append_spawn_record, an exception."""
+    try:
+        mod = _feedback_module()
+        if mod is None:
+            return
+        verdict = (line or {}).get("verdict")
+        reason = (line or {}).get("reason") if line else None
+        if line is None:
+            reason = "inferred: zero skills named" if not actual else "inferred: no Jev line"
+        review = {"accept": "agree", "modify": "disagree", "reject": "disagree"}.get(spawn_verdict, "unreviewed")
+        task_id = rid or data.get("spawn_id") or "spawn-%d" % int(time.time())
+        # project from the RAW prompt (`text` is the stripped/capped routed text and may have lost the Project: line)
+        rec = {"tool": "skill-route", "source": "spawn", "project": _spawn_project(data, data.get("prompt")),
+               "task_id": str(task_id),
+               "jev_verdict": rs[0] if rs else "(none)",
+               "router": res.get("router"), "pd_review": review, "pd_reason": reason or "",
+               "outcome": None, "outcome_mismatch": None,
+               "task_text": _excerpt(text),
+               "spawn_verdict": spawn_verdict, "verdict_raw": verdict.lower() if verdict else None,
+               "verdict_source": verdict_source, "gate": res.get("gate"), "none_fired": bool(none_fired),
+               "jev_skills": list(rs), "spawner_skills": list(actual),
+               "subagent_type": data.get("subagent_type"), "parent_agent": data.get("parent_agent"),
+               "role": role, "route_id": rid or None, "spawn_id": data.get("spawn_id"), "consult": consult}
+        mod.append_spawn_record(rec)
+        _maybe_reconcile(mod)
+    except Exception:
+        return
+
+
 def shadow_run(raw):
-    """One --shadow record (stdin JSON {prompt, description, spawn_id, subagent_type, parent_agent}).
-    Never raises; prints nothing."""
+    """The automatic spawn RECORDER behind `--shadow` (the spawn-ledger mod pipes every spawn here while the router
+    is on). Never raises; prints nothing. Stdin JSON {prompt, description, spawn_id, subagent_type, parent_agent}. Writes one
+    skill-route-shadow.jsonl record (all spawn types) and, for binding spawn types, one jev-feedback.jsonl record.
+    When the prompt carries `Jev[r=<id>]` and that id is in the route cache the cached Jev result is reused with NO
+    second Jev call (consult pre, or gate for an auto-injected line); otherwise the spawn is routed as before (shadow
+    accounting, passthrough off, consult post). The verdict recorded is what actually ran:
+    jev_spawn.normalise_verdict(spawner skills, Jev skills); evaluate() belongs to the gate, not to the recorder."""
     try:
         warnings.simplefilter("ignore")  # shadow prints NOTHING, stderr included
         if os.environ.get("SKILL_ROUTE_CHILD") == "1":
@@ -1045,23 +1513,57 @@ def shadow_run(raw):
         menu = load_menu(strict=False)
         names = list(menu["skills"])
         prompt = str(data.get("prompt") or "")
-        desc = str(data.get("description") or "")
-        actual = _actual_skills(prompt, names)
-        body = _SKILLS_LINE_RE.sub("", prompt)
-        full = strip_slash_tokens(desc + "\n" + body, names).strip()
-        text = full[:SHADOW_TEXT_CAP]
-        res, _meta = _route_full(text, None, None, None, False, shadow=True)
-        rs = res["skills"]
+        actual = _actual_skills(prompt, names)   # FULL menu names, never the role-filtered ones
+        full, text = _spawn_text(prompt, str(data.get("description") or ""), names)
+        role = role_for_subagent(data.get("subagent_type"))
+        try:
+            jev_spawn = _jev_spawn()
+            line = jev_spawn.parse_verdict_line(prompt)
+            cached = jev_spawn.cache_get(line["id"]) if line and line.get("id") else None
+        except Exception:
+            jev_spawn, line, cached = None, None, None
+        if cached:
+            rs = [str(x) for x in (cached.get("skills") or [])]
+            res = {"router": cached.get("router"), "domain": cached.get("domain"), "gate": cached.get("gate")}
+            none_fired = bool(cached.get("none_fired"))
+            rid = cached.get("route_id") or line["id"]
+            auto = line["reason"].lower().startswith("auto:") or line["verdict"].lower() == "unavailable"
+            consult = "gate" if auto else "pre"
+        else:
+            res, meta = _route_full(text, None, None, None, False, shadow=True, detect_text=full, role=role,
+                                    cache=False)
+            rs = res["skills"]
+            none_fired = bool(meta.get("none_fired"))
+            rid = (line or {}).get("id") or ""
+            consult = "post"
         if actual:
             agree1 = bool(rs) and rs[0] in actual
             agree_any = any(s in actual for s in rs)
+            agree_fam = family_agree(rs, actual, menu.get("families"))
         else:
-            agree1 = agree_any = None
+            agree1 = agree_any = agree_fam = None
+        if line and line["verdict"].lower() == "unavailable":
+            spawn_verdict, verdict_source = "unreviewed", "jev_unavailable"
+        else:
+            spawn_verdict = jev_spawn.normalise_verdict(actual, rs) if jev_spawn else "unreviewed"
+            reason = ((line or {}).get("reason") or "").lower()
+            if line is None:
+                verdict_source = "inferred"
+            elif reason.startswith("auto: jev default"):
+                verdict_source = "auto_default"
+            elif reason.startswith("auto: matches jev"):
+                verdict_source = "auto_match"
+            else:
+                verdict_source = "explicit"
         _append_jsonl(_shadow_log_path(), {
             "ts": _now_iso(), "spawn_id": data.get("spawn_id"), "subagent_type": data.get("subagent_type"),
             "parent_agent": data.get("parent_agent"), "task_excerpt": _excerpt(text),
             "actual_skills": actual, "router_skills": rs, "router": res["router"], "domain": res["domain"],
-            "gate": res["gate"], "agree_top1": agree1, "agree_any": agree_any})
+            "gate": res["gate"], "agree_top1": agree1, "agree_any": agree_any, "agree_family": agree_fam,
+            "role": role, "route_id": rid, "verdict": spawn_verdict, "verdict_source": verdict_source})
+        if jev_spawn is not None and jev_spawn.is_binding(data.get("subagent_type"), fork=bool(data.get("fork"))):
+            _record_spawn_feedback(data, text, line, cached, rid, actual, rs, res, none_fired,
+                                   consult, spawn_verdict, verdict_source, role)
     except Exception:
         return
 
@@ -1099,6 +1601,17 @@ def shadow_report():
 
     lines.append("top-1 agreement: %s" % pct(sum(1 for r in withact if r.get("agree_top1")), len(withact)))
     lines.append("any agreement:   %s" % pct(sum(1 for r in withact if r.get("agree_any")), len(withact)))
+    try:
+        families = load_menu().get("families") or {}
+    except Exception:
+        families = {}
+    # agree_family is recomputed for EVERY record (old ones lack the field; families may have changed since)
+    lines.append("family agreement: %s" % pct(
+        sum(1 for r in withact if family_agree(r.get("router_skills"), r.get("actual_skills"), families)),
+        len(withact)))
+    gated = [r for r in recs if r.get("gate")]
+    lines.append("low_confidence rate: %s" % pct(sum(1 for r in gated if r.get("gate") == "low_confidence"),
+                                                 len(gated)))
     by = {}
     for r in recs:
         by.setdefault(r.get("router") or "?", []).append(r)
@@ -1132,6 +1645,9 @@ def _build_parser():
     p.add_argument("--project", default=None, help="project slug, recorded in the decision log")
     p.add_argument("--router", choices=ROUTERS, default=None, help="jev (default) | haiku | grep")
     p.add_argument("--mode", choices=MODES, default=None, help="two-stage (default) | flat")
+    p.add_argument("--role", choices=ROLES, default="exec",
+                   help="exec (default: picking skills for an Exec spawn; orchestration/safety skills in the overlay "
+                        "role_excludes are left out of the menu) | lead (full menu, for Coord/PD-level routing)")
     p.add_argument("--no-log", action="store_true", help="skip the decision log skill-route.jsonl")
     p.add_argument("--rebuild-menu", action="store_true", help="rebuild the menu cache")
     p.add_argument("--shadow", action="store_true", help="shadow mode: stdin JSON, logs, prints nothing")
@@ -1190,7 +1706,7 @@ def main(argv=None):
             print(json.dumps(menu_stats(menu), ensure_ascii=False))
             return 0
         res = route(text, project=args.project, router=args.router, mode=args.mode,
-                    log=not args.no_log, cwd=os.getcwd())
+                    log=not args.no_log, cwd=os.getcwd(), role=args.role)
     except MenuError as e:
         sys.stderr.write("skill-route.py: MenuError: %s\n" % e)
         return 2
