@@ -393,15 +393,54 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 -m unittest discover -s scripts/tests
 
-      # The mods' Python halves: spawn-ledger (ledger.py, project resolution,
-      # Exec cap), the hooks/lib helpers (model-pin, spawn_project) and the
-      # identity test that every mod's platform.ts copy equals mods/_shared/.
-      - name: Mods Python tests
+      # The mods' Python halves, one step per suite so one red suite never hides the
+      # rest: spawn-ledger (ledger.py, project resolution, Exec cap), the hooks/lib
+      # helpers (model-pin, spawn_project, find_bash, the live-log guard) and the
+      # identity test that every mod's platform.ts / testpaths.ts copy equals
+      # mods/_shared/. (The scripts/tests isolation + win32 subset is part of the
+      # full "Skill router unit suite" step above.) Every suite loads its
+      # test_00_isolation.py first: tests run in a temp HOME and never write a
+      # live log; the test_zz guard fails the run if one did.
+      - name: Mods Python tests (spawn-ledger)
+        if: ${{ !cancelled() }}
+        run: python3 -m unittest discover -s mods/spawn-ledger/tests
+
+      - name: Mods Python tests (hooks/tests)
+        if: ${{ !cancelled() }}
+        run: python3 -m unittest discover -s hooks/tests
+
+      - name: Mods Python tests (mods/_shared identity)
+        if: ${{ !cancelled() }}
+        run: python3 mods/_shared/test_copies_identical.py
+
+      # The TypeScript halves. `claude plugin validate` and `claude plugin test` ship
+      # in @anthropic-ai/claude-code and need no login. Each loop runs every mod and
+      # fails at the end, so one bad mod never hides another.
+      - name: Install the claude CLI (for claude plugin validate / test)
+        if: ${{ !cancelled() }}
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Mods plugin validate (5 mods)
         if: ${{ !cancelled() }}
         run: |
-          python3 -m unittest discover -s mods/spawn-ledger/tests
-          python3 -m unittest discover -s hooks/tests
-          python3 mods/_shared/test_copies_identical.py
+          rc=0
+          for m in agent-ctx context-band loop-guard spawn-ledger voice-compact; do
+            echo "::group::validate $m"
+            claude plugin validate "mods/$m" || rc=1
+            echo "::endgroup::"
+          done
+          exit $rc
+
+      - name: Mods plugin test (5 mods)
+        if: ${{ !cancelled() }}
+        run: |
+          rc=0
+          for m in agent-ctx context-band loop-guard spawn-ledger voice-compact; do
+            echo "::group::test $m"
+            claude plugin test "mods/$m" || rc=1
+            echo "::endgroup::"
+          done
+          exit $rc
 
   install-ps1:
     name: install.ps1 (windows)
@@ -907,18 +946,69 @@ jobs:
           python3 .github/scripts/test-skill-registry.py
           python3 .github/scripts/check-skill-registry.py
 
-      # INFORMATIONAL for now (continue-on-error): the first real-host evidence
-      # for the Windows-portable mods. Until this run the Windows support was
-      # proven only with win32 simulated on macOS. Promote to a required step
-      # (drop continue-on-error) once it is green.
-      - name: Mods Python tests
+      # INFORMATIONAL for now (continue-on-error): real-host evidence for the
+      # Windows-portable mods. Until the first green run the Windows support was
+      # proven only with win32 simulated on macOS. One step per suite, each under
+      # !cancelled(), so one red suite never hides the rest. The maintainer
+      # promotes each step to required (drops continue-on-error) after a green run.
+      - name: Mods Python tests (spawn-ledger)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        shell: bash
+        run: python3 -m unittest discover -s mods/spawn-ledger/tests
+
+      - name: Mods Python tests (hooks/tests)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        shell: bash
+        run: python3 -m unittest discover -s hooks/tests
+
+      - name: Mods Python tests (mods/_shared identity)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        shell: bash
+        run: python3 mods/_shared/test_copies_identical.py
+
+      # test_00_isolation (temp HOME bootstrap) + test_win32_jev + test_zz_real_ledger_guard
+      # (live-log guard): the scripts/tests modules that matter on Windows. The
+      # pattern keeps test_00 in the run so the bootstrap is proven on a real OS.
+      - name: Mods Python tests (scripts win32 + isolation subset)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        shell: bash
+        run: python3 -m unittest discover -s scripts/tests -p "test_[0wz]*.py"
+
+      - name: Install the claude CLI (for claude plugin validate / test)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        shell: bash
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Mods plugin validate (5 mods)
         if: ${{ !cancelled() }}
         continue-on-error: true
         shell: bash
         run: |
-          python3 -m unittest discover -s mods/spawn-ledger/tests
-          python3 -m unittest discover -s hooks/tests
-          python3 mods/_shared/test_copies_identical.py
+          rc=0
+          for m in agent-ctx context-band loop-guard spawn-ledger voice-compact; do
+            echo "::group::validate $m"
+            claude plugin validate "mods/$m" || rc=1
+            echo "::endgroup::"
+          done
+          exit $rc
+
+      - name: Mods plugin test (5 mods)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          rc=0
+          for m in agent-ctx context-band loop-guard spawn-ledger voice-compact; do
+            echo "::group::test $m"
+            claude plugin test "mods/$m" || rc=1
+            echo "::endgroup::"
+          done
+          exit $rc
 
       # ---- Windows PowerShell 5.1 (shell: powershell) ----------------------
       # Every step above runs under pwsh (PowerShell 7), which defaults to UTF-8.

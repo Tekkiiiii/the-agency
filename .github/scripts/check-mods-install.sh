@@ -102,6 +102,7 @@ check "hooks/lib/model-pin.py deployed"        [ -f "$H/hooks/lib/model-pin.py" 
 check "hooks/lib/claude_pricing.py deployed"   [ -f "$H/hooks/lib/claude_pricing.py" ]
 check "hooks/lib/exec-model-map.json deployed" [ -f "$H/hooks/lib/exec-model-map.json" ]
 check "hooks/lib/spawn_project.py deployed (model-pin.py and ledger.py import it)" [ -f "$H/hooks/lib/spawn_project.py" ]
+check "hooks/lib/find_bash.py deployed (ledger.py reconcile and jev_client import it)" [ -f "$H/hooks/lib/find_bash.py" ]
 check "no __pycache__ under hooks/lib"         [ ! -e "$H/hooks/lib/__pycache__" ]
 check "state file records mods.installed of 3" [ "$(jget "$H/hooks/.agency-hooks-state.json" mods.installed.length)" = 3 ]
 check "mod dirs copied: agent-ctx spawn-ledger voice-compact" bash -c '[ -d "$1/mods/agent-ctx" ] && [ -d "$1/mods/spawn-ledger" ] && [ -d "$1/mods/voice-compact" ]' _ "$H"
