@@ -23,16 +23,24 @@ Steps s1-s3 degrade to Haiku (`claude -p`) exactly like a real outage does, so t
 The real API key is never read, printed or passed by this script: s1-s3 use a temp env file with a bogus
 key, s4 simply leaves JEV_ENV_FILE unset so the client reads its default file itself (see skill-route/README.md).
 
-State dir: default isolated {root}/state/skill-route/jev-drill/ (cleared at start) so the drill never collides with
-the live {root}/state/skill-route/jev-down flag. --real-state uses {root}/state/skill-route and REFUSES to start when
-jev-down already exists. Desktop notifications are REAL by default (macOS only; elsewhere only the notify log line is
-written); pass --no-notify to skip them.
+SAFE BY DEFAULT: a plain run never touches LIVE Jev state. The state dir is a fresh temp dir (removed at exit,
+after "flag_left" is read), the notify log is a temp file, JEV_NOTIFY=0 (no OS notification) and events are OFF
+(JEV_EMIT=0, nothing written to the live events.jsonl). Real-ledger spend stays real: the usage log defaults to
+the live {root}/memory/metrics/jev-usage.jsonl, rows tagged purpose=drill (consumers must skip them). Opt-ins, each
+explicit:
+  --real-state   use the LIVE {root}/state/skill-route (REFUSES to start when jev-down already exists); the flag is
+                 snapshotted at start and, in a finally, always restored on exit (removed if the drill left it,
+                 also on exceptions / Ctrl-C)
+  --real-notify  write the LIVE {root}/memory/metrics/jev-notify.log and fire REAL OS notifications (macOS only;
+                 elsewhere only the notify log line is written; --no-notify still wins)
+  --events on    emit/check events in the LIVE {root}/memory/metrics/events.jsonl
+  --notify-log P use that notify log (a path that resolves to the live log is refused without --real-notify)
 
 Usage
-    AGENCY_SKILL_ROUTER=1 jev-drill.py [--no-notify] [--notify-log PATH] [--events on|off]
+    AGENCY_SKILL_ROUTER=1 jev-drill.py [--real-notify] [--no-notify] [--notify-log PATH] [--events on|off]
                  [--results-dir DIR] [--usage-log PATH] [--real-state] [--steps s1,s2,s3,s4]
-Dry run (no desktop notification, no pollution of the real logs):
-    AGENCY_SKILL_ROUTER=1 jev-drill.py --no-notify --notify-log /tmp/n.log --events off --results-dir /tmp/res --usage-log /tmp/u.jsonl
+Safe run (the default; only the results file and the usage log are written, both redirectable):
+    AGENCY_SKILL_ROUTER=1 jev-drill.py --results-dir /tmp/res --usage-log /tmp/u.jsonl
 Output: results JSON {root}/evals/jev-drill/results/{YYYY-MM-DD}.json (local date; the same-day file is
 overwritten with the newest run on top and earlier runs of that day kept under "runs"), a PASS/FAIL table
 on stdout. Exit 0 only if every executed step passes.
@@ -89,7 +97,7 @@ TOOL = "skill-route"
 ROOT = agency_root(os.path.expanduser("~"))
 SCRIPTS = os.path.dirname(os.path.abspath(__file__))
 REAL_STATE = os.path.join(ROOT, "state", "skill-route")
-ISOLATED_STATE = os.path.join(REAL_STATE, "jev-drill")
+ISOLATED_STATE = os.path.join(REAL_STATE, "jev-drill")   # legacy default; the default is now a temp dir
 METRICS = os.path.join(ROOT, "memory", "metrics")
 DEFAULT_NOTIFY_LOG = os.path.join(METRICS, "jev-notify.log")
 DEFAULT_USAGE_LOG = os.path.join(METRICS, "jev-usage.jsonl")
@@ -361,12 +369,20 @@ def main(argv=None):
         return 0
 
     ap = argparse.ArgumentParser(description="Jev outage drill for the skill router (needs AGENCY_SKILL_ROUTER=1)")
-    ap.add_argument("--no-notify", action="store_true", help="JEV_NOTIFY=0 (notify-log lines still written)")
-    ap.add_argument("--notify-log", default=DEFAULT_NOTIFY_LOG, help="notify log path (default: the real one)")
-    ap.add_argument("--events", choices=("on", "off"), default="on", help="off: JEV_EMIT=0, events not checked")
+    ap.add_argument("--no-notify", action="store_true",
+                    help="force JEV_NOTIFY=0 even with --real-notify (notify-log lines still written)")
+    ap.add_argument("--real-notify", action="store_true",
+                    help="OPT-IN: write the LIVE jev-notify.log and fire REAL OS notifications "
+                         "(default: temp notify log, JEV_NOTIFY=0)")
+    ap.add_argument("--notify-log", default=None,
+                    help="notify log path (default: a temp file; the live log only with --real-notify)")
+    ap.add_argument("--events", choices=("on", "off"), default="off",
+                    help="on: OPT-IN, emit/check events in the LIVE events.jsonl (default off: JEV_EMIT=0)")
     ap.add_argument("--results-dir", default=DEFAULT_RESULTS)
     ap.add_argument("--usage-log", default=DEFAULT_USAGE_LOG)
-    ap.add_argument("--real-state", action="store_true", help="use {root}/state/skill-route (refuses if jev-down exists)")
+    ap.add_argument("--real-state", action="store_true",
+                    help="OPT-IN: use the LIVE {root}/state/skill-route (refuses if jev-down exists; flag always "
+                         "restored on exit). Default: a temp state dir")
     ap.add_argument("--steps", default=",".join(DEFAULT_STEPS), help="comma list of s1..s4 (default all)")
     args = ap.parse_args(argv)
 
@@ -376,23 +392,47 @@ def main(argv=None):
         return 2
     steps = [s for s in DEFAULT_STEPS if s in steps]
 
-    sys.path.insert(0, SCRIPTS)
-    import jev_fingerprint  # noqa: E402  (after the switch check: nothing router-related is imported while disabled)
+    notify_log = args.notify_log
+    if notify_log and not args.real_notify and \
+            os.path.realpath(notify_log) == os.path.realpath(DEFAULT_NOTIFY_LOG):
+        sys.stderr.write("jev-drill.py: --notify-log points at the live notify log; add --real-notify to allow\n")
+        return 2
 
-    state_dir = REAL_STATE if args.real_state else ISOLATED_STATE
-    if args.real_state:
-        if os.path.exists(os.path.join(state_dir, "jev-down")):
-            sys.stderr.write("jev-drill.py: refusing to start: %s/jev-down already exists (live outage?)\n" % state_dir)
-            return 2
-    else:
-        if os.path.realpath(state_dir) != os.path.realpath(ISOLATED_STATE):
-            sys.stderr.write("jev-drill.py: unexpected state dir\n")
-            return 2
-        shutil.rmtree(state_dir, ignore_errors=True)
-        os.makedirs(state_dir, exist_ok=True)
-        if os.path.exists(os.path.join(state_dir, "jev-down")):
-            sys.stderr.write("jev-drill.py: flag present after clearing state dir\n")
-            return 2
+    cleanup = []      # temp dirs removed at exit
+    flag_path = os.path.join(REAL_STATE, "jev-down")
+    flag_snapshot = None
+    try:
+        if args.real_state:
+            state_dir = REAL_STATE
+            if os.path.exists(flag_path):
+                sys.stderr.write("jev-drill.py: refusing to start: %s/jev-down already exists (live outage?)\n" %
+                                 state_dir)
+                return 2
+            flag_snapshot = False         # absent at start (a present flag was refused above)
+        else:
+            state_dir = tempfile.mkdtemp(prefix="jev-drill-state-")
+            cleanup.append(state_dir)
+        if not notify_log:
+            if args.real_notify:
+                notify_log = DEFAULT_NOTIFY_LOG
+            else:
+                nd = tempfile.mkdtemp(prefix="jev-drill-notify-")
+                cleanup.append(nd)
+                notify_log = os.path.join(nd, "jev-notify.log")
+        return _drill(args, steps, state_dir, notify_log)
+    finally:
+        if flag_snapshot is False:        # --real-state: restore "no flag" whatever happened
+            try:
+                os.remove(flag_path)
+            except OSError:
+                pass
+        for d in cleanup:
+            shutil.rmtree(d, ignore_errors=True)
+
+
+def _drill(args, steps, state_dir, notify_log):
+    sys.path.insert(0, SCRIPTS)
+    import jev_fingerprint  # noqa: E402  (main() already passed the switch check: nothing router-related imported while disabled)
 
     tmp = tempfile.mkdtemp(prefix="jev-drill-")
     srv = None
@@ -403,8 +443,8 @@ def main(argv=None):
             fh.write("TYPESAFE_API_KEY=%s\n" % BOGUS_KEY)
         srv = start_slow_server() if "s3" in steps else None
 
-        ctx = {"state_dir": state_dir, "notify_log": args.notify_log, "usage_log": args.usage_log,
-               "notify_real": not args.no_notify, "events_on": args.events == "on"}
+        ctx = {"state_dir": state_dir, "notify_log": notify_log, "usage_log": args.usage_log,
+               "notify_real": args.real_notify and not args.no_notify, "events_on": args.events == "on"}
         run = {"ts": now_local().isoformat(timespec="seconds"), "version": DRILL_VERSION, "state_dir": state_dir,
                **jev_fingerprint.fingerprint_fields(),
                "notify_real": ctx["notify_real"], "events_checked": ctx["events_on"],
