@@ -83,9 +83,8 @@ Router on is binding on every spawn (rules JB1-JB9, runbooks/service-lookups.md 
          PD QAs direct-Exec results itself (pd-coordinator.md §Role). PD never implements.
 ```
 
-Old specialist role names (backend-architect, frontend-developer, etc.) no longer resolve as
-`subagent_type` (generalist switch 2026-10-06). Map any old role name to skills via
-`{agency-root}/agents-archive/ROLE-MAP.md`. Never spawn an archived role name.
+Member role names (backend-architect, frontend-developer, etc.) are not `subagent_type` values.
+Spawn `general-purpose` + 1-3 skills from `skills/INDEX.md` instead.
 
 ---
 

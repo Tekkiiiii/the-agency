@@ -326,7 +326,7 @@ SendMessage is the fast path; the flag is the guarantee.
      After ALL Coords are ACKed with Phase A health ≥ 85 (≥ 90 design/visual) and no CRITICAL:
      a. Read pd-structure.md to confirm integration contracts and cross-L3 dependencies
      b. Spawn IntegrationTester-{slug}-{timestamp}:
-        - Agent: general-purpose + /qa-only, /run-acceptance-tests, /webapp-testing (role file: {agency-root}/agents-archive/generalist-2026-10-06/specialized/integration-tester.md)
+        - Agent: general-purpose + /qa-only, /run-acceptance-tests, /webapp-testing
         - Model: Sonnet
         - Provide: list of all L3 scopes, pd-structure.md path, QA target, test mode
         - Test mode: "full" for major changes; "quick" for config/doc-only changes

@@ -2,7 +2,7 @@ const { execFileSync, spawnSync } = require('child_process');
 const { existsSync, chmodSync, readFileSync, realpathSync, readdirSync } = require('fs');
 const { resolve, join } = require('path');
 const os = require('os');
-const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncAgentsArchive, syncDesignSystem, syncCore } = require('./sync-assets.js');
+const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem, syncCore } = require('./sync-assets.js');
 const { printSyncRoot, printNoSettingsWarning } = require('../lib/root.js');
 const hooksMerge = require('../lib/hooks-merge.js');
 const modsMerge = require('../lib/mods-merge.js');
@@ -554,10 +554,6 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const runbooksDest = join(agencyRoot, 'runbooks');
   const runbooks = syncRunbooks(repoDir, runbooksDest, console);
   console.log(`Runbooks: ${runbooks.updated} updated, ${runbooks.preserved} preserved`);
-
-  const archiveDest = join(agencyRoot, 'agents-archive');
-  const archive = syncAgentsArchive(repoDir, archiveDest, console);
-  console.log(`Agents archive: ${archive.updated} updated, ${archive.preserved} preserved`);
 
   const designSystemDest = join(agencyRoot, 'design-system');
   const designSystem = syncDesignSystem(repoDir, designSystemDest, console);

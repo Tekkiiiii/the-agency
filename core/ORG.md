@@ -1,6 +1,6 @@
 # The Agency — Organizational Structure
 
-> **GENERALIST SWITCH (2026-10-06):** all member-level specialist agents are ARCHIVED to `agents-archive/generalist-2026-10-06/`; spawn `general-purpose` + skills per `agents-archive/ROLE-MAP.md`. **DEPARTMENT SUNSET (2026-10-08):** all department leads and department coordinators (15 agent files) are ARCHIVED to `agents-archive/dept-sunset-2026-10-08/` (pre-sunset copy of this file: `agents-archive/dept-sunset-2026-10-08/ORG.md.pre-sunset`). PDs, Coords, critiques, council seats and service agents stay registered.
+> Work routes PD -> Coord -> general-purpose Exec. PDs, Coords, critics, council seats and service agents are the registered agent types.
 
 
 <!-- load only when managing or onboarding agents -->
@@ -16,7 +16,7 @@ The Agency operates on a **PD -> Coord -> Exec** model. There is no department l
 1. **Parent AI (Level 1 - Opus)** - Central orchestrator. Plans and routes; resolves conflicts, allocates resources, approves cross-project/shared-infra decisions. Weighted by task severity and project financial importance.
 2. **Project Directors (Level 2 - Opus)** - One per project. Own project delivery and knowledge work (analysis, research, planning) and QA the Execs/Coords they spawn. A PD never implements.
 3. **Coords (Level 3 - Sonnet[1m])** - Autonomous owners of L3 delivery tracks; decompose a PD task and spawn Execs. See `project-management/coord.md`, `project-management/mini-coord.md`, `project-management/pd-coordinator.md`.
-4. **Execs (Level 4 - general-purpose)** - Task execution. The spawner picks the model and 1-3 skills per task (role-to-skills map: `agents-archive/ROLE-MAP.md`). Spawn template: `project-management/coord.md` "Exec spawn message".
+4. **Execs (Level 4 - general-purpose)** - Task execution. The spawner picks the model and 1-3 skills per task (skills come from `skills/INDEX.md`). Spawn template: `project-management/coord.md` "Exec spawn message".
 5. **Critics** - `critique-*` and `sag-critique` (`critiques/`) are spawned directly by the PD or Coord (usually via `/cc-loop` or `quality-loop-router`); there is no critique lead.
 
 ### Authority Track
@@ -43,7 +43,6 @@ Standing exceptions: **All Project Directors -> Opus** (2026-07-25). Content-wri
 
 NOTE: `modelTier` is documentation only - nothing in the harness reads it (the sole consumer is `scripts/agent-tools-audit.py`, as an audit flag). The key the harness acts on is `model:`. Keep both present and in sync; setting `modelTier` alone changes nothing.
 
-<!-- core-mirror:exempt begin 1m-policy (core-only doctrine; not in the agents/ORG.md source) -->
 ### 1M context window (`[1m]`) — SELECTIVE, closed decision
 
 **Policy:** the `[1m]` model suffix (`opus[1m]`, `sonnet[1m]`, `claude-opus-4-7[1m]`) is
@@ -70,8 +69,6 @@ on ~300 defs to solve a problem ~21 of them have.
    spawning session's model and is intentionally left untouched — pinning a model on it is a
    separate decision from adopting `[1m]`. If a `model:` key is ever added to it, this
    policy applies and it gets the suffix.
-<!-- core-mirror:exempt end 1m-policy -->
-
 **Status loop policy:** Automated recurring loops are DISABLED. Use on-demand status checks only.
 
 ---
@@ -94,10 +91,8 @@ THE AGENCY
 ├── COUNCIL ───────────────────── council/: council-fable, council-opus, council-sonnet, council-haiku (+ optional Codex seat)
 │
 └── SERVICE AGENTS ────────────── specialized/: Delegator, codebase-search, save-state-runner,
-                                  project-scaffolder, understand-* workers
+                                  project-scaffolder
 ```
-
-Archived (nothing deleted): department leads and department coordinators (`agents-archive/dept-sunset-2026-10-08/`), member-level specialists (`agents-archive/generalist-2026-10-06/`), earlier departments (`agents-archive/MANIFEST.md`).
 
 ---
 
@@ -116,9 +111,8 @@ The council is 4 independent tier seats (council-fable/opus/sonnet/haiku) plus a
 | Specialized (PD home + service agents) | `specialized/` |
 | Critiques | `critiques/` |
 | Council | `council/` |
-| **Rooms Infrastructure** | `{agency-root}/agency-rooms/` - persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
 
-PD homes for other project types are created by the project-scaffolder on demand. Earlier archived departments and persona leftovers are listed in `agents-archive/MANIFEST.md`.
+PD homes for other project types are created by the project-scaffolder on demand.
 
 ---
 

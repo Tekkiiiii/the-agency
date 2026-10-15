@@ -30,7 +30,7 @@ Voice comes from exemplars (brand/voice-exemplars-vi, pending). Do not copy phra
 ## Diacritic & Unicode Rules
 
 - **Dùng tiếng Việt có dấu đầy đủ.** Bỏ dấu (viết "khong" thay vì "không") đổi nghĩa và đọc như spam.
-- **Composite vs precomposed Unicode**: Vietnamese has two valid Unicode forms (NFC vs NFD). Some platforms collapse incorrectly. If creating slugs, defer to general-purpose + `/vietnamese-language`, `/style-guide-vi` (role file: see `{agency-root}/agents-archive/ROLE-MAP.md`) for safe NFD → ASCII conversion (e.g. `thành công` → `thanh-cong`, never `thnh-cng`).
+- **Composite vs precomposed Unicode**: Vietnamese has two valid Unicode forms (NFC vs NFD). Some platforms collapse incorrectly. If creating slugs, defer to general-purpose + `/vietnamese-language`, `/style-guide-vi` for safe NFD → ASCII conversion (e.g. `thành công` → `thanh-cong`, never `thnh-cng`).
 - Tránh trộn từ tiếng Anh không cần thiết: "skincare routine của bạn" thay vì "skincare regimen của bạn"; "review chi tiết" thay vì "in-depth review".
 - Loanword đã hòa nhập: "review", "skincare", "deal", "sale", "outfit", "vibe", "trend".
 - Loanword chưa hòa nhập ("leverage", "synergy", "best practice") nên dịch hoặc bỏ.

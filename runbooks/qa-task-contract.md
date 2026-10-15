@@ -2,7 +2,7 @@
 name: qa-task-contract
 description: >
   Contract defining the QA dispatch protocol between PD/Coord (spawner) and
-  the QA deliverer (general-purpose + /qa-only, /browse, /webapp-testing; role file {agency-root}/agents-archive/generalist-2026-10-06/testing/testing-evidence-collector.md). Must be read before accepting any
+  the QA deliverer (general-purpose + /qa-only, /browse, /webapp-testing). Must be read before accepting any
   QA dispatch from a PD or Coord.
 domain: testing
 role: contract

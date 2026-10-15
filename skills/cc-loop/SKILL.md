@@ -10,7 +10,7 @@ polish → critics (in parallel) → score → loop until the deliverable passes
 or rounds are exhausted.
 
 Agent types used (from Agency catalog):
-- **Fixer**: `general-purpose` + `/content-critique`, `/quality-loop-router` (role file: see `{agency-root}/agents-archive/ROLE-MAP.md`; the old fixer agent is archived)
+- **Fixer**: `general-purpose` + `/content-critique`, `/quality-loop-router`
 - **Polish**: `general-purpose` + `/content-polish`, `/humanizer-writing`, `/proofreader` (the old editor agent is archived)
 - **Design critic**: `agents/critiques/critique-design.md` (Playwright at 1920×1080, screenshot-grounded)
 - **Content critic**: `agents/critiques/critique-content.md` (copy/voice/AI-slop)

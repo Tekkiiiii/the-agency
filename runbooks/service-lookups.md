@@ -37,7 +37,7 @@ metric; never auto-emit compliance events from a hook.
 key (setup: `{agency-root}/scripts/skill-route/README.md`). Two modes:
 
 - **Router off (default):** no router call, no Jev line. Pick 1-3 skills yourself from
-  `{agency-root}/skills/INDEX.md` (role -> skills table: `{agency-root}/agents-archive/ROLE-MAP.md`)
+  `{agency-root}/skills/INDEX.md`
   and spawn `general-purpose` with a `Skills: /x, /y` line in the prompt. If you run
   `skill-route.py` anyway, it prints one `"router":"disabled"` line that says the same.
 - **Router on (`AGENCY_SKILL_ROUTER=1`):** the binding rules JB1-JB9 below apply to every
@@ -62,7 +62,7 @@ key (setup: `{agency-root}/scripts/skill-route/README.md`). Two modes:
   use its `model`). Deviating = modify/reject + one-line reason.
 - JB4: `gate` = `low_confidence` or no skills: explicit accept/modify/reject
   + one-line reason, always. You evaluate Jev's result; grep
-  `{agency-root}/skills/INDEX.md` and ROLE-MAP.md (`{agency-root}/agents-archive/ROLE-MAP.md`) only to
+  `{agency-root}/skills/INDEX.md` only to
   pick alternatives for a modify/reject. They never replace the verdict.
 - JB5: zero named skills = reject + reason.
 - JB6: Jev down: the router falls back (Haiku, then grep); a spawn is never blocked on the
@@ -111,9 +111,7 @@ directory answers it.
 
 The generalist-ban metric was retired 2026-10-06 (no longer emitted). `general-purpose` +
 1-3 skills named in the prompt is the default spawn. Pick the skills from `skills/INDEX.md` (router off) or
-with `skill-route.py` and the JB1-JB9 verdict line (router on); ROLE-MAP.md
-(`{agency-root}/agents-archive/ROLE-MAP.md`) maps each archived specialist role to its skills and only
-helps pick alternatives.
+with `skill-route.py` and the JB1-JB9 verdict line (router on).
 
 ## PD/Coord Spawn Templates (moved from pd-coordinator.md / coord.md, 2026-07-07)
 

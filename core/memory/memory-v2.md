@@ -76,8 +76,7 @@ mentioned but not listed is "stranded" and fails D5. Template entry:
   link expansion from tier 1-3 hits.
 - `scripts/mem` — thin CLI wrapper: `mem find <query>`.
 - Retired (memory consolidation REV001, 2026-10-08/12): the graph builder
-  `scripts/mem-graph-build.py` (archived to
-  `agents-archive/rev001-curator-2026-10-12/scripts/`), the `mem graph`
+  `scripts/mem-graph-build.py` (removed), the `mem graph`
   subcommand, and the 8 scorecard checks that measured the derived graph
   (R3, S1, S2, S3, S4, S6, S8, S10). `[[wikilink]]` / `links:` frontmatter
   stay as the way memories point at each other; link health is scorecard

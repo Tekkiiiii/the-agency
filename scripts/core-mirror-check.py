@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """core-mirror-check: verify that core/ mirrors its canonical sources.
 
-Why it exists: core/ holds copies of canonical docs (agent defs, ORG.md, runbooks). Nothing
+Why it exists: core/ holds copies of canonical docs (agent defs, runbooks). Nothing
 re-synced them, so they drift silently and stale wording ships from the copy.
 
 Usage:
@@ -15,7 +15,6 @@ A root is a checkout of this repo or an installed agency tree: both have core/, 
 
 Mirror map (dest <- source, both under the root):
   core/agents/{coord,mini-coord,pd-coordinator,delegator}.md <- agents/ tree
-  core/ORG.md <- agents/ORG.md
   core/runbooks/<every file> <- runbooks/<same name>
 Everything else under core/ is standalone (no source) and is not checked. No git operations.
 
@@ -58,7 +57,6 @@ def build_pairs(root):
     if not core.is_dir():
         raise ValueError(f"missing {core}")
     pairs = [(core / "agents" / n, root / s) for n, s in AGENT_SRC.items()]
-    pairs.append((core / "ORG.md", root / "agents" / "ORG.md"))
     rb = core / "runbooks"
     if not rb.is_dir():
         raise ValueError(f"missing {rb}")

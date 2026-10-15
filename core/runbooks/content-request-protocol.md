@@ -9,7 +9,7 @@ version: 2.0.0
 
 # Content Request Protocol
 
-How written content gets produced. This is the ONE content pipeline doc. There is no department layer and no content head: the 2026-10-08 dept sunset folded `agents/content-creation/protocols/content-request.md` and `agents/content-creation/pipelines/content-production/` into this file (originals archived under `{agency-root}/agents-archive/dept-sunset-2026-10-08/content-creation/`).
+How written content gets produced. This is the ONE content pipeline doc. There is no department layer and no content head: the 2026-10-08 dept sunset folded `agents/content-creation/protocols/content-request.md` and `agents/content-creation/pipelines/content-production/` into this file.
 
 ## The Flow
 
@@ -37,7 +37,7 @@ PD / requester publishes, distributes, measures
 Requester feeds performance data back to the PD (next briefs cite what worked / did not)
 ```
 
-Spawn rules: writers are `general-purpose` Execs with 1-3 skills, spawned by the Coord (or by the PD directly when the delegation test in `pd-coordinator.md` says no Coord is needed). Critics are `critique-*` agents (`agents/critiques/`), spawned by `/cc-loop`. Role files for each writer type are listed in `{agency-root}/agents-archive/ROLE-MAP.md`.
+Spawn rules: writers are `general-purpose` Execs with 1-3 skills, spawned by the Coord (or by the PD directly when the delegation test in `pd-coordinator.md` says no Coord is needed). Critics are `critique-*` agents (`agents/critiques/`), spawned by `/cc-loop`.
 
 ## Step-by-Step
 
@@ -88,7 +88,7 @@ BRAND CONTEXT:
 
 ### Step 3 - Coord routes to the right writer
 
-The Coord reads the brief and spawns the writer as `general-purpose` with the skills below. Spawn prompt: "Role: read the role file for this writer listed in `{agency-root}/agents-archive/ROLE-MAP.md` first. Skills: ... Task: ..." The Coord attaches the strategic brief, the brand-guidelines path and any extra editorial direction.
+The Coord reads the brief and spawns the writer as `general-purpose` with the skills below. Spawn prompt: "Skills: ... Task: ..." The Coord attaches the strategic brief, the brand-guidelines path and any extra editorial direction.
 
 | Content type | Spawn as `general-purpose` + skills |
 |---|---|

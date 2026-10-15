@@ -32,7 +32,7 @@ The script comes from the content pipeline (`content-request-protocol.md`). The 
 
 ## End-to-End Production Flow
 
-Each step is a `general-purpose` Exec with the listed skills, reading its role file from `agents-archive/generalist-2026-10-06/video-studio/` first. Map: `{agency-root}/agents-archive/ROLE-MAP.md`.
+Each step is a `general-purpose` Exec with the listed skills.
 
 ```
 CONTENT PIPELINE (content-request-protocol.md)
@@ -133,5 +133,3 @@ All videos pass through the `critique-video` agent before distribution.
 ## Related Files
 
 - `content-request-protocol.md` - the content pipeline that produces the script
-- `agents-archive/ROLE-MAP.md` - role-to-skills map for every step above
-- `agents-archive/generalist-2026-10-06/content-creation/content-video-script-writer.md` - upstream script role file (archived; spawn general-purpose + /youtube-narration, /video-prompt-director)

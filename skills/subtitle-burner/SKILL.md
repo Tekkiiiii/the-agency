@@ -93,7 +93,7 @@ whisper input.mp4 --model medium --output_format srt --output_dir ./captions/
 
 ## Integration with the captioning role
 
-The captioning role (general-purpose + /subtitle-burner, /ffmpeg; role file: `{agency-root}/agents-archive/generalist-2026-10-06/video-studio/vs-captioning-specialist.md`) defaults to this workflow. For short-form:
+The captioning role (general-purpose + /subtitle-burner, /ffmpeg) defaults to this workflow. For short-form:
 1. Whisper transcription (base model for speed, medium for quality)
 2. Manual correction of proper nouns, brand names, technical terms
 3. ffmpeg burn with short-form style above

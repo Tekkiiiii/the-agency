@@ -3,8 +3,7 @@
 Pre-defined team compositions for common project types. Use `TeamCreate` with these as reference.
 
 > **Note 2026-10-08 (dept sunset):** There is no department layer. A project team is a PD, one or more Coords, and `general-purpose` Execs staffed with 1-3 skills picked from
-> `{agency-root}/skills/INDEX.md` (router on, `AGENCY_SKILL_ROUTER=1`: `python3 {agency-root}/scripts/skill-route.py --role exec "<task>"`, and the spawn prompt carries `Jev[r=<route_id>]: accept|modify|reject — <reason>`, service-lookups.md JB1-JB9); old role names map to skills in
-> `{agency-root}/agents-archive/ROLE-MAP.md`. Only the `critique-*` agents (spawned by PD/Coord or via `/cc-loop`) and the structural agents (`coord`, `mini-coord`, `pd-coordinator`, `{slug}-pd`) resolve as named agents. Rosters below are role labels with skills, not agent names.
+> `{agency-root}/skills/INDEX.md` (router on, `AGENCY_SKILL_ROUTER=1`: `python3 {agency-root}/scripts/skill-route.py --role exec "<task>"`, and the spawn prompt carries `Jev[r=<route_id>]: accept|modify|reject — <reason>`, service-lookups.md JB1-JB9). Only the `critique-*` agents (spawned by PD/Coord or via `/cc-loop`) and the structural agents (`coord`, `mini-coord`, `pd-coordinator`, `{slug}-pd`) resolve as named agents. Rosters below are role labels with skills, not agent names.
 
 ---
 
@@ -92,8 +91,6 @@ Build from the role roster (each row = `general-purpose` + skills):
 | Testing | `/qa-only`, `/benchmark`, `/webapp-testing` |
 | Video | `/video-use`, `/ffmpeg`, `/hyperframes` |
 | Specialized | `/xlsx-toolkit`, `/legal-contract-review`, `/security` |
-| Marketing, Sales, Paid Media, Product, Operations | archived - see `{agency-root}/agents-archive/MANIFEST.md` and ROLE-MAP.md |
-| Spatial Computing, Game Development | archived 2026-06-25 - see `{agency-root}/agents-archive/MANIFEST.md` |
 
 ---
 

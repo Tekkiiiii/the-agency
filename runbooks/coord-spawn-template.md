@@ -45,8 +45,7 @@ before doing any work. If two sub-tasks can run independently, split them.
 Rule 2 — Mandatory Routing + Service Agents (ALWAYS invoke):
 - **Routing** (the skill router is OFF by default; rules JB1-JB9 in `{agency-root}/runbooks/service-lookups.md` §Routing):
   before spawning an Exec (not needed for codebase-search, nor for the other fixed-role types in JB8),
-  router off: pick 1-3 skills from {agency-root}/skills/INDEX.md yourself (role -> skills table:
-  {agency-root}/agents-archive/ROLE-MAP.md) and put them in a `Skills: /x, /y` block in the Exec spawn
+  router off: pick 1-3 skills from {agency-root}/skills/INDEX.md yourself and put them in a `Skills: /x, /y` block in the Exec spawn
   prompt (per coord.md's Executor Spawn Prompt Template); no Jev line.
   Router on (`AGENCY_SKILL_ROUTER=1`): run
   `python3 {agency-root}/scripts/skill-route.py --role exec "<task>"` on each sub-task BEFORE spawning
@@ -54,7 +53,7 @@ Rule 2 — Mandatory Routing + Service Agents (ALWAYS invoke):
   `Jev[r=<route_id>]: accept|modify|reject — <reason>` in the Exec spawn prompt; use its `model`.
   `gate` = `pass`: Jev's skills are the default (accept; reason optional; deviating = modify/reject +
   reason). `gate` = `low_confidence` or no skills: write an explicit verdict + one-line reason, always;
-  pick alternatives from {agency-root}/skills/INDEX.md / ROLE-MAP.md (they never replace the verdict).
+  pick alternatives from {agency-root}/skills/INDEX.md (they never replace the verdict).
   Zero named skills = reject + reason. Recording is automatic when a recorder is wired to your spawn
   hook. After routing, emit (fire-and-forget; contract: metrics-emit-contracts.md Event 13)
   `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"skill_route","gate":"pass|low_confidence","router":"jev|haiku|grep|passthrough","top1":"<skill or none>","caller":"coord"}'`.

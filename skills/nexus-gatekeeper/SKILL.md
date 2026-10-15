@@ -9,7 +9,7 @@ description: "Formalizes Reality Checker as a hard blocking gate in the task pip
 
 ## Protocol
 
-1. **After implementation:** Spawn a reality-check agent (general-purpose + /qa-only, /doubt-driven-development; role file: agents-archive/generalist-2026-10-06/testing/testing-reality-checker.md) to assess
+1. **After implementation:** Spawn a reality-check agent (general-purpose + /qa-only, /doubt-driven-development) to assess
 2. **Parse verdict:**
    - `PASS` → set `gate_status=passed`
    - `NEEDS_WORK` → set `gate_status=failed`, halt pipeline
