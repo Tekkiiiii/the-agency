@@ -2,7 +2,7 @@
 
 Not everything in The Agency was made by one person. This system stands on other people's work: ideas I read and borrowed, skills I copied in and bent to fit, and tools I lean on every day. This page names them, links to where they live, and says what each one is for. If I got a name, a licence or a description wrong, please open an issue and I will fix it.
 
-Licences below are the upstream project's own, as listed on its repository. The Agency itself is MIT (see the README). Where a source ships without a licence file, it is listed as such, not guessed at.
+Licences below are the upstream project's own, as listed on its repository. The Agency itself is MIT (see the README). Where a source ships without a licence file, it is listed as such, not guessed at. Every folder under `skills/` that was copied or adapted from a licensed upstream carries that upstream's licence text (`LICENSE`, plus `NOTICE` where the upstream has one) next to its `SKILL.md`; `agents-archive/LICENSE-agency-agents` does the same for the archived persona catalog.
 
 ## Ideas and patterns
 
@@ -34,6 +34,7 @@ Two community plugins carry most of the token-saving behaviour, and I use them e
 | humanizer | Siqi Chen ([blader](https://github.com/blader/humanizer)) | MIT | Vendored (frozen copy) | `skills/humanizer` |
 | humanizer-writing, hw | Derivative of blader/humanizer at 2.11.2 | MIT | Adapted | `skills/humanizer-writing`, `skills/hw` |
 | humanizer-vi, grammar-checker-vi, style-guide-vi, translationese-cleaner-vi | Hàng Nhựt Long ([longhang2004](https://github.com/longhang2004/vietnamese-humanizer)) | MIT | Vendored, then extended with extra patterns | `skills/humanizer-vi`, `skills/grammar-checker-vi`, `skills/style-guide-vi`, `skills/translationese-cleaner-vi` |
+| stop-slop | Hardik Pandya ([hardikpandya/stop-slop](https://github.com/hardikpandya/stop-slop)) | MIT | Adapted: upstream's AI-tell checklist, extended with a scoring rubric | `skills/stop-slop` |
 | simple-english | Amin Boulegroun ([AminBlg](https://github.com/AminBlg/SimpleEnglish)) | MIT | Vendored | `skills/simple-english` |
 | markitdown | Microsoft ([microsoft/markitdown](https://github.com/microsoft/markitdown)) | MIT | Hand-written skill wrapping the library | `skills/markitdown` |
 
@@ -46,6 +47,8 @@ Two community plugins carry most of the token-saving behaviour, and I use them e
 | emil-design-eng | Emil Kowalski ([emilkowalski/skills](https://github.com/emilkowalski/skills)) | MIT | Vendored | `skills/emil-design-eng` |
 | huashu-design | 花叔 / alchaincyf ([alchaincyf/huashu-design](https://github.com/alchaincyf/huashu-design)) | MIT | Vendored | `skills/huashu-design` |
 | shadcn-ui | Google Labs ([stitch-skills](https://github.com/google-labs-code/stitch-skills)) | Apache-2.0 | Vendored | `skills/shadcn-ui` |
+| extract-design | Manavarya Singh ([Manavarya09/design-extract](https://github.com/Manavarya09/design-extract)) | MIT | Vendored | `skills/extract-design` |
+| awesome-design-md | VoltAgent ([VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md)) | MIT | Adapted: a workflow skill around that design-system library; the skill's own header names VoltAgent as author | `skills/awesome-design-md` |
 | excalidraw-diagram | Cole Medin ([coleam00](https://github.com/coleam00/excalidraw-diagram-skill)) | no licence file (see below) | Vendored | `skills/excalidraw-diagram` |
 | gpt-image-prompts | EvoLinkAI ([awesome-gpt-image-2 prompts](https://github.com/EvoLinkAI/awesome-gpt-image-2-API-and-Prompts)) | CC0-1.0 | Vendored (upstream renamed) | `skills/gpt-image-prompts` |
 | material-3 | Material Design docs, [m3.material.io](https://m3.material.io) | Apache-2.0 (as stated in the skill header) | Adapted from public docs | `skills/material-3` |
@@ -59,13 +62,13 @@ Two community plugins carry most of the token-saving behaviour, and I use them e
 | video-use | Browser Use ([browser-use/video-use](https://github.com/browser-use/video-use)) | MIT | Vendored | `skills/video-use` |
 | browser-harness | Browser Use ([browser-use/browser-harness](https://github.com/browser-use/browser-harness)) | MIT | Vendored | `skills/browser-harness` |
 | lightpanda | Pierre Tachoire, Lightpanda ([lightpanda-io/agent-skill](https://github.com/lightpanda-io/agent-skill)) | Apache-2.0 | Vendored | `skills/lightpanda` |
-| webapp-testing, mcp-builder | Anthropic ([anthropics/skills](https://github.com/anthropics/skills)) | Apache-2.0 (LICENSE.txt in each skill folder upstream) | Vendored | `skills/webapp-testing`, `skills/mcp-builder` |
+| webapp-testing, mcp-builder | Anthropic ([anthropics/skills](https://github.com/anthropics/skills)) | Apache-2.0 (upstream `LICENSE.txt` shipped in each folder) | Vendored | `skills/webapp-testing`, `skills/mcp-builder` |
 
 ### Engineering and platforms
 
 | Skill | Author | Licence | Use | Ships in |
 |---|---|---|---|---|
-| web-perf | Cloudflare ([cloudflare/skills](https://github.com/cloudflare/skills)) | Apache-2.0 | Vendored | `skills/web-perf` |
+| web-perf, agents-sdk | Cloudflare ([cloudflare/skills](https://github.com/cloudflare/skills)) | Apache-2.0 | Vendored (agents-sdk lightly edited) | `skills/web-perf`, `skills/agents-sdk` |
 | refactor-module, run-acceptance-tests | HashiCorp ([hashicorp/agent-skills](https://github.com/hashicorp/agent-skills)) | MPL-2.0 | Vendored | `skills/refactor-module`, `skills/run-acceptance-tests` |
 | sanity-best-practices, content-modeling-best-practices, content-experimentation-best-practices, seo-aeo-best-practices | Sanity ([sanity-io/agent-toolkit](https://github.com/sanity-io/agent-toolkit)) | MIT | Vendored | `skills/<same names>` |
 | supabase-postgres-best-practices | Supabase ([supabase/agent-skills](https://github.com/supabase/agent-skills)) | MIT (as stated in the skill header and upstream) | Vendored | `skills/supabase-postgres-best-practices` |
@@ -74,13 +77,15 @@ Two community plugins carry most of the token-saving behaviour, and I use them e
 | gws-chat, gws-forms, gws-slides, gws-tasks (and the `gws` skill) | Google Workspace ([googleworkspace/cli](https://github.com/googleworkspace/cli)) | Apache-2.0 | Vendored | `skills/gws*` |
 | openspec-explore, openspec-propose, openspec-apply-change, openspec-archive-change | Fission AI ([OpenSpec](https://github.com/Fission-AI/OpenSpec)) | MIT (as stated in each skill header) | Vendored | `skills/openspec-*` |
 | skill-creator | wraps [Skill Seekers](https://github.com/yusufkaraaslan/Skill_Seekers) by yusufkaraaslan | MIT | Skill that drives that CLI | `skills/skill-creator` |
+| cli-anything | HKUDS ([HKUDS/CLI-Anything](https://github.com/HKUDS/CLI-Anything)) | Apache-2.0 | Adapted: the 7-phase harness method condensed from its `HARNESS.md` | `skills/cli-anything` |
+| career-ops | Santiago Fernández de Valderrama ([career-ops-hq/career-ops](https://github.com/career-ops-hq/career-ops)) | MIT | Adapted: router skill built on its mode set (scan, oferta, pipeline, pdf, tracker and the rest); the routing text is ours | `skills/career-ops` |
 | graphify | Graphify ([Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify)) | Apache-2.0 | Adapted skill around the tool | `skills/graphify` |
 
 ### Workflow skills
 
 | Skill | Author | Licence | Use | Ships in |
 |---|---|---|---|---|
-| The review, QA, planning, ship and safety skills that carry the gstack marker: office-hours, plan-ceo-review, plan-eng-review, plan-design-review, plan-devex-review, design-consultation, design-review, design-html, design-shotgun, devex-review, review, qa, qa-only, ship, land-and-deploy, canary, careful, freeze, unfreeze, guard, cso, investigate, retro, learn, health, document-release, autoplan, benchmark, benchmark-models, browse, scrape, make-pdf, context-save, context-restore, pair-agent, plan-tune, setup-browser-cookies, setup-deploy, setup-gbrain, open-gstack-browser, landing-report, github-deploy, railway-deploy, vercel-deploy, supabase-deploy, skillify, codex, and the `*-critique` skills | Garry Tan ([garrytan/gstack](https://github.com/garrytan/gstack)) | MIT | Adapted: gstack's workflows, edited for this system's agents and paths | `skills/<same names>` |
+| The review, QA, planning, ship and safety skills that carry the gstack marker: office-hours, plan-ceo-review, plan-eng-review, plan-design-review, plan-devex-review, design-consultation, design-review, design-html, design-shotgun, devex-review, review, qa, qa-only, ship, land-and-deploy, canary, careful, freeze, unfreeze, guard, cso, investigate, retro, learn, health, document-release, autoplan, benchmark, benchmark-models, browse, scrape, make-pdf, context-save, context-restore, pair-agent, plan-tune, setup-browser-cookies, setup-deploy, setup-gbrain, open-gstack-browser (folder `connect-chrome`), landing-report, github-deploy, railway-deploy, vercel-deploy, supabase-deploy, skillify, codex, and the `*-critique` skills | Garry Tan ([garrytan/gstack](https://github.com/garrytan/gstack)) | MIT | Adapted: gstack's workflows, edited for this system's agents and paths | `skills/<same names>` |
 | superpowers-* (brainstorming, writing-plans, executing-plans, test-driven-development, systematic-debugging, subagent-driven-development, dispatching-parallel-agents, using-git-worktrees, finishing-a-development-branch, requesting/receiving-code-review, writing-skills, using-superpowers, unbundle) | Jesse Vincent ([obra/superpowers](https://github.com/obra/superpowers)) | MIT | Adapted | `skills/superpowers-*` |
 
 ### Agent catalog heritage
