@@ -5,7 +5,6 @@ department: project-management
 role: mini-coord
 reports_to: coord
 model: sonnet[1m]
-effort: medium
 color: "#10B981"
 skills: []
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, WebFetch, WebSearch

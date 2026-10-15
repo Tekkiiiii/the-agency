@@ -490,6 +490,10 @@ Full catalog: `skills/INDEX.md`
 
 To enable: get your own key from TypeSafe, put `TYPESAFE_API_KEY=...` in `~/.config/typesafe/.env`, set `AGENCY_SKILL_ROUTER=1` (the `env` block of `settings.json` works), rebuild the menu with `skill-route.py --rebuild-menu`. Exact steps for macOS, Linux and Windows, the output contract, fallback and cost logging: [`scripts/skill-route/README.md`](scripts/skill-route/README.md).
 
+### Effort policy (on by default)
+
+The `effort` section of `hooks/lib/exec-model-map.json` sets the reasoning effort of each subagent by task type (PD medium, complex coding high, routine coding medium, visual high, English content high, Vietnamese content xhigh, the rest medium, lookups low). The `spawn-ledger` mod enforces it on every request of the subagent, so it overrides the caller's `effort` param and an agent file's `effort:` line. With the skill router off (the default) there is no Jev line, so `general-purpose` spawns get `medium` unless the prompt carries `MODEL-CATEGORY: <name>`; PDs and the named agents in the `agents` table classify without the router. Kill switches: `EFFORT_POLICY_OFF=1`, `state/effort-policy.off`, `effort.enabled: false`. Details and ledger rows: `mods/README.md`. Windows: CI unit/TS tests only; the live `turn.step` relay is unproven on a real Windows session.
+
 ### Project Directors
 
 Spawned via `/recall {project}`. Owns the project end-to-end:

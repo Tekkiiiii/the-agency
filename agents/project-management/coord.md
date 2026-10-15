@@ -5,7 +5,6 @@ department: project-management
 role: coord
 reports_to: pd-coordinator
 model: sonnet[1m]
-effort: high
 color: "#10B981"
 skills: []
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, WebFetch, WebSearch

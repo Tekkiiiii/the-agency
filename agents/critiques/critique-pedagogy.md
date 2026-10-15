@@ -6,7 +6,6 @@ role: specialist
 reports_to: caller
 modelTier: opus
 model: opus[1m]
-effort: high
 skills:
   - content-critique
 ---

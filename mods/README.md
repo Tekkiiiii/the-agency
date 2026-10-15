@@ -96,6 +96,16 @@ With the router on, the gate relays one of three answers:
 
 Jev down never blocks: a timeout, a crash, no `python3`, non-JSON output, an unknown action, a rewrite without a prompt or a deny without a message all fail open and the spawn runs unchanged. Off switches (the script reads them, not the mod): `JEV_GATE_OFF=1`, the file `<root>/state/jev-gate.off`, and `<root>/.hook-profile` = `minimal`. The gate path resolves through the same root as everything else (`AGENCY_HOME`, `CLAUDE_CONFIG_DIR`, `<home>/.claude`). The router needs your own Jev key (see `scripts/skill-route/README.md`).
 
+### Effort policy (on by default)
+
+The `effort` section of `hooks/lib/exec-model-map.json` sets the reasoning effort of every subagent by task type: `pd` medium, `coding_complex` high, `coding_routine` medium, `visual` high, `content_en` high, `content_vi` xhigh, `other` medium, `lookup` low (only with an explicit `MODEL-CATEGORY: lookup`). The mod API cannot set `effort` at `agent.spawn`, so `model-pin.py` only DECIDES it there, the `spawn-ledger` hook stores the decision per agent, and a `turn.step` hook APPLIES it to every request of that subagent. The policy overrides the caller's `effort` param and the agent file's `effort:` frontmatter. Fork, teammate and workflow spawns are skipped.
+
+Classification reuses the Jev route cache (`Jev[r=<id>]` in the prompt), so with the router off (the default) there is no Jev line: PDs (`*-pd`, `pd-coordinator`) and the named agents in the `agents` table (critics, `coord`, `mini-coord`, `codebase-search`, `Delegator`) still classify, and every `general-purpose` spawn falls to `other` = `medium` unless the prompt carries `MODEL-CATEGORY: <name>` (`lookup`, `debug`). Every PD def carries `effort: medium`; other agent defs carry no `effort:` line (`hooks/tests/test_effort_policy_defs.py` checks this).
+
+Ledger rows: `effort_override` (policy value differs from the agent file's `effort:`), `effort_policy` (already equal) and `effort_skipped` at spawn, `effort_applied` at the first `turn.step` (`ledger.py effort_applied`), and a `model_pin_error` row prefixed `effort: ` if the step fails (fail open: the spawn is untouched). Kill switches (effort only): `EFFORT_POLICY_OFF=1`, `state/effort-policy.off`, or `effort.enabled: false`; the model-pin switches turn it off too.
+
+Windows: CI unit/TS tests only; the live `turn.step` relay is unproven on a real Windows session.
+
 ### Where spawn rows live
 
 A spawn's rows (`spawn_start`, `spawn_launched`, `spawn_end`) go to ONE `spawns.jsonl`, chosen by `hooks/lib/spawn_project.py` in this order: a `Project:` line in the prompt (a path on it, else its first word if it is a slug in `<root>/memory/medium-term.md`), then a parent agent named `{slug}-pd`, then a subagent type `{slug}-pd`, then the working directory (longest path-boundary match against the project table), else `<root>/logs/spawns.jsonl`. `<root>/logs/spawns.jsonl` therefore holds only spawns with no project hint; looking only there makes a healthy ledger look empty. `ledger.py launched` and `end` find the start row in whichever log holds it, `model-pin.py` counts the Exec cap across every known log, and `reconcile-stale-spawns.sh` checks all of them before it closes a spawn as ABANDONED.

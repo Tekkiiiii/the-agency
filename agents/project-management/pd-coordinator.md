@@ -6,7 +6,7 @@ role: project_director
 reports_to: root        # Reports to the root session (the Claude Code instance that spawned this PD), which routes to the human operator
 model: opus[1m]
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, WebFetch, WebSearch
-effort: high
+effort: medium
 color: "#F59E0B"
 skills:
   - save-state
