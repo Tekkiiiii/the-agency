@@ -16,10 +16,17 @@ Positive control (proves the guard is not vacuous): AGENCY_SKILL_ROUTER=1 with a
 JEV_ENDPOINT=http://127.0.0.1:9/v1/systemone must record >= 1 network attempt (or invoke the fake claude)
 and still exit 0 with a JSON result degraded to the grep router.
 
+The Jev spawn gate (scripts/jev-spawn-gate.py, called by the spawn-ledger mod) is covered the same way: with
+AGENCY_SKILL_ROUTER unset, "0" or "true" and a spawn JSON on stdin it must print exactly {"action": "pass"}, exit 0,
+make 0 network attempts and 0 subprocess spawns, import neither jev_client nor urllib.request, never invoke the
+fake `claude`, and create or modify nothing under the temp HOME / AGENCY_HOME. Its positive control is the same
+spawn with AGENCY_SKILL_ROUTER=1 and a bogus key: the guard must record >= 1 network attempt.
+
 The fixture (3 tiny skills + a matching overlay) is self-contained, so the shipped overlay is not involved.
 
-Usage: check-skill-route-disabled.py [path/to/skill-route.py]   (or env SKILL_ROUTE_SCRIPT)
-Default script: <repo>/scripts/skill-route.py, resolved from this file's location.
+Usage: check-skill-route-disabled.py [path/to/skill-route.py [path/to/jev-spawn-gate.py]]
+       (or env SKILL_ROUTE_SCRIPT / JEV_SPAWN_GATE_SCRIPT)
+Default scripts: <repo>/scripts/skill-route.py and <repo>/scripts/jev-spawn-gate.py, resolved from this file.
 Stdlib only. Exit 0 = PASS, 1 = FAIL. Prints one OK/FAIL line per assertion.
 """
 import json
@@ -33,6 +40,8 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 DEFAULT_SCRIPT = os.path.join(REPO, "scripts", "skill-route.py")
+DEFAULT_GATE = os.path.join(REPO, "scripts", "jev-spawn-gate.py")
+GATE_PASS_LINE = '{"action": "pass"}'
 
 PINNED = {"router": "disabled", "enabled": False, "skills": [], "reason": "AGENCY_SKILL_ROUTER is not 1",
           "fallback": "pick 1-3 skills from skills/INDEX.md", "enable": "see scripts/skill-route/README.md"}
@@ -63,6 +72,7 @@ atexit.register(_write_report)
 
 def _blocked(kind, args):
     _net.append({"kind": kind, "args": repr(args)[:200]})
+    _write_report()  # at once: the spawn gate can leave through os._exit, which skips atexit
     return ConnectionRefusedError("network blocked by check-skill-route-disabled (%s)" % kind)
 
 
@@ -80,6 +90,7 @@ def _create_connection(*a, **k):
 
 def _getaddrinfo(*a, **k):
     _net.append({"kind": "getaddrinfo", "args": repr(a)[:200]})
+    _write_report()
     raise socket.gaierror("lookup blocked by check-skill-route-disabled")
 
 
@@ -93,6 +104,7 @@ _orig_popen_init = subprocess.Popen.__init__
 
 def _popen_init(self, args, *a, **k):
     _spawns.append(repr(args)[:300])
+    _write_report()
     raise OSError("subprocess blocked by check-skill-route-disabled")
 
 
@@ -202,12 +214,70 @@ def run(script, wrapper, env, argv, stdin_text, report):
     return proc, wall, rep
 
 
+def check_gate(gate, wrapper, env0, report, home, root, tmp, fake_log):
+    spawn = json.dumps({"tool_use_id": "toolu_1", "subagent_type": "general-purpose",
+                        "description": "Build the landing page", "prompt": "Write a landing page for a bakery.",
+                        "parent_agent": "root", "parent_spawn_id": "", "fork": False, "is_teammate": False,
+                        "workflow": False})
+    for switch in (None, "0", "true"):
+        env = dict(env0)
+        if switch is not None:
+            env["AGENCY_SKILL_ROUTER"] = switch
+        sw = "unset" if switch is None else repr(switch)
+        tag = "[gate, AGENCY_SKILL_ROUTER=%s]" % sw
+        before = snapshot(home, root)
+        proc, wall, rep = run(gate, wrapper, env, [], spawn, report)
+        out = proc.stdout.decode("utf-8", "replace")
+        check(proc.returncode == 0, "%s exit 0" % tag,
+              "rc=%s stderr=%s" % (proc.returncode, proc.stderr.decode("utf-8", "replace")[-300:]))
+        check(wall < MAX_SECONDS, "%s wall %.2fs < %.0fs" % (tag, wall, MAX_SECONDS))
+        check(out == GATE_PASS_LINE + "\n", "%s stdout is exactly {\"action\": \"pass\"}" % tag, "stdout=%r" % out[:300])
+        check(rep is not None, "%s guard report written" % tag)
+        rep = rep or {}
+        check(len(rep.get("net", [])) == 0, "%s 0 network attempts" % tag, "attempts=%s" % rep.get("net", [])[:3])
+        check(len(rep.get("spawns", [])) == 0, "%s 0 subprocess spawns" % tag, "spawns=%s" % rep.get("spawns", [])[:3])
+        check(not os.path.exists(fake_log), "%s fake claude never invoked" % tag)
+        check(rep.get("jev_client_loaded") is False, "%s jev_client not imported" % tag)
+        check(rep.get("urllib_request_loaded") is False, "%s urllib.request not imported" % tag)
+        created = changed(before, snapshot(home, root))
+        check(not created, "%s nothing created or modified under temp HOME / AGENCY_HOME" % tag,
+              "created=%s" % [os.path.relpath(p, tmp) for p in created[:5]])
+
+    # positive control: with the switch on the guard must SEE the gate try to route (and the gate must still fail open)
+    keyfile = os.path.join(tmp, "typesafe-gate.env")
+    with open(keyfile, "w") as fh:
+        fh.write("TYPESAFE_API_KEY=bogus-test-value-not-a-key\n")
+    env = dict(env0, AGENCY_SKILL_ROUTER="1", JEV_ENV_FILE=keyfile, JEV_ENDPOINT="http://127.0.0.1:9/v1/systemone",
+               JEV_NOTIFY="0", JEV_EMIT="0", JEV_GATE_DEADLINE="3")
+    tag = "[gate positive control AGENCY_SKILL_ROUTER=1]"
+    proc, wall, rep = run(gate, wrapper, env, [], spawn, report)
+    out = proc.stdout.decode("utf-8", "replace")
+    rep = rep or {}
+    net = rep.get("net", [])
+    check(proc.returncode == 0, "%s exit 0" % tag,
+          "rc=%s stderr=%s" % (proc.returncode, proc.stderr.decode("utf-8", "replace")[-300:]))
+    check(len(net) >= 1 or len(rep.get("spawns", [])) >= 1 or os.path.exists(fake_log),
+          "%s guard recorded %d network attempt(s) (guard is not vacuous)" % (tag, len(net)))
+    try:
+        res = json.loads(out.splitlines()[0]) if out.strip() else None
+    except ValueError:
+        res = None
+    check(isinstance(res, dict) and res.get("action") in ("pass", "rewrite", "deny") and len(out.splitlines()) == 1,
+          "%s exactly one JSON line with an action (fails open)" % tag, "stdout=%r" % out[:300])
+
+
 def main(argv):
     script = (argv[1] if len(argv) > 1 else None) or os.environ.get("SKILL_ROUTE_SCRIPT") or DEFAULT_SCRIPT
     script = os.path.abspath(script)
+    gate = (argv[2] if len(argv) > 2 else None) or os.environ.get("JEV_SPAWN_GATE_SCRIPT") or DEFAULT_GATE
+    gate = os.path.abspath(gate)
     print("script: %s" % script)
+    print("gate:   %s" % gate)
     if not os.path.isfile(script):
         print("FAIL  script not found")
+        return 1
+    if not os.path.isfile(gate):
+        print("FAIL  gate script not found")
         return 1
     tmp = tempfile.mkdtemp(prefix="skill-route-disabled-")
     try:
@@ -287,6 +357,9 @@ def main(argv):
             res = None
         check(isinstance(res, dict) and res.get("router") == "grep" and "skills" in res,
               "%s JSON result degraded to the grep router" % tag, "stdout=%r" % out[:300])
+
+        # ---- the Jev spawn gate (called by the spawn-ledger mod): same guarantees while disabled
+        check_gate(gate, wrapper, env0, report, home, root, tmp, fake_log)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
