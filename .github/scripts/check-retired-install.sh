@@ -124,6 +124,8 @@ assert_default() {
   check "logs/agency-retired.log written" bash -c '[ -s "$1/logs/agency-retired.log" ] && grep -q "dept-status" "$1/logs/agency-retired.log"' _ "$H"
   check "user skill my-own untouched" bash -c '[ "$(cat "$1/skills/my-own/SKILL.md" 2>/dev/null)" = "my own skill" ]' _ "$H"
   check "a still-shipped skill is intact (skills/recall)" present "$H/skills/recall/SKILL.md"
+  # scripts/tests is repo + CI only: scripts/ is deployed, its tests are not (docs/INSTALL-LAYOUT.md)
+  check "scripts/ was deployed (jev-spawn-gate.py) but scripts/tests was not" bash -c '[ -f "$1/scripts/jev-spawn-gate.py" ] && [ ! -e "$1/scripts/tests" ]' _ "$H"
 }
 
 # ── case I: the current install.sh prunes an old install ─────────────────────
@@ -138,6 +140,23 @@ AGENCY_HOME="$H" bash "$REPO/install.sh" > "$W/i2.log" 2>&1 </dev/null; CODE=$?
 check "rerun install.sh exit 0 (got $CODE)" [ "$CODE" -eq 0 ]
 check "rerun prints 'Retired files: none to remove'" grep -q 'Retired files: none to remove' "$W/i2.log"
 check "rerun leaves my-own untouched" bash -c '[ "$(cat "$1/skills/my-own/SKILL.md" 2>/dev/null)" = "my own skill" ]' _ "$H"
+
+echo "case I-tests: an existing {root}/scripts/tests is left alone (never deleted, never refreshed)"
+# 26e4f72 shipped scripts/tests to installs for one day. Removal is deliberately NOT automatic: the directory carries no
+# ownership marker and may be a dev checkout's or the user's own tests (docs/INSTALL-LAYOUT.md), so the installer
+# only stops copying it. A file already there must survive an install untouched and nothing may be added beside it.
+H="$W/it"
+old_install "$H"
+mkdir -p "$H/scripts/tests"
+printf 'user test\n' > "$H/scripts/tests/keep-me.py"
+AGENCY_HOME="$H" bash "$REPO/install.sh" > "$W/it.log" 2>&1 </dev/null; CODE=$?
+check "install.sh exit 0 (got $CODE)" [ "$CODE" -eq 0 ]
+check "scripts/tests/keep-me.py survives" bash -c '[ "$(cat "$1/scripts/tests/keep-me.py" 2>/dev/null)" = "user test" ]' _ "$H"
+check "nothing was copied beside it" bash -c '[ "$(ls "$1/scripts/tests")" = "keep-me.py" ]' _ "$H"
+
+echo "case I-cli: the CLI sync path (syncScripts, agency init) skips scripts/tests too"
+node "$REPO/.github/scripts/check-scripts-tests-excluded.js" 2>&1 | sed 's/^/    | /'
+check "check-scripts-tests-excluded.js passes" bash -c 'REPO="$1" node "$1/.github/scripts/check-scripts-tests-excluded.js" >/dev/null 2>&1' _ "$REPO"
 
 echo "case I-delete: install.sh --retired=delete also deletes the edited file"
 H="$W/id"
@@ -290,6 +309,7 @@ check "exactly one summary line, 'none to remove' (no double count)" bash -c '[ 
 check "the root was not skipped as the repo checkout" bash -c '! grep -q "agency repo checkout itself" "$1"' _ "$W/la.log"
 check "user skill my-own untouched" bash -c '[ "$(cat "$1/skills/my-own/SKILL.md" 2>/dev/null)" = "my own skill" ]' _ "$H"
 check "a still-shipped skill is intact (skills/recall)" present "$H/skills/recall/SKILL.md"
+# (no scripts/tests assertion here: this root IS a repo clone, so git itself tracks scripts/tests in it)
 ( cd "$W" && AGENCY_HOME="$H" node "$H/cli/bin/agency.js" upgrade ) > "$W/la2.log" 2>&1 </dev/null; CODE=$?
 check "rerun agency upgrade exit 0 (got $CODE)" [ "$CODE" -eq 0 ]
 check "rerun prints 'Retired files: none to remove'" grep -q 'Retired files: none to remove' "$W/la2.log"

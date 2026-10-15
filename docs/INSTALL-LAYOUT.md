@@ -56,7 +56,7 @@ resolve.
 | `hooks/` | ✓ | ✓ | ✓ | ✓ | incl. `hooks/lib/` (carries `resolve-root.sh`, plus the top-level `*.py` and `*.json` the `spawn-ledger` mod calls: `model-pin.py`, `exec-model-map.json`, `claude_pricing.py`) and `hooks/fable/`; `+x` on `.sh` |
 | `mods/` | ✓ | ✓ | ✓ | ✓ | copied to `{agency-root}/mods/<name>/` and wired into `settings.json` `env.CLAUDE_CODE_PLUGIN_DIRS` by one engine, `cli/lib/mods-merge.js`; Claude Code 2.1.287+ only; opt out with `AGENCY_NO_MODS=1` (see below) |
 | `runbooks/` | ✓ | ✓ | ✓ | ✓ | docs only |
-| `scripts/` | ✓ | ✓ | ✓ | ✓ | `+x` on `.sh`/`.py`/`.js`; `__pycache__` excluded at any depth; includes `scripts/skill-route/` (the optional, disabled-by-default skill router's overlay and `README.md`) |
+| `scripts/` | ✓ | ✓ | ✓ | ✓ | `+x` on `.sh`/`.py`/`.js`; `__pycache__` excluded at any depth; **`scripts/tests/` is not deployed** (see below); includes `scripts/skill-route/` (the optional, disabled-by-default skill router's overlay and `README.md`) and `scripts/jev-spawn-gate.py` (the router's spawn gate, also disabled by default) |
 | `agents-archive/` | ✓ | ✓ | ✓ | ✓ | role files + `ROLE-MAP.md` read by spawners at runtime; plain copy to `{agency-root}/agents-archive/`, **never under `agents/`** so nothing registers as an agent type |
 | `design-system/` | ✓ | ✓ | ✓ | ✓ | brand-token SSOT; `+x` on `.js`; skills resolve `{agency-root}/design-system/brands/{name}.json` at generation time |
 
@@ -72,8 +72,24 @@ resolve.
 
 Retired files are pruned by `cli/lib/retired-prune.js` (`install.sh`, `install.ps1`, `agency init`, `agency upgrade`, `agency prune`) against `retired-manifest.json`. It only touches paths listed there, under `skills/`, `agents/`, `runbooks/` and `core/`; it refuses the repo checkout itself and skips a root that is a git work tree unless you run `agency prune --force`. Legacy git installs are the exception and are pruned without `--force`: a root that is a git clone of the repo (the old `git clone ... ~/.claude` or `rescue.sh`) whose remote matches the repo's, or the `repository` URL in `cli/package.json` when the repo has no remote (URLs are compared after dropping protocol, `user@`, `.git` and trailing `/`, and scp `host:owner/repo` reads as `host/owner/repo`), is pruned normally and prints `legacy git install detected`. When the CLI runs out of the Claude config root itself, `agency upgrade`'s `git pull` has already removed the tracked retired files (git renames keep an edit at the new path), so only manifest paths that `git ls-files` does not list are pruned and git's own files are never touched. A git root with any other remote still needs `--force`, and a repo checkout that is not the Claude config root is still refused. `retired-manifest.json` is generated from git history by `scripts/gen-retired-manifest.py`; CI fails when a deleted path is missing from it.
 
-Not deployed by design: `docs/`, `evals/`, `plans/`, `openspec/`, `memory/`,
+Not deployed by design: `scripts/tests/`, `docs/`, `evals/`, `plans/`, `openspec/`, `memory/`,
 `cli/` (the CLI is symlinked, not copied).
+
+`scripts/tests/` (about 1 MB of unit tests and fixtures) stays in the repo and in CI but is skipped
+at the top level of `scripts/` by all four paths: `install.sh` and `install.ps1` skip it while
+copying, and `agency init` / `agency upgrade` skip it in `syncScripts()` (`skipTop` in
+`cli/commands/sync-assets.js`). A nested directory that happens to be named `tests` deeper under
+`scripts/` still ships. Guards: `.github/scripts/check-retired-install.sh` / `.ps1` (real
+`install.sh` / `install.ps1` and `agency upgrade` runs, then "`scripts/` deployed, `scripts/tests` not")
+and `.github/scripts/check-scripts-tests-excluded.js` (the CLI sync path and `agency init`).
+
+**Existing installs are not cleaned up.** Commit 26e4f72 (2026-10-14) shipped `scripts/tests/` to installs
+for about a day. The installers stop copying it but do not delete a copy that is already there: the
+directory has no ownership marker, and the same path is legitimate in a checkout used for development
+or holds a user's own tests, so a delete could destroy someone's files. An existing
+`{agency-root}/scripts/tests` is also never refreshed. It is inert (nothing reads it); delete it by
+hand with `rm -rf "{agency-root}/scripts/tests"` if you want the space back. The guards above assert this too
+(a `keep-me.py` already in `scripts/tests` survives an install and nothing is added beside it).
 
 `agents-archive/` is worth calling out too, for the opposite reason: it is
 deployed, but its position is the whole point. Claude Code registers every `.md`

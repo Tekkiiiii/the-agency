@@ -257,7 +257,15 @@ foreach ($tree in @("hooks", "runbooks", "scripts", "design-system", "agents-arc
         if (-not (Test-Path $TreeDest)) {
             New-Item -ItemType Directory -Path $TreeDest -Force | Out-Null
         }
-        Copy-Item -Path (Join-Path $TreeSrc "*") -Destination $TreeDest -Recurse -Force
+        if ($tree -eq "scripts") {
+            # scripts\tests is repo + CI only (docs/INSTALL-LAYOUT.md): skipped at copy time. An existing
+            # {root}\scripts\tests is never touched, whether it came from an earlier install or is the user's own.
+            foreach ($ScriptItem in @(Get-ChildItem -LiteralPath $TreeSrc -Force | Where-Object { $_.Name -ne "tests" })) {
+                Copy-Item -LiteralPath $ScriptItem.FullName -Destination $TreeDest -Recurse -Force
+            }
+        } else {
+            Copy-Item -Path (Join-Path $TreeSrc "*") -Destination $TreeDest -Recurse -Force
+        }
         # Recursive: scripts\skill-route\ (and any future subdir) must not ship bytecode either.
         @(Get-ChildItem -Path $TreeDest -Directory -Recurse -Force -Filter "__pycache__" -ErrorAction SilentlyContinue) |
             ForEach-Object { Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }

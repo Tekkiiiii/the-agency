@@ -146,6 +146,8 @@ function Assert-Default([string]$H, [string]$log) {
     Check "logs\agency-retired.log written" (($lg.Length -gt 0) -and (Has $lg 'dept-status'))
     Check "user skill my-own untouched" ((Read-Raw (Join-Path $H 'skills\my-own\SKILL.md')).Trim() -ceq 'my own skill')
     Check "a still-shipped skill is intact (skills\recall)" (Present (Join-Path $H 'skills\recall\SKILL.md'))
+    # scripts\tests is repo + CI only: scripts\ is deployed, its tests are not (docs/INSTALL-LAYOUT.md)
+    Check "scripts\ was deployed (jev-spawn-gate.py) but scripts\tests was not" ((Present (Join-Path $H 'scripts\jev-spawn-gate.py')) -and (Absent (Join-Path $H 'scripts\tests')))
 }
 function Print-Retired([string]$log) {
     foreach ($l in ((Read-Raw $log) -split "`r?`n")) { if ($l -match 'Retired|retired|You changed') { Write-Host "    | $l" } }
@@ -163,6 +165,19 @@ $code = Install-Into $H (Join-Path $W 'i2.log') $Repo @()
 Check "rerun install.ps1 exit 0 (got $code)" ($code -eq 0)
 Check "rerun prints 'Retired files: none to remove'" (Has (Read-Raw (Join-Path $W 'i2.log')) 'Retired files: none to remove')
 Check "rerun leaves my-own untouched" ((Read-Raw (Join-Path $H 'skills\my-own\SKILL.md')).Trim() -ceq 'my own skill')
+
+Write-Host "case I-tests: an existing {root}\scripts\tests is left alone (never deleted, never refreshed)"
+$H = Join-Path $W 'it'
+Old-Install $H
+Write-Text (Join-Path $H 'scripts\tests\keep-me.py') 'user test'
+$code = Install-Into $H (Join-Path $W 'it.log') $Repo @()
+Check "install.ps1 exit 0 (got $code)" ($code -eq 0)
+Check "scripts\tests\keep-me.py survives" ((Read-Raw (Join-Path $H 'scripts\tests\keep-me.py')).Trim() -ceq 'user test')
+Check "nothing was copied beside it" (@(Get-ChildItem -LiteralPath (Join-Path $H 'scripts\tests') -Force).Count -eq 1)
+
+Write-Host "case I-cli: the CLI sync path (syncScripts, agency init) skips scripts\tests too"
+& node (Join-Path $Repo '.github\scripts\check-scripts-tests-excluded.js') 2>&1 | ForEach-Object { Write-Host "    | $_" }
+Check "check-scripts-tests-excluded.js passes" ($LASTEXITCODE -eq 0)
 
 Write-Host "case I-delete: install.ps1 -Retired delete also deletes the edited file"
 $H = Join-Path $W 'id'

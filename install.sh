@@ -372,7 +372,12 @@ SCRIPTS_SRC="$SCRIPT_DIR/scripts"
 SCRIPTS_DEST="$CLAUDE_HOME/scripts"
 if [ -d "$SCRIPTS_SRC" ]; then
     mkdir -p "$SCRIPTS_DEST"
-    cp -r "$SCRIPTS_SRC"/* "$SCRIPTS_DEST/"
+    # scripts/tests is repo + CI only (docs/INSTALL-LAYOUT.md): skipped at copy time. An existing
+    # {root}/scripts/tests is never touched, whether it came from an earlier install or is the user's own.
+    for scripts_item in "$SCRIPTS_SRC"/*; do
+        [ "$(basename "$scripts_item")" = "tests" ] && continue
+        cp -r "$scripts_item" "$SCRIPTS_DEST/"
+    done
     # Recursive: scripts/skill-route/ (and any future subdir) must not ship bytecode either.
     find "$SCRIPTS_DEST" -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true
     chmod +x "$SCRIPTS_DEST"/*.sh "$SCRIPTS_DEST"/*.py "$SCRIPTS_DEST"/*.js 2>/dev/null || true

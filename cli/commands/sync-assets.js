@@ -31,17 +31,18 @@ const ALWAYS_SKIP = new Set(['.DS_Store', '__pycache__']);
 // core/.preserve. It is checked BEFORE shouldCopy(): the whole point is that
 // the destination content legitimately differs from the repo's, so a hash
 // comparison would say "copy" every single time.
-function syncDir(src, dest, rootLabel, result, include = () => true, preserve = null) {
+function syncDir(src, dest, rootLabel, result, include = () => true, preserve = null, skipTop = null) {
   mkdirSync(dest, { recursive: true });
   const entries = readdirSync(src, { withFileTypes: true });
   for (const entry of entries) {
     if (ALWAYS_SKIP.has(entry.name)) continue;
+    if (skipTop && !rootLabel && skipTop.has(entry.name)) continue; // top level of the tree only
     const srcPath = join(src, entry.name);
     const destPath = join(dest, entry.name);
     const label = rootLabel ? `${rootLabel}/${entry.name}` : entry.name;
 
     if (entry.isDirectory()) {
-      syncDir(srcPath, destPath, label, result, include, preserve);
+      syncDir(srcPath, destPath, label, result, include, preserve);  // skipTop is top-level only
     } else if (include(entry.name)) {
       if (preserve && preserve.has(label) && existsSync(destPath)) {
         // Accumulated user rows live here. Absent at the destination it falls
@@ -144,7 +145,7 @@ function syncAgents(repoDir, destDir, console) {
 // can tell "unchanged because identical" from "left alone on purpose" — the
 // two are indistinguishable in `preserved`, and only the second one is the
 // data-loss guarantee worth asserting in a test.
-function syncTree(repoDir, destDir, dirName, console, { chmodExec = false, preserveIfExists = null } = {}) {
+function syncTree(repoDir, destDir, dirName, console, { chmodExec = false, preserveIfExists = null, skipTop = null } = {}) {
   const srcDir = join(repoDir, dirName);
   const result = { updated: [], preserved: [], preserveSkipped: [] };
 
@@ -156,7 +157,7 @@ function syncTree(repoDir, destDir, dirName, console, { chmodExec = false, prese
   // Belt-and-suspenders: __pycache__ dirs are excluded by ALWAYS_SKIP inside
   // syncDir already, but also gate stray .pyc files here in case one ever
   // lands outside a __pycache__ dir.
-  syncDir(srcDir, destDir, '', result, name => !name.endsWith('.pyc'), preserveIfExists);
+  syncDir(srcDir, destDir, '', result, name => !name.endsWith('.pyc'), preserveIfExists, skipTop);
 
   if (chmodExec) {
     for (const label of result.updated) {
@@ -175,8 +176,11 @@ function syncTree(repoDir, destDir, dirName, console, { chmodExec = false, prese
 
 // scripts/ ships the .py/.sh/.js support tooling that shipped skills invoke
 // by absolute path (e.g. `python3 {agency-root}/scripts/save-state.py`).
+// scripts/tests is repo + CI only: skipped at the top level of scripts/, never
+// deployed. An existing {root}/scripts/tests (an earlier install's, or the
+// user's own) is left exactly as it is: not deleted, not refreshed.
 function syncScripts(repoDir, destDir, console) {
-  return syncTree(repoDir, destDir, 'scripts', console, { chmodExec: true });
+  return syncTree(repoDir, destDir, 'scripts', console, { chmodExec: true, skipTop: new Set(['tests']) });
 }
 
 // hooks/ ships the lifecycle hooks AND emit-metric.sh, which shipped agent
