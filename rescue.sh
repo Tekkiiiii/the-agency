@@ -17,11 +17,6 @@ AGENCY_REPO="https://github.com/Tekkiiiii/the-agency.git"
 # script directory to resolve a sibling from — ${BASH_SOURCE[0]} is not a path
 # at all. install.sh makes the same inline mirror on its line 9;
 # hooks/lib/resolve-root.sh remains the place the precedence is DEFINED.
-#
-# Before this existed, rescue.sh addressed $HOME/.claude unconditionally: a user
-# who installed with AGENCY_HOME=/opt/agency and then ran the rescue got a
-# SECOND clone in a directory their install does not read from, and was told it
-# had been rescued.
 AGENCY_ROOT="${AGENCY_HOME:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}"
 
 echo ""
@@ -45,9 +40,9 @@ is_agency_repo() {
 }
 
 # ─── Backups before anything destructive ─────────────────────────────────────
-# Every `git reset --hard` below used to run unguarded: when the stash failed it
-# silently deleted local changes, and on a force-pushed (rewritten) origin it
-# silently dropped local COMMITS. Now nothing is reset until (a) every changed
+# No `git reset --hard` below runs unguarded: a failed stash or a force-pushed
+# (rewritten) origin would otherwise lose local changes or local COMMITS. Nothing
+# is reset until (a) every changed
 # or untracked file is copied to ~/.agency/backups/<ts>/ (outside the repo,
 # relative paths kept) and (b) a HEAD that origin/main does not contain is kept
 # on a branch agency-backup/<ts>. If the copy fails, nothing is reset.

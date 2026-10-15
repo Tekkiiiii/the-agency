@@ -2,8 +2,7 @@
 """
 mem-scorecard.py — Memory v2 30-check scorecard (R1-R10, D1-D10, S1-S10).
 
-Spec: {agency-root}/projects/system-improvement/outputs/memory-audit/
-      2026-07-10-memory-system-audit/memory-v2-target-architecture.html §3
+Spec: core/memory/memory-v2.md
 
 Each check is a function returning (status, evidence):
   status   — "PASS" | "FAIL" | "NOT_IMPLEMENTED"  (NOT_IMPLEMENTED counts as fail)
@@ -54,7 +53,7 @@ MEMORY = CLAUDE / "memory"
 # every other user.
 AUTO_SLUG = str(CLAUDE).replace("/", "-").replace(".", "-")
 AUTO_MEMORY = CLAUDE / "projects" / AUTO_SLUG / "memory"
-SYS_IMPROVE = CLAUDE / "projects/system-improvement/memory"
+PROJECT_MEMORY = CLAUDE / "memory"
 SCRIPTS = CLAUDE / "scripts"
 
 sys.path.insert(0, str(SCRIPTS))
@@ -63,17 +62,17 @@ from memory_scope import EXCLUDE_NAMES, EXCLUDE_DIRS  # noqa: E402
 CANARY_FILE = MEMORY / ".canary.md"
 CANARY_HASH = MEMORY / ".canary.sha256"
 CANARY_SESSION = MEMORY / ".canary-session.json"
-DEAD_LINKS = SYS_IMPROVE / "qa/dead-links.txt"
+DEAD_LINKS = PROJECT_MEMORY / "qa/dead-links.txt"
 EXTERNAL_STORES = MEMORY / "external-stores.md"
-DECISIONS_MD = SYS_IMPROVE / "decisions.md"
+DECISIONS_MD = PROJECT_MEMORY / "decisions.md"
 SCORECARD_MD = MEMORY / "scorecard.md"
 EVENTS_JSONL = MEMORY / "metrics/events.jsonl"
 EMIT = CLAUDE / "hooks/emit-metric.sh"
-GARDENER_MARKER = SYS_IMPROVE / "ops/gardener-last-run.json"
-RECALL_EVALS = SYS_IMPROVE / "qa/recall-evals.md"
-CONTRADICTION_QUEUE = SYS_IMPROVE / "ops/contradiction-queue.md"
-SCORECARD_HISTORY = SYS_IMPROVE / "ops/scorecard-history.jsonl"
-D8_SAMPLE = SYS_IMPROVE / "ops/d8-correction-latency.json"
+GARDENER_MARKER = PROJECT_MEMORY / "ops/gardener-last-run.json"
+RECALL_EVALS = PROJECT_MEMORY / "qa/recall-evals.md"
+CONTRADICTION_QUEUE = PROJECT_MEMORY / "ops/contradiction-queue.md"
+SCORECARD_HISTORY = PROJECT_MEMORY / "ops/scorecard-history.jsonl"
+D8_SAMPLE = PROJECT_MEMORY / "ops/d8-correction-latency.json"
 
 BUNDLES = [MEMORY, AUTO_MEMORY]
 # CONTROL_FILES was a local {"MEMORY.md", "index.md"} pair (2026-07-10) that
@@ -466,7 +465,7 @@ def check_d1():
         if not src_m:
             continue
         src_path = (src_m.group(1).strip())
-        candidates = [CLAUDE / src_path, MEMORY / src_path, AUTO_MEMORY / src_path, SYS_IMPROVE / src_path]
+        candidates = [CLAUDE / src_path, MEMORY / src_path, AUTO_MEMORY / src_path, PROJECT_MEMORY / src_path]
         src_file = next((c for c in candidates if c.exists()), None)
         if not src_file:
             continue

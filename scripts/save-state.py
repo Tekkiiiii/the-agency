@@ -13,7 +13,7 @@ Usage:
 
 Payload schema (all fields optional except slug, phase, next):
 {
-  "slug": "system-improvement",
+  "slug": "my-app",
   "phase": "current phase or status",
   "next": "specific next action — one sentence",
   "blockers": ["..."],                # or []

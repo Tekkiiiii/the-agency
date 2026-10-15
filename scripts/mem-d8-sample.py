@@ -25,7 +25,7 @@ scores (global memory/ + auto-memory). Keeps D8's data source aligned with the
 same bundle boundary the rest of the scorecard uses, instead of inventing a
 third scope.
 
-Output: projects/system-improvement/memory/ops/d8-correction-latency.json
+Output: memory/ops/d8-correction-latency.json
 """
 import json
 import glob
@@ -58,7 +58,7 @@ def agency_root(home):
 CLAUDE = Path(agency_root(str(HOME)))
 AUTO_SLUG = str(CLAUDE).replace("/", "-").replace(".", "-")
 TRANSCRIPT_DIR = CLAUDE / "projects" / AUTO_SLUG
-OUT_PATH = CLAUDE / "projects/system-improvement/memory/ops/d8-correction-latency.json"
+OUT_PATH = CLAUDE / "memory/ops/d8-correction-latency.json"
 
 DELTA_PATTERNS = ("/memory/lessons/", "/memory/feedback_")
 

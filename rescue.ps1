@@ -32,10 +32,9 @@ function Test-AgencyRepo {
 }
 
 # --- Backups before anything destructive -------------------------------------
-# Mirrors rescue.sh. Every `git reset --hard` below used to run unguarded: when
-# the stash failed it silently deleted local changes, and on a force-pushed
-# (rewritten) origin it silently dropped local COMMITS. Now nothing is reset
-# until (a) every changed or untracked file is copied to
+# Mirrors rescue.sh. No `git reset --hard` below runs unguarded: a failed stash
+# or a force-pushed (rewritten) origin would otherwise lose local changes or
+# local COMMITS. Nothing is reset until (a) every changed or untracked file is copied to
 # %USERPROFILE%\.agency\backups\<ts>\ (outside the repo, relative paths kept)
 # and (b) a HEAD that origin/main does not contain is kept on a branch
 # agency-backup/<ts>. If the copy fails, nothing is reset.

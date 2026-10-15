@@ -19,9 +19,7 @@ TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 OPS_DIR="$CLAUDE_DIR/memory/ops"
 mkdir -p "$OPS_DIR"
 LOG="$OPS_DIR/gardener-run-$(date -u +%Y%m%dT%H%M%SZ).log"
-MARKER_DIR="$CLAUDE_DIR/projects/system-improvement/memory/ops"
-mkdir -p "$MARKER_DIR"
-MARKER="$MARKER_DIR/gardener-last-run.json"
+MARKER="$OPS_DIR/gardener-last-run.json"
 APPROVAL_QUEUE="$OPS_DIR/approval-queue.md"
 SCORECARD="$CLAUDE_DIR/memory/scorecard.md"
 EMIT="$CLAUDE_DIR/hooks/emit-metric.sh"
@@ -62,7 +60,7 @@ echo "--- 2. Curate ---"
 # Near-duplicate / contradiction detection needs embedding similarity or LLM
 # judgment — not something a bash driver can do. This step only guarantees the
 # approval queue file exists (so D7 has a real, checkable target). Real
-# curation is an LLM task: run system-improvement-pd with "gardener curate
+# curation is an LLM task: run a memory-curation agent with "gardener curate
 # pass" to actually flag duplicates/contradictions and propose delta-edit
 # merges. Trivial fixes (missing index line, malformed row) still auto-apply
 # there; destructive changes (merge/archive/delete) always land in
@@ -71,8 +69,8 @@ touch "$APPROVAL_QUEUE"
 
 echo "--- 3. Distill ---"
 # Same constraint as Curate: extracting principles from oversized lesson files
-# append-preserving needs LLM judgment. Stub only — run system-improvement-pd
-# with "gardener distill pass" for the real step.
+# append-preserving needs LLM judgment. Stub only — run a memory-curation
+# agent with "gardener distill pass" for the real step.
 
 echo "--- 4. Rebuild ---"
 # Retired 2026-10-08 (memory consolidation M4): the memory-graph rebuild no
@@ -93,7 +91,7 @@ echo "Post-run FAIL count: $POST_FAILS"
 echo "--- Self-grading ---"
 if [ "$POST_FAILS" -gt "$PRE_FAILS" ]; then
   echo "REGRESSION: FAIL count $PRE_FAILS -> $POST_FAILS. Reverting this run's memory changes."
-  git checkout -- memory "projects/system-improvement/memory" 2>/dev/null || true
+  git checkout -- memory 2>/dev/null || true
   STATUS="reverted_regression"
 else
   echo "OK: FAIL count $PRE_FAILS -> $POST_FAILS (no regression)."
@@ -101,7 +99,7 @@ else
 fi
 
 echo "--- Git commit (one-command rollback: git revert HEAD) ---"
-git add memory "projects/system-improvement/memory" 2>/dev/null || true
+git add memory 2>/dev/null || true
 if ! git diff --cached --quiet 2>/dev/null; then
   git commit -m "chore(gardener): weekly memory curation run $(date -u +%Y-%m-%d)" --quiet
   echo "Committed."
