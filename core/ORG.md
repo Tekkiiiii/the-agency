@@ -111,18 +111,14 @@ The council is 4 independent tier seats (council-fable/opus/sonnet/haiku) plus a
 
 | Folder | Directory |
 |-----------|-----------|
-| Engineering (PD home) | `engineering/` |
 | Design (PD home) | `design/` |
-| Content Creation (PD home) | `content-creation/` |
 | Project Management (PD home + Coord defs) | `project-management/` |
-| Testing (PD home) | `testing/` |
 | Specialized (PD home + service agents) | `specialized/` |
 | Critiques | `critiques/` |
 | Council | `council/` |
-| Video Studio (PD home) | `video-studio/` |
 | **Rooms Infrastructure** | `{agency-root}/agency-rooms/` - persistent file-based chat rooms for inter-agent communication, NEXUS handoffs, and escalation routing |
 
-Earlier archived departments are listed in `agents-archive/MANIFEST.md`.
+PD homes for other project types are created by the project-scaffolder on demand. Earlier archived departments and persona leftovers are listed in `agents-archive/MANIFEST.md`.
 
 ---
 

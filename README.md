@@ -431,28 +431,9 @@ The PD handles decomposition, delegation, QA gating, and state persistence. You 
 
 ---
 
-## Works With 9 Tools
+## Works With
 
-The Agency runs natively in Claude Code. It also works as an agent layer inside other tools:
-
-| Tool | How it works |
-|------|-------------|
-| **Claude Code** | Native — agents load directly from `~/.claude/agents/` |
-| **GitHub Copilot** | Native `.md` agents in `~/.github/agents/` |
-| **Cursor** | Auto-converted `.mdc` rule files in `.cursor/rules/` |
-| **Windsurf** | Compiled into `.windsurfrules` in your project root |
-| **Aider** | Compiled into a single `CONVENTIONS.md` |
-| **Antigravity (Gemini)** | `SKILL.md` per agent in `~/.gemini/antigravity/skills/` |
-| **Gemini CLI** | Extension format with manifest |
-| **OpenCode** | `.md` agents in `.opencode/agents/` |
-| **OpenClaw** | `SOUL.md` + `AGENTS.md` + `IDENTITY.md` per agent |
-
-```bash
-./scripts/convert.sh   # generate all integration formats
-./scripts/install.sh   # interactive installer — auto-detects your tools
-```
-
-Full integration details and per-tool setup: `agents/README.md`
+The Agency runs natively in Claude Code: agents load from `~/.claude/agents/`. The earlier converter for other tools (Cursor, Windsurf, Aider, Gemini CLI, OpenCode, OpenClaw, Copilot, Antigravity) was retired with the persona catalog and lives in `agents-archive/persona-retire-2026-10-15/`.
 
 ---
 
@@ -580,7 +561,7 @@ the-agency/
 
 Two ways to extend the system:
 
-**New agents** — add an agent to an existing agent folder or propose a new folder. See `agents/CONTRIBUTING.md` for the agent spec format and review process.
+**New agents** — the roster is structural only (PD, Coord, critics, council seats, service agents); domain work is a general-purpose agent plus skills, so most contributions are skills. If you do need a structural agent, follow the frontmatter of the existing files in `agents/` and see `docs/DEVELOPER.md`.
 
 **New skills** — create a markdown file in `skills/`, register it in `skills/INDEX.md`, and invoke it with `/skill-name`. Skills are reusable workflows: a skill can call other skills, spawn agents, or chain multi-stage pipelines. Contributors also add an overlay entry for the new skill (`python3 scripts/skill-route-overlay-add.py <name> [--domain D --hint H]`); CI's skill-router menu gate fails without it. Users who enable the optional skill router need an entry for their own skills too, to make them routable. See `docs/DEVELOPER.md` for the full guide.
 
@@ -943,7 +924,7 @@ Each project carries a `scope.json` that defines the PD's authority boundaries. 
 1. Create the agent spec in `agents/{folder}/{agent-name}.md`
 2. Follow the frontmatter convention (name, role, modelTier)
 3. Reference it in the folder's `INDEX.md`
-4. See `agents/CONTRIBUTING.md` for the full spec format
+4. See `docs/DEVELOPER.md` for the full guide
 
 **Adding an agent folder:**
 1. Create `agents/{folder}/` with an `INDEX.md`
@@ -955,3 +936,5 @@ Each project carries a `scope.json` that defines the PD's authority boundaries. 
 **GitHub:** [https://github.com/Tekkiiiii/the-agency](https://github.com/Tekkiiiii/the-agency)
 
 **License:** MIT — use it however you want.
+
+**Credits:** the early agent catalog and its tooling derive from [msitarzewski/agency-agents](https://github.com/msitarzewski/agency-agents) (MIT). The retired files are preserved in `agents-archive/`.

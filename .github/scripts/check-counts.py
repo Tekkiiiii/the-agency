@@ -15,7 +15,7 @@ The counts are DERIVED from the tree, never typed in here:
 
 Scanned (current, user-facing copy only; CHANGELOG and dated notes are out of scope):
   README.md, skills/INDEX.md, skills/onboard/SKILL.md, agents/INDEX.md,
-  agents/README.md, docs/**/*.md, cli/** (.js/.json/.md), install.sh, install.ps1
+  docs/**/*.md, cli/** (.js/.json/.md), install.sh, install.ps1
 
 Claim rules:
   "N agents"  -> always a failure (no agent counts), except numbers < 20 (spawn limits)
@@ -80,7 +80,7 @@ def derive(root):
 def targets(root):
     out = []
     for rel in ("README.md", "skills/INDEX.md", "skills/onboard/SKILL.md",
-                "agents/INDEX.md", "agents/README.md", "install.sh", "install.ps1"):
+                "agents/INDEX.md", "install.sh", "install.ps1"):
         if os.path.isfile(os.path.join(root, rel)):
             out.append(rel)
     for pattern in ("docs/**/*.md", "agents/**/*.md", "cli/**/*.js", "cli/**/*.json", "cli/**/*.md"):

@@ -1,20 +1,16 @@
 # The Agency — Agent Directory
 
-Each folder below is a PD home with its own `INDEX.md` listing the agents registered there.
+Each folder below holds structural agents (PD homes, Coord defs, critics, council seats, service agents) with its own `INDEX.md`.
 
 ## Folders
 
 | Folder | Directory | Use when you need... |
 |---|---|---|
-| [Engineering](engineering/INDEX.md) | `engineering/` | Code, APIs, infrastructure, security, DevOps, mobile, AI/ML |
-| [Design](design/INDEX.md) | `design/` | UI, UX, branding, visual storytelling, creative direction |
-| [Content Creation](content-creation/INDEX.md) | `content-creation/` | Written content of any type — blogs, social copy, ads, email, scripts, docs, decks |
-| [Project Management](project-management/INDEX.md) | `project-management/` | Sprint planning, project coordination, studio ops |
-| [Testing](testing/INDEX.md) | `testing/` | QA, performance, accessibility, API testing, audits |
-| [Specialized](specialized/INDEX.md) | `specialized/` | Agents infra, audits, data extraction, web extraction/crawling, ZK knowledge, Vietnamese text processing, misc |
+| [Design](design/INDEX.md) | `design/` | Design quality principles and design PD homes |
+| [Project Management](project-management/INDEX.md) | `project-management/` | Coord, mini-coord and pd-coordinator definitions |
+| [Specialized](specialized/INDEX.md) | `specialized/` | Service agents (delegator, codebase-search, save-state-runner, project-scaffolder) and the Understand-Anything pipeline agents |
 | [Critiques](critiques/INDEX.md) | `critiques/` | Scored critique of any deliverable — design, content, marketing, pedagogy, SEO, product, security, brand |
-| [Council](council/INDEX.md) | `council/` | Independent read-only opinions on a decision brief (4 tier seats, optional Codex seat) |
-| [Video Studio](video-studio/INDEX.md) | `video-studio/` | All video production — scripted or AI-generated. Pre-production, production, post-production, distribution, QA |
+| [Council](council/INDEX.md) | `council/` | Independent read-only opinions on a decision brief (tier seats, optional Codex seat) |
 
 ## Routing (department layer sunset 2026-10-08)
 
@@ -31,6 +27,5 @@ There are no department heads or department coordinators. Work routes PD -> Coor
 
 ## Reference
 
-- [council/](council/) — 4 council seats (council-fable, council-opus, council-sonnet, council-haiku): read-only opinion agents for BOD/council; protocol in `{agency-root}/core/memory/agency-council.md`
+- [council/](council/) — council seats (council-fable, council-opus, council-sonnet, council-haiku): read-only opinion agents for BOD/council; protocol in `{agency-root}/core/memory/agency-council.md`
 - [ORG.md](ORG.md) — org chart (PD -> Coord -> Exec), council seats
-- [CONTRIBUTING.md](CONTRIBUTING.md) — how to add new agents

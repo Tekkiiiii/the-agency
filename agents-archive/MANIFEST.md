@@ -72,3 +72,16 @@ Memory consolidation REV001 (2026-10-12): Pinecone, the Obsidian MCP and the mem
 | `scripts/mem-graph-build.py` | `scripts/mem-graph-build.py`: built the derived memory graph; its callers (`scripts/mem` graph subcommand, the gardener Rebuild step, 8 scorecard checks) are retired or repointed |
 | `skills/obsidian-vault/` | `skills/obsidian-vault/` |
 | `skills/save-state-pinecone-upsert/pinecone_upsert.py` | `skills/save-state/pinecone_upsert.py`: the Pinecone session upsert that `scripts/save-state.py` no longer fires |
+
+## persona-retire-2026-10-15
+Leftover persona-era files archived (Tekki ruling: "archive them or turn them into skill if possible"). Moved with `git mv` into `agents-archive/persona-retire-2026-10-15/` under their old relative path, never deleted; `ARCHIVED.md` there has the table, the credit to `msitarzewski/agency-agents` (MIT) and the restore steps. No file carried reusable method, so no skill was created. `agency upgrade` prunes the unedited installed copies of the .md files.
+
+| Archived (now in `agents-archive/persona-retire-2026-10-15/`) | Was |
+|---|---|
+| `agents/README.md`, `agents/CONTRIBUTING.md` | persona catalog README and contributor guide |
+| `agents/integrations/**` | per-tool converter outputs and registries |
+| `agents/scripts/convert.sh`, `agents/scripts/install.sh` | persona-to-tool converter and installer |
+| `core/agents/TEAM_LEAD.md`, `core/agents/SPECIALIST.md` | persona-era pattern templates |
+| `agents/{content-creation,engineering,testing,video-studio}/INDEX.md` | PD-home indexes of empty dirs |
+
+Restore: `git mv agents-archive/persona-retire-2026-10-15/<path> <path>` for each row you need.

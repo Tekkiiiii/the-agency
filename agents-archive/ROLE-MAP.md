@@ -140,3 +140,12 @@ Routing is now PD -> Coord -> general-purpose Exec (spawner picks model + skills
 | Video Studio Director / Video Studio Dept-Coord | general-purpose + /video-use, /ffmpeg; review via critique-video | `agents-archive/dept-sunset-2026-10-08/video-studio/video-studio-{lead,coord}.md` |
 
 Note on the RoomManager row above: the `room-manager` skill it names was archived with this sunset (`agents-archive/dept-sunset-2026-10-08/skills/room-manager/`); spawn `general-purpose` for that role instead. The `agency-rooms/` directory stays.
+
+## Persona leftovers retired 2026-10-15
+
+| Old file | Now | Archived at |
+|---|---|---|
+| `core/agents/SPECIALIST.md` (specialist pattern template) | archived; Execs are general-purpose + 1-3 skills, spawn template in `agents/project-management/coord.md` "Exec spawn message" | `agents-archive/persona-retire-2026-10-15/core/agents/SPECIALIST.md` |
+| `core/agents/TEAM_LEAD.md` (team-lead pattern template) | archived; the PD or Coord routes, council seats give opinions | `agents-archive/persona-retire-2026-10-15/core/agents/TEAM_LEAD.md` |
+| `agents/CONTRIBUTING.md` (authoring a persona) | archived; new skills follow `skill-creator` | `agents-archive/persona-retire-2026-10-15/agents/CONTRIBUTING.md` |
+
