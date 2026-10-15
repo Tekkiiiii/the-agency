@@ -211,6 +211,23 @@ async function main() {
     check('9 core/runbooks dir removed, core/ and core/memory kept', !exists(path.join(root, 'core/runbooks')) && exists(path.join(root, 'core/memory/medium-term.md')));
     check('9 tree roots never removed', ['skills', 'agents', 'runbooks', 'core'].every((t) => exists(path.join(root, t)) || t === 'skills' || t === 'runbooks'));
   }
+  // 9b persona-retire 2026-10-15: untouched copies removed, an edited copy listed under "You changed these"
+  {
+    const repo = fakeRepo({
+      'agents/README.md': ['pr1'], 'agents/integrations/cursor/README.md': ['pr2'],
+      'core/agents/TEAM_LEAD.md': ['pr3'], 'agents/CONTRIBUTING.md': ['pr4'],
+    });
+    const root = mk('root');
+    put(root, 'agents/README.md', 'pr1');
+    put(root, 'agents/integrations/cursor/README.md', 'pr2');
+    put(root, 'core/agents/TEAM_LEAD.md', 'pr3');
+    put(root, 'agents/CONTRIBUTING.md', 'my edited contributing notes');
+    put(root, 'agents/critiques/critique-code.md', 'live structural agent');
+    const r = await run(base(repo, root, {}));
+    check('9b persona leftovers: 3 untouched copies removed', r.removed.length === 3 && !exists(path.join(root, 'agents/README.md')) && !exists(path.join(root, 'core/agents/TEAM_LEAD.md')), JSON.stringify(r.removed));
+    check('9b persona leftovers: emptied agents/integrations tree removed', !exists(path.join(root, 'agents/integrations')));
+    check('9b persona leftovers: edited CONTRIBUTING listed under "You changed these" and archived, structural agent untouched', r.edited.length === 1 && r.edited[0].path === 'agents/CONTRIBUTING.md' && r.note.includes('You changed these') && r.archived.length === 1 && !exists(path.join(root, 'agents/CONTRIBUTING.md')) && exists(path.join(root, 'agents/critiques/critique-code.md')), JSON.stringify({ e: r.edited, a: r.archived }));
+  }
   // 10
   {
     const repo = fakeRepo({ 'skills/old-skill/SKILL.md': ['shipped'], 'skills/linked/SKILL.md': ['shipped'] });

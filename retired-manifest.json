@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generated_from": "c6ef26891787ba149d5a26b9a9ccedf2f181cc81",
+ "generated_from": "e0f6dee48ea7df9628c4e9e4f922fa2d8084f880",
  "trees": [
   "skills/",
   "agents/",
@@ -8,6 +8,21 @@
   "core/"
  ],
  "paths": {
+  "agents/CONTRIBUTING.md": [
+   "1df3bad066da24d43f653c8a1152cec92cf4a9c37dfa6d758288fc4b20fe7257",
+   "66599bdf674a5e786860d3d756a83aa61c0d7301ff3961da878ddebc8027eeb9",
+   "af6c8c0d418f68c538aebe2a2e76913deb79223e28c86c8ba324d0c12bf0e376",
+   "ecb654e104ff6de68428191bd6dd4748c7fe5a7aeb4a3e3ec0a892bba81de92a"
+  ],
+  "agents/README.md": [
+   "1eed4ab9d36671a04f8598a7f4607588e851db597221bc176f457e3ea26444a1",
+   "428d8fdf861d0350872d329fdfcb6e5fdbbf961fa0e8118b58e7894fca28cca4",
+   "48a290e84c8408623a883ce3f57e72a85ccc2446b8f4fbcb03827bbf38805a74",
+   "708c0e31f3f78ecceeeeda35826af1a8dfe5ab8d9cafc4be3806f69a2d2014ce",
+   "73b3a594c0aef00b10f6c50846c41b8d127b24033554f4cbde0013c7a96f14f1",
+   "96efda7f44c307f825cb2b2766b9c5753f54ca7fc10cba0d03dd50c7efe60a91",
+   "e6dd760d843ceb8ee58a1c2f7cad70bcc3ee79ecbac852328d3b12598d4475e0"
+  ],
   "agents/career/career-application-form-assistant.md": [
    "2ff9c31198cff95b7a456d54697de7bd5b2b1e201b0c7f1182577352d00a2f42",
    "a0f58de182a70c0712f4d239eba215e184a9a24493fb7d8da78085d15d30b1e9"
@@ -43,6 +58,14 @@
   "agents/career/career-pipeline-strategist.md": [
    "b130727f849a1ee0be4623221977bf8f51a782d3edf836087bd2976556a90555",
    "d17a03f47dd3e573adcde7718e4a42e37b5f3d7b47780ea6646df6a5fa8bcd9d"
+  ],
+  "agents/content-creation/INDEX.md": [
+   "3f2032ae6f67ba6f5bc5b61ca45b5156ae34fe740bd12d3227ead693128fa870",
+   "47cee6fd49f1cd5ef87ce8d6d7fe54d90777ffe71ccbf907e2751477b925a8d9",
+   "6c2017afe9896e66e3bd202840fbe3e70495c98b5ed50ea81485bed8ef5564ac",
+   "8a6cc1bf289d8ed5c8f117005f0993f8c96a39513571a08fbbd2e4865e8ceb9a",
+   "a365b90f0d20d12826ddfc8e46414c0e9874f06f1de962e030c89525cefcd216",
+   "a56b60aa722a91060586ed6353c2096121056053beab72eb1a594de75227a66c"
   ],
   "agents/content-creation/content-ad-copywriter.md": [
    "05ca236ba3af3b05fe61c68ae2c62d1ed15a047ace1179b099ac6231ee9ea9b2",
@@ -239,6 +262,13 @@
   "agents/design/design-whimsy-injector.md": [
    "9dcee76c76a085b37408dca8dc27d3a2a7994efb807343c8a1bd0cc23c9b8324",
    "d516d2db7ee92ec7004df9fde1bf630a4c0ab791f37ffbbf09608cb50bf55e00"
+  ],
+  "agents/engineering/INDEX.md": [
+   "5fea876ddab6225f2a8cb80d94ec2a207ed9055f8d26be8b1b05fc9ffd1a5ef2",
+   "79d97863859252a188cad328b2c1eabcb1b84ba6e6eb5270483c5e685de0dec2",
+   "a11be08031d6294f6e4d1171f393f3335f2880787fe371301adfa800cc4bc38a",
+   "d53d8333695b8022348485497461cb10d4906565035bb51092a7c98e1b2183e9",
+   "f543f1269e1a16dc1b55357df0443e6cd26c9d91b171b3fad802f19513ffc3c0"
   ],
   "agents/engineering/engineering-ai-engineer.md": [
    "9666752db45640d8cca35df1096c331f6b1834db16508153cc81e382c63a16f5",
@@ -447,8 +477,63 @@
    "9616d99561ea752b335d9b8cd3a816420eb5cdb5fdc8a02f424b1ee1fc941b0a",
    "f296ae96b07e776f598478e146054ade706ae4fb446c2db7622f7640b60f27ee"
   ],
+  "agents/integrations/README.md": [
+   "2c8c0e441c5f55311288e7b94fe5cb8ff4146258fcdf152bb313a9cac6e00065"
+  ],
+  "agents/integrations/aider/README.md": [
+   "3e3f31ba521db394d350453bb6765f562c375db66d92220e77b13c92e72ac06f",
+   "3e7ea036d10f69cfe073619214a792ad6486bc2c25a8a01a2a5d68938e58de48",
+   "ff30fc0e796dfe6b6bffcf863de7efe8be7116d9d000f6b78fac7982ed8f555b"
+  ],
+  "agents/integrations/antigravity/README.md": [
+   "806941ccd528a978504f07603b51018394d680403658be6d31e81e7eadebe111"
+  ],
+  "agents/integrations/claude-code/README.md": [
+   "9959a294b6a6fa769c4fcea0079139857c6bd8b9edcb4e7357fb62cb41555ee9",
+   "ba0d40b544f661a88cc74eb2a5e6f9d03142b37da24f5dd83e8324f3404577b1",
+   "d51028a2b8a4430e9576e143330c212adc3f3794cf84463710d13f4eb0127fd7"
+  ],
+  "agents/integrations/cursor/README.md": [
+   "8eeab520b7d7da3f78a84fcb24cf15eaecfb18b4aff41ee755b0bee46efacef9"
+  ],
+  "agents/integrations/gemini-cli/README.md": [
+   "da416bbe702d8b510dc5c4497ef6314aa4972595dafce6a30bc1cc17c5054df6"
+  ],
+  "agents/integrations/github-copilot/README.md": [
+   "5b4f4fbdf806190ed377cd5d1e3ffdc234581e2baace352151f4b0f8d9f8384e",
+   "6e4d19cfc1628016eace22c645147c692172505798fc86ab341f9e57b2c36aca",
+   "e26195ff93f461e975a8ec82d52cfe915aa1a02c11169170e24a78225dd411b3"
+  ],
+  "agents/integrations/mcp-memory/README.md": [
+   "a1af9ae6cad16e399c414a9e49b5629de3da023ef528f412aa20da961a031036",
+   "c3748137cf4ff134f6c401f418347f1fdcde5e332000850c5acc05f0171d6641",
+   "e3252682132b4aa6f95f17fb4888cf8722b8bd9c747af403e3d6651b1dd57cf4"
+  ],
   "agents/integrations/mcp-memory/backend-architect-with-memory.md": [
    "66effaaeb2fe015551b81a29cdd9dbfb781d98bc42b2dd7588437aaf2b747e25"
+  ],
+  "agents/integrations/mcp-memory/setup.sh": [
+   "7fd9166f7410f3708486b26301166728befacde39fc561a492f3ce6e7c529928"
+  ],
+  "agents/integrations/openclaw/README.md": [
+   "4a2a0d6fb6d2ec7a360d3e023ab5e333c3508e4a6d4312120e28eba1aef6d00a"
+  ],
+  "agents/integrations/opencode/README.md": [
+   "4db4e70ae72fd43f5f5779bb9070bc12dc6b6167fb8b716f78d29fef5eb1ff13",
+   "9bb95c474f2d1bd19e31f1bdfbd91cad4c2adab13f43479a8088dad284e0e725",
+   "c65fe1e31613c525523a0773499c382986df4b772440bc5dbf433906cec1f792"
+  ],
+  "agents/integrations/pipelines/INDEX.md": [
+   "61899177030a8fac21562fedf1ab479ce274f680d557682df57b36edb893d1f9",
+   "a154384d14ffa7f2bb6c528f13d5d7364aac45fc82ac8708f6b0a85086bb99d6"
+  ],
+  "agents/integrations/protocols/INDEX.md": [
+   "516ce4ad626739cbf171a4d36e0312c3386e9e205519190c4967b841507f7fb9",
+   "b4faf0b4fd2fbcf5673b7c9c4e8dd2910ae0f3e65d85e21bb08c599caa36e0a7"
+  ],
+  "agents/integrations/windsurf/README.md": [
+   "7bb921026d06002d3b653c94d57aee07f3a4c543ec6f2fcfeb8eef556668fdaa",
+   "93b3c1dc2ac3c884f32f0469ada9f268a399bc7f423402b29ea4dc84482fb19a"
   ],
   "agents/marketing/INDEX.md": [
    "84b27c908b06b51f3e229b5c9094b85f38cab905a52f950a2bf392b836700493",
@@ -783,6 +868,15 @@
    "357df1aa1b33fddbe3faf0c1a7d696599bd8affc9d4a59110a52ab3bc1f18b69",
    "a6afa79ddb7ffad2f938f66532876fb7acba1b4427e9cd17e2e56c5efec03c59"
   ],
+  "agents/scripts/convert.sh": [
+   "215593ae005f1d4fcdba403294d9e64b4e7b1b22aef29c4b3c5016238cf119ee",
+   "4fc52bbcaf0cf96a0f1333146c54399de02f67625a2d85f2fe91d7a6855490ba",
+   "fab8d74504d2521a346090e74462369a4709a866e04d0f1975b29fd969c4481a"
+  ],
+  "agents/scripts/install.sh": [
+   "0b04ce0d9ccf6099de957db615545b6e52300dc65a0ac85986541e4d40a0cf4d",
+   "f3c8f8e24ad55914cdd920047e8ebc03191e0b11dc3541a7db981ce6e962a10a"
+  ],
   "agents/spatial-computing/INDEX.md": [
    "629a65db2280fca2e29bafb851b198001d122ae9fc08d6fa153a2d669585aead"
   ],
@@ -1069,6 +1163,12 @@
   "agents/strategy/runbooks/scenario-startup-mvp.md": [
    "90eb81f4338453ce3064d33434967cf028f6a3a668fccb436c64424d1e00ff26"
   ],
+  "agents/testing/INDEX.md": [
+   "0aa46f39d7d30d61ac4d6e302ce9b877eee11a90f7f8ae07992f74dad9ed0845",
+   "0e598aac1c0ce595eaa73057d45460df28a738896bf5f2e1a2526deb4a90d0dc",
+   "3ce045b9abea348900d7c164eeb1e98734516937fb753f8c4577065add0ea5cb",
+   "e7ac20d07ba4992ac7412bfde6977f5a4cc1d275eb2c82067b9bf48fc433c72b"
+  ],
   "agents/testing/qa-task-contract.md": [
    "a1beb03fdb1f0bd12043f64a04bd746ed8840dabb0005db2a306060ee88128a1",
    "beff7f73c48856a9caea94d9038ca6c7765593de6fac1bde5a220f973fce7d7b"
@@ -1123,6 +1223,12 @@
   "agents/testing/testing-workflow-optimizer.md": [
    "2b8a522e7fb8a7b47b083337d20858174e567941a6fe93040901fd7d8b57c00f",
    "72eedfffe0eb4e1ea558dd4873a1bf6abf09565044d2d8e85f76e9e0b223bad7"
+  ],
+  "agents/video-studio/INDEX.md": [
+   "25e151155d42fbc7c60c79a1a4cee2a211d34dffd4708b8318e86f59160391d2",
+   "73ab898ee101cea22f3545efca96a28e4a6dee082e3dcf9de7b254a4b13ffc11",
+   "87a86e5713e8f0881f263f4ea81dcd030103bcc10fa4b4a01e363ea6d1595dee",
+   "d12123ce70c187896988710ce3d51ebdf3d6366c58c6d7c9119f6af5f5974a30"
   ],
   "agents/video-studio/video-studio-coord.md": [
    "2f175534cfe2292ad94ac93da390366bb68b8300079c18c8356aea7b8f07151e",
@@ -1196,6 +1302,15 @@
    "c1979ad3f14c285da54784034d4e5bdde38e87ef7545f4c0cacff3bc4b80b6a8",
    "cfbaf91107a1ec806da0ddc08266bd1f8f3287e61dc1a0ee73d596bbc8c4c3aa",
    "df35c7b32d33a6f9d5760c4f2a528880c611a9da32dfd661b781999424a25777"
+  ],
+  "core/agents/SPECIALIST.md": [
+   "5439c694bd1b4e41d768e1a529db38b1c4f6a7c118e9642eb7c3e4d0eb00d879",
+   "974b8454b0cbde8c9805608511bc68413a7a3d531b7876859e2a688426676a95",
+   "ea200229c28b77b2286903c911023c1feed41418d6030f862bb5d9692dbd33fd"
+  ],
+  "core/agents/TEAM_LEAD.md": [
+   "3537ca48adf0833e6f5a6149a805c5814c2dc0f0125ea577d17fdd4e880cf1b9",
+   "4e797e2c42308ed7e267ee949c114cd1f343bc8c3cd50bfd53f299bb757de3ee"
   ],
   "core/agents/coord-lite.md": [
    "114d5364ecb7af55d28f62f3cd4802fcb1bc3901a1c9ad73906d06182488bb96",
