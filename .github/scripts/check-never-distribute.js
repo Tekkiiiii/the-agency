@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // check-never-distribute.js - fail the build when a git-tracked path or file
 // carries something on .github/scripts/never-distribute.txt (third-party
-// Vietnamese marketing skills that are not licensed for distribution).
+// skills that are not licensed for distribution).
 //
 //   node .github/scripts/check-never-distribute.js            scan the repo this script lives in
 //   node .github/scripts/check-never-distribute.js <dir>      scan the git repo at <dir>
@@ -12,7 +12,9 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const crypto = require('crypto');
 const { spawnSync } = require('child_process');
+const sha = t => crypto.createHash('sha256').update(t).digest('hex');
 
 const LIST = path.join(__dirname, 'never-distribute.txt');
 const CONTENT_EXEMPT = new Set(['.github/scripts/never-distribute.txt']);
@@ -25,16 +27,18 @@ function git(dir, args) {
 }
 
 function loadList() {
-  const dirs = new Set(), ids = [];
+  const dirs = new Set(), ids = [], hashes = new Set();
   for (const raw of fs.readFileSync(LIST, 'utf8').split(/\r?\n/)) {
     const line = raw.trim();
     if (!line || line.startsWith('#')) continue;
-    const m = /^(dir|id)\s*\|\s*(.+)$/.exec(line);
+    const m = /^(dir|id|idhash)\s*\|\s*(.+)$/.exec(line);
     if (!m) throw new Error(`bad line in never-distribute.txt: ${line}`);
-    if (m[1] === 'dir') dirs.add(m[2].trim()); else ids.push(m[2].trim().toLowerCase());
+    if (m[1] === 'dir') dirs.add(m[2].trim());
+    else if (m[1] === 'idhash') hashes.add(m[2].trim().toLowerCase());
+    else ids.push(m[2].trim().toLowerCase());
   }
-  if (!dirs.size || !ids.length) throw new Error('never-distribute.txt has no entries');
-  return { dirs, ids };
+  if (!dirs.size || !(ids.length || hashes.size)) throw new Error('never-distribute.txt has no entries');
+  return { dirs, ids, hashes };
 }
 
 function scan(dir, list) {
@@ -55,21 +59,27 @@ function scan(dir, list) {
     for (let i = 0; i < lines.length; i++) {
       const id = list.ids.find(x => lines[i].includes(x));
       if (id) { out.push(`${f}:${i + 1}: contains blocked identifier "${id}"`); break; }
+      if (list.hashes.size && lines[i].split(/[^a-z0-9]+/).some(t => t && list.hashes.has(sha(t)))) {
+        out.push(`${f}:${i + 1}: contains a blocked identifier (hashed entry)`); break;
+      }
     }
   }
   return out;
 }
 
-function selfTest(list) {
+function selfTest() {
+  const list = { dirs: new Set(['blocked-dir']), ids: ['zxq-plain-id'], hashes: new Set([sha('zxqhashed')]) };
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'never-dist-'));
   try {
     git(tmp, ['init', '-q']);
-    fs.mkdirSync(path.join(tmp, 'skills', '00-ke-hoach-mkt'), { recursive: true });
-    fs.writeFileSync(path.join(tmp, 'skills', '00-ke-hoach-mkt', 'SKILL.md'), 'x\n');
-    fs.writeFileSync(path.join(tmp, 'README.md'), 'credit: github.com/' + 'minhnv' + '0807' + '/x\n');
+    fs.mkdirSync(path.join(tmp, 'skills', 'blocked-dir'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'skills', 'blocked-dir', 'SKILL.md'), 'x\n');
+    fs.writeFileSync(path.join(tmp, 'a.md'), 'credit: ZXQ-plain-id\n');
+    fs.writeFileSync(path.join(tmp, 'b.md'), 'credit: example.org/ZXQhashed/x\n');
     git(tmp, ['add', '-A']);
     const hits = scan(tmp, list);
-    const ok = hits.some(h => h.includes('blocked directory')) && hits.some(h => h.includes('blocked identifier'));
+    const ok = hits.some(h => h.includes('blocked directory')) && hits.some(h => h.startsWith('a.md') && h.includes('blocked identifier'))
+      && hits.some(h => h.startsWith('b.md') && h.includes('hashed'));
     if (!ok) { console.error('self-test FAILED: planted leaks not caught:\n' + hits.join('\n')); return 1; }
     console.log(`self-test ok: ${hits.length} planted hit(s) caught`);
     return 0;
@@ -79,7 +89,7 @@ function selfTest(list) {
 try {
   const list = loadList();
   const arg = process.argv[2];
-  if (arg === '--self-test') process.exit(selfTest(list));
+  if (arg === '--self-test') process.exit(selfTest());
   const dir = arg ? path.resolve(arg) : path.resolve(__dirname, '..', '..');
   const hits = scan(dir, list);
   if (hits.length) {

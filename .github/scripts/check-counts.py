@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Fail on any stale "N skills / N departments" claim, and on ANY agent count, in user-facing docs.
 
-Agent counts are banned (owner ruling 2026-10-15: no agent counts anywhere, the repo does not
-use named agents anymore): a claim like "45+ agents" fails regardless of its value, so counts
+Agent counts are banned (no agent counts anywhere): a claim like "45+ agents" fails regardless of its value, so counts
 cannot creep back. The derived agent number is kept only for the sanity check below.
 
 The counts are DERIVED from the tree, never typed in here:

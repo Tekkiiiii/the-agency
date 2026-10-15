@@ -1,10 +1,9 @@
 # verify-agency-refs.ps1 - Windows twin of verify-agency-refs.sh.
 #
 # Asserts that every {agency-root}/<tree>/... reference emitted by a DEPLOYED
-# agency tree resolves to a real file in that install. install.ps1 shipped none
-# of hooks/, runbooks/ or scripts/ before Wave 12, which made every such
-# reference dangle on Windows - and nothing caught it, because the installer
-# still printed success. This is what catches it now.
+# agency tree resolves to a real file in that install. A reference to a tree the installer
+# does not deploy would dangle on Windows while the installer still printed
+# success. This is what catches it.
 
 param(
     [Parameter(Mandatory = $true)]
@@ -48,7 +47,7 @@ foreach ($tree in $trees) {
     # correctly. So the two scripts silently disagreed: every `.json` reference
     # passed the Linux job and failed the Windows one. The pair only looked like
     # twins because no `{agency-root}/<tree>/....json` reference existed in the
-    # tree until wave 18 added one. Keep both lists longest-first so the two
+    # tree contained one. Keep both lists longest-first so the two
     # engines cannot diverge again.
     $pattern = '(?:\{agency-root\}|~/\.claude)/' + [regex]::Escape($tree) + '/([A-Za-z0-9._/-]+\.(?:json|md|sh|py|js))'
     $refs = @{}

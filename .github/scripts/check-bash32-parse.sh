@@ -17,9 +17,9 @@
 #
 #     line 70: unexpected EOF while looking for matching ``'
 #
-# Wave 15 fixed it by writing the backticks as \x60 escapes and recorded the
-# rule in a comment. A comment is not a guard: nothing stopped the next edit
-# from typing a literal one straight back in. This is that guard.
+# The fix is to write the backticks as \x60 escapes. A comment is not a guard:
+# nothing would stop the next edit from typing a literal one straight back in.
+# This is that guard.
 #
 # WHY A PARSER AND NOT A GREP
 #

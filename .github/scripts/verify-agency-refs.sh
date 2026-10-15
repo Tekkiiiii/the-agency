@@ -62,8 +62,8 @@ EOF
 done
 
 # The resolver itself must be deployed — every sourcing script silently falls
-# back to a degraded root without it, which is precisely the drift this wave
-# exists to remove.
+# back to a degraded root without it, which is precisely the drift this check
+# exists to catch.
 if [ ! -f "$ROOT/hooks/lib/resolve-root.sh" ]; then
   echo "FAIL: hooks/lib/resolve-root.sh not deployed"
   missing_total=$((missing_total + 1))

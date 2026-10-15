@@ -211,7 +211,7 @@ async function main() {
     check('9 core/runbooks dir removed, core/ and core/memory kept', !exists(path.join(root, 'core/runbooks')) && exists(path.join(root, 'core/memory/medium-term.md')));
     check('9 tree roots never removed', ['skills', 'agents', 'runbooks', 'core'].every((t) => exists(path.join(root, t)) || t === 'skills' || t === 'runbooks'));
   }
-  // 9b persona-retire 2026-10-15: untouched copies removed, an edited copy listed under "You changed these"
+  // 9b: untouched copies removed, an edited copy listed under "You changed these"
   {
     const repo = fakeRepo({
       'agents/README.md': ['pr1'], 'agents/integrations/cursor/README.md': ['pr2'],

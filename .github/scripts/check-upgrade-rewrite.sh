@@ -5,17 +5,16 @@
 # covers rescue.sh's first-install (repo-not-found) path: the clone goes to
 # ~/the-agency, never into an existing agency root (cases 8-9).
 #
-# That is the exact state of a real Windows clone after the 2026-10-08
-# Pinecone-key history purge: `pull --rebase` replayed the pre-rewrite commits
-# onto their rewritten twins and conflicted, `git stash` refused to run over the
-# UU file, and the lock blocked every index write. The old rescue scripts then
-# fell back to `git reset --hard` and silently dropped local work.
+# That is the state of a clone after a history rewrite: `pull --rebase` replays the
+# pre-rewrite commits onto their rewritten twins and conflicts, `git stash` refuses
+# to run over the UU file, and the lock blocks every index write. The rescue
+# scripts must not fall back to `git reset --hard` and silently drop local work.
 #
 # Everything runs inside one mktemp -d sandbox: HOME, AGENCY_HOME, the bare
-# origin and every clone. The code under test (cli/, CHANGELOG.md, rescue.sh) is
+# origin and every clone. The code under test (cli/, rescue.sh) is
 # COPIED from $CLI_SRC, default this checkout. To check an older revision
 # without touching the live tree:
-#   d=$(mktemp -d); git archive <rev> cli CHANGELOG.md rescue.sh | tar -x -C "$d"
+#   d=$(mktemp -d); git archive <rev> cli rescue.sh | tar -x -C "$d"
 #   CLI_SRC="$d" bash .github/scripts/check-upgrade-rewrite.sh
 #
 # bash 3.2-safe (macOS /bin/bash). KEEP_TMP=1 keeps the sandbox for debugging.
@@ -50,6 +49,9 @@ export GIT_AUTHOR_NAME=ci GIT_AUTHOR_EMAIL=ci@example.invalid
 export GIT_COMMITTER_NAME=ci GIT_COMMITTER_EMAIL=ci@example.invalid
 
 FAILS=0
+# Owner segment of the repo URL that rescue.sh hardcodes; taken from rescue.sh itself.
+OWNER="$(sed -n 's#.*github\.com/\([A-Za-z0-9_-]*\)/the-agency.*#\1#p' "$CLI_SRC/rescue.sh" | head -1)"
+[ -n "$OWNER" ] || OWNER=owner
 ok()  { echo "  ok   $*"; }
 bad() { echo "  FAIL $*"; FAILS=$((FAILS + 1)); }
 check() { local d="$1"; shift; if "$@"; then ok "$d"; else bad "$d"; fi; }
@@ -62,10 +64,10 @@ commit_at() { # dir iso-date subject
 }
 
 # ── origin + seed history ────────────────────────────────────────────────────
-# The origin path carries "Tekkiiiii/the-agency" so rescue.sh's remote-URL
+# The origin path carries "<owner>/the-agency" so rescue.sh's remote-URL
 # check accepts the clones.
-ORIGIN="$W/Tekkiiiii/the-agency.git"
-mkdir -p "$W/Tekkiiiii"
+ORIGIN="$W/$OWNER/the-agency.git"
+mkdir -p "$W/$OWNER"
 git init -q --bare "$ORIGIN"
 git -C "$ORIGIN" symbolic-ref HEAD refs/heads/main
 
@@ -74,7 +76,6 @@ git -c init.defaultBranch=main init -q "$SEED"
 git -C "$SEED" checkout -q -b main 2>/dev/null || true
 cp -R "$CLI_SRC/cli" "$SEED/cli"
 rm -rf "$SEED/cli/node_modules"
-cp "$CLI_SRC/CHANGELOG.md" "$SEED/"
 [ -f "$CLI_SRC/rescue.sh" ] && cp "$CLI_SRC/rescue.sh" "$SEED/"
 printf 'base\n' > "$SEED/notes.md"
 commit_at "$SEED" 2026-10-01T10:00:00+07:00 "base: code under test"
@@ -100,7 +101,7 @@ git -C "$SEED" reset -q --hard HEAD~1
 printf 'KEY=REDACTED\n' > "$SEED/config.txt"
 commit_at "$SEED" 2026-10-03T10:00:00+07:00 "chore: add config"
 printf 'post\n' > "$SEED/post.txt"
-commit_at "$SEED" 2026-10-08T10:00:00+07:00 "chore: re-pin after purge"
+commit_at "$SEED" 2026-10-08T10:00:00+07:00 "chore: re-pin after rewrite"
 git -C "$SEED" push -q -f origin main
 NEW_MAIN="$(git -C "$ORIGIN" rev-parse main)"
 
@@ -246,7 +247,7 @@ fresh_first_install() { # root-dir — only settings.json in the root, nothing e
   printf '{}\n' > "$1/settings.json"
 }
 if [ -f "$CLI_SRC/rescue.sh" ]; then
-  git config --global url."$ORIGIN".insteadOf https://github.com/Tekkiiiii/the-agency.git
+  git config --global url."$ORIGIN".insteadOf https://github.com/$OWNER/the-agency.git
 
   echo "case 8: rescue.sh first install — root already exists (a Claude Code user)"
   CC="$W/cc-root"

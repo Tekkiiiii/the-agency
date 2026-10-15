@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# check-hardcoded-root.sh — regression guard for the Wave 13 AGENCY_HOME pass.
+# check-hardcoded-root.sh — regression guard for AGENCY_HOME handling.
 #
-# Before Wave 13 every script under hooks/ and scripts/ resolved the agency root
-# as a literal $HOME/.claude, so a user who installed with a custom AGENCY_HOME
-# got an install in one directory read from another. The fix routes all of them
-# through hooks/lib/resolve-root.sh (or its documented Python twin).
+# Every script under hooks/ and scripts/ must resolve the agency root through
+# hooks/lib/resolve-root.sh (or its documented Python twin), never as a literal
+# $HOME/.claude: a user who installed with a custom AGENCY_HOME would otherwise get
+# an install in one directory read from another.
 #
 # This guard fails the build if a new hardcoded root sneaks back in. It scans
 # executable code only — comments and prose are stripped first, because the
@@ -67,10 +67,10 @@ scan() {
   fi
 }
 
-# install.sh and rescue.sh are in the list as of Wave 16. They are the two
+# install.sh and rescue.sh are in the list. They are the two
 # entry points a user runs BEFORE anything is deployed, so a hardcoded root
 # there sends the whole install to the wrong directory — the loudest possible
-# version of the defect, and the only two files that were never checked for it.
+# version of the defect.
 for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh scripts/*.py install.sh rescue.sh; do
   [ -f "$f" ] || continue
   case "$f" in
@@ -105,7 +105,7 @@ echo "OK: no hardcoded agency root in hooks/, scripts/, install.sh or rescue.sh"
 # ---------------------------------------------------------------------------
 # Second guard: the Python twin must stay ONE idiom.
 #
-# Every python block under hooks/ — and, since Wave 16, every scripts/*.py —
+# Every python block under hooks/ — and every scripts/*.py —
 # resolves the root through an inlined `agency_root(home)` whose nt branch
 # rewrites an MSYS-style AGENCY_HOME (/c/Users/me/.claude) into a form native
 # Windows python can open. The duplication is forced for the hooks — under Git
@@ -129,13 +129,9 @@ extract_twin() {
   awk '/def agency_root\(home\):/,/^    return root$/' "$1"
 }
 
-# scripts/*.py joined this list in Wave 16. Wave 15 had left them on the plain
-# three-line twin, reasoning that a native python3 could not load their MSYS-form
-# script path anyway so normalising the env read would not help. Measured on
-# windows-latest (run 30689704116): under plain Git Bash the script loads fine —
-# MSYS2 converts the path argument — and it is the ENV read that breaks, exactly
-# as it did in the hooks (FileNotFoundError on '\d\a\_temp\...\skills'). The
-# deferral rested on an inference; the inference was wrong.
+# scripts/*.py are in this list too: under plain Git Bash a script loads fine (MSYS2
+# converts the path argument) and it is the ENV read that breaks, exactly as in the
+# hooks, so they need the normalising twin as well.
 for f in hooks/*.sh hooks/lib/*.sh scripts/*.py; do
   [ -f "$f" ] || continue
   case "$f" in

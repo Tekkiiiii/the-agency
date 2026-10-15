@@ -2,8 +2,8 @@
 // check-design-system-sync.js — run the design-system sync `agency upgrade`
 // uses, end to end, against a throwaway destination.
 //
-// WHY: Wave 14 shipped the design-system tree onto the deploy list and could
-// only verify the upgrade path by READING syncDesignSystem() — an end-to-end
+// WHY: the upgrade path of the design-system tree could only be verified by
+// READING syncDesignSystem() — an end-to-end
 // `agency upgrade` needs a pushed commit to pull, a git remote, and a re-exec,
 // none of which belong in a unit check. install.sh's deployment is asserted by
 // the workflow already; the UPGRADE path was the untested half.
