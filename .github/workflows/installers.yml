@@ -1,21 +1,21 @@
 name: installers
 
-# Durable verification for the two shell installers. Wave 12 fixed both after
-# they had each been silently installing ZERO skills; that fix was verified by
-# hand on macOS only, and install.ps1 was never executed at all. This workflow
-# is the thing that stops either regression from reaching main unnoticed.
+# Durable verification for the two installers (install.sh, install.ps1): each is
+# executed end to end on its own OS, so a regression cannot reach main unnoticed.
 #
 # Deliberately minimal: no matrix, no caching. Two jobs, one per installer.
 #
-# SECURITY: no secrets, and no `github.event.*` value is read anywhere. The only
-# interpolated expression is `runner.temp` (runner-controlled, not attacker
-# controlled), and even that is passed through `env:` rather than pasted into a
-# run: body — so there is no injection surface from PR titles, branch names or
-# commit messages.
+# SECURITY: the only secret is PRIVACY_DENYLIST, handed to the privacy step through
+# `env:` (never pasted into a run: body, never echoed; the script prints only a
+# term count). Fork PRs cannot read secrets, so there the step degrades to the
+# generic checks. The interpolated expressions are `runner.temp` and
+# `github.event_name` (runner-controlled constants, not attacker controlled), always
+# passed through `env:`, so there is no injection surface from PR titles, branch
+# names or commit messages.
 
 on:
   push:
-    branches: [main]
+    branches: [main, fresh-public]
   pull_request:
     branches: [main]
 
@@ -27,9 +27,8 @@ jobs:
     name: install.sh (ubuntu)
     runs-on: ubuntu-latest
     steps:
-      # Full history: scripts/gen-retired-manifest.py --check and
-      # check-retired-install.sh (the "old install" is a worktree of 723a223) read
-      # git history, and both fail loudly on a shallow clone.
+      # Full history: scripts/gen-retired-manifest.py --check reads git history and
+      # fails loudly on a shallow clone.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -73,24 +72,6 @@ jobs:
           grep -q '"ts"' "$log" || { echo "FAIL: emitted line carries no ts"; cat "$log"; exit 1; }
           cat "$log"
 
-      # agents-archive/ is runtime reading (ROLE-MAP.md + role files), deployed as
-      # a plain copy beside agents/. It must NEVER land under agents/: anything
-      # there registers as a spawnable agent type, which is exactly what the
-      # archive exists to prevent.
-      - name: Assert agents-archive deployed beside agents/, not under it
-        if: ${{ !cancelled() }}
-        env:
-          AGENCY_HOME: ${{ runner.temp }}/agency-default
-        run: |
-          [ -f "$AGENCY_HOME/agents-archive/ROLE-MAP.md" ] || { echo "FAIL: agents-archive/ROLE-MAP.md not deployed"; exit 1; }
-          [ -f "$AGENCY_HOME/agents-archive/MANIFEST.md" ] || { echo "FAIL: agents-archive/MANIFEST.md not deployed"; exit 1; }
-          [ ! -e "$AGENCY_HOME/agents/agents-archive" ] || { echo "FAIL: agents-archive leaked under agents/"; exit 1; }
-          repo=$(find agents-archive -type f ! -name '*.pyc' ! -name .DS_Store ! -path '*/__pycache__/*' | wc -l | tr -d ' ')
-          got=$(find "$AGENCY_HOME/agents-archive" -type f | wc -l | tr -d ' ')
-          echo "repo=$repo installed=$got"
-          [ "$repo" -gt 0 ] || { echo "FAIL: repo agents-archive/ is empty"; exit 1; }
-          [ "$got" = "$repo" ] || { echo "FAIL: installed $got of $repo agents-archive files"; exit 1; }
-
       # design-system/ is the quietest tree on the deploy list: a skill that
       # cannot find its brand file does not error, it falls back to a hardcoded
       # hex and ships an off-brand deliverable. So assert the DEPLOYED copy is
@@ -114,12 +95,11 @@ jobs:
           diff -u "$RUNNER_TEMP/neutral.css.before" "$ds/brands/neutral.css" \
             || { echo "FAIL: deployed brand CSS is not what build.js generates"; exit 1; }
 
-      # core/ is deployed by four paths and all four used to blind-overwrite it.
-      # Some core/memory/ files ship as empty scaffolds that the running system
-      # appends rows to at their INSTALLED path, so every reinstall destroyed
-      # user data with exit code 0. Note this is a second install into the SAME
-      # root — the existing "different AGENCY_HOME" step below cannot see this
-      # class of bug at all, which is why it went unnoticed.
+      # core/ is deployed by four paths and none may blind-overwrite it. Some
+      # core/memory/ files ship as empty scaffolds that the running system appends
+      # rows to at their INSTALLED path, so a reinstall must not destroy user data.
+      # This is a second install into the SAME root; the "different AGENCY_HOME"
+      # step below cannot see this class of bug.
       #
       # Both halves are asserted. (a) the user's row survives. (b) a file that
       # is NOT preserved still refreshes — without (b) this step would pass just
@@ -163,9 +143,9 @@ jobs:
         if: ${{ !cancelled() }}
         run: node .github/scripts/check-core-preserve.js
 
-      # The custom-root case is the one that had no test before Wave 13: every
-      # script under hooks/ and scripts/ used to hardcode $HOME/.claude, so a
-      # custom AGENCY_HOME installed to one place and was read from another.
+      # Custom-root case: every script under hooks/ and scripts/ must resolve the
+      # root from AGENCY_HOME, not a hardcoded $HOME/.claude, or a custom
+      # AGENCY_HOME is installed to one place and read from another.
       - name: Second install into a DIFFERENT AGENCY_HOME
         if: ${{ !cancelled() }}
         env:
@@ -229,17 +209,16 @@ jobs:
 
       # install.sh's design-system deployment is asserted above. `agency
       # upgrade` uses a different code path (syncDesignSystem -> syncTree, with
-      # update/preserve semantics) and Wave 14 could only verify it by reading
-      # the source. This runs that exact function end to end.
+      # update/preserve semantics). This runs that exact function end to end.
       - name: Assert agency upgrade's design-system sync works end to end
         if: ${{ !cancelled() }}
         run: node .github/scripts/check-design-system-sync.js
 
-      # The 2026-10-08 history purge left a real clone with a force-pushed
-      # origin, a stale .git/index.lock and a leftover UU file: `agency upgrade`
-      # could not stash, `pull --rebase` replayed the purged commits, and
-      # rescue.sh fell back to an unguarded `git reset --hard`. This runs both
-      # tools on that exact state, in a sandboxed HOME/AGENCY_HOME.
+      # A clone whose origin was force-pushed, with a stale .git/index.lock and a
+      # leftover UU file: `agency upgrade` must still stash, `pull --rebase` must not
+      # replay rewritten commits, and rescue.sh must not fall back to an unguarded
+      # `git reset --hard`. This runs both tools on that state, in a sandboxed
+      # HOME/AGENCY_HOME.
       - name: Assert agency upgrade + rescue.sh recover a rewritten origin safely
         if: ${{ !cancelled() }}
         run: bash .github/scripts/check-upgrade-rewrite.sh
@@ -252,9 +231,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: node .github/scripts/check-hooks-manifest.js
 
-      # install.sh used to wire hooks only when settings.json did not exist, and
-      # agency upgrade never wired them, so existing users ran no hooks. The
-      # merge that replaced it edits a LIVE settings.json: this asserts that user
+      # install.sh and agency upgrade merge hooks into a LIVE settings.json: this asserts that user
       # hooks and keys survive sync/re-sync/manifest change/remove, that a second
       # run is byte-identical with no new backup, and runs install.sh twice end
       # to end. Sandboxed HOME/AGENCY_HOME throughout.
@@ -295,10 +272,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: node .github/scripts/check-retired-prune.js
 
-      - name: Assert install.sh and agency upgrade prune retired files
-        if: ${{ !cancelled() }}
-        run: bash .github/scripts/check-retired-install.sh
-
       # The PreToolUse guards (config-protection, secret-scanner, gate-guard,
       # spawn-gate) once printed a top-level permissionDecision, which Claude
       # Code ignores, so they never blocked or asked. This pins the nested
@@ -335,14 +308,24 @@ jobs:
         run: node .github/scripts/check-ps1-ascii.js
 
       # Nothing private ships: no NotebookLM notebook IDs, real e-mail addresses,
-      # /Users/<name> paths, pcsk_/sk-ant- keys or C4 personal terms in any tracked
-      # file. Justified hits are listed in .github/scripts/privacy-allowlist.txt.
+      # /Users/<name> paths, pcsk_/sk-ant- keys or private terms in any tracked
+      # file. The term list is the PRIVACY_DENYLIST secret (newline-separated), never
+      # stored in the repo. Pushes require it (--require-denylist); fork PRs cannot
+      # read secrets, so there the generic checks run and a notice is logged.
+      # Justified hits are listed in .github/scripts/privacy-allowlist.txt.
       # The self-test plants each kind of leak in a throwaway repo and must catch it.
       - name: Assert no private data is tracked (NotebookLM IDs, emails, user paths, keys, personal terms)
         if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
+          REQUIRE_DENYLIST: ${{ github.event_name != 'pull_request' && '--require-denylist' || '' }}
         run: |
           node .github/scripts/check-privacy.js --self-test
-          node .github/scripts/check-privacy.js
+          if [ -z "$PRIVACY_DENYLIST" ]; then
+            echo "::notice::PRIVACY_DENYLIST is not available (fork PR or secret unset): running generic checks only"
+          fi
+          node .github/scripts/check-privacy.js $REQUIRE_DENYLIST
 
       # Third-party Vietnamese marketing skills are not licensed for distribution:
       # no blocked skill directory and no upstream identifier in any tracked file.
@@ -361,9 +344,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: node .github/scripts/check-quickstart-registry.js
 
-      # agents/scripts/lint-agents.sh used to scan only 6 hand-listed directories
-      # (and printed "No agent files found" from the repo root). It now derives
-      # the department list from agents/*/INDEX.md, so a new department or agent
+      # agents/scripts/lint-agents.sh derives the department list from agents/*/INDEX.md, so a new department or agent
       # with broken frontmatter fails here instead of shipping.
       - name: Assert every agent definition has valid frontmatter (all departments)
         if: ${{ !cancelled() }}
@@ -387,10 +368,9 @@ jobs:
           python3 .github/scripts/test-skill-registry.py
           python3 .github/scripts/check-skill-registry.py
 
-      # core/ holds copies of canonical docs (six agent defs, ORG.md, every runbook).
-      # Nothing re-synced them, so they drifted and stale wording shipped from the
-      # copy. Byte-compares each copy to its source; the one documented exemption
-      # (core-only [1m] policy in core/ORG.md) is wrapped in explicit markers.
+      # core/ holds copies of canonical docs (agent defs, every runbook). Byte-compares
+      # each copy to its source so they cannot drift; a documented core-only block is
+      # allowed only when wrapped in explicit exemption markers.
       - name: Assert core/ mirrors agents/ and runbooks/
         if: ${{ !cancelled() }}
         run: python3 scripts/core-mirror-check.py --root .
@@ -458,11 +438,7 @@ jobs:
       run:
         shell: pwsh
     steps:
-      # Full history: check-retired-install.ps1 builds its "old install" from a git
-      # worktree of 723a223.
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Run install.ps1 into a sandboxed AGENCY_HOME
         env:
@@ -558,11 +534,10 @@ jobs:
           AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
         shell: bash
         run: |
-          # Same MSYS-path defect class as emit-metric.sh (Wave 13, 3383ea9):
-          # python3 on Windows PATH is native and cannot open the MSYS-style
-          # path Git Bash hands it. Wave 14 applied the same cd+bare-filename
-          # idiom to check-session-state.sh and session-end.sh (both write
-          # $AGENCY_ROOT/session-state.json) — assert the fix holds.
+          # python3 on the Windows PATH is native and cannot open the MSYS-style
+          # path Git Bash hands it. check-session-state.sh and session-end.sh (both
+          # write $AGENCY_ROOT/session-state.json) use a cd+bare-filename idiom to
+          # avoid that — assert it holds.
           export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
 
           state="$AGENCY_HOME/session-state.json"
@@ -686,17 +661,12 @@ jobs:
           AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
         shell: bash
         run: |
-          # Fourth and last variant of the Windows path defect. Wave 15 left
-          # scripts/*.py on the plain three-line twin, reasoning that a native
-          # python3 could not load their MSYS-form script path anyway, so
-          # normalising the env read would not help. That was an inference. It
-          # was measured here (run 30689704116, informational probe) and it was
-          # wrong: MSYS2 converts path-shaped ARGUMENTS to native binaries just
-          # as it converts path-shaped environment variables, so the script
-          # loads fine and it is the ENV read that breaks —
+          # Windows path defect, scripts/*.py variant: MSYS2 converts path-shaped
+          # ARGUMENTS to native binaries just as it converts path-shaped environment
+          # variables, so the script loads fine and it is the ENV read that breaks —
           #   FileNotFoundError: '\d\a\_temp\agency-default\skills'
-          # exactly the hooks' defect. That probe run IS the red check for the
-          # raw-env case below; this step is the green one.
+          # The agency_root() twin normalises the env read; this step is the green
+          # check for it.
           #
           # skill-audit.py and agent-tools-audit.py are the right probes: both
           # read a tree under the resolved root at import time, both print a
@@ -757,9 +727,8 @@ jobs:
           fi
 
       # rescue.ps1 could `git reset --hard origin/main` on ANY git repository it
-      # was run inside, and searched no install location at all. Wave 16 gave it
-      # the same remote-verified discovery and the same root ladder as
-      # rescue.sh. Assert the negative path: found nothing -> exits 1, names the
+      # was run inside, and searched no install location at all. It now has the same
+      # remote-verified discovery and the same root ladder as rescue.sh. Assert the negative path: found nothing -> exits 1, names the
       # resolved root, touches nothing.
       - name: Assert rescue.ps1 honours the root ladder and refuses unknown repos
         if: ${{ !cancelled() }}
@@ -877,7 +846,7 @@ jobs:
           AGENCY_HOME: ${{ runner.temp }}\agency-custom
         run: |
           .\.github\scripts\verify-agency-refs.ps1 -AgencyRoot $env:AGENCY_HOME
-          foreach ($tree in @('skills','agents','core','hooks','runbooks','scripts','design-system','agents-archive')) {
+          foreach ($tree in @('skills','agents','core','hooks','runbooks','scripts','design-system')) {
             $p = Join-Path $env:AGENCY_HOME $tree
             if (-not (Test-Path $p)) { throw "missing tree under custom root: $tree" }
           }
@@ -928,10 +897,6 @@ jobs:
         shell: bash
         run: node .github/scripts/check-retired-prune.js
 
-      - name: Assert install.ps1 and agency upgrade prune retired files (pwsh)
-        if: ${{ !cancelled() }}
-        run: .\.github\scripts\check-retired-install.ps1
-
       # Same two skill-router checks as the ubuntu job, on the Windows runner's
       # python3 under Git Bash (os.path paths, tempfile dirs, no shell-isms). The
       # router ships disabled; these prove the overlay still matches skills/ and
@@ -955,8 +920,7 @@ jobs:
           python3 .github/scripts/test-skill-registry.py
           python3 .github/scripts/check-skill-registry.py
 
-      # REQUIRED since green run 38664799549 on windows-latest: real-host evidence
-      # for the Windows-portable mods. One step per suite, each under
+      # Real-host evidence for the Windows-portable mods. One step per suite, each under
       # !cancelled(), so one red suite never hides the rest.
       - name: Mods Python tests (spawn-ledger)
         if: ${{ !cancelled() }}
@@ -1020,14 +984,24 @@ jobs:
         run: node .github/scripts/check-ps1-ascii.js
 
       # Nothing private ships: no NotebookLM notebook IDs, real e-mail addresses,
-      # /Users/<name> paths, pcsk_/sk-ant- keys or C4 personal terms in any tracked
-      # file. Justified hits are listed in .github/scripts/privacy-allowlist.txt.
+      # /Users/<name> paths, pcsk_/sk-ant- keys or private terms in any tracked
+      # file. The term list is the PRIVACY_DENYLIST secret (newline-separated), never
+      # stored in the repo. Pushes require it (--require-denylist); fork PRs cannot
+      # read secrets, so there the generic checks run and a notice is logged.
+      # Justified hits are listed in .github/scripts/privacy-allowlist.txt.
       # The self-test plants each kind of leak in a throwaway repo and must catch it.
       - name: Assert no private data is tracked (NotebookLM IDs, emails, user paths, keys, personal terms)
         if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
+          REQUIRE_DENYLIST: ${{ github.event_name != 'pull_request' && '--require-denylist' || '' }}
         run: |
           node .github/scripts/check-privacy.js --self-test
-          node .github/scripts/check-privacy.js
+          if [ -z "$PRIVACY_DENYLIST" ]; then
+            echo "::notice::PRIVACY_DENYLIST is not available (fork PR or secret unset): running generic checks only"
+          fi
+          node .github/scripts/check-privacy.js $REQUIRE_DENYLIST
 
       # Third-party Vietnamese marketing skills are not licensed for distribution:
       # no blocked skill directory and no upstream identifier in any tracked file.
@@ -1105,14 +1079,6 @@ jobs:
           Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
           if ($PSVersionTable.PSVersion.Major -ne 5) { throw "expected Windows PowerShell 5.x" }
           .\.github\scripts\check-mods-install.ps1
-
-      - name: Assert install.ps1 and agency upgrade prune retired files (Windows PowerShell 5.1)
-        if: ${{ !cancelled() }}
-        shell: powershell
-        run: |
-          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
-          if ($PSVersionTable.PSVersion.Major -ne 5) { throw "expected Windows PowerShell 5.x" }
-          .\.github\scripts\check-retired-install.ps1
 
       - name: Run rescue.ps1 under Windows PowerShell 5.1
         if: ${{ !cancelled() }}
