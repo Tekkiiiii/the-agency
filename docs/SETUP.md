@@ -43,7 +43,7 @@ After the sync, the installer wires the five Claude Code mods in `mods/` (contex
 
 ### Retired files
 
-The sync only adds and updates files, so a skill, agent, runbook or core doc that the repo later deleted would stay on your disk forever. The installers, `agency init` and `agency upgrade` therefore also prune them, using `retired-manifest.json` (every path the repo once shipped and removed, with the checksum of every version it shipped):
+The sync only adds and updates files, so a skill, agent, runbook or core doc that the repo later deleted would stay on your disk forever. The installers, `agency init` and `agency upgrade` therefore also prune them, using `retired-manifest.json` (every path a release has removed, with the checksum of every version it shipped):
 
 - An installed retired file that is byte-for-byte a shipped version is deleted, and its folder if that leaves it empty.
 - A retired file you edited is listed under "You changed these". Then it is archived to `{root}/archive/agency-retired-<YYYY-MM-DD>/` or deleted, per `--retired=archive|delete|ask` (`install.ps1`: `-Retired`; or the `AGENCY_RETIRED` environment variable). The default is `ask` on a terminal and `archive` without one (`curl | bash`, CI, an agent), so an edited file is never deleted unless you say `delete`. The note is also written to `{root}/logs/agency-retired.log`.
