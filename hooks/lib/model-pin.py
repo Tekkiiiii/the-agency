@@ -10,7 +10,10 @@ ledger `start` row is written. Reads ONE JSON object on stdin:
 and prints ONE JSON line:
 
   {action: pass|rewrite|deny, model: <string|null; null = strip the param so frontmatter decides>,
-   old, new, reason, deny: "<message, deny only>"}
+   old, new, reason, effort: <low|medium|high|xhigh|max|null>, effort_category: <string|null>,
+   deny: "<message, deny only>"}
+
+(`effort` / `effort_category` are on every non-deny result, null when no effort is decided; a deny carries neither.)
 
 Why: the Agent tool's `model` param overrides an agent file's frontmatter
 `model:`, so a spawner passing model:"opus" leaks Opus onto agents pinned to sonnet. Rules, in order:
@@ -37,8 +40,32 @@ Why: the Agent tool's `model` param overrides an agent file's frontmatter
      (the PD tree's start rows split over project + global logs). spawn_project.py missing -> global log only +
      one model_pin_error row (fail open).
 
+EFFORT POLICY (Owner ruling 2026-10-15; the `effort` section of exec-model-map.json is the single source of truth).
+The Agent tool cannot set `effort` at agent.spawn, so this hook only DECIDES it; the spawn-ledger `turn.step` hook applies
+it. decide_effort(), first match wins, fork/teammate/workflow excepted (no effort + one `effort_skipped` row):
+  a. PD (type ends "-pd" or == pd-coordinator)          -> category `pd`.
+  b. type listed in effort.agents (exact match)         -> that category (reason `agent_table`).
+  c. any other named type                               -> no effort (Council seats, caveman:*, built-ins untouched).
+  d. general-purpose: a `MODEL-CATEGORY:` marker listed in effort.marker_categories -> that category; else the Jev route
+     cache entry named by the prompt's `Jev[r=<id>]` line, read DIRECTLY from <SKILL_ROUTE_STATE_DIR or
+     <root>/state/skill-route>/jev-route-cache/<id>.json (48h TTL; no router import, no Jev call): gate pass ->
+     domain family (effort.domains): visual -> `visual`; content -> `content_vi` when cache lang == vi or domain ==
+     writing-vi else `content_en`; coding -> `coding_complex` when a complexity signal fires (effort.complexity: domain,
+     skill in the cache or the prompt's `Skills:` line, marker word in description+prompt outside code fences) else
+     `coding_routine`; other/unknown -> `other`. No Jev line / no usable cache entry / jev_down / gate != pass ->
+     effort.fallback_category (`other`).
+  The value is effort.categories[category] and ALWAYS wins over the caller's `effort` and the agent frontmatter.
+  Ledger rows (same log as model_override): `effort_override` (value differs from the agent file's `effort:`, or that is
+  unknown), `effort_policy` (already equal), `effort_skipped` (fork/teammate/workflow). A bad `effort` section or any
+  error inside the effort step -> no effort + exactly one `model_pin_error` row prefixed `effort: `; the model decision
+  and the cap are never affected (fail open).
+  Effort-only kill switch: env EFFORT_POLICY_OFF=1, file $STATE/effort-policy.off, or effort.enabled == false (the model
+  pin keeps working). The model-pin kill switches above also switch effort off.
+
+SPAWN_LOG_FILE, SPAWN_LEDGER_EXTRA_LOGS (the only extra logs the cap reads when SPAWN_LOG_FILE is set), SPAWN_MEDIUM_TERM, SKILL_ROUTE_STATE_DIR (Jev route cache base), MODEL_PIN_MAP, MODEL_PIN_AGENTS_DIR, MODEL_PIN_STATE_DIR, MODEL_PIN_NOW (epoch),
+
 Config: exec-model-map.json next to this file (override: env MODEL_PIN_MAP). Test overrides:
-SPAWN_LOG_FILE, SPAWN_LEDGER_EXTRA_LOGS (the only extra logs the cap reads when SPAWN_LOG_FILE is set), SPAWN_MEDIUM_TERM, MODEL_PIN_MAP, MODEL_PIN_AGENTS_DIR, MODEL_PIN_STATE_DIR, MODEL_PIN_NOW (epoch),
+SPAWN_LOG_FILE, SPAWN_LEDGER_EXTRA_LOGS (the only extra logs the cap reads when SPAWN_LOG_FILE is set), SPAWN_MEDIUM_TERM, SKILL_ROUTE_STATE_DIR (Jev route cache base), MODEL_PIN_MAP, MODEL_PIN_AGENTS_DIR, MODEL_PIN_STATE_DIR, MODEL_PIN_NOW (epoch),
 MODEL_PIN_HOME (replaces $HOME when the root is derived: <root> = AGENCY_HOME, else CLAUDE_CONFIG_DIR, else
 $MODEL_PIN_HOME/.claude; the profile is <root>/.hook-profile),
 MODEL_PIN_GLOBAL_LOG (second log scanned by the cap; empty = none),
@@ -95,6 +122,9 @@ BUILTIN_MAP = {"default": "sonnet", "categories": {}}
 CAP_DEFAULTS = {"enabled": True, "max": 5, "types": ["general-purpose", "task-executor"],
                 "include_root": False, "stale_after_sec": 7200}
 ESC_DEFAULTS = {"enabled": False, "allowed": ["opus"]}
+EFFORT_VALUES = ("low", "medium", "high", "xhigh", "max")
+EFFORT_FAMILIES = ("visual", "content", "coding", "other")
+JEV_CACHE_TTL_SEC = 48 * 3600  # same as scripts/jev_spawn.py CACHE_TTL_SECONDS
 
 
 # ---- environment ----------------------------------------------------------
@@ -198,6 +228,10 @@ def kill_switch():
     return ""
 
 
+def effort_killed():
+    return os.environ.get("EFFORT_POLICY_OFF") == "1" or os.path.exists(os.path.join(state_dir(), "effort-policy.off"))
+
+
 def cap_killed():
     return os.environ.get("SPAWN_CAP_OFF") == "1" or os.path.exists(os.path.join(state_dir(), "spawn-cap.off"))
 
@@ -239,10 +273,9 @@ def strip_fences(text):
     return FENCED.sub("", text or "")
 
 
-def agent_frontmatter_model(subagent_type):
-    """Frontmatter `model:` of the agent file whose `name:` is subagent_type (the matching approach of
-    ledger.py agent_def_model, but a sorted walk so duplicates resolve deterministically).
-    Returns "" when there is no file, no model, or the model is `inherit`."""
+def agent_frontmatter(subagent_type):
+    """Frontmatter text of the agent file whose `name:` is subagent_type (the matching approach of ledger.py
+    agent_def_model, but a sorted walk so duplicates resolve deterministically). "" when there is no such file."""
     try:
         for root, dirs, files in os.walk(agents_dir()):
             dirs.sort()
@@ -256,12 +289,24 @@ def agent_frontmatter_model(subagent_type):
                 fm = head.split("---", 2)[1] if head.count("---") >= 2 else ""
                 nm = re.search(r"^name:\s*[\"']?(.+?)[\"']?\s*$", fm, re.M)
                 if nm and nm.group(1).strip() == subagent_type:
-                    mm = re.search(r"^model:\s*[\"']?([^\s\"']+)", fm, re.M)
-                    val = mm.group(1) if mm else ""
-                    return "" if val.lower() == "inherit" else val
+                    return fm
     except Exception:
         pass
     return ""
+
+
+def agent_frontmatter_model(subagent_type):
+    """Frontmatter `model:` of the named agent file. Returns "" when there is no file, no model, or the model
+    is `inherit`."""
+    mm = re.search(r"^model:\s*[\"']?([^\s\"']+)", agent_frontmatter(subagent_type), re.M)
+    val = mm.group(1) if mm else ""
+    return "" if val.lower() == "inherit" else val
+
+
+def agent_frontmatter_effort(subagent_type):
+    """Frontmatter `effort:` of the named agent file, lower-cased; None when there is no file or no line."""
+    mm = re.search(r"^effort:\s*[\"']?([^\s\"']+)", agent_frontmatter(subagent_type), re.M)
+    return mm.group(1).lower() if mm else None
 
 
 CAT_INLINE = re.compile(r"\[category:\s*([A-Za-z0-9_-]+)\s*\]", re.I)
@@ -305,6 +350,176 @@ def decide_model(d, m):
     if param and norm(param) == norm(desired):
         return "pass", param, param, None, reason if reason.startswith("escalation") else ""
     return "rewrite", desired, param, desired, reason
+
+
+# ---- effort policy --------------------------------------------------------
+
+JEV_ID = re.compile(r"Jev\[r=([0-9a-f]{8})\]")
+SKILLS_LINE = re.compile(r"^[ \t]*Skills:[ \t]*(.+)$", re.M)
+SKILL_TOKEN = re.compile(r"/([A-Za-z0-9][A-Za-z0-9_.:-]*)")
+
+
+class EffortSkip(Exception):
+    """Raised inside the effort step to mean "no effort for this spawn" with a reason (not an error)."""
+
+
+def validate_effort(cfg):
+    """Raises ValueError on a malformed `effort` section (caller fails open with one error row)."""
+    if not isinstance(cfg, dict):
+        raise ValueError("map.effort must be an object")
+    cats = cfg.get("categories")
+    if not isinstance(cats, dict) or not cats:
+        raise ValueError("effort.categories must be a non-empty object")
+    for k, v in cats.items():
+        if v not in EFFORT_VALUES:
+            raise ValueError("effort.categories.%s=%r is not one of %s" % (k, v, "/".join(EFFORT_VALUES)))
+    if cfg.get("fallback_category") not in cats:
+        raise ValueError("effort.fallback_category %r is not a category" % (cfg.get("fallback_category"),))
+    for key in ("agents", "marker_categories"):
+        tbl = cfg.get(key, {})
+        if not isinstance(tbl, dict) or any(v not in cats for v in tbl.values()):
+            raise ValueError("effort.%s must map to known categories" % key)
+    dom = cfg.get("domains", {})
+    if not isinstance(dom, dict) or any(v not in EFFORT_FAMILIES for v in dom.values()):
+        raise ValueError("effort.domains must map to one of %s" % "/".join(EFFORT_FAMILIES))
+    cx = cfg.get("complexity", {})
+    if not isinstance(cx, dict) or any(not isinstance(cx.get(k, []), list) or
+                                       any(not isinstance(x, str) for x in cx.get(k, []))
+                                       for k in ("domains", "skills", "markers")):
+        raise ValueError("effort.complexity.{domains,skills,markers} must be lists of strings")
+
+
+def jev_cache_entry(route_id):
+    """The Jev route cache entry for route_id, read directly from the JSON file (scripts/jev_spawn.py layout, no
+    import). None when missing / unreadable / not an object / older than the 48h TTL."""
+    base = os.environ.get("SKILL_ROUTE_STATE_DIR") or os.path.join(ROOT, "state", "skill-route")
+    path = os.path.join(base, "jev-route-cache", route_id + ".json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            entry = json.load(f)
+        if not isinstance(entry, dict):
+            return None
+        try:
+            ts = float(entry.get("ts"))
+        except (TypeError, ValueError):
+            ts = now_epoch()
+        try:
+            mt = os.path.getmtime(path)
+        except OSError:
+            mt = now_epoch()
+        if now_epoch() - min(ts, mt) > JEV_CACHE_TTL_SEC:
+            return None
+        return entry
+    except Exception:
+        return None
+
+
+def coding_signal(cfg, d, entry):
+    """First complexity signal that fires for a coding spawn, as 'domain:x' / 'skill:x' / 'marker:x', else ''."""
+    cx = cfg.get("complexity") or {}
+    if entry.get("domain") in (cx.get("domains") or []):
+        return "domain:%s" % entry.get("domain")
+    prompt = d.get("prompt") or ""
+    named = set(str(s) for s in (entry.get("skills") or []))
+    for line in SKILLS_LINE.findall(strip_fences(prompt)):
+        named.update(SKILL_TOKEN.findall(line))
+    for sk in (cx.get("skills") or []):
+        if sk in named:
+            return "skill:%s" % sk
+    text = strip_fences(d.get("description") or "") + "\n" + strip_fences(prompt)
+    for mk in (cx.get("markers") or []):
+        if re.search(r"\b" + re.escape(mk), text, re.I):
+            return "marker:%s" % mk
+    return ""
+
+
+def decide_effort(d, m):
+    """-> {category, value, reason, old} or None (no effort for this spawn). Order and reasons: see the module
+    docstring. Raises on a bad config (caller fails open)."""
+    cfg = m.get("effort")
+    if cfg is None or (isinstance(cfg, dict) and cfg.get("enabled") is False):
+        return None
+    validate_effort(cfg)
+    st = d.get("subagent_type") or ""
+    cats = cfg["categories"]
+
+    def out(cat, reason):
+        old = agent_frontmatter_effort(st) if st not in GP_TYPES else None
+        return {"category": cat, "value": cats[cat], "reason": reason, "old": old}
+
+    if is_pd(st):
+        return out("pd", "pd")
+    agents = cfg.get("agents") or {}
+    if st in agents:
+        return out(agents[st], "agent_table")
+    if st not in GP_TYPES:
+        return None  # named_unlisted: Council seats, caveman:*, built-ins stay untouched
+    mk = find_category(d.get("description") or "", d.get("prompt") or "")
+    mcats = cfg.get("marker_categories") or {}
+    if mk in mcats:
+        return out(mcats[mk], "marker:" + mk)
+    fb = cfg["fallback_category"]
+    mid = JEV_ID.search(d.get("prompt") or "")
+    if not mid:
+        return out(fb, "jev_unavailable")
+    entry = jev_cache_entry(mid.group(1))
+    if entry is None:
+        return out(fb, "jev_no_route")
+    if entry.get("jev_down") is True:
+        return out(fb, "jev_unavailable")
+    if entry.get("gate") != "pass":
+        return out(fb, "jev_low_confidence")
+    domain = entry.get("domain") or ""
+    family = (cfg.get("domains") or {}).get(domain, "other")
+    if family == "visual":
+        return out("visual", "domain:" + domain)
+    if family == "content":
+        if str(entry.get("lang") or "").lower() == "vi":
+            return out("content_vi", "lang:vi")
+        if domain == "writing-vi":
+            return out("content_vi", "domain:writing-vi")
+        return out("content_en", "domain:" + domain)
+    if family == "coding":
+        sig = coding_signal(cfg, d, entry)
+        if sig:
+            return out("coding_complex", "coding_complex:" + sig)
+        return out("coding_routine", "coding_routine")
+    return out("other", "domain:" + domain if domain else "other")
+
+
+def effort_step(d, m, tuid, parent, subagent_type):
+    """-> (value, category). Runs the whole effort step incl. its ledger rows; never raises (one `effort: ` error
+    row instead). m may be None (only fork/teammate/workflow spawns call it without having loaded the map)."""
+    try:
+        if effort_killed():
+            return None, None
+        if m is None:
+            try:
+                m = load_map()
+            except Exception:
+                return None, None  # untouched-path spawn: a broken map is the model path's business, not ours
+        cfg = m.get("effort")
+        if cfg is None or (isinstance(cfg, dict) and cfg.get("enabled") is False):
+            return None, None
+        why = ("fork ignores effort" if d.get("fork") else "teammate" if d.get("is_teammate")
+               else "workflow" if d.get("workflow") else "")
+        if why:
+            validate_effort(cfg)
+            append_row({"event": "effort_skipped", "ts": iso(now_epoch()), "tool_use_id": tuid,
+                        "subagent_type": subagent_type, "reason": why}, d)
+            return None, None
+        r = decide_effort(d, m)
+        if r is None:
+            return None, None
+        append_row({"event": "effort_policy" if r["old"] == r["value"] else "effort_override",
+                    "ts": iso(now_epoch()), "tool_use_id": tuid, "subagent_type": subagent_type,
+                    "category": r["category"], "old": r["old"], "new": r["value"], "reason": r["reason"],
+                    "parent_spawn_id": parent}, d)
+        return r["value"], r["category"]
+    except Exception as e:
+        append_row({"event": "model_pin_error", "ts": iso(now_epoch()), "tool_use_id": tuid,
+                    "subagent_type": subagent_type, "error": "effort: %s: %s" % (type(e).__name__, e)}, d)
+        return None, None
 
 
 # ---- Exec cap ---------------------------------------------------------------
@@ -551,10 +766,13 @@ def cap_message(n, max_n, root):
 
 # ---- main -----------------------------------------------------------------
 
-def result(action="pass", model=None, old=None, new=None, reason="", deny=None):
+def result(action="pass", model=None, old=None, new=None, reason="", deny=None, effort=None, effort_category=None):
     out = {"action": action, "model": model, "old": old, "new": new, "reason": reason}
     if deny is not None:
         out["deny"] = deny
+    else:  # a deny carries no effort keys; every other result does (null = no effort decided)
+        out["effort"] = effort
+        out["effort_category"] = effort_category
     return out
 
 
@@ -567,6 +785,7 @@ def decide(raw):
         raise ValueError("stdin is not a JSON object")
     param = d.get("model") or None
     if d.get("fork") or d.get("is_teammate") or d.get("workflow"):
+        effort_step(d, None, d.get("tool_use_id") or "", d.get("parent_spawn_id") or "", d.get("subagent_type") or "")
         return result(model=param, old=param, reason="untouched: fork/teammate/workflow")
     if spawn_project is None and SPAWN_PROJECT_ERROR:  # shared module missing: global log only, say so (fail open)
         append_row({"event": "model_pin_error", "ts": iso(now_epoch()), "tool_use_id": d.get("tool_use_id", ""),
@@ -607,6 +826,7 @@ def decide(raw):
         append_row({"event": "model_override", "ts": iso(now_epoch()), "tool_use_id": tuid,
                     "subagent_type": subagent_type, "old": old, "new": new, "reason": reason,
                     "parent_spawn_id": parent}, d)
+    out["effort"], out["effort_category"] = effort_step(d, m, tuid, parent, subagent_type)
     return out
 
 

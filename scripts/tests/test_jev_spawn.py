@@ -378,6 +378,16 @@ class CacheTests(unittest.TestCase):
     def path(self, rid):
         return os.path.join(js.cache_dir(), rid + ".json")
 
+    def test_cache_stores_lang_from_res(self):
+        # effort policy (model-pin.py reads the entry directly): content + lang vi -> xhigh
+        rid = js.cache_put(dict(self.RES, domain="writing-en", lang="vi"), self.META)
+        self.assertEqual(js.cache_get(rid)["lang"], "vi")
+        rid = js.cache_put(dict(self.RES, lang="en"), self.META)
+        self.assertEqual(js.cache_get(rid)["lang"], "en")
+
+    def test_cache_lang_absent_is_none(self):
+        self.assertIsNone(js.cache_get(js.cache_put(self.RES, self.META))["lang"])
+
     def test_cache_dir_reads_env_at_call_time(self):
         self.assertEqual(js.cache_dir(), os.path.join(self.tmp, "jev-route-cache"))
         os.environ["SKILL_ROUTE_STATE_DIR"] = self.tmp + "-b"
@@ -398,7 +408,7 @@ class CacheTests(unittest.TestCase):
         rid = js.cache_put(dict(self.RES, task="SECRET TASK TEXT"), dict(self.META, text="SECRET TASK TEXT"))
         self.assertRegex(rid, r"^[0-9a-f]{8}$")
         e = js.cache_get(rid)
-        self.assertEqual(set(e), {"route_id", "ts", "skills", "gate", "router", "domain", "role", "none_fired",
+        self.assertEqual(set(e), {"route_id", "ts", "skills", "gate", "router", "domain", "lang", "role", "none_fired",
                                   "confidential", "jev_down", "denies"})
         self.assertEqual((e["route_id"], e["skills"], e["gate"], e["router"], e["domain"], e["role"], e["denies"]),
                          (rid, ["frontend", "tailwind"], "pass", "jev", "ui", "exec", 0))

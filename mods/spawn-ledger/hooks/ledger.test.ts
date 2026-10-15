@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
-import { parseJevGate, parseKnownSlugs, respawnNotice, respawnSlug } from './register'
+import { parseJevGate, parseKnownSlugs, parsePin, respawnNotice, respawnSlug } from './register'
 import { seenPosix } from './testpaths'
 
 type Run = { cmd: string; payload: Record<string, unknown> }
@@ -23,6 +23,8 @@ const MEDIUM_TERM = `# Medium-Term Memory
 // The engine beneath the plugin: HOME, the hook profile, medium-term.md, and ledger.py as a fake.
 // mediumTerm = null makes medium-term.md unreadable.
 function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: string | null = MEDIUM_TERM) {
+  let prof = profile // setProfile flips the hook profile mid-test
+  const fail = { effortApplied: false } // the ledger.py effort_applied run throws
   const runs: Run[] = []
   const logs: string[] = []
   const toasts: string[] = []
@@ -35,7 +37,7 @@ function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: s
   on('env.get', (_$, e) => ({ value: e.name === 'HOME' ? '/home/t' : e.name === 'AGENCY_SKILL_ROUTER' ? jev.router : undefined }))
   on('fs.read', (_$, e) => {
     // seenPosix: a real Windows host path.resolve()s '/home/t/x' to 'D:\\home\\t\\x' before the stub sees it.
-    if (!seenPosix(e.path).endsWith('/memory/medium-term.md')) return { value: profile }
+    if (!seenPosix(e.path).endsWith('/memory/medium-term.md')) return { value: prof }
     if (mediumTerm === null) throw new Error('ENOENT')
     return { value: mediumTerm }
   })
@@ -53,6 +55,7 @@ function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: s
       return { value: { exitCode: 0, stdout: pin.reply, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
     }
     const cmd = String(e.argv[2])
+    if (cmd === 'effort_applied' && fail.effortApplied) throw new Error('python gone')
     const payload = JSON.parse(e.init?.stdin ?? '{}') as Record<string, unknown>
     runs.push({ cmd, payload })
     const stdout =
@@ -70,7 +73,7 @@ function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: s
     return { value: undefined }
   })
   on('turn.complete', (_$, e) => ({ text: e.answer }))
-  return { runs, logs, toasts, pin, jev }
+  return { runs, logs, toasts, pin, jev, fail, setProfile: (p: string) => void (prof = p) }
 }
 
 test('slug parsing', async () => {
@@ -429,4 +432,208 @@ test('jev gate, router ON: a note with no open Agent call (a workflow agent) is 
   await $.agent.spawn(spawnCall({ tool_use_id: 'tW' }))
   const later = await $.tool.call({ tool: 'Agent', tool_use_id: 'tW', prompt: 'p', description: 'exec', subagent_type: 'general-purpose' } as never)
   expect(later.context ?? []).toEqual([])
+})
+
+// ---- effort relay: model-pin.py DECIDES an effort at agent.spawn (AgentSpawnInput has no effort field), this remembers it
+// per subagent and APPLIES it on that subagent's turn.step, the way the pin sets `model`. The fake pin stands in for the script.
+
+test('parsePin: effort and effort_category ride pass and rewrite; malformed effort is dropped, not an error', () => {
+  expect(parsePin('{"action":"pass","model":null,"effort":"medium","effort_category":"pd"}')).toEqual({
+    action: 'pass', model: null, effort: 'medium', effort_category: 'pd',
+  })
+  expect(parsePin('{"action":"rewrite","model":"sonnet","reason":"r","effort":"xhigh","effort_category":"content_vi"}')).toEqual({
+    action: 'rewrite', model: 'sonnet', reason: 'r', effort: 'xhigh', effort_category: 'content_vi',
+  })
+  for (const effort of ['low', 'medium', 'high', 'xhigh', 'max']) {
+    expect(parsePin(`{"action":"pass","effort":"${effort}"}`)?.effort).toBe(effort)
+  }
+  for (const bad of ['"turbo"', '"HIGH"', '""', '5', 'null', 'true', '["high"]']) {
+    const pin = parsePin(`{"action":"pass","effort":${bad},"effort_category":"x"}`)
+    expect(pin?.action).toBe('pass') // still a usable pin
+    expect(pin?.effort).toBeUndefined()
+  }
+  expect(parsePin('{"action":"pass","effort_category":7}')?.effort_category).toBeUndefined()
+  expect(parsePin('{"action":"pass"}')?.effort).toBeUndefined()
+  // deny carries no effort
+  expect(parsePin('{"action":"deny","deny":"cap","effort":"high"}')).toEqual({ action: 'deny', model: null, deny: 'cap' })
+})
+
+type Seen = Array<{ agentId?: string; effort?: unknown }>
+
+// The bottom of the turn.step chain: records what the engine would send.
+function bottomStep(on: Parameters<TestBody>[1]): Seen {
+  const seen: Seen = []
+  on('turn.step', async function* (_$, e) {
+    seen.push({ agentId: e.agentId, effort: e.effort })
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' } as never
+  })
+  return seen
+}
+
+async function step($: Parameters<TestBody>[0], agentId: string | undefined, effort?: string) {
+  const stream = $.turn.step({ turnId: 't', index: 0, model: 'claude-sonnet-5-5', messageCount: 3, agentId, effort } as never)
+  for await (const _ of stream) {
+    // drain
+  }
+}
+
+const PD_PIN = '{"action":"pass","model":null,"effort":"medium","effort_category":"pd"}'
+
+test('effort relay: the spawned agent\'s turn.step reaches the bottom with the pin effort, whatever the caller sent', async ($, on) => {
+  const { pin } = engine(on)
+  pin.reply = '{"action":"pass","model":null,"effort":"high","effort_category":"coding_complex"}'
+  const seen = bottomStep(on)
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall())
+  await step($, 'a1', 'low') // the caller's effort differs from the policy
+  expect(seen).toEqual([{ agentId: 'a1', effort: 'high' }])
+  await step($, 'a1') // no effort at all (model without one set): the policy still applies
+  expect(seen[1]).toEqual({ agentId: 'a1', effort: 'high' })
+})
+
+test('effort relay: another agent, no agentId and an equal effort are untouched', async ($, on) => {
+  const { pin, runs } = engine(on)
+  pin.reply = PD_PIN
+  const seen = bottomStep(on)
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  on('agent.list', () => ({ value: [] }) as never)
+  await $.agent.spawn(spawnCall({ subagentType: 'ltv-pd' }))
+  await step($, 'other', 'low') // not a spawn we pinned
+  await step($, undefined, 'low') // the main loop pays nothing
+  await step($, 'a1', 'medium') // already the policy value
+  expect(seen).toEqual([
+    { agentId: 'other', effort: 'low' },
+    { agentId: undefined, effort: 'low' },
+    { agentId: 'a1', effort: 'medium' },
+  ])
+  // the main loop and a stranger never reach the ledger; the equal step logs seen == applied
+  expect(runs.filter(r => r.cmd === 'effort_applied').map(r => r.payload.agent_id)).toEqual(['a1'])
+})
+
+test('effort relay: a fork (the pin returns no effort) is untouched, and so is a pin that predates the key', async ($, on) => {
+  const { pin, runs } = engine(on)
+  const seen = bottomStep(on)
+  let id = 0
+  on('agent.spawn', () => ({ model: 'm', agentId: `a${++id}` }))
+  on('agent.list', () => ({ value: [] }) as never)
+  pin.reply = '{"action":"pass","model":null,"effort":null,"effort_category":null}'
+  await $.agent.spawn(spawnCall({ subagentType: 'fork', tool_use_id: 'tF', fork: true }))
+  pin.reply = '{"action":"pass","model":null}'
+  await $.agent.spawn(spawnCall({ tool_use_id: 'tG' }))
+  await step($, 'a1', 'low')
+  await step($, 'a2', 'xhigh')
+  expect(seen).toEqual([{ agentId: 'a1', effort: 'low' }, { agentId: 'a2', effort: 'xhigh' }])
+  expect(runs.filter(r => r.cmd === 'effort_applied')).toHaveLength(0)
+})
+
+test('effort relay: a deny pin starts no agent and leaves nothing behind', async ($, on) => {
+  const { pin } = engine(on)
+  pin.reply = '{"action":"deny","model":null,"deny":"cap","effort":"high"}'
+  const seen = bottomStep(on)
+  on('agent.list', () => ({ value: [] }) as never)
+  await $.agent.spawn(spawnCall())
+  await step($, 'a1', 'low')
+  expect(seen).toEqual([{ agentId: 'a1', effort: 'low' }])
+})
+
+test('effort relay: the first step may beat $.state.set, the agent.list row finds the pending effort', async ($, on) => {
+  const { pin } = engine(on)
+  pin.reply = '{"action":"pass","model":null,"effort":"xhigh","effort_category":"content_vi"}'
+  const seen = bottomStep(on)
+  on('agent.list', () => ({ value: [{ id: 'a1', type: 'general-purpose', description: 'exec', status: 'running' }] }) as never)
+  on('agent.spawn', async () => {
+    await step($, 'a1', 'low') // inside the spawn: the record is not stored yet
+    return { model: 'm', agentId: 'a1' }
+  })
+  await $.agent.spawn(spawnCall())
+  expect(seen).toEqual([{ agentId: 'a1', effort: 'xhigh' }])
+  // the pending key is gone after the spawn; the stored record now serves later steps
+  await step($, 'a1', 'low')
+  expect(seen[1]).toEqual({ agentId: 'a1', effort: 'xhigh' })
+})
+
+test('effort relay: a pending effort never leaks to a later agent with the same type and description', async ($, on) => {
+  const { pin } = engine(on)
+  const seen = bottomStep(on)
+  on('agent.list', () => ({ value: [{ id: 'ghost', type: 'general-purpose', description: 'exec', status: 'running' }] }) as never)
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  pin.reply = '{"action":"pass","model":null,"effort":"high","effort_category":"visual"}'
+  await $.agent.spawn(spawnCall())
+  await step($, 'ghost', 'low') // listed, but no record and no pending effort left
+  expect(seen).toEqual([{ agentId: 'ghost', effort: 'low' }])
+})
+
+test('effort relay: the first step per agent writes one effort_applied row with what it saw and applied', async ($, on) => {
+  const { pin, runs } = engine(on)
+  pin.reply = '{"action":"pass","model":null,"effort":"high","effort_category":"coding_complex"}'
+  bottomStep(on)
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall({ tool_use_id: 'tE' }))
+  await step($, 'a1', 'low')
+  await step($, 'a1', 'low')
+  await step($, 'a1', 'low')
+  const rows = runs.filter(r => r.cmd === 'effort_applied')
+  expect(rows).toHaveLength(1)
+  expect(rows[0]?.payload).toEqual({ tool_use_id: 'tE', agent_id: 'a1', seen: 'low', applied: 'high', category: 'coding_complex' })
+})
+
+test('effort relay: seen is null when the request carried no effort', async ($, on) => {
+  const { pin, runs } = engine(on)
+  pin.reply = '{"action":"pass","model":null,"effort":"low","effort_category":"lookup"}'
+  bottomStep(on)
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall({ tool_use_id: 'tN' }))
+  await step($, 'a1')
+  expect(runs.find(r => r.cmd === 'effort_applied')?.payload).toEqual({ tool_use_id: 'tN', agent_id: 'a1', seen: null, applied: 'low', category: 'lookup' })
+})
+
+test('effort relay: fail open, a throwing lookup sends the step unchanged and logs one line', async ($, on) => {
+  const { pin, logs } = engine(on)
+  pin.reply = PD_PIN
+  const seen = bottomStep(on)
+  on('agent.list', () => {
+    throw new Error('list down')
+  })
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall())
+  const before = logs.length
+  await step($, 'unknown', 'low') // no record: the fallback lookup throws
+  expect(seen).toEqual([{ agentId: 'unknown', effort: 'low' }])
+  const added = logs.slice(before)
+  expect(added).toHaveLength(1)
+  expect(added[0]).toContain('effort relay skipped (fail open)')
+})
+
+test('effort relay: a failing effort_applied ledger call never blocks the step or changes its effort', async ($, on) => {
+  const { pin, fail } = engine(on)
+  pin.reply = '{"action":"pass","model":null,"effort":"high","effort_category":"visual"}'
+  fail.effortApplied = true
+  const seen = bottomStep(on)
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall())
+  await step($, 'a1', 'low')
+  expect(seen).toEqual([{ agentId: 'a1', effort: 'high' }])
+})
+
+test('effort relay: hook profile minimal leaves every step untouched', async ($, on) => {
+  const { pin, runs, setProfile } = engine(on)
+  pin.reply = PD_PIN
+  const seen = bottomStep(on)
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall({ subagentType: 'ltv-pd' }))
+  setProfile('minimal\n') // recorded under standard, applied under minimal: still off
+  await step($, 'a1', 'low')
+  expect(seen).toEqual([{ agentId: 'a1', effort: 'low' }])
+  expect(runs.filter(r => r.cmd === 'effort_applied')).toHaveLength(0)
+})
+
+test('effort relay: minimal at spawn never runs the pin, so no step is touched', async ($, on) => {
+  const { pin } = engine(on, 'minimal\n')
+  pin.reply = PD_PIN
+  const seen = bottomStep(on)
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall())
+  await step($, 'a1', 'low')
+  expect(pin.calls).toHaveLength(0)
+  expect(seen).toEqual([{ agentId: 'a1', effort: 'low' }])
 })

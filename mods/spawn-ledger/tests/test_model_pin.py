@@ -833,6 +833,480 @@ class SplitLogCapTests(Base):
         self.assertEqual(self.events("model_override", os.path.join(self.home, ".claude", "logs", "spawns.jsonl")), [])
 
 
+# ---------------------------------------------------------------- effort policy (ruling 2026-10-15)
+
+SHIPPED_DOMAINS = {
+    "frontend-ui": "visual", "design-visual": "visual", "image-gen": "visual", "video-audio": "visual",
+    "decks-docs-reports-charts": "visual",
+    "writing-en": "content", "writing-vi": "content", "marketing-growth-seo": "content",
+    "backend-infra-deploy": "coding", "code-quality-testing": "coding",
+    "browser-web-data": "other", "planning-strategy-review": "other", "google-workspace": "other",
+    "claude-system-ops": "other", "research": "other", "career-personal": "other",
+}
+SHIPPED_CATEGORIES = {"pd": "medium", "coding_complex": "high", "coding_routine": "medium", "visual": "high",
+                      "content_en": "high", "content_vi": "xhigh", "other": "medium", "lookup": "low"}
+SHIPPED_AGENTS = {
+    "critique-design": "visual", "critique-social": "visual", "critique-video": "visual", "critique-data": "visual",
+    "critique-imageprompt": "visual", "critique-product": "visual",
+    "critique-content": "content_en", "critique-brand": "content_en", "critique-marketing": "content_en",
+    "critique-seo": "content_en", "critique-pedagogy": "content_en", "sag-critique": "content_en",
+    "critique-code": "coding_complex", "critique-security": "coding_complex",
+    "coord": "other", "mini-coord": "other", "codebase-search": "lookup", "Delegator": "lookup",
+}
+RID = "0d703d1e"
+
+
+def shipped_effort():
+    with open(REAL_MAP) as f:
+        return json.load(f).get("effort", {})
+
+
+class EffortBase(Base):
+    """Real shipped `effort` section + a temp Jev route cache (SKILL_ROUTE_STATE_DIR)."""
+
+    def setUp(self):
+        super().setUp()
+        self.skill_state = os.path.join(self.tmp, "skillstate")
+        self.cache = os.path.join(self.skill_state, "jev-route-cache")
+        os.makedirs(self.cache)
+        self.map_with(effort=shipped_effort())
+
+    def env(self, **extra):
+        e = super().env(SKILL_ROUTE_STATE_DIR=self.skill_state)
+        e.update(extra)
+        return e
+
+    def jev(self, domain="backend-infra-deploy", skills=None, gate="pass", lang=None, jev_down=False,
+            rid=RID, age=60, raw=None):
+        entry = {"route_id": rid, "ts": NOW - age, "skills": skills if skills is not None else ["backend"],
+                 "gate": gate, "router": "jev", "domain": domain, "role": "exec", "none_fired": False,
+                 "confidential": False, "jev_down": jev_down, "denies": 0}
+        if lang is not None:
+            entry["lang"] = lang
+        with open(os.path.join(self.cache, rid + ".json"), "w") as f:
+            f.write(raw if raw is not None else json.dumps(entry))
+        return rid
+
+    def gp(self, prompt="do the thing", rid=RID, line=True, **kw):
+        p = ("Jev[r=%s]: accept - route ok\n" % rid if line else "") + prompt
+        return self.run_pin(prompt=p, **kw)
+
+    def add_effort_agent(self, name, effort=None, model=None):
+        fm = "---\nname: %s\n" % name
+        if model:
+            fm += "model: %s\n" % model
+        if effort:
+            fm += "effort: %s\n" % effort
+        with open(os.path.join(self.agents, name + ".md"), "w") as f:
+            f.write(fm + "description: t\n---\nbody\n")
+
+    def eff_rows(self):
+        return [r for r in self.rows() if str(r.get("event", "")).startswith("effort_")]
+
+    def assertEffort(self, o, value, cat):
+        self.assertEqual((o.get("effort"), o.get("effort_category")), (value, cat), o)
+
+
+class EffortCategoryTests(EffortBase):
+    def test_pd_system_improvement(self):
+        self.assertEffort(self.run_pin(subagent_type="system-improvement-pd"), "medium", "pd")
+
+    def test_pd_coordinator(self):
+        self.assertEffort(self.run_pin(subagent_type="pd-coordinator"), "medium", "pd")
+
+    def test_coding_complex_by_domain(self):
+        self.jev("code-quality-testing", ["backend"])
+        self.assertEffort(self.gp(), "high", "coding_complex")
+        self.assertIn("domain:code-quality-testing", self.eff_rows()[0]["reason"])
+
+    def test_coding_complex_by_cache_skill(self):
+        self.jev("backend-infra-deploy", ["investigate"])
+        self.assertEffort(self.gp(), "high", "coding_complex")
+        self.assertIn("skill:investigate", self.eff_rows()[0]["reason"])
+
+    def test_coding_complex_by_prompt_skills_line(self):
+        self.jev("backend-infra-deploy", ["backend"])
+        self.assertEffort(self.gp(prompt="Skills: /backend, /security\nadd a column"), "high", "coding_complex")
+
+    def test_coding_complex_by_marker(self):
+        self.jev("backend-infra-deploy", ["backend"])
+        o = self.gp(description="Refactor the billing module", prompt="tidy it")
+        self.assertEffort(o, "high", "coding_complex")
+        self.assertIn("marker:refactor", self.eff_rows()[0]["reason"])
+
+    def test_marker_matches_word_start_case_insensitive(self):
+        self.jev("backend-infra-deploy", ["backend"])
+        self.assertEffort(self.gp(prompt="Needs a Migration of the tables"), "high", "coding_complex")
+        self.assertEffort(self.gp(prompt="we got a multi-file change here"), "high", "coding_complex")
+
+    def test_marker_in_fenced_block_ignored(self):
+        self.jev("backend-infra-deploy", ["backend"])
+        o = self.gp(prompt="rename a var\n```\n# refactor architecture debug\n```\n")
+        self.assertEffort(o, "medium", "coding_routine")
+
+    def test_coding_routine(self):
+        self.jev("backend-infra-deploy", ["backend"])
+        self.assertEffort(self.gp(prompt="fix the typo in README"), "medium", "coding_routine")
+
+    def test_complexity_split_same_domain(self):
+        self.jev("backend-infra-deploy", ["backend"])
+        routine = self.gp(prompt="fix the typo in README")
+        complex_ = self.gp(prompt="root cause of the outage")
+        self.assertEqual((routine["effort"], complex_["effort"]), ("medium", "high"))
+
+    def test_visual(self):
+        for dom in ("design-visual", "frontend-ui", "image-gen", "video-audio", "decks-docs-reports-charts"):
+            self.jev(dom, ["frontend"])
+            self.assertEffort(self.gp(), "high", "visual")
+
+    def test_content_english(self):
+        for dom in ("writing-en", "marketing-growth-seo"):
+            self.jev(dom, ["copywriting"])
+            self.assertEffort(self.gp(), "high", "content_en")
+
+    def test_vietnamese_by_cache_lang(self):
+        self.jev("writing-en", ["copywriting"], lang="vi")
+        self.assertEffort(self.gp(), "xhigh", "content_vi")
+        self.jev("marketing-growth-seo", ["copywriting"], lang="vi")
+        self.assertEffort(self.gp(), "xhigh", "content_vi")
+
+    def test_vietnamese_by_domain(self):
+        self.jev("writing-vi", ["humanizer-vi"])
+        self.assertEffort(self.gp(), "xhigh", "content_vi")
+
+    def test_lang_vi_on_non_content_domain_is_not_xhigh(self):
+        self.jev("research", ["auto-researcher"], lang="vi")
+        self.assertEffort(self.gp(), "medium", "other")
+        self.jev("frontend-ui", ["frontend"], lang="vi")
+        self.assertEffort(self.gp(), "high", "visual")
+
+    def test_other_medium(self):
+        for dom in ("research", "google-workspace", "claude-system-ops", "browser-web-data"):
+            self.jev(dom, ["x"])
+            self.assertEffort(self.gp(), "medium", "other")
+
+    def test_unknown_domain_is_other(self):
+        self.jev("brand-new-domain", ["x"])
+        self.assertEffort(self.gp(), "medium", "other")
+
+    def test_trivial_lookup_marker_is_low(self):
+        self.jev("research", ["x"])
+        self.assertEffort(self.gp(prompt="MODEL-CATEGORY: lookup\nfind the path"), "low", "lookup")
+        self.assertEffort(self.gp(description="[category:lookup] where is x"), "low", "lookup")
+
+    def test_marker_beats_jev_domain(self):
+        self.jev("design-visual", ["x"])
+        o = self.gp(prompt="MODEL-CATEGORY: lookup\nlist files")
+        self.assertEffort(o, "low", "lookup")
+        self.assertEqual(self.eff_rows()[0]["reason"], "marker:lookup")
+
+    def test_debug_marker_is_coding_complex(self):
+        self.assertEffort(self.gp(prompt="MODEL-CATEGORY: debug\ntrace it", line=False), "high", "coding_complex")
+
+    def test_unmapped_marker_falls_through_to_jev(self):
+        self.jev("design-visual", ["x"])
+        self.assertEffort(self.gp(prompt="MODEL-CATEGORY: implement\nbuild it"), "high", "visual")
+
+    def test_claude_and_empty_type_are_general_purpose(self):
+        self.jev("design-visual", ["x"])
+        for t in ("claude", ""):
+            self.assertEffort(self.gp(subagent_type=t), "high", "visual")
+
+    def test_named_agent_table(self):
+        self.assertEffort(self.run_pin(subagent_type="critique-design"), "high", "visual")
+        self.assertEffort(self.run_pin(subagent_type="critique-content"), "high", "content_en")
+        self.assertEffort(self.run_pin(subagent_type="critique-code"), "high", "coding_complex")
+        self.assertEffort(self.run_pin(subagent_type="coord"), "medium", "other")
+        self.assertEffort(self.run_pin(subagent_type="codebase-search"), "low", "lookup")
+        self.assertEffort(self.run_pin(subagent_type="Delegator"), "low", "lookup")
+        self.assertEqual(self.eff_rows()[0]["reason"], "agent_table")
+
+    def test_named_unlisted_untouched(self):
+        for t in ("pinned-sonnet", "Explore", "some-plugin:agent", "caveman:cavecrew"):
+            o = self.run_pin(subagent_type=t)
+            self.assertEffort(o, None, None)
+        self.assertEqual(self.eff_rows(), [])
+
+
+class EffortJevUnavailableTests(EffortBase):
+    def test_no_jev_line(self):
+        o = self.gp(line=False)
+        self.assertEffort(o, "medium", "other")
+        self.assertEqual(self.eff_rows()[0]["reason"], "jev_unavailable")
+
+    def test_line_but_missing_cache_file(self):
+        o = self.gp(rid="deadbeef")
+        self.assertEffort(o, "medium", "other")
+        self.assertEqual(self.eff_rows()[0]["reason"], "jev_no_route")
+
+    def test_corrupt_cache_file(self):
+        self.jev(raw="{not json")
+        self.assertEffort(self.gp(), "medium", "other")
+        self.assertEqual(self.eff_rows()[0]["reason"], "jev_no_route")
+
+    def test_jev_down(self):
+        self.jev("design-visual", jev_down=True)
+        self.assertEffort(self.gp(), "medium", "other")
+        self.assertEqual(self.eff_rows()[0]["reason"], "jev_unavailable")
+
+    def test_low_confidence_gate(self):
+        for g in ("low_confidence", None, "fail"):
+            self.jev("design-visual", gate=g)
+            self.assertEffort(self.gp(), "medium", "other")
+            self.assertEqual(self.eff_rows()[-1]["reason"], "jev_low_confidence")
+
+    def test_expired_cache_entry_is_a_miss(self):
+        self.jev("design-visual", age=49 * 3600)
+        self.assertEffort(self.gp(), "medium", "other")
+        self.assertEqual(self.eff_rows()[0]["reason"], "jev_no_route")
+
+    def test_entry_just_inside_ttl_is_used(self):
+        self.jev("design-visual", age=47 * 3600)
+        self.assertEffort(self.gp(), "high", "visual")
+
+    def test_cache_uses_home_state_when_env_unset(self):
+        sd = os.path.join(self.home, ".claude", "state", "skill-route", "jev-route-cache")
+        os.makedirs(sd)
+        with open(os.path.join(sd, RID + ".json"), "w") as f:
+            json.dump({"ts": NOW - 5, "gate": "pass", "domain": "design-visual", "skills": []}, f)
+        env = self.env()
+        del env["SKILL_ROUTE_STATE_DIR"]
+        self.assertEffort(self.run_pin(env=env, prompt="Jev[r=%s]: accept - ok\nx" % RID), "high", "visual")
+
+
+class EffortPrecedenceAndRowsTests(EffortBase):
+    def test_caller_param_is_ignored(self):
+        self.jev("design-visual")
+        o = self.gp(effort="max")
+        self.assertEffort(o, "high", "visual")
+
+    def test_pd_frontmatter_high_still_medium(self):
+        self.add_effort_agent("agent-memory-pd", "high")
+        o = self.run_pin(subagent_type="agent-memory-pd")
+        self.assertEffort(o, "medium", "pd")
+        r = self.eff_rows()
+        self.assertEqual(len(r), 1)
+        self.assertEqual((r[0]["event"], r[0]["old"], r[0]["new"]), ("effort_override", "high", "medium"))
+
+    def test_pd_frontmatter_equal_logs_effort_policy(self):
+        self.add_effort_agent("x-pd", "medium")
+        self.run_pin(subagent_type="x-pd", tool_use_id="tu-E", parent_spawn_id="PX")
+        r = self.eff_rows()
+        self.assertEqual(len(r), 1)
+        self.assertEqual(r[0]["event"], "effort_policy")
+        self.assertEqual((r[0]["tool_use_id"], r[0]["subagent_type"], r[0]["category"], r[0]["old"], r[0]["new"],
+                          r[0]["reason"], r[0]["parent_spawn_id"]),
+                         ("tu-E", "x-pd", "pd", "medium", "medium", "pd", "PX"))
+        self.assertIn("ts", r[0])
+
+    def test_named_agent_without_effort_line_old_null_override(self):
+        self.add_effort_agent("critique-design")
+        self.run_pin(subagent_type="critique-design", tool_use_id="tu-F")
+        r = self.eff_rows()
+        self.assertEqual((r[0]["event"], r[0]["old"], r[0]["new"], r[0]["category"]),
+                         ("effort_override", None, "high", "visual"))
+
+    def test_named_agent_model_decision_unchanged(self):
+        self.add_effort_agent("critique-design", model="sonnet")
+        o = self.run_pin(subagent_type="critique-design", model="opus")
+        self.assertEqual((o["action"], o["model"], o["new"], o["reason"]),
+                         ("rewrite", None, "sonnet", "named_frontmatter_wins"))
+        self.assertEffort(o, "high", "visual")
+
+    def test_gp_model_decision_unchanged_and_row_shape(self):
+        self.jev("design-visual")
+        o = self.gp(model="opus", tool_use_id="tu-G", parent_spawn_id="PX")
+        self.assertEqual((o["action"], o["model"], o["reason"]), ("rewrite", "sonnet", "gp_category_map"))
+        self.assertEffort(o, "high", "visual")
+        self.assertEqual(len(self.events("model_override")), 1)
+        r = self.events("effort_override")
+        self.assertEqual(len(r), 1)
+        self.assertEqual(set(r[0]), {"event", "ts", "tool_use_id", "subagent_type", "category", "old", "new",
+                                     "reason", "parent_spawn_id"})
+        self.assertEqual((r[0]["tool_use_id"], r[0]["subagent_type"], r[0]["category"], r[0]["old"], r[0]["new"],
+                          r[0]["parent_spawn_id"]), ("tu-G", "general-purpose", "visual", None, "high", "PX"))
+
+    def test_deny_has_no_effort(self):
+        self.put(*[self.start("s%d" % i) for i in range(5)])
+        o = self.run_pin(parent_spawn_id="P1", model="sonnet")
+        self.assertEqual(o["action"], "deny")
+        self.assertFalse(o.get("effort"))
+        self.assertFalse(o.get("effort_category"))
+        self.assertEqual(self.eff_rows(), [])
+
+    def test_every_non_deny_result_carries_both_keys(self):
+        for kw in ({}, {"subagent_type": "pinned-sonnet"}, {"fork": True}, {"subagent_type": "system-improvement-pd"}):
+            o = self.run_pin(**kw)
+            self.assertIn("effort", o, kw)
+            self.assertIn("effort_category", o, kw)
+
+    def test_no_effort_section_means_no_effort(self):
+        self.write_map(DEFAULT_MAP)
+        o = self.run_pin(subagent_type="system-improvement-pd")
+        self.assertEffort(o, None, None)
+        self.assertEqual(self.eff_rows(), [])
+
+
+class EffortSkipTests(EffortBase):
+    def test_fork_teammate_workflow_skipped_with_row(self):
+        for kw, why in (({"fork": True}, "fork ignores effort"), ({"is_teammate": True}, "teammate"),
+                        ({"workflow": True}, "workflow")):
+            o = self.run_pin(tool_use_id="tu-" + why[:4], **kw)
+            self.assertEffort(o, None, None)
+            self.assertEqual(o["action"], "pass")
+        rows = self.events("effort_skipped")
+        self.assertEqual([r["reason"] for r in rows], ["fork ignores effort", "teammate", "workflow"])
+        self.assertEqual(rows[0]["tool_use_id"], "tu-fork")
+        self.assertEqual(set(rows[0]), {"event", "ts", "tool_use_id", "subagent_type", "reason"})
+        self.assertEqual(self.events("effort_override"), [])
+
+    def test_fork_skip_row_not_written_without_effort_section(self):
+        self.write_map(DEFAULT_MAP)
+        self.run_pin(fork=True)
+        self.assertEqual(self.eff_rows(), [])
+
+    def test_fork_with_corrupt_map_stays_silent_pass(self):
+        with open(self.map, "w") as f:
+            f.write("{broken")
+        o = self.run_pin(fork=True)
+        self.assertEqual(o["action"], "pass")
+        self.assertEqual(self.events("model_pin_error"), [])
+
+
+class EffortKillSwitchTests(EffortBase):
+    def assertQuiet(self, o):
+        self.assertEffort(o, None, None)
+        self.assertEqual(self.eff_rows(), [])
+
+    def test_model_pin_off_env(self):
+        self.assertQuiet(self.run_pin(env=self.env(MODEL_PIN_OFF="1"), subagent_type="system-improvement-pd"))
+
+    def test_model_pin_off_file(self):
+        open(os.path.join(self.state, "model-pin.off"), "w").close()
+        self.assertQuiet(self.run_pin(subagent_type="system-improvement-pd"))
+
+    def test_hook_profile_minimal(self):
+        with open(os.path.join(self.home, ".claude", ".hook-profile"), "w") as f:
+            f.write("minimal\n")
+        self.assertQuiet(self.run_pin(subagent_type="system-improvement-pd"))
+
+    def test_effort_policy_off_env_keeps_model_pin(self):
+        o = self.run_pin(env=self.env(EFFORT_POLICY_OFF="1"), model="opus")
+        self.assertQuiet(o)
+        self.assertEqual((o["action"], o["new"]), ("rewrite", "sonnet"))
+        self.assertEqual(len(self.events("model_override")), 1)
+
+    def test_effort_policy_off_file(self):
+        open(os.path.join(self.state, "effort-policy.off"), "w").close()
+        o = self.run_pin(subagent_type="system-improvement-pd")
+        self.assertQuiet(o)
+
+    def test_effort_policy_off_also_silences_fork_skip_row(self):
+        open(os.path.join(self.state, "effort-policy.off"), "w").close()
+        self.run_pin(fork=True)
+        self.assertEqual(self.eff_rows(), [])
+
+    def test_enabled_false(self):
+        eff = shipped_effort()
+        eff["enabled"] = False
+        self.map_with(effort=eff)
+        self.assertQuiet(self.run_pin(subagent_type="system-improvement-pd"))
+        self.assertQuiet(self.run_pin(fork=True))
+
+
+class EffortFailOpenTests(EffortBase):
+    def bad(self, mutate):
+        eff = shipped_effort()
+        mutate(eff)
+        self.map_with(effort=eff)
+
+    def assertFailOpen(self):
+        o = self.gp(model="opus")  # model decision must be unaffected
+        self.assertEqual((o["action"], o["model"], o["new"]), ("rewrite", "sonnet", "sonnet"))
+        self.assertEffort(o, None, None)
+        errs = self.events("model_pin_error")
+        self.assertEqual(len(errs), 1, errs)
+        self.assertTrue(errs[0]["error"].startswith("effort: "), errs[0])
+        self.assertEqual(self.eff_rows(), [])
+
+    def test_disallowed_effort_value(self):
+        self.bad(lambda e: e["categories"].update(pd="ludicrous"))
+        self.assertFailOpen()
+
+    def test_effort_section_not_an_object(self):
+        self.map_with(effort=5)
+        self.assertFailOpen()
+
+    def test_missing_fallback_category(self):
+        self.bad(lambda e: e.update(fallback_category="nope"))
+        self.assertFailOpen()
+
+    def test_agent_points_at_unknown_category(self):
+        self.bad(lambda e: e["agents"].update(coord="ghost"))
+        self.assertFailOpen()
+
+    def test_domain_family_unknown(self):
+        self.bad(lambda e: e["domains"].update(research="weird"))
+        self.assertFailOpen()
+
+    def test_unwritable_log_still_decides(self):
+        os.remove(self.log)
+        os.makedirs(self.log)  # the "log" is a directory: appends fail silently
+        self.jev("design-visual")
+        o = self.gp()
+        self.assertEffort(o, "high", "visual")
+
+    def test_cap_and_effort_error_independent(self):
+        self.bad(lambda e: e["categories"].update(pd="ludicrous"))
+        self.put(*[self.start("s%d" % i) for i in range(5)])
+        o = self.run_pin(parent_spawn_id="P1", model="sonnet")
+        self.assertEqual(o["action"], "deny")
+
+
+class ShippedEffortMapTests(unittest.TestCase):
+    def setUp(self):
+        self.e = shipped_effort()
+
+    def test_enabled_and_categories(self):
+        self.assertIs(self.e["enabled"], True)
+        self.assertEqual(self.e["categories"], SHIPPED_CATEGORIES)
+        self.assertEqual(self.e["fallback_category"], "other")
+
+    def test_domain_table_exact(self):
+        self.assertEqual(self.e["domains"], SHIPPED_DOMAINS)
+
+    def test_agent_table_exact(self):
+        self.assertEqual(self.e["agents"], SHIPPED_AGENTS)
+
+    def test_complexity_and_marker_tables(self):
+        c = self.e["complexity"]
+        self.assertEqual(c["domains"], ["code-quality-testing"])
+        self.assertEqual(c["skills"], ["investigate", "superpowers-systematic-debugging",
+                                       "mattpocock-skills:diagnosing-bugs", "security", "security-review",
+                                       "deprecation-and-migration", "refactor-module", "doubt-driven-development"])
+        self.assertEqual(c["markers"], ["architecture", "refactor", "migration", "multi-file", "cross-file",
+                                        "debug", "root cause", "security"])
+        self.assertEqual(self.e["marker_categories"], {"lookup": "lookup", "debug": "coding_complex"})
+
+    def test_values_are_allowed_and_resolve(self):
+        allowed = {"low", "medium", "high", "xhigh", "max"}
+        self.assertTrue(set(self.e["categories"].values()) <= allowed)
+        cats = set(self.e["categories"])
+        self.assertTrue(set(self.e["agents"].values()) <= cats)
+        self.assertTrue(set(self.e["marker_categories"].values()) <= cats)
+        self.assertTrue(set(self.e["domains"].values()) <= {"visual", "content", "coding", "other"})
+
+    def test_domains_match_jev_overlay_when_present(self):
+        ov = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts", "skill-route",
+                          "overlay.json")
+        if not os.path.exists(ov):
+            self.skipTest("overlay.json absent (sparse checkout)")
+        with open(ov) as f:
+            text = f.read()
+        for dom in self.e["domains"]:
+            self.assertIn(dom, text, dom)
+
+
 class RealMapTests(unittest.TestCase):
     def test_shipped_map_is_valid_and_empty(self):
         with open(REAL_MAP) as f:

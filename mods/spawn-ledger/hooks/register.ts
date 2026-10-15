@@ -89,6 +89,19 @@ async function isMinimal($: EngineInterface): Promise<boolean> {
   return String(profile).trim() === 'minimal'
 }
 
+type Pending = Map<string, { effort: string; category?: string; toolUseId: string }>
+const effortKey = (type: string, description: string | undefined) => `${type}\u0000${description ?? ''}`
+
+// The effort the policy wants for a subagent, or undefined (none decided, minimal profile, not ours). Throws on a lookup error.
+async function wantedEffort($: EngineInterface, agentId: string, pending: Pending) {
+  if (await isMinimal($)) return undefined
+  const spawn = (await $.state.get({ ...SPAWNS, id: agentId })).value
+  if (spawn) return spawn.effort ? { effort: spawn.effort, category: spawn.effortCategory, toolUseId: spawn.toolUseId } : undefined
+  // Not stored yet (the first step beat agent.spawn's $.state.set): the listed row names the pending key.
+  const listed = (await $.agent.list()).find(a => a.id === agentId)
+  return listed ? pending.get(effortKey(listed.type, listed.description)) : undefined
+}
+
 async function ledger($: EngineInterface, py: Python, cmd: string, payload: unknown): Promise<string> {
   const ran = await runPy($, py, [`${$.plugin.root}/bin/ledger.py`, cmd], {
     stdin: JSON.stringify(payload),
@@ -102,17 +115,34 @@ async function ledger($: EngineInterface, py: Python, cmd: string, payload: unkn
 // sonnet-pinned agents; and no PD may have more than 5 Execs running at once across its whole tree (all its coords + direct Execs).
 // FAIL OPEN: any error (no python, timeout, non-JSON, unknown action) = the spawn goes through unchanged.
 // Kill switch: MODEL_PIN_OFF=1 | state/model-pin.off | .hook-profile=minimal (cap alone: SPAWN_CAP_OFF=1 | state/spawn-cap.off).
-type Pin = { action: 'pass' | 'rewrite' | 'deny'; model: string | null; deny?: string; reason?: string }
+// Effort policy (owner ruling 2026-10-15, enforced): the same script also DECIDES an `effort` (+ `effort_category`) for every
+// non-deny result. agent.spawn input has no effort field, so it cannot be rewritten there; this module remembers it per
+// subagent and the turn.step hook below applies it to every request of that subagent, the way the pin sets `model`.
+// Its own kill switches live in the python CLI (EFFORT_POLICY_OFF=1 | state/effort-policy.off | effort.enabled=false): no key, no relay.
+type Pin = {
+  action: 'pass' | 'rewrite' | 'deny'
+  model: string | null
+  deny?: string
+  reason?: string
+  effort?: string
+  effort_category?: string
+}
+
+const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
 
 export const parsePin = (stdout: string): Pin | null => {
   const line = stdout.trim().split('\n').filter(Boolean).pop() ?? ''
-  const pin = JSON.parse(line) as Partial<Pin> | null
+  const pin = JSON.parse(line) as (Partial<Pin> & { effort?: unknown; effort_category?: unknown }) | null
   if (!pin || typeof pin !== 'object') return null
   if (pin.action === 'deny') return typeof pin.deny === 'string' && pin.deny ? { action: 'deny', model: null, deny: pin.deny } : null
+  // A malformed effort is dropped, never an error: the model decision stands.
+  const effort = typeof pin.effort === 'string' && EFFORTS.includes(pin.effort) ? pin.effort : undefined
+  const category = typeof pin.effort_category === 'string' && pin.effort_category ? pin.effort_category : undefined
+  const policy = effort ? { effort, ...(category ? { effort_category: category } : {}) } : {}
   if (pin.action === 'rewrite' && (pin.model === null || (typeof pin.model === 'string' && pin.model))) {
-    return { action: 'rewrite', model: pin.model, reason: pin.reason }
+    return { action: 'rewrite', model: pin.model, reason: pin.reason, ...policy }
   }
-  return pin.action === 'pass' ? { action: 'pass', model: null } : null
+  return pin.action === 'pass' ? { action: 'pass', model: null, ...policy } : null
 }
 
 async function modelPin($: EngineInterface, py: Python, e: AgentSpawnInput, parent: Spawn | undefined): Promise<Pin | null> {
@@ -210,6 +240,12 @@ export const register: Register = on => {
   // Project registry, read once per session; a failed read is not cached, so the next request retries.
   const registry: Registry = {}
   const py = pythonRunner()
+  // Effort the pin decided for a spawn that has no agentId yet, keyed `${subagentType}\u0000${description}`: the subagent's
+  // first turn.step may fire before $.state.set, and $.agent.list() then names the same type + description.
+  // ponytail: module variables like `open`/`pending`; a hot reload drops them and the stored record serves later steps.
+  const pendingEffort: Pending = new Map()
+  // Agents whose first effort-applied step is already in the ledger.
+  const effortLogged = new Set<string>()
 
   on('agent.spawn', async ($, e, next) => {
     if (await isMinimal($)) return next(e)
@@ -238,23 +274,58 @@ export const register: Register = on => {
       parent_spawn_id: parent?.spawnId ?? '',
       parent_agent: parent?.type ?? 'root',
     }).catch(() => '')
-    const result = await next(e)
-    if (result.agentId) {
-      const spawn: Spawn = {
-        spawnId,
-        toolUseId: e.tool_use_id,
-        type: e.subagentType,
-        description: e.description || e.subagentType,
-        parentAgentId: e.parentAgentId ?? null,
+    // Remember the effort BEFORE next(e): the agent's first turn.step can run before this hook gets the agentId back.
+    const key = effortKey(e.subagentType, e.description)
+    if (pin?.effort) pendingEffort.set(key, { effort: pin.effort, category: pin.effort_category, toolUseId: e.tool_use_id })
+    try {
+      const result = await next(e)
+      if (result.agentId) {
+        const spawn: Spawn = {
+          spawnId,
+          toolUseId: e.tool_use_id,
+          type: e.subagentType,
+          description: e.description || e.subagentType,
+          parentAgentId: e.parentAgentId ?? null,
+          ...(pin?.effort ? { effort: pin.effort, effortCategory: pin.effort_category } : {}),
+        }
+        await $.state.set({ ...SPAWNS, id: result.agentId }, spawn)
+        await ledger($, py, 'launched', {
+          tool_use_id: e.tool_use_id,
+          agent_id: result.agentId,
+          resolved_model: result.model,
+        }).catch(() => '')
       }
-      await $.state.set({ ...SPAWNS, id: result.agentId }, spawn)
-      await ledger($, py, 'launched', {
-        tool_use_id: e.tool_use_id,
-        agent_id: result.agentId,
-        resolved_model: result.model,
+      return result
+    } finally {
+      pendingEffort.delete(key)
+    }
+  })
+
+  // Applies the effort model-pin.py decided to every request of the subagent that spawn made. TurnStepInput.effort is
+  // rewritable going down (`next({ ...e, effort })`), AgentSpawnInput's is not. The main loop (no agentId) pays nothing.
+  // FAIL OPEN: any lookup error = the step goes through unchanged, one log line.
+  on('turn.step', async function* ($, e, next) {
+    if (!e.agentId) return yield* next(e)
+    // The lookups run in a plain async helper, so a throw from `next` (the model request itself) is never mistaken for a lookup error.
+    let desired: Awaited<ReturnType<typeof wantedEffort>>
+    try {
+      desired = await wantedEffort($, e.agentId, pendingEffort)
+    } catch (err) {
+      $.ui.log(`effort relay skipped (fail open): ${err instanceof Error ? err.message : String(err)}`)
+      return yield* next(e)
+    }
+    if (!desired) return yield* next(e)
+    if (!effortLogged.has(e.agentId)) {
+      effortLogged.add(e.agentId)
+      await ledger($, py, 'effort_applied', {
+        tool_use_id: desired.toolUseId,
+        agent_id: e.agentId,
+        seen: e.effort ?? null,
+        applied: desired.effort,
+        category: desired.category ?? '',
       }).catch(() => '')
     }
-    return result
+    return yield* next(e.effort === desired.effort ? e : { ...e, effort: desired.effort as typeof e.effort })
   })
 
   // spawn_end with real tokens and cost: SubagentStop carries the transcript path.

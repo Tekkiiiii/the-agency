@@ -25,6 +25,9 @@ Public API (pinned; downstream: skill-route.py and the spawn recorder; also the 
     cache_dir(); cache_put(res, meta=None) -> route_id ("" on failure); cache_get(route_id) -> dict|None;
     cache_bump_denies(route_id) -> int (0 on failure); CACHE_TTL_SECONDS = 48h; CACHE_PRUNE_THRESHOLD = 500
     Cache functions NEVER raise. Entries hold NO task text.
+    Entry keys (_KEYS): route_id, ts, skills, gate, router, domain, lang, role, none_fired, confidential, jev_down,
+    denies. `lang` = res["lang"] (Jev's detected language, e.g. "vi"/"en", else null); hooks/lib/model-pin.py reads it
+    straight from the JSON file for the effort policy (content + lang vi -> xhigh).
     spawner_key(spawner, routing_text) -> 16 hex = sha256(spawner or "root" + "\\0" + routing_text)[:16]
     spawner_dir(); spawner_denies(key) -> int (0 on missing/expired/corrupt/failure);
     spawner_bump_denies(key) -> int (0 on failure); SPAWNER_TTL_SECONDS = 1h
@@ -246,7 +249,7 @@ def apply_decision(prompt, decision):
 CACHE_TTL_SECONDS = 48 * 3600
 CACHE_PRUNE_THRESHOLD = 500
 _ID_RE = re.compile(r"[0-9a-f]{8}")
-_KEYS = ("route_id", "ts", "skills", "gate", "router", "domain", "role", "none_fired", "confidential",
+_KEYS = ("route_id", "ts", "skills", "gate", "router", "domain", "lang", "role", "none_fired", "confidential",
          "jev_down", "denies")
 
 
@@ -349,7 +352,8 @@ def cache_put(res, meta=None):
             if not os.path.exists(path):
                 break
         entry = {"route_id": rid, "ts": now, "skills": skills, "gate": res.get("gate"),
-                 "router": res.get("router"), "domain": res.get("domain"), "role": meta.get("role"),
+                 "router": res.get("router"), "domain": res.get("domain"), "lang": res.get("lang"),
+                 "role": meta.get("role"),
                  "none_fired": bool(meta.get("none_fired")), "confidential": bool(meta.get("confidential")),
                  "jev_down": bool(res.get("jev_down", meta.get("jev_down", False))), "denies": 0}
         _write_atomic(path, entry)

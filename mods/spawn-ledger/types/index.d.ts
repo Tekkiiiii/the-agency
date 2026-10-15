@@ -7,6 +7,10 @@ export type Spawn = {
   description: string
   /** The loop that spawned it; null for the main loop. */
   parentAgentId: string | null
+  /** The effort hooks/lib/model-pin.py decided at spawn (low|medium|high|xhigh|max); the turn.step relay applies it. Absent: no policy (fork, named_unlisted, kill switch). */
+  effort?: string
+  /** The policy category behind `effort` (pd, coding_complex, ...). */
+  effortCategory?: string
 }
 
 declare module 'claude-code' {

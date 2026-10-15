@@ -8,6 +8,9 @@ spawn-completion.sh, artifact-verify.sh). Field names, field order and value for
   ledger.py start     stdin {tool_use_id, subagent_type, description, prompt, model,
                              parent_spawn_id, parent_agent}  -> prints spawn_id
   ledger.py launched  stdin {tool_use_id, agent_id, resolved_model}
+  ledger.py effort_applied
+                      stdin {tool_use_id, agent_id, seen, applied, category}: the first time the turn.step relay applied the
+                      effort policy to a subagent (seen = effort its request carried or null, applied = what was sent)
   ledger.py end       stdin: the classic SubagentStop hook input, verbatim
   ledger.py verify    stdin {text}  -> prints the ARTIFACT_MISSING warning, if any
 
@@ -373,12 +376,10 @@ def iso_ms(a, b):
         return 0
 
 
-def launched(d):
-    """spawn_launched row, appended NEXT TO the spawn_start row it belongs to. The payload carries only the
-    tool_use_id (no prompt), so the start row is looked up in the resolved log, then in every other known log;
-    not found anywhere -> the resolved log (spawn_id empty), as before."""
+def locate_by_tool_use_id(tool_use_id):
+    """(log_file, spawn_id) of the spawn_start row for a tool_use_id: the resolved log first, then every other known log.
+    Not found anywhere -> (resolved log, ""). Shared by launched and effort_applied (payloads with no prompt)."""
     log_file = resolve_log_file()
-    tool_use_id = d.get("tool_use_id", "")
     spawn_id, _ = find_start(read_lines(log_file), tool_use_id=tool_use_id)
     if not spawn_id and tool_use_id:
         for other in other_logs(log_file):
@@ -387,8 +388,16 @@ def launched(d):
                 continue
             spawn_id, _ = find_start(olines, tool_use_id=tool_use_id)
             if spawn_id:
-                log_file = other
-                break
+                return other, spawn_id
+    return log_file, spawn_id
+
+
+def launched(d):
+    """spawn_launched row, appended NEXT TO the spawn_start row it belongs to. The payload carries only the
+    tool_use_id (no prompt), so the start row is looked up in the resolved log, then in every other known log;
+    not found anywhere -> the resolved log (spawn_id empty), as before."""
+    tool_use_id = d.get("tool_use_id", "")
+    log_file, spawn_id = locate_by_tool_use_id(tool_use_id)
     reconcile(log_file)
     append(log_file, {
         "event": "spawn_launched",
@@ -396,6 +405,27 @@ def launched(d):
         "tool_use_id": tool_use_id,
         "agent_id": d.get("agent_id", ""),
         "resolved_model": d.get("resolved_model", ""),
+        "ts": now_iso(),
+    })
+
+
+def effort_applied(d):
+    """effort_applied row: the turn.step relay (hooks/register.ts) sent a subagent's first request with the effort
+    hooks/lib/model-pin.py decided at spawn. seen = the effort the request carried (null: none), applied = what was
+    sent, category = the policy category, changed = seen != applied. Appended next to the spawn_start row, like launched;
+    no reconcile sweep (nothing here closes a spawn). The payload keys are the relay's; anything missing is stored empty."""
+    tool_use_id = d.get("tool_use_id", "")
+    log_file, spawn_id = locate_by_tool_use_id(tool_use_id)
+    seen, applied = d.get("seen"), d.get("applied")
+    append(log_file, {
+        "event": "effort_applied",
+        "spawn_id": spawn_id,
+        "tool_use_id": tool_use_id,
+        "agent_id": d.get("agent_id", ""),
+        "seen": seen,
+        "applied": applied,
+        "category": d.get("category", ""),
+        "changed": seen != applied,
         "ts": now_iso(),
     })
 
@@ -559,7 +589,7 @@ if __name__ == "__main__":
     try:
         cmd = sys.argv[1]
         payload = json.loads(sys.stdin.read() or "{}")
-        {"start": start, "launched": launched, "end": end, "verify": verify}[cmd](payload)
+        {"start": start, "launched": launched, "effort_applied": effort_applied, "end": end, "verify": verify}[cmd](payload)
     except Exception:
         pass
     sys.exit(0)
