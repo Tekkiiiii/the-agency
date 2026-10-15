@@ -780,7 +780,10 @@ jobs:
           Remove-Item -Recurse -Force $env:AGENCY_HOME -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force -Path $env:AGENCY_HOME | Out-Null
           git -C $env:AGENCY_HOME init -q
-          git -C $env:AGENCY_HOME remote add origin https://github.com/Tekkiiiii/the-agency.git
+          # Take the URL rescue.ps1 itself accepts, so this step names no owner.
+          $repoUrl = [regex]::Match((Get-Content -Raw rescue.ps1), 'https://github\.com/[A-Za-z0-9_-]+/the-agency\.git').Value
+          if (-not $repoUrl) { throw 'no repo URL found in rescue.ps1' }
+          git -C $env:AGENCY_HOME remote add origin $repoUrl
 
           $sandbox = Join-Path $env:RUNNER_TEMP 'rescue-sandbox2'
           Remove-Item -Recurse -Force $sandbox -ErrorAction SilentlyContinue
