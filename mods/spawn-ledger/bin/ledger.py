@@ -19,6 +19,17 @@ WHERE THE ROWS GO: a spawn's rows land in {project root}/memory/spawns.jsonl (ho
 {agency-root}/memory/medium-term.md. {agency-root}/logs/spawns.jsonl holds ONLY spawns with no project hint, so
 looking there alone makes a healthy ledger look empty. Read them all: hooks/lib/spawn_project.all_logs.
 
+OUTCOME / CONTINUATION (spawn_end; pinned by tests/test_outcome_unknown.py): `outcome` comes from detect_outcome(), a plain
+substring scan of the agent's final message (SubagentHandback text, else last_assistant_message, else last text block):
+KILLED > BLOCKED > ESCALATE > DONE/COMPLETE, else UNKNOWN. UNKNOWN therefore means "the final message carries no such
+English token" (a terse acknowledgement, a Vietnamese-only report, a report whose token sits past the 300-char summary_excerpt),
+or the spawn was a silent no-op (<5s, 0 work tools: silent_noop true). It is NOT a parse failure: the scan ignores CRLF and
+works on any text that arrived as UTF-8 (only the em-dash forms "— BLOCKED"/"— ESCALATE" need real UTF-8; see
+tests/test_utf8_roundtrip.py). `continuation: true` = this agent_id already had a spawn_end (resumed via SendMessage): the
+transcript is cumulative (do not double-sum tokens) and the outcome is judged on THIS turn's last message only, so resumed
+ends skew UNKNOWN. A Mac ledger (2026-10-15, source=subagent-stop) showed UNKNOWN on about a third of ends, continuations included.
+ABANDONED rows come from the reconciliation sweep, never from here. Field list: skills/spawn-log/SKILL.md.
+
 Why Python and not the mod: $.fs has no append (read+write would race the other
 writers of spawns.jsonl), and cost comes from the shipped hooks/lib/claude_pricing.py, the
 rate table cost-tracker.sh shares. FAILURE ISOLATION: always exits 0.
@@ -94,6 +105,18 @@ def resolve_log_file(d=None):
         except Exception:
             pass
     return os.path.join(ROOT, "logs", "spawns.jsonl")
+
+
+def project_label(log_file):
+    """The row's "project": the project dir of {root}/memory/spawns.jsonl. The global log ({agency-root}/logs/spawns.jsonl, a spawn
+    that resolved to no project) is "global", not ".claude": the basename rule made it look like a project of its own."""
+    try:
+        glob_log = spawn_project.global_log(HOME) if spawn_project is not None else os.path.join(ROOT, "logs", "spawns.jsonl")
+        if os.path.abspath(log_file) == os.path.abspath(glob_log):
+            return "global"
+    except Exception:
+        pass
+    return os.path.basename(os.path.dirname(os.path.dirname(log_file)))
 
 
 def under_test():
@@ -259,7 +282,7 @@ def start(d):
         "model_source": model_source,
         "skills": sorted(set(skills)),
         "ts": now_iso(),
-        "project": os.path.basename(os.path.dirname(os.path.dirname(log_file))),
+        "project": project_label(log_file),
     })
     fire_shadow(spawn_id, d, subagent_type, prompt)
     print(spawn_id)

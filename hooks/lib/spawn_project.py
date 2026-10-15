@@ -5,7 +5,7 @@ Exec cap, appends model_override / spawn_denied rows), so both pick the same fil
 NEVER raises: every failure degrades to the global log <root>/logs/spawns.jsonl
 (<root> = AGENCY_HOME, else CLAUDE_CONFIG_DIR, else ~/.claude; see hooks/lib/resolve-root.sh).
 
-Resolution order (the same as scripts/skill-route.py _spawn_project; keep the two in step):
+Resolution order (scripts/skill-route.py _spawn_project calls this module, so there is one implementation):
   0. env SPAWN_LOG_FILE (tests / explicit override) wins over everything
   1. a `Project:` line in the prompt: a path on it -> longest-prefix match with path-boundary check, else its first
      word if that is a table slug
@@ -19,6 +19,9 @@ Table: the Active Projects rows of memory/medium-term.md (`| slug | `path` | ...
 SPAWN_MEDIUM_TERM (table path), env SPAWN_LEDGER_EXTRA_LOGS (os.pathsep list; the ONLY extra logs when SPAWN_LOG_FILE
 is set), and every function that touches `~` takes home= (default: expanduser("~")).
 Only a LEADING ~ is expanded; `/x/a~b` is a plain path.
+Windows: roots / paths in any of C:\\x, C:/x, c:\\X (case-folded), \\\\unc, ~\\x and the Git-Bash spellings /c/x, /mnt/c/x,
+/cygdrive/c/x compare equal; the Git-Bash fold applies only when a drive path is on one side. A log path is returned in the
+OS spelling (_native). scripts/skill-route.py and hooks/lib/resolve-project.sh reuse this module; they do not match paths.
 """
 import glob
 import os
@@ -48,12 +51,21 @@ def agency_root(home):
 # (which may legally hold a backslash) is never touched. UNC case stays exact; only drive-letter paths casefold.
 _WINISH = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\|~\\)")
 _DRIVE = re.compile(r"^[A-Za-z]:/")
+# Git-Bash / WSL / Cygwin spellings of a drive path: /d/x, /mnt/d/x, /cygdrive/d/x. They only ever mean a drive when the
+# OTHER side of a comparison is a drive path (or the OS is Windows): a bare POSIX /d/x with no drive in sight stays as is.
+_MSYS = re.compile(r"^/(?:(?:mnt|cygdrive)/)?([A-Za-z])(?:/|$)")
 
 
 def _norm(p):
     if isinstance(p, str) and _WINISH.match(p):
         return p.replace("\\", "/").rstrip("/")
     return p
+
+
+def _drive(p):
+    """/d/x, /mnt/d/x, /cygdrive/d/x -> D:/x; anything else unchanged."""
+    m = _MSYS.match(p)
+    return "%s:/%s" % (m.group(1).upper(), p[m.end():]) if m else p
 
 
 _SEP = os.sep
@@ -64,7 +76,7 @@ def _native(p):
     project_rows() keeps the "/"-folded form (its documented contract, hooks/tests/test_win32_model_pin.py) and matching
     folds the same way; joining that onto "memory", "spawns.jsonl" with os.path.join built C:/x/alpha\\memory\\spawns.jsonl on
     Windows (two spellings of one file). Every path this module RETURNS for a file goes through here."""
-    return p.replace("/", "\\") if _SEP == "\\" else p
+    return _drive(p).replace("/", "\\") if _SEP == "\\" else p
 
 
 def _expand(path, home):
@@ -83,12 +95,13 @@ def medium_term_path(home=None):
     return os.environ.get("SPAWN_MEDIUM_TERM") or os.path.join(agency_root(_home(home)), "memory", "medium-term.md")
 
 
-def project_rows(home=None):
+def project_rows(home=None, path=None):
     """[(slug, root)] from the medium-term table (trailing / and /memory stripped, leading ~ expanded).
+    path= reads that table instead of medium_term_path() (scripts/skill-route.py SKILL_ROUTE_MEDIUM_TERM).
     Raises on a missing/unreadable table; callers that must not raise catch."""
     h = _home(home)
     rows = []
-    with open(medium_term_path(h), encoding="utf-8") as f:
+    with open(path or medium_term_path(h), encoding="utf-8") as f:
         for line in f:
             m = re.match(r"^\|\s*([^|`]+?)\s*\|\s*`([^`]+)`", line)
             if not m:
@@ -106,9 +119,11 @@ def longest_prefix(path, rows):
     best_len, best = 0, None
     for slug, root in rows:
         root = _norm(root)
-        p, r = (path.casefold(), root.casefold()) if _DRIVE.match(root) else (path, root)
-        if (p == r or p.startswith(r + "/")) and len(root) > best_len:
-            best_len, best = len(root), slug
+        p, r = path, root
+        if _DRIVE.match(root) or _DRIVE.match(path):  # a drive path on either side: fold msys spellings, ignore case
+            p, r = _drive(path).casefold(), _drive(root).casefold()
+        if (p == r or p.startswith(r + "/")) and len(r) > best_len:
+            best_len, best = len(r), slug
     return best
 
 
@@ -119,12 +134,12 @@ def pd_slug(name, slugs):
     return None
 
 
-def spawn_project(data=None, prompt=None, home=None):
+def spawn_project(data=None, prompt=None, home=None, rows=None):
     """Project slug of a spawn per the order in the module docstring, or None (= global). Never raises.
-    prompt defaults to data["prompt"]. No args = steps 4-5 only."""
+    prompt defaults to data["prompt"]. No args = steps 4-5 only. rows= a project_rows() result the caller already has."""
     try:
         h = _home(home)
-        rows = project_rows(h)
+        rows = project_rows(h) if rows is None else rows
     except Exception:
         return None
     try:

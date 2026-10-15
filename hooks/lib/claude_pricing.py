@@ -72,7 +72,9 @@ def usage_from_transcript(path):
     last_text = ""
     handback = ""
     session_id = ""
-    with open(path, errors="ignore") as f:
+    # Transcripts are UTF-8. Without encoding= a Windows host (cp1252 default) misreads them: mojibake in handback_text
+    # and "— BLOCKED" / "— ESCALATE" outcome patterns missed (real Windows ledger, 2026-10-12/13).
+    with open(path, encoding="utf-8", errors="ignore") as f:
         for line in f:
             line = line.strip()
             if not line:

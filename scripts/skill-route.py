@@ -1366,75 +1366,49 @@ def _feedback_module():
     return _FEEDBACK_MOD or None
 
 
+_SPAWN_PROJECT_MOD = None
+
+
+def _spawn_project_mod():
+    """hooks/lib/spawn_project.py, the ONE project resolver (ledger.py, model-pin.py, resolve-project.sh share it): path-boundary
+    longest-prefix match, Windows drive paths in every spelling, `~` against the OS home. Next to this file's tree first
+    (<root>/hooks/lib; the repo checkout and an installed root have the same layout), then the agency root's hooks/lib."""
+    global _SPAWN_PROJECT_MOD
+    if _SPAWN_PROJECT_MOD is None:
+        for lib in (os.path.join(os.path.dirname(_scripts_dir()), "hooks", "lib"), os.path.join(_root(), "hooks", "lib")):
+            path = os.path.join(lib, "spawn_project.py")
+            if os.path.isfile(path):
+                spec = importlib.util.spec_from_file_location("spawn_project", path)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                _SPAWN_PROJECT_MOD = mod
+                break
+        else:
+            raise ImportError("hooks/lib/spawn_project.py not found")
+    return _SPAWN_PROJECT_MOD
+
+
 def _project_rows():
-    """Medium-term Active Projects rows `| slug | `path` | ...` as [(slug, root)] (trailing / and /memory stripped,
-    ~ expanded). Raises on a missing/unreadable table; callers catch."""
+    """Medium-term Active Projects rows `| slug | `path` | ...` as [(slug, root)] (hooks/lib/spawn_project.project_rows).
+    SKILL_ROUTE_MEDIUM_TERM selects the table (default <root>/memory/medium-term.md). Raises on a missing/unreadable
+    table; callers catch."""
     mt = os.environ.get("SKILL_ROUTE_MEDIUM_TERM") or os.path.join(_root(), "memory", "medium-term.md")
-    rows = []
-    with open(mt, encoding="utf-8") as f:
-        for line in f:
-            m = re.match(r"^\|\s*([^|`]+?)\s*\|\s*`([^`]+)`", line)
-            if not m:
-                continue
-            raw = os.path.expanduser(m.group(2).strip()).rstrip("/")
-            root = (raw[:-7] if raw.endswith("/memory") else raw).rstrip("/")
-            if root:
-                rows.append((m.group(1).strip(), root))
-    return rows
+    return _spawn_project_mod().project_rows(_home(), path=mt)
 
 
 def _longest_prefix(path, rows):
     """Slug of the row whose root is the longest path-boundary prefix of `path`, else None."""
-    path = (path or "").rstrip("/") or "/"
-    best_len, best = 0, None
-    for slug, root in rows:
-        if (path == root or path.startswith(root + "/")) and len(root) > best_len:
-            best_len, best = len(root), slug
-    return best
-
-
-def _pd_slug(name, slugs):
-    """`{slug}-pd` -> slug when slug is in the table, else None."""
-    if isinstance(name, str) and name.endswith("-pd") and name[:-3] in slugs:
-        return name[:-3]
-    return None
+    return _spawn_project_mod().longest_prefix(path, rows)
 
 
 def _spawn_project(data=None, prompt=None):
-    """Project slug of a spawn, against the medium-term table rows (see _project_rows). Order: (1) a `Project:` line in
-    the prompt: a path on it (longest-prefix, path-boundary check), else its first word if that is a table slug;
-    (2) data.parent_agent `{slug}-pd`; (3) data.subagent_type `{slug}-pd`; (4) longest-prefix of CLAUDE_PROJECT_DIR
-    (else cwd); (5) "global". Unknown slug/path falls to the next step; never raises. No-arg call = steps 4-5 only.
-    Step 4 is the same resolution as mods/spawn-ledger/bin/ledger.py resolve_log_file (the mod
-    resolves it through hooks/lib/spawn_project.py)."""
+    """Project slug of a spawn, "global" when none. The order and the matching are hooks/lib/spawn_project.spawn_project
+    (the same as mods/spawn-ledger/bin/ledger.py): (1) a `Project:` line in the prompt (a path, else its first word if it is a
+    table slug); (2) data.parent_agent `{slug}-pd`; (3) data.subagent_type `{slug}-pd`; (4) CLAUDE_PROJECT_DIR (else cwd);
+    (5) "global". Unknown slug/path falls to the next step; never raises. No-arg call = steps 4-5 only."""
     try:
         rows = _project_rows()
-    except Exception:
-        return "global"
-    slugs = set(s for s, _ in rows)
-    data = data if isinstance(data, dict) else {}
-    try:
-        for m in re.finditer(r"(?im)^[ \t]*project:[ \t]*(.*)$", prompt if isinstance(prompt, str) else ""):
-            val = m.group(1)
-            for pm in re.finditer(r"(~?/[^\s`'\",;)\]]*)", val):
-                hit = _longest_prefix(os.path.expanduser(pm.group(1)), rows)
-                if hit:
-                    return hit
-            first = (val.split() or [""])[0].strip("`'\",;")
-            if first in slugs:
-                return first
-    except Exception:
-        pass
-    for key in ("parent_agent", "subagent_type"):
-        try:
-            hit = _pd_slug(data.get(key), slugs)
-            if hit:
-                return hit
-        except Exception:
-            pass
-    try:
-        cwd = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-        return _longest_prefix(cwd, rows) or "global"
+        return _spawn_project_mod().spawn_project(data, prompt, _home(), rows=rows) or "global"
     except Exception:
         return "global"
 

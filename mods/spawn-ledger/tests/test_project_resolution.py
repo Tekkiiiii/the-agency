@@ -130,7 +130,9 @@ class StartResolution(Base):
     def test_no_hint_pd_cwd_goes_global(self):
         self.start()
         self.assertEqual(self.events(self.glog), ["spawn_start"])
-        self.assertEqual(self.rows(self.glog)[0]["project"], ".claude")
+        # not ".claude" (the basename of the global log's grandparent): that read as a project of its own and hid that a
+        # Windows machine's spawns had resolved to no project at all (the same label skill-route's recorder uses)
+        self.assertEqual(self.rows(self.glog)[0]["project"], "global")
 
     def test_sibling_prefix_cwd_does_not_match(self):
         with mock.patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": self.gamma_root + "bis"}):

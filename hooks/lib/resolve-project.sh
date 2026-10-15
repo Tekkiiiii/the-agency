@@ -2,6 +2,12 @@
 # resolve-project.sh — shared function: resolve cwd to project path
 # Source this file; call resolve_project_path; result in SPAWN_LOG_FILE var.
 # Usage: source {agency-root}/hooks/lib/resolve-project.sh && resolve_project_path
+#
+# The matching itself lives in hooks/lib/spawn_project.py (the ONE resolver, also used by ledger.py, model-pin.py and
+# scripts/skill-route.py): path-boundary prefix match (proj is not proj2), Windows drive paths (D:\x, D:/x, d:\X, /d/x),
+# `~` expanded against the OS home, agency root = AGENCY_HOME -> CLAUDE_CONFIG_DIR -> ~/.claude. This file used to match with
+# grep "^$path" and a POSIX $HOME, so proj matched proj2 and a Windows CLAUDE_PROJECT_DIR never matched anything.
+# Table override for tests: SPAWN_MEDIUM_TERM.
 
 . "$(dirname "${BASH_SOURCE[0]:-$0}")/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
 
@@ -12,58 +18,22 @@ resolve_project_path() {
     return 0
   fi
 
-  local MEDIUM_TERM="$AGENCY_ROOT/memory/medium-term.md"
   local FALLBACK="$AGENCY_ROOT/logs/spawns.jsonl"
-  local CWD="${CLAUDE_PROJECT_DIR:-$PWD}"
+  local LIB
+  LIB="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+  local PY="${CLAUDE_PYTHON:-}"
+  [ -n "$PY" ] || PY="$(command -v python3 || command -v python || true)"
 
-  # Ensure fallback log dir exists
-  mkdir -p "$(dirname "$FALLBACK")" 2>/dev/null || true
-
-  if [ ! -f "$MEDIUM_TERM" ]; then
-    SPAWN_LOG_FILE="$FALLBACK"
-    return 0
+  local resolved=""
+  if [ -n "$PY" ]; then
+    # CLAUDE_PROJECT_DIR (else the cwd) is read by spawn_project itself. python on Windows prints CRLF: strip the CR.
+    resolved="$("$PY" -c 'import sys; sys.path.insert(0, sys.argv[1]); import spawn_project; print(spawn_project.resolve_log_file())' "$LIB" 2>/dev/null)" || resolved=""
+    resolved="${resolved%$'\r'}"
   fi
+  [ -n "$resolved" ] || resolved="$FALLBACK"
 
-  # Parse Active Projects table: extract paths from medium-term.md
-  # Lines look like: | project | `/path/` | pd-name | ... |
-  # or:              | project | `~/.claude/projects/...` | ...
-  # We expand ~ and find the longest-prefix match against CWD
-  local BEST_MATCH_LEN=0
-  local BEST_PROJECT_PATH=""
-
-  while IFS= read -r line; do
-    # Match table rows with backtick-quoted path in 2nd column
-    if printf '%s' "$line" | grep -qE '^\|[^|]+\|[[:space:]]*`[^`]+`'; then
-      local raw_path
-      raw_path=$(printf '%s' "$line" | sed -n 's/^|[^|]*|[[:space:]]*`\([^`]*\)`.*/\1/p' | head -1)
-      if [ -z "$raw_path" ]; then
-        continue
-      fi
-      # Expand ~ to home
-      local expanded_path="${raw_path/#\~/$HOME}"
-      # Remove trailing slash and /memory suffix — medium-term.md stores memory paths like
-      # ~/.claude/projects/system-improvement/memory/ but we need the project root
-      local normalized="${expanded_path%/}"
-      normalized="${normalized%/memory}"
-
-      # Check if CWD starts with this project root path
-      if [ -n "$normalized" ] && printf '%s' "$CWD" | grep -q "^${normalized}"; then
-        local path_len=${#normalized}
-        if [ "$path_len" -gt "$BEST_MATCH_LEN" ]; then
-          BEST_MATCH_LEN="$path_len"
-          BEST_PROJECT_PATH="$normalized"
-        fi
-      fi
-    fi
-  done < "$MEDIUM_TERM"
-
-  if [ -n "$BEST_PROJECT_PATH" ]; then
-    local log_dir="${BEST_PROJECT_PATH}/memory"
-    mkdir -p "$log_dir" 2>/dev/null || true
-    SPAWN_LOG_FILE="${log_dir}/spawns.jsonl"
-  else
-    SPAWN_LOG_FILE="$FALLBACK"
-  fi
-
+  # Ensure the log dir exists (project or fallback)
+  mkdir -p "$(dirname "$resolved")" 2>/dev/null || true
+  SPAWN_LOG_FILE="$resolved"
   return 0
 }

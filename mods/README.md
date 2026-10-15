@@ -137,12 +137,20 @@ python3 -m unittest discover -s scripts/tests -p "test_[0wz]*.py"   # isolation 
 Windows support is only partly proven. Do not read this section as "Windows is supported". What has been done:
 
 - **Simulated on macOS.** The mods and their Python helpers were made Windows-aware (`USERPROFILE` as the home, a python launcher that falls back to `py -3`, an `msvcrt` lock for the Exec cap, UTF-8 stdio, drive-letter and `~\` path forms in the project and artifact checks, a Windows process-detach flag, Git for Windows' `bash` picked by full path) and tested with `win32` simulated: stubbed environment and platform, mocked `os.name`, `sys.platform`, `shutil.which` and `Popen`, a fake `msvcrt`, and subprocesses forced to a cp1252 code page. These tests show the code takes the right branch.
-- **CI unit tests on a real runner.** The `windows-latest` CI job now also runs the mods' Python suites (spawn-ledger, `hooks/tests`, the `mods/_shared` identity test, the `scripts/tests` isolation and win32 subset) and `claude plugin validate` + `claude plugin test` for all five mods. Those steps are informational (`continue-on-error`) until a green run promotes them to required. The ubuntu job runs the same steps as required. A real Windows runner found bugs the simulation hid, all fixed: a bare `bash` resolved to the WSL launcher so the stale-spawn sweep silently did nothing, `os.path.expanduser` ignores `HOME` there so tests that moved only `HOME` resolved the real home, and the host's `path.resolve` rewrote the separators the TypeScript tests compared.
+- **CI unit tests on a real runner.** The `windows-latest` CI job now also runs the mods' Python suites (spawn-ledger, `hooks/tests`, the `mods/_shared` identity test, the `scripts/tests` isolation and win32 subset) and `claude plugin validate` + `claude plugin test` for all five mods. Those steps are required, like the ubuntu job's. A real Windows runner found bugs the simulation hid, all fixed: a bare `bash` resolved to the WSL launcher so the stale-spawn sweep silently did nothing, `os.path.expanduser` ignores `HOME` there so tests that moved only `HOME` resolved the real home, and the host's `path.resolve` rewrote the separators the TypeScript tests compared.
 
-That is still "simulated + CI unit tests only". These stay UNPROVEN on a real Windows host:
+A ledger export from one real Windows host (counts only) has since checked part of the list:
 
-- live hook loading in a real Windows Claude Code session (the checks below);
-- the `msvcrt` lock under real contention (parallel spawns racing for the Exec cap);
+- **Check 2 PASSED.** A spawn writes a ledger row: 54 `spawn_start`, 54 launched and 107 end rows.
+- **Check 3 PASSED.** The Exec cap holds under `msvcrt`: 8 `spawn_denied` at running=5, cap=5.
+- **Check 5 FAILED on the pre-fix build.** Vietnamese text came back as cp1252 mojibake. The fix is the UTF-8 transcript read in `hooks/lib/claude_pricing.py` plus the UTF-8 stdio and env forcing already in the mod. It still needs one fresh Vietnamese spawn on Windows after `agency upgrade` to count as PASS.
+- The same export showed all 54 starts labelled with the wrong project (a `D:\` root never matched); fixed by the single resolver in `hooks/lib/spawn_project.py` and the `global` label for no-project rows. Confirm on the next export that rows carry the real slug.
+- **Checks 1, 4 and 6 remain unproven.** Nothing is marked passed in the list below.
+- `UNKNOWN` outcomes (39 of the 107 end rows) are expected whenever the final report carries no English outcome token (DONE, COMPLETE, BLOCKED, ESCALATE, KILLED); they are not a parse failure (see the OUTCOME docstring in `mods/spawn-ledger/bin/ledger.py`).
+
+That is still mostly "simulated + CI unit tests". These stay UNPROVEN on a real Windows host:
+
+- live hook loading in a real Windows Claude Code session (check 1 below);
 - what `reconcile-stale-spawns.sh` does to a live ledger there (CI runs it on a temp ledger only);
 - a Windows host without Git for Windows (simulated only: the sweep is skipped, nothing else changes).
 
@@ -159,7 +167,7 @@ Until the checks below pass on a real Windows host, treat the mods there as unte
 
 ### Known gaps on Windows
 
-- `scripts/skill-route.py` resolves the project from the working directory with `/`-only path logic, so a drive-letter working directory does not match a project there. It only runs when `AGENCY_SKILL_ROUTER=1`. Not changed.
+- `scripts/skill-route.py` and `hooks/lib/resolve-project.sh` now resolve the project through `hooks/lib/spawn_project.py` (drive-letter and Git-Bash spellings match). Still POSIX-only: the `medium-term.md` parsing in `scripts/jev-feedback.py`, the inline python of `hooks/lib/reconcile-stale-spawns.sh`, and the legacy `hooks/lib/log-spawn-from-agent.sh`, `hooks/lib/log-spawn-end-from-agent.sh` and `hooks/spawn-logger.sh`, which still label a global-log row with the old basename rule.
 - `hooks/lib/reconcile-stale-spawns.sh` and `hooks/emit-metric.sh` need `bash` (Git for Windows). `hooks/lib/find_bash.py` finds it by full path and never returns the WSL launcher in `System32`; without Git for Windows `ledger.py` skips the stale-spawn sweep.
 - `CLAUDE_PYTHON` names one executable path, no arguments. A launcher that needs flags must go through `py -3` or a wrapper.
 - If neither `fcntl` nor `msvcrt` loads, or `msvcrt` gives up after about 10 seconds, the Exec cap runs without the lock and parallel spawns can over-count.

@@ -20,6 +20,7 @@ const MEDIUM_TERM = '## Active Projects\n\n| Project | Path |\n|---|---|\n| proj
 function machine(on: On, env: Record<string, string>, works: string[], missing: string[] = []) {
   mock.env(on, env)
   const argvs: string[][] = []
+  const inits: Array<{ stdin?: string; env?: Record<string, string> } | undefined> = []
   const reads: string[] = []
   const logs: string[] = []
   let n = 0
@@ -31,6 +32,7 @@ function machine(on: On, env: Record<string, string>, works: string[], missing: 
   on('process.run', (_$, e) => {
     const argv = [...e.argv]
     argvs.push(argv)
+    inits.push(e.init)
     const launcher = argv[0] === 'py' ? 'py -3' : String(argv[0])
     if (missing.includes(launcher)) throw new Error(`spawn ${launcher} ENOENT`)
     if (!works.includes(launcher)) return res(9009)
@@ -42,7 +44,7 @@ function machine(on: On, env: Record<string, string>, works: string[], missing: 
   on('ui.toast', () => ({ value: undefined }))
   on('ui.log', (_$, e) => (logs.push(e.text), { value: undefined }))
   on('turn.complete', (_$, e) => ({ text: e.answer }))
-  return { argvs, reads, logs }
+  return { argvs, inits, reads, logs }
 }
 
 const scripts = (argvs: string[][]) =>
@@ -89,6 +91,23 @@ test('win32: router OFF: the Jev gate script is never started', async ($, on) =>
   const m = machine(on, { ...WIN, AGENCY_SKILL_ROUTER: '0' }, ['python3'])
   await spawnOnce($, on)
   expect(scripts(m.argvs).some(a => String(a[0]).endsWith('jev-spawn-gate.py'))).toBe(false)
+})
+
+test('win32: Vietnamese text and an em dash reach the ledger as UTF-8 JSON, python runs with PYTHONUTF8=1 and PYTHONIOENCODING=utf-8', async ($, on) => {
+  const m = machine(on, WIN, ['python3'])
+  const prompt = 'Kiểm tra — tiếng Việt'
+  on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
+  await $.agent.spawn({ prompt, description: 'Mô tả — Hà Nội', subagentType: 'task-executor', tool_use_id: 't1', background: true } as never)
+  const i = m.argvs.findIndex(a => a.some(x => String(x).endsWith('/bin/ledger.py')) && a.includes('start'))
+  expect(i).toBeGreaterThanOrEqual(0)
+  const stdin = m.inits[i]?.stdin ?? ''
+  expect(stdin).not.toMatch(/\\u[0-9a-f]{4}/i) // JSON.stringify keeps non-ASCII raw: python must decode it as UTF-8
+  const sent = JSON.parse(stdin) as Record<string, string>
+  expect(sent.prompt).toBe(prompt)
+  expect(sent.description).toBe('Mô tả — Hà Nội')
+  for (const init of m.inits.filter((_, k) => !m.argvs[k]?.includes('-c'))) {
+    expect(init?.env).toEqual({ PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8' })
+  }
 })
 
 test('win32: python3 is the Store stub (exit 9009) -> every script runs through py -3 after one probe', async ($, on) => {
