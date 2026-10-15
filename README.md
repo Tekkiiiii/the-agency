@@ -933,6 +933,12 @@ Each project carries a `scope.json` that defines the PD's authority boundaries. 
 
 ---
 
+## Credits
+
+Not everything here was made by one person. The memory design is inspired by Andrej Karpathy's LLM Wiki, the token-saving mode builds on the caveman and ponytail plugins, and many skills started as other people's open-source work. [CREDITS.md](CREDITS.md) names each source, its author and licence, and what we use it for.
+
+---
+
 **GitHub:** [https://github.com/Tekkiiiii/the-agency](https://github.com/Tekkiiiii/the-agency)
 
 **License:** MIT — use it however you want.
