@@ -30,8 +30,8 @@ Module API (other tools load this file in-process via importlib spec_from_file_l
                                        a retired "task-executor" is kept as a legacy alias for old logs
     family_agree(router_skills, actual, families=None) -> bool   overlap OR shared overlay family (agree_family)
     gate_route(prompt, description, subagent_type, parent_agent) -> (res, meta, actual_skills)
-                                       binding-spawn gate helper (for the jev gate, when you enable one; not shipped
-                                       here): routes the spawn text exactly as the shadow recorder would (Skills
+                                       binding-spawn gate helper (for the jev gate, scripts/jev-spawn-gate.py; ships
+                                       DISABLED, runs only with AGENCY_SKILL_ROUTER=1): routes the spawn text exactly as the shadow recorder would (Skills
                                        clause, /slash tokens and the Jev verdict line stripped) but with passthrough
                                        DISABLED and LIVE (shadow=False) usage accounting; writes the route cache
                                        (res["route_id"]); actual_skills = _actual_skills over the FULL menu.
@@ -1331,7 +1331,7 @@ def _spawn_text(prompt, description, names):
 
 
 def gate_route(prompt, description, subagent_type, parent_agent):
-    """Route a spawn for the binding gate (the jev gate, when you enable one; this repo does not ship it).
+    """Route a spawn for the binding gate (scripts/jev-spawn-gate.py; ships DISABLED, runs only with AGENCY_SKILL_ROUTER=1).
     Returns (res, meta, actual_skills): res is the route() contract dict incl. route_id (the route cache is written), meta the routing meta (none_fired, calls,
     ...), actual_skills the spawner's own skills (Skills line + /slash tokens, FULL menu names). Same routed text as
     the recorder; explicit /name passthrough is DISABLED (a prompt naming /frontend still goes to Jev) and usage

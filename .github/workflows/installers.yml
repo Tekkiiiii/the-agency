@@ -946,26 +946,21 @@ jobs:
           python3 .github/scripts/test-skill-registry.py
           python3 .github/scripts/check-skill-registry.py
 
-      # INFORMATIONAL for now (continue-on-error): real-host evidence for the
-      # Windows-portable mods. Until the first green run the Windows support was
-      # proven only with win32 simulated on macOS. One step per suite, each under
-      # !cancelled(), so one red suite never hides the rest. The maintainer
-      # promotes each step to required (drops continue-on-error) after a green run.
+      # REQUIRED since green run 38664799549 on windows-latest: real-host evidence
+      # for the Windows-portable mods. One step per suite, each under
+      # !cancelled(), so one red suite never hides the rest.
       - name: Mods Python tests (spawn-ledger)
         if: ${{ !cancelled() }}
-        continue-on-error: true
         shell: bash
         run: python3 -m unittest discover -s mods/spawn-ledger/tests
 
       - name: Mods Python tests (hooks/tests)
         if: ${{ !cancelled() }}
-        continue-on-error: true
         shell: bash
         run: python3 -m unittest discover -s hooks/tests
 
       - name: Mods Python tests (mods/_shared identity)
         if: ${{ !cancelled() }}
-        continue-on-error: true
         shell: bash
         run: python3 mods/_shared/test_copies_identical.py
 
@@ -974,19 +969,16 @@ jobs:
       # pattern keeps test_00 in the run so the bootstrap is proven on a real OS.
       - name: Mods Python tests (scripts win32 + isolation subset)
         if: ${{ !cancelled() }}
-        continue-on-error: true
         shell: bash
         run: python3 -m unittest discover -s scripts/tests -p "test_[0wz]*.py"
 
       - name: Install the claude CLI (for claude plugin validate / test)
         if: ${{ !cancelled() }}
-        continue-on-error: true
         shell: bash
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Mods plugin validate (5 mods)
         if: ${{ !cancelled() }}
-        continue-on-error: true
         shell: bash
         run: |
           rc=0
@@ -999,7 +991,6 @@ jobs:
 
       - name: Mods plugin test (5 mods)
         if: ${{ !cancelled() }}
-        continue-on-error: true
         shell: bash
         run: |
           rc=0

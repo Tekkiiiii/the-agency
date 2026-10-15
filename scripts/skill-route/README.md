@@ -248,7 +248,7 @@ Output: `added: NAME` (exit 0), `exists: NAME` (exit 0, existing entries are nev
 
 ## Binding spawn routing
 
-Optional, and only meaningful once you enable the router. If you want every spawn to carry the router's pick, the pieces below record it; a gate that enforces it is not shipped. Where this document says "the jev gate (when enabled)", it means an enforcer you wire yourself. With the router off, spawners pick 1-3 skills from `skills/INDEX.md` as before.
+Optional, and only meaningful once you enable the router. If you want every spawn to carry the router's pick, the pieces below record it; the Jev spawn gate that enforces it ships disabled and turns on with `AGENCY_SKILL_ROUTER=1` through the spawn-ledger mod, which calls `scripts/jev-spawn-gate.py` from `agent.spawn` (see `mods/README.md`, section Jev spawn gate). Where this document says "the jev gate (when enabled)", it means that gate. With the router off, spawners pick 1-3 skills from `skills/INDEX.md` as before.
 
 The spawner rule these pieces support: before a spawn, run `skill-route.py --role exec "<task>"`; the spawn prompt then carries `Skills: /a, /b` and one line `Jev[r=<route_id>]: accept|modify|reject — <reason>`. When the result's `gate` is `pass`, Jev's skills are the default (accept, reason optional). When it is `low_confidence` or `skills` is empty, the spawner states an explicit verdict with a reason. If the router is down, spawn anyway.
 

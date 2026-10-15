@@ -22,6 +22,9 @@ All notable changes to The Agency are documented here, grouped by release wave (
 - **CI chia từng bộ test.** Bước "Mods Python tests" tách thành "Mods Python tests (spawn-ledger)", "(hooks/tests)", "(mods/_shared identity)" và, ở Windows, "(scripts win32 + isolation subset)"; mỗi bước có `if: ${{ !cancelled() }}` để một bộ đỏ không che các bộ khác. Thêm bước cài CLI `claude`, "Mods plugin validate (5 mods)" và "Mods plugin test (5 mods)" ở cả hai runner. Linux: bắt buộc. Windows: vẫn `continue-on-error` cho đến khi chạy xanh rồi mới nâng lên bắt buộc.
 - **`mods/README.md`** có mục cổng Jev, mục "Tests never write a live log" và "Windows status" mới: CI nay chạy các bộ Python và test plugin trên `windows-latest`; vẫn chưa chứng minh: nạp hook trong phiên Windows thật, `msvcrt` khi tranh chấp thật, tác động của `reconcile` lên sổ thật, và máy không có Git for Windows.
 
+#### Changed (2026-10-15)
+- **Tài liệu nay ghi đúng: cổng Jev kèm theo nhưng TẮT.** `runbooks/service-lookups.md` (JB9), `skills/agent-dispatch`, `scripts/skill-route/README.md`, `README.md` và các chú thích trong `scripts/skill-route.py` không còn nói "repo này không kèm cổng"; cổng chỉ chạy khi `AGENCY_SKILL_ROUTER=1`, qua mod `spawn-ledger` (xem `mods/README.md`). Các bước mod trên Windows trong CI (`installers.yml`) nay là bắt buộc (bỏ `continue-on-error`) sau lần chạy xanh 38664799549 trên `windows-latest`.
+
 #### Decided (2026-10-14, quyết định của chủ repo)
 - Cổng Jev được kèm theo, TẮT cùng router (xem trên).
 - `scripts/tests` bị loại khỏi bản cài của người dùng, ở cả `install.sh` lẫn `install.ps1`; vẫn nằm trong repo và trong CI.
@@ -347,6 +350,9 @@ Mục tiêu: catalog ship ra khớp đúng hệ thống live, không giữ thêm
 - **The Jev spawn gate (`scripts/jev-spawn-gate.py`) ships, DISABLED together with the router.** The `spawn-ledger` mod calls the gate only when `AGENCY_SKILL_ROUTER` is exactly `1`; with the router off (the default) no python process starts and a spawn is untouched. Router on: the gate runs before the model pin and answers `pass`, `rewrite` (the full replacement prompt, with the `Jev[r=...]` and `Skills:` lines) or `deny` (refused once; the spawner re-issues with its verdict line; a deny writes no ledger row and uses no Exec cap slot). Jev down never blocks a spawn; off switches: `JEV_GATE_OFF=1`, the file `state/jev-gate.off`, `.hook-profile` = `minimal`. The gate always ends its one JSON line with a bare LF, on Windows too. You need your own Jev key.
 - **CI runs one step per suite.** "Mods Python tests" is split into "Mods Python tests (spawn-ledger)", "(hooks/tests)", "(mods/_shared identity)" and, on Windows, "(scripts win32 + isolation subset)"; each has `if: ${{ !cancelled() }}` so one red suite never hides the rest. New steps install the `claude` CLI and run "Mods plugin validate (5 mods)" and "Mods plugin test (5 mods)" on both runners. Linux: required. Windows: still `continue-on-error` until a green run promotes them.
 - **`mods/README.md`** documents the Jev gate and "Tests never write a live log", and has a new "Windows status": CI now runs the Python suites and the plugin tests on `windows-latest`; still unproven: live hook loading in a real Windows session, `msvcrt` under real contention, `reconcile`'s effect on a live ledger, and hosts without Git for Windows.
+
+#### Changed (2026-10-15)
+- **The docs now say the Jev gate ships, DISABLED.** `runbooks/service-lookups.md` (JB9), `skills/agent-dispatch`, `scripts/skill-route/README.md`, `README.md` and the comments in `scripts/skill-route.py` no longer say "this repo ships no gate"; the gate runs only with `AGENCY_SKILL_ROUTER=1`, through the `spawn-ledger` mod (see `mods/README.md`). The Windows mods steps in CI (`installers.yml`) are now required (`continue-on-error` removed) since green run 38664799549 on `windows-latest`.
 
 #### Decided (2026-10-14, owner rulings)
 - The Jev spawn gate ships, disabled together with the router (above).

@@ -79,8 +79,9 @@ key (setup: `{agency-root}/scripts/skill-route/README.md`). Two modes:
   Everything else (general-purpose, coord, mini-coord, pd-coordinator, `*-pd`) is binding.
 - JB9: the jev gate (when enabled) denies a binding spawn missing a required line
   up to twice per spawn (same spawner + task, or same route id), with Jev's result inline;
-  re-issue with the line added. The 3rd attempt passes as `deny_cap` and is recorded. The gate is an
-  enforcer you wire yourself; this repo ships no gate, so without one JB2 is a rule you follow.
+  re-issue with the line added. The 3rd attempt passes as `deny_cap` and is recorded. The gate ships
+  DISABLED: the spawn-ledger mod runs `scripts/jev-spawn-gate.py` only when `AGENCY_SKILL_ROUTER=1`
+  (`mods/README.md`, section Jev spawn gate); with the router off, or the mod not installed, JB2 is a rule you follow.
   Detail: `scripts/skill-route/README.md`.
 
 **Spawn the Delegator agent ONLY when** the task is ambiguous, cross-domain,
