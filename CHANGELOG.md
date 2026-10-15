@@ -10,6 +10,9 @@ All notable changes to The Agency are documented here, grouped by release wave (
 
 **Đợt 2026-10-14 — sửa các lỗi chỉ lộ ra trên Windows thật, test không còn ghi được vào log thật, CI chia từng bộ test và thêm test plugin, cổng Jev kèm theo (TẮT cùng router). Chưa phát hành, chưa đổi phiên bản, chưa gắn tag.** Router skill và cổng Jev vẫn TẮT mặc định (`AGENCY_SKILL_ROUTER=1` mới bật cả hai). Windows vẫn ở mức "giả lập + unit test trên CI": xem `mods/README.md`, mục "Windows status".
 
+#### Added (2026-10-15, không phân phối skill bên thứ ba)
+- **CI chặn các skill marketing tiếng Việt của bên thứ ba, không được cấp phép để phân phối.** Danh sách chặn nằm ở `.github/scripts/never-distribute.txt` (tên thư mục skill và mã định danh nguồn gốc); `.github/scripts/check-never-distribute.js` (kèm `--self-test`) làm CI đỏ nếu có file được theo dõi nằm trong thư mục bị chặn dưới `skills/` hoặc nhắc đến mã định danh đó. Chạy ở cả hai runner (ubuntu và windows). Hiện cây repo không có bản sao hay tham chiếu nào; check giữ nguyên trạng đó.
+
 #### Fixed (2026-10-14)
 - **Windows: `bash` trần là trình khởi chạy WSL.** Trên máy Windows, `subprocess.run(["bash", ...])` tìm ra `C:\Windows\System32\bash.exe` (thoát mã 1, không in gì), nên bước dọn spawn bỏ dở của `ledger.py` (`reconcile`) lặng lẽ không làm gì. `hooks/lib/find_bash.py` (mới) chọn `bash.exe` của Git for Windows theo đường dẫn đầy đủ và không bao giờ trả về `System32`, `SysWOW64`, `Sysnative` hay `WindowsApps`; trên POSIX vẫn là `bash` như cũ. `ledger.py`, `scripts/jev_client.py` và `scripts/save-state.py` dùng nó; không có Git for Windows thì bước đó được bỏ qua như trước.
 - **Windows: `expanduser` không đọc `HOME`.** `ledger.py` không truyền `home=` cho `spawn_project`, nên test chỉ đổi `HOME` lại phân giải ra thư mục home thật của runner. Nay `ledger.py` truyền `home=HOME`; gốc agency vẫn theo `AGENCY_HOME` -> `CLAUDE_CONFIG_DIR` -> `<home>/.claude`. `spawn_project.py` trả đường dẫn log theo dấu phân cách gốc của hệ điều hành (`_native`), hết cảnh một file có hai cách viết.
@@ -344,6 +347,9 @@ Mục tiêu: catalog ship ra khớp đúng hệ thống live, không giữ thêm
 ### English
 
 **Wave 2026-10-14 — fixes found only on a real Windows runner, tests can no longer write a live log, CI split per suite plus plugin tests, and the Jev spawn gate ships (DISABLED together with the router). No release, no version bump, no tag.** The skill router and the Jev gate are both still OFF by default (`AGENCY_SKILL_ROUTER=1` turns both on). Windows is still "simulated + CI unit tests only": see `mods/README.md`, "Windows status".
+
+#### Added (2026-10-15, never distribute third-party skills)
+- **CI blocks the third-party Vietnamese marketing skills that are not licensed for distribution.** The blocklist is `.github/scripts/never-distribute.txt` (skill directory names and upstream identifiers); `.github/scripts/check-never-distribute.js` (with `--self-test`) turns CI red if a tracked file sits in a blocked directory below `skills/` or mentions an identifier. It runs on both runners (ubuntu and windows). The tree has no copy or reference today; the check keeps it that way.
 
 #### Fixed (2026-10-14)
 - **Windows: a bare `bash` is the WSL launcher.** On a Windows host `subprocess.run(["bash", ...])` finds `C:\Windows\System32\bash.exe` (exit 1, no output), so the stale-spawn sweep in `ledger.py` (`reconcile`) silently did nothing. The new `hooks/lib/find_bash.py` picks Git for Windows' `bash.exe` by full path and never returns `System32`, `SysWOW64`, `Sysnative` or `WindowsApps`; on POSIX it is still plain `bash`. `ledger.py`, `scripts/jev_client.py` and `scripts/save-state.py` use it; without Git for Windows the step is skipped, as before.

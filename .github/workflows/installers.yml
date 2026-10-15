@@ -344,6 +344,15 @@ jobs:
           node .github/scripts/check-privacy.js --self-test
           node .github/scripts/check-privacy.js
 
+      # Third-party Vietnamese marketing skills are not licensed for distribution:
+      # no blocked skill directory and no upstream identifier in any tracked file.
+      # The blocklist is .github/scripts/never-distribute.txt; the self-test plants both.
+      - name: Assert no never-distribute skill or identifier is tracked
+        if: ${{ !cancelled() }}
+        run: |
+          node .github/scripts/check-never-distribute.js --self-test
+          node .github/scripts/check-never-distribute.js
+
       # The first-run path: install -> `agency new demo` -> /recall, /pd-resume and the
       # spawn-log hooks all resolve demo from ONE registry, {root}/memory/medium-term.md.
       # Also: a second install leaves an existing registry byte-identical, and a registry
@@ -1019,6 +1028,15 @@ jobs:
         run: |
           node .github/scripts/check-privacy.js --self-test
           node .github/scripts/check-privacy.js
+
+      # Third-party Vietnamese marketing skills are not licensed for distribution:
+      # no blocked skill directory and no upstream identifier in any tracked file.
+      # The blocklist is .github/scripts/never-distribute.txt; the self-test plants both.
+      - name: Assert no never-distribute skill or identifier is tracked
+        if: ${{ !cancelled() }}
+        run: |
+          node .github/scripts/check-never-distribute.js --self-test
+          node .github/scripts/check-never-distribute.js
 
       # Same check through install.ps1 (pwsh) with the Windows node CLI. Git Bash supplies
       # awk for the documented /pd-resume lookup.
