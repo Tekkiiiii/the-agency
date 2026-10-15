@@ -164,7 +164,7 @@ The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. 
 │   ├── frontend/SKILL.md
 │   ├── ship/SKILL.md
 │   └── ...
-├── agents/              ← 34+ agents in agent folders
+├── agents/              ← agent definitions in agent folders
 │   ├── engineering/
 │   ├── design/
 │   ├── content-creation/
@@ -424,7 +424,7 @@ After this walkthrough:
 
 - **`~/.agency/projects/`** — project state that persists across sessions
 - **`~/.agency/skills/`** — 235+ skills ready to invoke
-- **`~/.agency/agents/`** — 34+ agents in agent folders
+- **`~/.agency/agents/`** — agent definitions in agent folders
 - **`~/.agency/task-store.db`** — SQLite task pipeline with gate tracking
 
 The PD handles decomposition, delegation, QA gating, and state persistence. You give direction and review results.
@@ -571,7 +571,7 @@ the-agency/
 │   ├── cost-tracker.sh  # Stop: compute session token cost
 │   ├── fable-on-opus.sh # UserPromptSubmit: inject Fable reasoning discipline on Opus
 │   └── fable/           # Fable playbook modules read by fable-on-opus.sh
-├── agents/              # 34+ agent definitions (PD/Coord/critic/council + project PDs)
+├── agents/              # agent definitions (PD/Coord/critic/council + project PDs)
 ├── skills/              # 235+ reusable workflow skills
 └── plans/               # Architecture decision records
 ```

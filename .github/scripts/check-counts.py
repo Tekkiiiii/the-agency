@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Fail on any stale "N skills / N+ agents / N departments" claim in user-facing docs.
+"""Fail on any stale "N skills / N departments" claim, and on ANY agent count, in user-facing docs.
+
+Agent counts are banned (owner ruling 2026-10-15: no agent counts anywhere, the repo does not
+use named agents anymore): a claim like "45+ agents" fails regardless of its value, so counts
+cannot creep back. The derived agent number is kept only for the sanity check below.
 
 The counts are DERIVED from the tree, never typed in here:
   skills       skills/*/SKILL.md
@@ -14,6 +18,7 @@ Scanned (current, user-facing copy only; CHANGELOG and dated notes are out of sc
   agents/README.md, docs/**/*.md, cli/** (.js/.json/.md), install.sh, install.ps1
 
 Claim rules:
+  "N agents"  -> always a failure (no agent counts), except numbers < 20 (spawn limits)
   "N skills"  -> N must equal the derived count
   "N+ skills" -> N <= count <= N * 1.1 (a floor claim that has drifted far below the
                  real number is stale too; refresh it or drop the count)
@@ -104,6 +109,8 @@ def verdict(noun, n, floor, actual):
     """Return None if the claim holds, else a reason."""
     if noun != "departments" and n < MIN_CATALOG:
         return None
+    if noun == "agents":
+        return "agent counts are not allowed in user-facing docs; remove the number"
     if floor:
         if n <= actual <= n * 1.1:
             return None
@@ -115,6 +122,7 @@ def selftest():
     cases = [
         ("240+ skills and 45+ agents.", [("skills", 240, True), ("agents", 45, True)]),
         ("Agent catalog (130+ agents)", [("agents", 130, True)]),
+        ("34+ agents in agent folders", [("agents", 34, True)]),
         ("organized across 8 departments", [("departments", 8, False)]),
         ("240+ reusable workflow skills", [("skills", 240, True)]),
         ("![Skills: 240+](x/Skills-240%2B-orange)", [("skills", 240, True)]),
@@ -128,11 +136,19 @@ def selftest():
             sys.exit("check-counts: self-test failed on %r: got %r want %r" % (text, got, want))
 
 
+def verdict_selftest():
+    assert verdict("agents", 35, True, 35), "an agent count must fail even when it matches"
+    assert verdict("agents", 45, False, 45), "an exact agent count must fail"
+    assert verdict("agents", 6, False, 45) is None, "spawn limits below 20 stay allowed"
+    assert verdict("skills", 235, True, 237) is None, "a valid skill floor claim must pass"
+
+
 def main():
     root = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.getcwd()
     if not os.path.isdir(os.path.join(root, "agents")) or not os.path.isdir(os.path.join(root, "skills")):
         sys.exit("check-counts: %s has no agents/ and skills/ (run from the repo root)" % root)
     selftest()
+    verdict_selftest()
     actual = derive(root)
     print("derived from tree: skills=%(skills)d agents=%(agents)d departments=%(departments)d" % actual)
     checked = stale = 0
