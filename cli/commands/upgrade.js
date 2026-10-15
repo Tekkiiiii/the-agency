@@ -97,76 +97,6 @@ function getHead(repoDir) {
   }
 }
 
-// Prints CHANGELOG.md entries relevant to what was just pulled (best-effort —
-// see the module-level design note in the git history / task notes for why
-// this is date-based rather than commit-hash-based). Returns true if it
-// printed anything, false if the caller should fall back to a bare pointer.
-function printChangelogSince(repoDir, headBefore, console) {
-  const changelogPath = join(repoDir, 'CHANGELOG.md');
-  if (!existsSync(changelogPath)) return false;
-
-  const content = readFileSync(changelogPath, 'utf8');
-  const lines = content.split('\n');
-  const blocks = [];
-  let current = null;
-  for (const line of lines) {
-    if (/^## \[.+\]/.test(line)) {
-      if (current) blocks.push(current);
-      current = { header: line, body: [] };
-    } else if (current) {
-      current.body.push(line);
-    }
-  }
-  if (current) blocks.push(current);
-  if (blocks.length === 0) return false;
-
-  let beforeDate = null;
-  try {
-    beforeDate = execFileSync(
-      'git', ['-C', repoDir, 'log', '-1', '--format=%ad', '--date=short', headBefore],
-      { stdio: 'pipe' }
-    ).toString().trim() || null;
-  } catch (_) {
-    beforeDate = null;
-  }
-
-  let selected;
-  if (beforeDate) {
-    selected = blocks.filter(b => {
-      if (/^## \[Unreleased\]/.test(b.header)) return true;
-      const dates = b.header.match(/\d{4}-\d{2}-\d{2}/g);
-      if (!dates) return false;
-      const maxDate = dates.sort().pop(); // lexicographic sort is correct for YYYY-MM-DD
-      return maxDate > beforeDate;
-    });
-  } else {
-    // Date lookup failed (e.g. headBefore not reachable after a rebase) — least
-    // fragile fallback per spec: show only the topmost block.
-    selected = [blocks[0]];
-  }
-
-  if (selected.length === 0) return false;
-
-  console.log('\nWhat changed:');
-  const CAP = 40;
-  let printed = 0;
-  let truncated = false;
-  outer:
-  for (const block of selected) {
-    if (printed >= CAP) { truncated = true; break; }
-    console.log(block.header.replace(/^## /, ''));
-    printed++;
-    for (const bodyLine of block.body) {
-      if (!bodyLine.trim()) continue; // skip blank lines to keep output dense
-      if (printed >= CAP) { truncated = true; break outer; }
-      console.log(bodyLine);
-      printed++;
-    }
-  }
-  if (truncated) console.log('... see CHANGELOG.md for more');
-  return true;
-}
-
 // --retired=archive|delete|ask (or `--retired X`): what to do with a retired file
 // the user EDITED (see cli/lib/retired-prune.js). Returns { value } (undefined when
 // the flag is absent, so the engine falls back to AGENCY_RETIRED, then its default)
@@ -207,7 +137,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   // process would pull again and potentially re-exec forever.
   const isReexec = process.env[REEXEC_ENV] === '1';
   // HEAD before the pull — set below in whichever branch runs, used at the end
-  // to select which CHANGELOG.md entries to print. See HEAD_BEFORE_ENV above
+  // to select what to show after the upgrade. See HEAD_BEFORE_ENV above
   // for why the reexec'd child can't compute this itself.
   let resolvedHeadBefore = null;
   // History-rewrite recovery summary, printed again at the very end.
@@ -302,8 +232,8 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
     }
 
     // Snapshot HEAD before pull — used to detect whether new code was fetched,
-    // and (via resolvedHeadBefore) to select which CHANGELOG.md entries to
-    // print at the end of this run.
+    // and (via resolvedHeadBefore) to select what to show after the
+    // upgrade at the end of this run.
     const headBefore = getHead(repoDir);
     resolvedHeadBefore = headBefore;
     // Set if `git stash pop` below leaves unresolved conflicts. When true, the
@@ -615,19 +545,8 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   console.log('\nUpgrade complete.');
   if (headCommit) console.log(`Version: ${headCommit}`);
 
-  // Print CHANGELOG.md entries for what was just pulled, if anything was.
-  // Best-effort — a parse failure here must never fail the upgrade itself.
-  let shownChangelog = false;
-  try {
-    const headNow = getHead(repoDir);
-    if (resolvedHeadBefore && headNow && resolvedHeadBefore !== headNow) {
-      shownChangelog = printChangelogSince(repoDir, resolvedHeadBefore, console);
-    }
-  } catch (_) {
-    shownChangelog = false;
-  }
-  if (!shownChangelog) {
-    console.log('See what changed: CHANGELOG.md');
+  if (resolvedHeadBefore && headCommit && !String(headCommit).startsWith(resolvedHeadBefore.slice(0, 7))) {
+    console.log(`See what changed: git -C "${repoDir}" log --oneline ${resolvedHeadBefore.slice(0, 7)}..HEAD`);
   }
 
   printRecoveryNotes(recoveryText, console);

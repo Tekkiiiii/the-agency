@@ -9,11 +9,10 @@ The counts are DERIVED from the tree, never typed in here:
   skills       skills/*/SKILL.md
   agents       .md files under agents/ whose YAML frontmatter has `name:` and
                `description:` (skips memory/, integrations/, scripts/, which are not
-               agent definitions). Same definition the CHANGELOG uses, and the same
-               file set agents/scripts/lint-agents.sh lints.
+               agent definitions). The same file set agents/scripts/lint-agents.sh lints.
   departments  agents/<dir>/ that contains an INDEX.md
 
-Scanned (current, user-facing copy only; CHANGELOG and dated notes are out of scope):
+Scanned (current, user-facing copy only; dated notes are out of scope):
   README.md, skills/INDEX.md, skills/onboard/SKILL.md, agents/INDEX.md,
   docs/**/*.md, cli/** (.js/.json/.md), install.sh, install.ps1
 

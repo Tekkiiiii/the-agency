@@ -13,7 +13,7 @@
 # Format, one per line:
 #   dir | <name>   fails if a tracked path has a directory segment equal to <name> below a skills/ segment
 #   id  | <text>   fails if ANY tracked file CONTENT contains <text> (case-insensitive)
-# Exempt from the content rule: this file and CHANGELOG.md.
+# Exempt from the content rule: this file.
 # Never add an entry to remove a hit; delete the offending files instead.
 
 dir | marketing

@@ -94,14 +94,3 @@ When passing work to another agent:
 ## Questions for receiver
 1. {question}
 ```
-
-## Rooms (Optional)
-
-For teams using file-based rooms:
-
-```
-{agency-root}/rooms/{project}/
-├── messages.mdl   ← structured log (agent, timestamp, content)
-├── shared.md      ← auto-extracted: DECIDED, ACTION, QUESTION
-└── handoffs/     ← pending handoff documents
-```

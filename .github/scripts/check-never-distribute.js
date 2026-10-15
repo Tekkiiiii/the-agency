@@ -15,7 +15,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const LIST = path.join(__dirname, 'never-distribute.txt');
-const CONTENT_EXEMPT = new Set(['.github/scripts/never-distribute.txt', 'CHANGELOG.md']);
+const CONTENT_EXEMPT = new Set(['.github/scripts/never-distribute.txt']);
 const MAX_BYTES = 2 * 1024 * 1024;
 
 function git(dir, args) {
