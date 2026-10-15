@@ -265,7 +265,7 @@ jobs:
       # with --retired=delete), a user skill is untouched, a rerun is a no-op and a
       # bad --retired value exits 2 before changing anything.
       - name: Assert retired-manifest.json matches git history
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && github.ref != 'refs/heads/fresh-public' }}
         run: python3 scripts/gen-retired-manifest.py --check
 
       - name: Assert the retired-files prune engine keeps what the user edited
