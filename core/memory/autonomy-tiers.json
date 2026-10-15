@@ -2,7 +2,6 @@
   "_meta": {
     "version": "1.0.0",
     "created": "2026-06-14",
-    "created_by": "system-improvement (Wave 2)",
     "description": "Graduated autonomy tier config. Read by PD and Coord agents before any action. Safe-by-default: all outward-facing and irreversible actions are operator-gated.",
     "how_to_read": "Look up an action in 'action_tiers'. Tier 'auto_ack' = mechanical verifier only. Tier 'agent_gated' = critique loop (LLM judges). Tier 'operator_gated' = human ACK required.",
     "how_to_promote": "Tier promotion from agent_gated -> auto_ack requires: (a) 50+ real instances logged with action_type tag, (b) pass_k >= 0.95 over those instances, (c) explicit operator ACK. No agent may self-promote a tier.",

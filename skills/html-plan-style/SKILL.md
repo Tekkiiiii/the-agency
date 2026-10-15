@@ -181,7 +181,7 @@ Use standard `<pre><code>` -- styled with mono font and forest-50 background.
   <p class="subtitle">One-line description of this plan</p>
   <div class="header-meta">
     <span>Date: 2026-05-22</span>
-    <span>Author: System-Improvement PD</span>
+    <span>Author: Example PD</span>
     <span class="badge badge-in-progress">In Progress</span>
   </div>
 </header>

@@ -14,7 +14,7 @@ spec = importlib.util.spec_from_file_location("ledger", os.path.join(HERE, "..",
 ledger = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ledger)
 
-D = {"description": "build ui", "parent_agent": "system-improvement-pd",
+D = {"description": "build ui", "parent_agent": "docs-site-pd",
      "prompt": "Skills: /frontend\n" + "x" * 9000}
 
 

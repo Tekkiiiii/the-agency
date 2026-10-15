@@ -909,7 +909,7 @@ class EffortBase(Base):
 
 class EffortCategoryTests(EffortBase):
     def test_pd_system_improvement(self):
-        self.assertEffort(self.run_pin(subagent_type="system-improvement-pd"), "medium", "pd")
+        self.assertEffort(self.run_pin(subagent_type="docs-site-pd"), "medium", "pd")
 
     def test_pd_coordinator(self):
         self.assertEffort(self.run_pin(subagent_type="pd-coordinator"), "medium", "pd")
@@ -1081,8 +1081,8 @@ class EffortPrecedenceAndRowsTests(EffortBase):
         self.assertEffort(o, "high", "visual")
 
     def test_pd_frontmatter_high_still_medium(self):
-        self.add_effort_agent("agent-memory-pd", "high")
-        o = self.run_pin(subagent_type="agent-memory-pd")
+        self.add_effort_agent("search-api-pd", "high")
+        o = self.run_pin(subagent_type="search-api-pd")
         self.assertEffort(o, "medium", "pd")
         r = self.eff_rows()
         self.assertEqual(len(r), 1)
@@ -1135,14 +1135,14 @@ class EffortPrecedenceAndRowsTests(EffortBase):
         self.assertEqual(self.eff_rows(), [])
 
     def test_every_non_deny_result_carries_both_keys(self):
-        for kw in ({}, {"subagent_type": "pinned-sonnet"}, {"fork": True}, {"subagent_type": "system-improvement-pd"}):
+        for kw in ({}, {"subagent_type": "pinned-sonnet"}, {"fork": True}, {"subagent_type": "docs-site-pd"}):
             o = self.run_pin(**kw)
             self.assertIn("effort", o, kw)
             self.assertIn("effort_category", o, kw)
 
     def test_no_effort_section_means_no_effort(self):
         self.write_map(DEFAULT_MAP)
-        o = self.run_pin(subagent_type="system-improvement-pd")
+        o = self.run_pin(subagent_type="docs-site-pd")
         self.assertEffort(o, None, None)
         self.assertEqual(self.eff_rows(), [])
 
@@ -1179,16 +1179,16 @@ class EffortKillSwitchTests(EffortBase):
         self.assertEqual(self.eff_rows(), [])
 
     def test_model_pin_off_env(self):
-        self.assertQuiet(self.run_pin(env=self.env(MODEL_PIN_OFF="1"), subagent_type="system-improvement-pd"))
+        self.assertQuiet(self.run_pin(env=self.env(MODEL_PIN_OFF="1"), subagent_type="docs-site-pd"))
 
     def test_model_pin_off_file(self):
         open(os.path.join(self.state, "model-pin.off"), "w").close()
-        self.assertQuiet(self.run_pin(subagent_type="system-improvement-pd"))
+        self.assertQuiet(self.run_pin(subagent_type="docs-site-pd"))
 
     def test_hook_profile_minimal(self):
         with open(os.path.join(self.home, ".claude", ".hook-profile"), "w") as f:
             f.write("minimal\n")
-        self.assertQuiet(self.run_pin(subagent_type="system-improvement-pd"))
+        self.assertQuiet(self.run_pin(subagent_type="docs-site-pd"))
 
     def test_effort_policy_off_env_keeps_model_pin(self):
         o = self.run_pin(env=self.env(EFFORT_POLICY_OFF="1"), model="opus")
@@ -1198,7 +1198,7 @@ class EffortKillSwitchTests(EffortBase):
 
     def test_effort_policy_off_file(self):
         open(os.path.join(self.state, "effort-policy.off"), "w").close()
-        o = self.run_pin(subagent_type="system-improvement-pd")
+        o = self.run_pin(subagent_type="docs-site-pd")
         self.assertQuiet(o)
 
     def test_effort_policy_off_also_silences_fork_skip_row(self):
@@ -1210,7 +1210,7 @@ class EffortKillSwitchTests(EffortBase):
         eff = shipped_effort()
         eff["enabled"] = False
         self.map_with(effort=eff)
-        self.assertQuiet(self.run_pin(subagent_type="system-improvement-pd"))
+        self.assertQuiet(self.run_pin(subagent_type="docs-site-pd"))
         self.assertQuiet(self.run_pin(fork=True))
 
 

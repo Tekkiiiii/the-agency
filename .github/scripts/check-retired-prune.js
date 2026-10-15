@@ -410,7 +410,7 @@ async function main() {
     const repo = fakeRepo({ 'skills/old-skill/SKILL.md': ['shipped'] });
     gitInit(repo, AGENCY_URL);
     const root = mk('root');
-    gitInit(root, 'https://git.example.com/someone-else/tekki-claude.git');
+    gitInit(root, 'https://git.example.com/someone-else/my-dotfiles.git');
     put(root, 'skills/old-skill/SKILL.md', 'shipped');
     const r = await run(base(repo, root, {}));
     check('23 non-matching remote still skipped (git-root)', r.status === 'skipped' && r.reason === 'git-root' && exists(path.join(root, 'skills/old-skill/SKILL.md')), JSON.stringify(r));

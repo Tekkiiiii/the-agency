@@ -12,8 +12,8 @@ const MEDIUM_TERM = `# Medium-Term Memory
 
 | Project | Memory Path | PD | Flag |
 |---------|-------------|-----|------|
-| ltv | \`/p/ltv/memory/\` | ltv-pd | active |
-| system-improvement | \`/p/si/memory/\` | system-improvement-pd | active |
+| billing-app | \`/p/billing-app/memory/\` | billing-app-pd | active |
+| docs-site | \`/p/ds/memory/\` | docs-site-pd | active |
 | acme (alias -> acme-app) | \`/p/acme/memory/\` | acme-app-pd | active |
 
 ## Delegation
@@ -77,10 +77,10 @@ function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: s
 }
 
 test('slug parsing', async () => {
-  expect(respawnSlug('done.\nRESPAWN_REQUEST system-improvement\n')).toBe('system-improvement')
+  expect(respawnSlug('done.\nRESPAWN_REQUEST docs-site\n')).toBe('docs-site')
   expect(respawnSlug('no request here')).toBe(null)
-  expect(respawnNotice('ltv', 'PD ltv', '/r')).toContain('/pd-resume ltv')
-  expect(respawnNotice('ltv', 'PD ltv', '/r')).toContain('rm /r/state/respawn-queue/ltv')
+  expect(respawnNotice('billing-app', 'PD billing-app', '/r')).toContain('/pd-resume billing-app')
+  expect(respawnNotice('billing-app', 'PD billing-app', '/r')).toContain('rm /r/state/respawn-queue/billing-app')
 })
 
 test('slug parsing: only an own, bare line counts', async () => {
@@ -88,45 +88,45 @@ test('slug parsing: only an own, bare line counts', async () => {
   expect(respawnSlug('The RESPAWN_REQUEST contract says to run /pd-resume.')).toBe(null)
   expect(respawnSlug('Fixture phrase: RESPAWN_REQUEST contract applies here')).toBe(null)
   // Code span, quote, bullet, bold, fenced block.
-  expect(respawnSlug('see `RESPAWN_REQUEST ltv` above')).toBe(null)
-  expect(respawnSlug('> RESPAWN_REQUEST ltv')).toBe(null)
-  expect(respawnSlug('- RESPAWN_REQUEST ltv')).toBe(null)
-  expect(respawnSlug('**RESPAWN_REQUEST ltv**')).toBe(null)
-  expect(respawnSlug('Example:\n```\nRESPAWN_REQUEST ltv\n```\ndone')).toBe(null)
+  expect(respawnSlug('see `RESPAWN_REQUEST billing-app` above')).toBe(null)
+  expect(respawnSlug('> RESPAWN_REQUEST billing-app')).toBe(null)
+  expect(respawnSlug('- RESPAWN_REQUEST billing-app')).toBe(null)
+  expect(respawnSlug('**RESPAWN_REQUEST billing-app**')).toBe(null)
+  expect(respawnSlug('Example:\n```\nRESPAWN_REQUEST billing-app\n```\ndone')).toBe(null)
   // Own line, with indent / CRLF / after other lines.
-  expect(respawnSlug('done\n  RESPAWN_REQUEST ltv\n')).toBe('ltv')
-  expect(respawnSlug('done\r\nRESPAWN_REQUEST ltv\r\n')).toBe('ltv')
-  expect(respawnSlug('RESPAWN_REQUEST ltv now')).toBe(null)
+  expect(respawnSlug('done\n  RESPAWN_REQUEST billing-app\n')).toBe('billing-app')
+  expect(respawnSlug('done\r\nRESPAWN_REQUEST billing-app\r\n')).toBe('billing-app')
+  expect(respawnSlug('RESPAWN_REQUEST billing-app now')).toBe(null)
   // A fenced example before the real line does not hide the real line.
-  expect(respawnSlug('```\nx\n```\nRESPAWN_REQUEST ltv')).toBe('ltv')
+  expect(respawnSlug('```\nx\n```\nRESPAWN_REQUEST billing-app')).toBe('billing-app')
 })
 
 test('known slugs: first cell of the Active Projects table only', async () => {
-  expect([...parseKnownSlugs(MEDIUM_TERM)]).toEqual(['ltv', 'system-improvement', 'acme'])
+  expect([...parseKnownSlugs(MEDIUM_TERM)]).toEqual(['billing-app', 'docs-site', 'acme'])
   expect(parseKnownSlugs('no table').size).toBe(0)
 })
 
 async function backgroundReport($: Parameters<TestBody>[0], on: Parameters<TestBody>[1], message: string) {
   on('agent.spawn', () => ({ model: 'm', agentId: 'bg1' }))
   on('tool.call', () => ({ result: 'ok' }) as never)
-  await $.agent.spawn({ prompt: 'p', description: 'PD', subagentType: 'ltv-pd', tool_use_id: 't9', background: true } as never)
+  await $.agent.spawn({ prompt: 'p', description: 'PD', subagentType: 'billing-app-pd', tool_use_id: 't9', background: true } as never)
   await $.tool.call({ tool: 'SubagentHandback', agentId: 'bg1', message } as never)
   await $.turn.complete({ answer: '', durationMs: 1, isAborted: false, turnId: 't', agentId: 'bg1', reason: 'answer' } as never)
 }
 
 test('prose or code span quoting RESPAWN_REQUEST: no toast, no notice', async ($, on) => {
   const { logs, toasts } = engine(on)
-  await backgroundReport($, on, 'Tested the RESPAWN_REQUEST contract; also `RESPAWN_REQUEST ltv` quoted.\n> RESPAWN_REQUEST ltv')
+  await backgroundReport($, on, 'Tested the RESPAWN_REQUEST contract; also `RESPAWN_REQUEST billing-app` quoted.\n> RESPAWN_REQUEST billing-app')
   expect(toasts).toHaveLength(0)
   expect(logs).toHaveLength(0)
 })
 
 test('own line, known slug: toast + notice', async ($, on) => {
   const { logs, toasts } = engine(on)
-  await backgroundReport($, on, 'STATUS: DONE\nRESPAWN_REQUEST ltv\n')
-  expect(toasts).toEqual(['RESPAWN_REQUEST ltv: run /pd-resume ltv'])
+  await backgroundReport($, on, 'STATUS: DONE\nRESPAWN_REQUEST billing-app\n')
+  expect(toasts).toEqual(['RESPAWN_REQUEST billing-app: run /pd-resume billing-app'])
   expect(logs).toHaveLength(1)
-  expect(logs[0]).toContain('/pd-resume ltv')
+  expect(logs[0]).toContain('/pd-resume billing-app')
 })
 
 test('own line, unknown slug: no toast, no notice, one ignored log line', async ($, on) => {
@@ -149,29 +149,29 @@ test('logs start + launched with native lineage: child parent_spawn_id = parent 
   const { runs } = engine(on)
   let id = 0
   on('agent.spawn', () => ({ model: 'claude-sonnet-5-5', agentId: `a${++id}` }))
-  await $.agent.spawn({ prompt: 'p', description: 'pd', subagentType: 'system-improvement-pd', tool_use_id: 't1', background: true } as never)
+  await $.agent.spawn({ prompt: 'p', description: 'pd', subagentType: 'docs-site-pd', tool_use_id: 't1', background: true } as never)
   await $.agent.spawn({ prompt: 'c', description: 'coord', subagentType: 'coord', tool_use_id: 't2', background: true, parentAgentId: 'a1' } as never)
   expect(runs.map(r => r.cmd)).toEqual(['start', 'launched', 'start', 'launched'])
-  expect(runs[0]?.payload).toMatchObject({ tool_use_id: 't1', subagent_type: 'system-improvement-pd', parent_spawn_id: '', parent_agent: 'root' })
+  expect(runs[0]?.payload).toMatchObject({ tool_use_id: 't1', subagent_type: 'docs-site-pd', parent_spawn_id: '', parent_agent: 'root' })
   expect(runs[1]?.payload).toEqual({ tool_use_id: 't1', agent_id: 'a1', resolved_model: 'claude-sonnet-5-5' })
-  expect(runs[2]?.payload).toMatchObject({ parent_spawn_id: 'sid-1', parent_agent: 'system-improvement-pd' })
+  expect(runs[2]?.payload).toMatchObject({ parent_spawn_id: 'sid-1', parent_agent: 'docs-site-pd' })
 })
 
 test('background agent: RESPAWN_REQUEST and missing artifact are toasted and logged', async ($, on) => {
   const { logs, toasts, runs } = engine(on)
   on('agent.spawn', () => ({ model: 'm', agentId: 'bg1' }))
   on('tool.call', () => ({ result: 'ok' }) as never)
-  await $.agent.spawn({ prompt: 'p', description: 'ltv PD', subagentType: 'ltv-pd', tool_use_id: 't9', background: true } as never)
+  await $.agent.spawn({ prompt: 'p', description: 'billing-app PD', subagentType: 'billing-app-pd', tool_use_id: 't9', background: true } as never)
   // The report arrives through SubagentHandback, the answer text is empty.
-  await $.tool.call({ tool: 'SubagentHandback', agentId: 'bg1', message: 'STATUS: DONE /nope/x.html\nRESPAWN_REQUEST ltv' } as never)
+  await $.tool.call({ tool: 'SubagentHandback', agentId: 'bg1', message: 'STATUS: DONE /nope/x.html\nRESPAWN_REQUEST billing-app' } as never)
   await $.turn.complete({ answer: '', durationMs: 1, isAborted: false, turnId: 't', agentId: 'bg1', reason: 'answer' } as never)
-  expect(runs.find(r => r.cmd === 'verify')?.payload.text).toContain('RESPAWN_REQUEST ltv')
+  expect(runs.find(r => r.cmd === 'verify')?.payload.text).toContain('RESPAWN_REQUEST billing-app')
   // The person sees both lines; the same text goes to the parent loop by $.session.append,
   // which this kit does not route to test hooks (verified live, not here).
   expect(logs).toHaveLength(2)
   expect(logs[0]).toContain('ARTIFACT_MISSING')
-  expect(logs[1]).toContain('/pd-resume ltv')
-  expect(toasts.some(t => t.includes('RESPAWN_REQUEST ltv'))).toBe(true)
+  expect(logs[1]).toContain('/pd-resume billing-app')
+  expect(toasts.some(t => t.includes('RESPAWN_REQUEST billing-app'))).toBe(true)
 })
 
 test('foreground agent: the artifact warning rides the Agent result as context', async ($, on) => {
@@ -497,7 +497,7 @@ test('effort relay: another agent, no agentId and an equal effort are untouched'
   const seen = bottomStep(on)
   on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
   on('agent.list', () => ({ value: [] }) as never)
-  await $.agent.spawn(spawnCall({ subagentType: 'ltv-pd' }))
+  await $.agent.spawn(spawnCall({ subagentType: 'billing-app-pd' }))
   await step($, 'other', 'low') // not a spawn we pinned
   await step($, undefined, 'low') // the main loop pays nothing
   await step($, 'a1', 'medium') // already the policy value
@@ -620,7 +620,7 @@ test('effort relay: hook profile minimal leaves every step untouched', async ($,
   pin.reply = PD_PIN
   const seen = bottomStep(on)
   on('agent.spawn', () => ({ model: 'm', agentId: 'a1' }))
-  await $.agent.spawn(spawnCall({ subagentType: 'ltv-pd' }))
+  await $.agent.spawn(spawnCall({ subagentType: 'billing-app-pd' }))
   setProfile('minimal\n') // recorded under standard, applied under minimal: still off
   await step($, 'a1', 'low')
   expect(seen).toEqual([{ agentId: 'a1', effort: 'low' }])

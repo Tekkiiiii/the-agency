@@ -148,14 +148,14 @@ class LedgerEnd(unittest.TestCase):
     # ---- log-file split ----------------------------------------------------
     def test_g_start_in_other_log_is_found_and_end_lands_next_to_start(self):
         # spawn + launched live in the project log; the hook resolved the global log.
-        self.put(self.proj, start_row(sid="sid-P", tu="tu-P", typ="system-improvement-pd"),
+        self.put(self.proj, start_row(sid="sid-P", tu="tu-P", typ="docs-site-pd"),
                  launched_row(sid="sid-P", tu="tu-P", aid="a1"))
         self.put(self.log, {"event": "spawn_start", "spawn_id": "other", "tool_use_id": "x"})
         self.run_end(usage({"claude-opus-5-5": {"cost_usd": 3.0}}), agent_type="")
         self.assertEqual(ends(self.log), [])
         e = ends(self.proj)[0]
         self.assertEqual((e["spawn_id"], e["tool_use_id"]), ("sid-P", "tu-P"))
-        self.assertEqual(e["agent_type"], "system-improvement-pd")
+        self.assertEqual(e["agent_type"], "docs-site-pd")
 
     def test_g2_continuation_flag_uses_the_log_that_holds_the_first_end(self):
         self.put(self.proj, start_row(sid="sid-P", tu="tu-P"), launched_row(sid="sid-P", tu="tu-P"))

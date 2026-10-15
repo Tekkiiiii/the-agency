@@ -26,8 +26,7 @@ Read `~/.claude/teams/agency-council/config.json`. Extract member names that end
 For each PD, derive their project directory:
 ```
 ~/.claude/projects/{project-name}/   (most PDs)
-~/Projects/{project-name}/memory/     (ltv)
-~/projects/{project-name}/memory/     (website-pitch, sightsee)
+~/projects/{project-name}/memory/     (projects kept outside ~/.claude)
 ```
 
 If a PD has no known project, skip them.

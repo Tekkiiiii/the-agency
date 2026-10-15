@@ -104,8 +104,8 @@ PD SHOWCASE: OFF (default)
 Pass `--showcase` directly to `/pd-resume` or `/pd-spawn`. Showcase activates for
 that spawn only. The flag file is not read or written.
 ```
-/pd-resume ltv --showcase
-/pd-spawn ltv --showcase
+/pd-resume my-app --showcase
+/pd-spawn my-app --showcase
 ```
 
 **Path B — Persistent demo session (`/pd-showcase on` toggle):**

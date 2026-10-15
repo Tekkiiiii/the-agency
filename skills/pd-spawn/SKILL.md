@@ -45,7 +45,7 @@ From medium-term.md, find:
 
 ## Step 2 — Create the Task ID
 
-Generate: `{YYYYMMDD}-{slug}-{n}` e.g. `20260416-website-pitch-1`
+Generate: `{YYYYMMDD}-{slug}-{n}` e.g. `20260416-my-app-1`
 
 ## Step 3 — Create Incoming Briefing
 
@@ -317,7 +317,7 @@ Caller reads this on next `/pd-resume`. Do NOT use SendMessage for blockers eith
 
 When the operator or the caller PD is unsatisfied with the result:
 
-**Trigger:** "revision needed on {task-id}" or "website-pitch PD, revise the landing page"
+**Trigger:** "revision needed on {task-id}" or "my-app PD, revise the landing page"
 
 **Step 1 — The requesting PD (caller):**
 1. Move `{caller}/memory/tasks/completed/delegated-{task-id}.md` → `memory/tasks/revisions/delegated-{task-id}.md`

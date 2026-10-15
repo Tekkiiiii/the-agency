@@ -2,7 +2,7 @@
 name: content-request-protocol
 description: The single content-production pipeline. PD -> Coord -> general-purpose writer -> /content-polish -> critics via /cc-loop. Brief format, writer routing table, quality gate, turnaround, repurposing, escalation.
 type: runbook
-owner: system-improvement
+owner: agency-council
 lastUpdated: 2026-10-08
 version: 2.0.0
 ---

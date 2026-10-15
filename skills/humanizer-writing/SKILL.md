@@ -610,6 +610,6 @@ Wikipedia's main point: "LLMs use statistical algorithms to guess what should co
 
 This skill is a derivative. Its base is `github:blader/humanizer@e2e92e7b4b82` (version 2.11.2), which supplies §1 to §35 and the original false-positive list.
 
-Everything added on top (the writing-time section, the 60-second decision tree, §36 to §43, the model fingerprint table, the false-positive additions, and "Tells decay") comes from a 2026-09-03 NotebookLM research pass over 83 sources, held at `~/.claude/projects/system-improvement/outputs/notebooklm-research/2026-09-03-spot-ai-writing/`. The named studies behind the numbers: Kobak et al. (*Science Advances*, 2025), Reinhart et al. (*PNAS*, 2025), Freeburg (arXiv:2603.27006, 2026), Siler (*PNAS*, 2026), Liang et al. (Stanford), and Pew Research Center's Common Crawl analysis.
+Everything added on top (the writing-time section, the 60-second decision tree, §36 to §43, the model fingerprint table, the false-positive additions, and "Tells decay") comes from a 2026-09-03 NotebookLM research pass over 83 sources. The named studies behind the numbers: Kobak et al. (*Science Advances*, 2025), Reinhart et al. (*PNAS*, 2025), Freeburg (arXiv:2603.27006, 2026), Siler (*PNAS*, 2026), Liang et al. (Stanford), and Pew Research Center's Common Crawl analysis.
 
 Long-form evidence, full tables, and per-claim citations: [references/research-2026-09.md](references/research-2026-09.md).

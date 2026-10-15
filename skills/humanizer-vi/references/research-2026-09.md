@@ -2,9 +2,6 @@
 
 Ngày khảo sát: 2026-09-04. Phương pháp: NotebookLM deep web research, prompt song ngữ Việt–Anh, 59 nguồn, kèm một báo cáo tổng hợp do NotebookLM sinh ra.
 
-Bản đầy đủ: `~/.claude/projects/system-improvement/outputs/notebooklm-research/2026-09-04-spot-ai-writing-vi/`.
-Mã nguồn tám ký tự trong ngoặc vuông tra được ở `sources.md` của thư mục đó.
-
 Đây là tài liệu tham khảo cho việc biên tập, không phải hướng dẫn phát hiện. Mọi mục dưới đây là gợi ý để đọc lại một đoạn văn, không phải bằng chứng về tác giả. Một tín hiệu đơn lẻ không kết luận được gì.
 
 ## Từ vựng — độ tin cậy thấp

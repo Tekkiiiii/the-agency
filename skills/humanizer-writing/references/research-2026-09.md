@@ -3,7 +3,7 @@
 Evidence companion to `../SKILL.md`. The skill carries the actionable rules; this file carries the numbers, study names, and citations behind them so the skill can stay short.
 
 - **Compiled:** 2026-09-03
-- **Source:** NotebookLM deep web research, 83 sources. Notebook "Research: How to Spot AI Writing (2026-09)". Raw output: `~/.claude/projects/system-improvement/outputs/notebooklm-research/2026-09-03-spot-ai-writing/`
+- **Source:** NotebookLM deep web research, 83 sources. Notebook "Research: How to Spot AI Writing (2026-09)".
 - **Covers:** q1 lexical tells · q2 structural tells · q3 model fingerprints · q4 editing techniques and false positives · q5 deep-report synthesis.
 
 > **PERISHABLE.** Model-specific findings decay fast. Labs suppress named tells in post-training (GPT-4.1 → GPT-5.4 em dash collapse is the clearest case) and writers scrub memed vocabulary once it is memed. Anything naming a model version or a per-model rate should be treated as stale after roughly one quarter — re-run the research quarterly. Structural and rhetorical findings age far more slowly than lexical ones.

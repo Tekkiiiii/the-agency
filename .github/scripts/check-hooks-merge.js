@@ -114,7 +114,7 @@ const env1 = { HOME: HOME1, USERPROFILE: HOME1, AGENCY_HOME: ROOT1 };
 const R = ROOT1.split(path.sep).join('/');
 const userPersonal = `bash ${R}/hooks/my-personal.sh`;            // under {root}/hooks, NOT in manifest
 const userComposite = `echo pre && bash ${R}/hooks/gate-guard.sh`;  // composite: user-owned
-const userStop = 'sh ~/.agent-memory/heartbeat.sh stop';
+const userStop = 'sh ~/.my-tool/heartbeat.sh stop';
 const original = {
   model: 'opus',
   env: { FOO: '1' },
@@ -395,7 +395,7 @@ section('11. deleted-hook opt-out, agency hooks disable|enable');
   const STATE = path.join(ROOT, 'hooks', '.agency-hooks-state.json');
   const Rf = ROOT.split(path.sep).join('/');
   const userHook = `bash ${Rf}/hooks/my-personal.sh`;
-  const userStopHook = 'sh ~/.agent-memory/heartbeat.sh stop';
+  const userStopHook = 'sh ~/.my-tool/heartbeat.sh stop';
   fs.writeFileSync(S, JSON.stringify({
     model: 'opus',
     hooks: {

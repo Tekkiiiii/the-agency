@@ -2,7 +2,7 @@
 name: Task Decomposition Methodology
 description: In-depth guide for PDs and Coords on HOW to break down tasks — DAG construction, layer computation, writes-to identification, tier classification, and the two-condition parallel rule.
 type: runbook
-owner: system-improvement
+owner: agency-council
 lastUpdated: 2026-06-08
 lazyRead: true
 ---
