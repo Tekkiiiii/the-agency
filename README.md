@@ -107,7 +107,6 @@ You didn't explain anything the second day. The agent remembered.
 - **Production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, and more — all invoked via `/skill-name`.
 - **SQLite task store — nothing leaves your machine**: Task pipeline, gates, retries, blocking in `~/.claude/`. No servers. No API keys.
 - **Session persistence**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where it left off.
-- **Agency Rooms** — file-based inter-agent chat with persistent rooms and NEXUS JSON handoffs, written through `room-utils.sh` and read on demand (no polling process).
 - **Inter-PD Protocol** — PDs coordinate via filesystem, not messaging. Delegation through `inter-spawn-tasks/` directories with completion tracking.
 - **Delegator Agent** — routing-as-a-service. When the right route is not obvious, an agent spawns the Delegator; it reads the agency catalog and returns the route. Worker roles run as `general-purpose` plus 1-3 skills (archived role files live in `agents-archive/`). No hardcoded selection hierarchies.
 - **Direct memory lookups** — project knowledge is looked up in order: your memory files (`MEMORY.md` index, project memory), then a shared-memory MCP server if you run one, then NotebookLM for research topics. A question that spans several sources is one read-only `general-purpose` spawn. No retrieval agent sits in between.
@@ -599,7 +598,7 @@ Everything above describes what the system does. This section describes how it w
 
 **Memory System** — four filesystem layers (see Memory System below).
 
-**NEXUS Protocol** — file-based 6-phase handoff doctrine for inter-agent coordination. Handoff artifacts are JSON files, read on demand with `room-utils.sh`.
+**NEXUS Protocol** — file-based 6-phase handoff doctrine for inter-agent coordination. Handoff artifacts are JSON files.
 
 **Hook System** — shell scripts wired into Claude Code's 5 lifecycle events. Live at `{root}/hooks` (root = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`); install and `agency upgrade` copy them and wire them into `settings.json` from `hooks/hooks.json` (`agency hooks sync|remove` does the wiring on demand). Profile-aware (`standard` / `strict` / `minimal`).
 
@@ -716,7 +715,7 @@ NEXUS is the handoff doctrine. Core principle: every agent writes what it knows;
 | tier-2 | Major blocker | Escalate to team-lead, pause task |
 | tier-3 | Crisis | Escalate to council, stop work |
 
-Handoff artifacts are JSON files placed in `{room}/handoffs/`. the sender tells the receiving agent the handoff exists, and `room-utils.sh read-handoffs <room> pending` lists the open ones.
+Handoff artifacts are JSON files; the sender tells the receiving agent the handoff exists.
 
 </details>
 
@@ -836,41 +835,6 @@ their own brief. Everything below them stays plain. Full policy and rationale:
 
 Note that `modelTier:` is a documentation tag only — `model:` is the key Claude Code
 actually reads, and it is the one `[1m]` attaches to.
-
-### Agency Rooms
-
-File-based inter-agent communication. Agents coordinate through rooms, not direct messaging.
-
-Two room types:
-- **Project rooms** — one per active project, owned by the project's PD
-- **Oversight room** — `project-oversight/`; all PDs post status; main session reads on demand
-
-<details>
-<summary>Room directory structure</summary>
-
-```
-{agency-root}/agency-rooms/{room}/
-├── messages.mdl        # Append-only message log
-├── room.json           # Room metadata and member list
-├── members.json        # Active members
-├── handoffs/           # Pending NEXUS handoffs (JSON)
-└── context/
-    ├── shared.md       # Extracted DECIDED/ACTION/QUESTION items
-```
-
-Message format:
-```
-[{ISO timestamp}] @{agent-name} [{phase}]: {content}
-```
-
-Rooms are plain files written by `agents/scripts/room-utils.sh` (and by the feedback-pipeline cron under `agency-rooms/feedback/`). There is no polling process: the `room-manager` skill was archived in the 2026-10-08 department sunset, so nothing auto-notifies members, auto-summarizes `context/shared.md` (keep it by hand), or routes `ESCALATE:` messages. Read a room on demand with `room-utils.sh read`. See `runbooks/agency-rooms-protocol.md`.
-
-Anti-patterns:
-- Do NOT send direct messages between agents — everything goes through rooms
-- Do NOT implement recurring status loops — use on-demand reads via `/swarm`
-- Do NOT skip the handoff JSON — without it, context is lost between sessions
-
-</details>
 
 ### Agency Council and Governance
 
