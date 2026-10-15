@@ -53,7 +53,7 @@ resolve.
 | `skills/` | ✓ | ✓ | ✓ | ✓ | directory layout `skills/<name>/SKILL.md` + sibling assets |
 | `agents/` | ✓ | ✓ | ✓ | ✓ | `.md` only in the CLI path |
 | `core/` | ✓ | ✓ | ✓ | ✓ | **skip-if-exists** for the paths in `core/.preserve`; everything else overwritten as normal — see below |
-| `hooks/` | ✓ | ✓ | ✓ | ✓ | incl. `hooks/lib/` (carries `resolve-root.sh`, plus the top-level `*.py` and `*.json` the `spawn-ledger` mod calls: `model-pin.py`, `exec-model-map.json`, `claude_pricing.py`) and `hooks/fable/`; `+x` on `.sh` |
+| `hooks/` | ✓ | ✓ | ✓ | ✓ | incl. `hooks/lib/` (carries `resolve-root.sh`, plus the top-level `*.py` and `*.json` the `spawn-ledger` mod calls: `model-pin.py`, `exec-model-map.json`, `claude_pricing.py`); `+x` on `.sh` |
 | `mods/` | ✓ | ✓ | ✓ | ✓ | copied to `{agency-root}/mods/<name>/` and wired into `settings.json` `env.CLAUDE_CODE_PLUGIN_DIRS` by one engine, `cli/lib/mods-merge.js`; Claude Code 2.1.287+ only; opt out with `AGENCY_NO_MODS=1` (see below) |
 | `runbooks/` | ✓ | ✓ | ✓ | ✓ | docs only |
 | `scripts/` | ✓ | ✓ | ✓ | ✓ | `+x` on `.sh`/`.py`/`.js`; `__pycache__` excluded at any depth; **`scripts/tests/` is not deployed** (see below); includes `scripts/skill-route/` (the optional, disabled-by-default skill router's overlay and `README.md`) and `scripts/jev-spawn-gate.py` (the router's spawn gate, also disabled by default) |

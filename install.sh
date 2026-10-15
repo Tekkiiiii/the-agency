@@ -154,12 +154,6 @@ if [ -d "$HOOKS_SRC" ]; then
         hook_count=$((hook_count + 1))
     done
 
-    # Fable playbook modules (not top-level *.sh — a subdirectory read by fable-on-opus.sh)
-    if [ -d "$HOOKS_SRC/fable" ]; then
-        mkdir -p "$HOOKS_DEST/fable"
-        cp "$HOOKS_SRC"/fable/*.md "$HOOKS_DEST/fable/"
-    fi
-
     # Shared helper library sourced by other hooks (hooks/lib/resolve-project.sh
     # is `source`d by spawn-completion.sh). The *.sh loop above is top-level
     # only, so without this the sourced helpers were never on disk.

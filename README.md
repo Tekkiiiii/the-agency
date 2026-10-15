@@ -172,8 +172,6 @@ The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. 
 │   ├── gate-guard.sh
 │   ├── secret-scanner.sh
 │   ├── cost-tracker.sh
-│   ├── fable-on-opus.sh # UserPromptSubmit: inject Fable reasoning discipline on Opus
-│   ├── fable/           # Fable playbook modules read by fable-on-opus.sh
 │   └── ...
 ├── mods/                ← Claude Code mods, wired into settings.json (Claude Code 2.1.287+)
 ├── archive/             ← retired files you had edited, moved here by install/upgrade
@@ -549,8 +547,6 @@ the-agency/
 │   ├── session-end.sh   # Stop: mark session clean
 │   ├── batch-check.sh   # Stop: typecheck + shellcheck edited files
 │   ├── cost-tracker.sh  # Stop: compute session token cost
-│   ├── fable-on-opus.sh # UserPromptSubmit: inject Fable reasoning discipline on Opus
-│   └── fable/           # Fable playbook modules read by fable-on-opus.sh
 ├── agents/              # agent definitions (PD/Coord/critic/council + project PDs)
 ├── skills/              # 235+ reusable workflow skills
 └── plans/               # Architecture decision records
