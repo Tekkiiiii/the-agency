@@ -10,7 +10,6 @@
 //      docs/INSTALL-LAYOUT.md: the directory carries no ownership marker, so the installers only stop copying it.
 //   4. only the top level is skipped: a nested directory named tests elsewhere under scripts/ still ships
 //      (checked with a throwaway repo fixture)
-// install.sh and install.ps1 are covered by check-retired-install.sh / .ps1, which call this script.
 //
 // REPO=<dir> checks another checkout (e.g. a worktree of an older revision, to see the check go red).
 // Usage: node .github/scripts/check-scripts-tests-excluded.js   Exit 0 = PASS, 1 = FAIL.

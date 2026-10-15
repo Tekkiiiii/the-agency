@@ -78,16 +78,12 @@ Not deployed by design: `scripts/tests/`, `docs/`, `evals/`, `plans/`, `openspec
 at the top level of `scripts/` by all four paths: `install.sh` and `install.ps1` skip it while
 copying, and `agency init` / `agency upgrade` skip it in `syncScripts()` (`skipTop` in
 `cli/commands/sync-assets.js`). A nested directory that happens to be named `tests` deeper under
-`scripts/` still ships. Guards: `.github/scripts/check-retired-install.sh` / `.ps1` (real
-`install.sh` / `install.ps1` and `agency upgrade` runs, then "`scripts/` deployed, `scripts/tests` not")
-and `.github/scripts/check-scripts-tests-excluded.js` (the CLI sync path and `agency init`).
+`scripts/` still ships. Guard: `.github/scripts/check-scripts-tests-excluded.js` (the CLI sync path and `agency init`).
 
-**Existing installs are not cleaned up.** Commit 26e4f72 (2026-10-14) shipped `scripts/tests/` to installs
-for about a day. The installers stop copying it but do not delete a copy that is already there: the
-directory has no ownership marker, and the same path is legitimate in a checkout used for development
+**An existing `scripts/tests` is left alone.** The installers never delete or refresh a copy that is already there: the directory has no ownership marker, and the same path is legitimate in a checkout used for development
 or holds a user's own tests, so a delete could destroy someone's files. An existing
 `{agency-root}/scripts/tests` is also never refreshed. It is inert (nothing reads it); delete it by
-hand with `rm -rf "{agency-root}/scripts/tests"` if you want the space back. The guards above assert this too
+hand with `rm -rf "{agency-root}/scripts/tests"` if you want the space back. The guard above asserts this too
 (a `keep-me.py` already in `scripts/tests` survives an install and nothing is added beside it).
 
 `design-system/` is worth calling out separately because its failure mode is the
