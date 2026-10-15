@@ -799,4 +799,4 @@ The final result should be:
 
 ## Design Quality Principles
 
-Before producing any brand visual output, read `~/.claude/agents/design/design-quality-principles.md` and verify the output meets its quality bar for visual design.
+Before producing any brand visual output, read `~/.claude/core/design-quality-principles.md` and verify the output meets its quality bar for visual design.

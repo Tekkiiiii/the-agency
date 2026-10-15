@@ -6,7 +6,6 @@ Each folder below holds structural agents (PD homes, Coord defs, critics, counci
 
 | Folder | Directory | Use when you need... |
 |---|---|---|
-| [Design](design/INDEX.md) | `design/` | Design quality principles and design PD homes |
 | [Project Management](project-management/INDEX.md) | `project-management/` | Coord, mini-coord and pd-coordinator definitions |
 | [Specialized](specialized/INDEX.md) | `specialized/` | Service agents (delegator, codebase-search, save-state-runner, project-scaffolder) |
 | [Critiques](critiques/INDEX.md) | `critiques/` | Scored critique of any deliverable — design, content, marketing, pedagogy, SEO, product, security, brand |

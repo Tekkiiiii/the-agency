@@ -18,8 +18,7 @@ set -euo pipefail
 AGENTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # color is WARN-only: Claude Code treats it as optional and the 2026 agent
-# frontmatter (department/role/model) dropped it, so the dept-coords, leads and
-# vendored understand-* agents legitimately have none.
+# frontmatter (role/model) dropped it, so agents legitimately have none.
 REQUIRED_FRONTMATTER=("name" "description")
 RECOMMENDED_FRONTMATTER=("color")
 RECOMMENDED_SECTIONS=("Identity" "Core Mission" "Critical Rules")

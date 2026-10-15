@@ -1405,4 +1405,4 @@ Use AskUserQuestion:
 
 ## Design Quality Principles
 
-Before generating visual HTML output, read `~/.claude/agents/design/design-quality-principles.md` and apply its standards to spacing, typography, color, and visual hierarchy.
+Before generating visual HTML output, read `~/.claude/core/design-quality-principles.md` and apply its standards to spacing, typography, color, and visual hierarchy.

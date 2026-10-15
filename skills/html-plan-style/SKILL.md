@@ -202,7 +202,7 @@ Use standard `<pre><code>` -- styled with mono font and forest-50 background.
 
 ## Design Quality Principles
 
-Before producing any HTML plan output, read `~/.claude/agents/design/design-quality-principles.md` and apply its visual standards to layout, color usage, and typography choices.
+Before producing any HTML plan output, read `~/.claude/core/design-quality-principles.md` and apply its visual standards to layout, color usage, and typography choices.
 
 ## Files in This Skill
 

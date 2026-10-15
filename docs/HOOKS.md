@@ -58,7 +58,7 @@ These are the hooks it wires (the table is generated from `hooks/hooks.json`):
 | `gate-guard` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/gate-guard.sh` | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
 | `config-protection` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/config-protection.sh` | Block modification of existing linter/formatter configs |
 | `secret-scanner` | PreToolUse | `Bash` | `bash {root}/hooks/secret-scanner.sh` | Scan shell commands for credential-looking patterns |
-| `spawn-gate` | PreToolUse | `Agent` | `bash {root}/hooks/spawn-gate.sh` | Spawn gate: unknown agent types get an ask pointing to general-purpose + skills |
+| `spawn-gate` | PreToolUse | `Agent` | `bash {root}/hooks/spawn-gate.sh` | Generalist-switch gate: unknown agent types get an ask pointing to general-purpose + skills |
 | `track-edits` | PostToolUse | `Edit\|Write` | `bash {root}/hooks/track-edits.sh` | Buffer edited file paths for batch checking at session end |
 | `write-evidence` | PostToolUse | `Edit\|Write` | `bash {root}/hooks/write-evidence.sh` | Log path + byte count of deliverable-shaped writes (paper trail against fabricated completions) |
 | `loop-detector` | PostToolUse | (all) | `bash {root}/hooks/loop-detector.sh` | Detect stall loops: 5 identical tool calls in a row triggers a warning |
