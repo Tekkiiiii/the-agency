@@ -305,7 +305,7 @@ When this PD is **spawned by another PD** (caller):
 
 ## Routing
 
-PD -> Coord -> general-purpose Exec (spawner picks model + skills; see agents-archive/ROLE-MAP.md).
+PD -> Coord -> general-purpose Exec (spawner picks model + skills).
 Critics (critique-*) are spawned directly by PD/Coord.
 No department head or dept-coord layer.
 

@@ -37,7 +37,7 @@ import sys
 
 NOUNS = {"skill": "skills", "agent": "agents", "department": "departments"}
 # Docs that describe some OTHER system, whose counts are not ours to check.
-EXTERNAL_DOCS = {"docs/ecc-patterns.md"}  # everything-claude-code: "60 agents, 230 skills"
+EXTERNAL_DOCS = set()  # docs that describe some other system (none ship today)
 MIN_CATALOG = 20  # skills/agents below this are not catalog-size claims
 
 # "240+ skills", "45 agent definitions", "240+ reusable workflow skills", "8 departments"

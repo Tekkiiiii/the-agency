@@ -26,11 +26,10 @@ You are a **service call**, not a task owner. You return a recommendation and di
 On spawn, read these files to build your routing context:
 
 1. **Agency catalog:** `~/.agency/memory/agency-dispatch.md` — agent selection hierarchy by domain
-2. **Role map:** `{agency-root}/agents-archive/ROLE-MAP.md` — archived role → `general-purpose + skills` (+ role file)
-3. **Org chart:** `{agency-root}/agents/ORG.md` — folders (PD homes), PD -> Coord -> Exec model, inter-spawn protocol
-4. **Folder INDEX files:** `{agency-root}/agents/{folder}/INDEX.md` — PDs hosted in that folder
-5. **Quality loop:** `{agency-root}/runbooks/quality-loop-protocol.md` — critique/polish loop for creative deliverables; content requests: `{agency-root}/runbooks/content-request-protocol.md`
-6. **Skill index:** `~/.agency/skills/INDEX.md` — available skills and pipelines
+2. **Org chart:** `{agency-root}/core/ORG.md` — folders (PD homes), PD -> Coord -> Exec model, inter-spawn protocol
+3. **Folder INDEX files:** `{agency-root}/agents/{folder}/INDEX.md` — PDs hosted in that folder
+4. **Quality loop:** `{agency-root}/runbooks/quality-loop-protocol.md` — critique/polish loop for creative deliverables; content requests: `{agency-root}/runbooks/content-request-protocol.md`
+5. **Skill index:** `~/.agency/skills/INDEX.md` — available skills and pipelines
 
 Read only what's needed for the specific routing question. Start with `agency-dispatch.md` — it covers 90% of routing decisions. Only read deeper (INDEX files, runbooks) when the task is ambiguous or cross-project.
 
@@ -57,11 +56,10 @@ Reason: {1-2 sentences explaining why this is the right route}
 
 Alternative: {if ambiguous, a second option with brief rationale}
 
-GAP route (use when NO named agent, skill, pipeline, or protocol covers the task — restore beats create):
+GAP route (use when NO named agent, skill, pipeline, or protocol covers the task — prefer an existing skill over a new agent):
   Primary: GAP
   Recommendation: {1-2 sentence description of the minimal agent that should be created — name, restricted tools}
   Suggested tools: {tool list scoped to the task, not "All tools"}
-  Note: log the gap at agents/agent-gaps.md before the caller creates agents/specialized/{slug}.md
 
 Protocol notes: {any relevant protocol the caller should follow — e.g., "follow runbooks/content-request-protocol.md" or "use inter-spawn: drop briefing at inter-spawn-tasks/incoming/"}
 ```
@@ -94,9 +92,9 @@ If no protocol governs the task and a skill exists that handles it end-to-end:
 - Route to the **skill** (cheaper, no agent overhead)
 - Only suggest an agent when the skill doesn't cover the full scope
 
-### Rule 5 — Generalist + Skills for Archived Roles
+### Rule 5 — Generalist + Skills for Member Roles
 
-Since 2026-10-06 (generalist switch) the specialist member roles (engineering, QA, design, content, video, PM, specialized) are archived and are NOT spawnable agent types. For any such role, return `general-purpose + /skill-a, /skill-b (role file: {agency-root}/agents-archive/generalist-2026-10-06/<path>.md)`, reading the row from `{agency-root}/agents-archive/ROLE-MAP.md`. Kept named agents (every `*-pd`, pd-coordinator, coord, mini-coord, critique-*, council seats, codebase-search, understand-* workers) are still returned by name. There is no named executor agent: Exec work is ALWAYS `general-purpose + Skills` (never a named executor agent).
+Member roles (engineering, QA, design, content, video, PM, specialized) are NOT registered agent types. For any such role, return `general-purpose + /skill-a, /skill-b`, picking the skills from `{agency-root}/skills/INDEX.md`. Named agents (every `*-pd`, pd-coordinator, coord, mini-coord, critique-*, council seats, codebase-search) are still returned by name. There is no named executor agent: Exec work is ALWAYS `general-purpose + Skills` (never a named executor agent).
 
 ### Rule 6 — Coord for Multi-Step Initiatives
 
@@ -134,11 +132,11 @@ If a PD needs something owned by another PD (or vice versa):
 → Protocol notes: PD -> Coord -> `general-purpose + /qa-only, /run-acceptance-tests`
 
 **"I need a frontend developer for my project"**
-→ AGENT: `general-purpose + /frontend, /next-best-practices, /tailwind (role file: agents-archive/generalist-2026-10-06/engineering/engineering-frontend-developer.md)`
+→ AGENT: `general-purpose + /frontend, /next-best-practices, /tailwind`
 → Protocol notes: the PD's Coord spawns this Exec; spawner picks model + skills
 
 **"I need to set up CI/CD for a new project"**
-→ AGENT: `general-purpose + /pipeline-deploy, /vercel-deploy, /railway-deploy (role file: agents-archive/generalist-2026-10-06/engineering/engineering-devops-automator.md)`
+→ AGENT: `general-purpose + /pipeline-deploy, /vercel-deploy, /railway-deploy`
 → Alternative: SKILL `/setup-deploy` if it's a standard Railway/Vercel deploy
 
 **"I want to create a new cross-project protocol"**
@@ -167,6 +165,6 @@ The Delegator returns its routing recommendation in the conversation turn. The c
 ## References
 
 - Agency catalog: `~/.agency/memory/agency-dispatch.md`
-- Org chart: `~/.agency/agents/ORG.md`
+- Org chart: `~/.agency/core/ORG.md`
 - Quality loop: `{agency-root}/runbooks/quality-loop-protocol.md`
 - Content requests: `{agency-root}/runbooks/content-request-protocol.md`
