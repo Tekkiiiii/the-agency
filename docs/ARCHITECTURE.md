@@ -34,17 +34,79 @@ Source of truth for pipeline state. All agents read/write here.
 - Schema: tasks with status, blocked_by, gate_status, retry_count
 
 ### Memory System
-Persistent context across sessions:
-- `~/.claude/sessions/{project}/` — session logs
-- `~/.claude/projects/{project}/STATE.md` — project state
-- `~/.claude/lessons/` — lessons learned
-- `~/.claude/decisions/` — architectural decisions
+
+The memory system uses `next-session.md` as the single source of truth for PD startup. `/save-state` writes it; `/recall` reads it. That keeps the startup payload small (15 lines max) and avoids loading stale state.
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `next-session.md` | `{project}/memory/` | PD startup SSOT: phase, next action, blockers, decisions (max 15 lines) |
+| `sessions/YYYY-MM-DD.md` | `{project}/memory/sessions/` | Full session logs, append-only |
+| `decisions.md` | `{project}/memory/` | Architectural decisions, append-only |
+| `heartbeat.md` | `{project}/memory/` | Live phase status, updated each session |
+| `lessons/*.md` | `{root}/memory/lessons/` | Root-cause lessons by stack, append-only |
+
+Each project carries its own memory structure:
+
+```
+{project}/memory/
+├── next-session.md      # PD startup SSOT, read on every /recall
+├── heartbeat.md         # phase status, updated each session
+├── decisions.md         # architectural decisions (append-only)
+├── sessions/            # session logs by date
+├── lessons/             # per-stack lessons (synced from root)
+├── tasks/
+│   ├── ongoing/         # active task files
+│   └── completed/       # completed task archive
+├── agents/
+│   ├── pd-scratch.md    # PD working scratch
+│   ├── pd-status-live.md# append-only status log (zero-cost on-demand reads)
+│   └── coords/          # Coord scratch files
+└── qa/
+    ├── qa-report-final-{timestamp}.md
+    └── screenshots/
+```
+
+### Project Knowledge: Direct Lookups
+
+PDs and Coords look project context up themselves, in this order:
+
+1. The wiki: `MEMORY.md`, the memory files it indexes, and the project's own `memory/` files.
+2. A shared-memory MCP server, if you run one.
+3. NotebookLM, for research topics only.
+
+When a question spans several of these, or you cannot name the source, spawn one read-only `general-purpose` agent (Sonnet) with that order in its prompt. Full protocol: `runbooks/service-lookups.md`.
 
 ### NEXUS Protocol
-File-based handoff system for inter-agent coordination:
-- Handoff documents with full context
-- Phase 0–5 coordination doctrine
-- Quality gates before every handoff
+
+NEXUS is the handoff doctrine. Every agent writes what it knows; the next agent reads what it needs. Handoff artifacts are JSON files, and the sender tells the receiving agent the handoff exists.
+
+| Phase | Name | What happens |
+|-------|------|-------------|
+| 0 | Register | Create project structure and task |
+| 1 | Brief | Assign work with full context |
+| 2 | Work | Execute, document incrementally |
+| 3 | Handoff | Transfer with evidence and acceptance criteria |
+| 4 | Review | Gate work against acceptance criteria |
+| 5 | Archive | Close out, record lessons |
+
+Key rules:
+
+1. Write before you stop: never end a session without saving state.
+2. Gate before handoff: do not pass work that fails its criteria.
+3. Surface blockers fast: escalate within one session.
+4. Lessons from mistakes: append, never overwrite.
+
+| Escalation | Trigger | Action |
+|------------|---------|--------|
+| tier-1 | Minor blocker | Note in session log, continue |
+| tier-2 | Major blocker | Escalate to team-lead, pause task |
+| tier-3 | Crisis | Escalate to council, stop work |
+
+Protocol files: `core/nexus/`.
+
+### Hook System
+
+Shell scripts wired into four Claude Code lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop). They gate sensitive writes, scan for secrets, protect linter config, detect stalls and crashes, and track cost. Profile-aware (`standard` / `strict` / `minimal`). Reference: [HOOKS.md](HOOKS.md).
 
 ### Skills
 Reusable workflow procedures invoked via `/skill-name`:
@@ -56,7 +118,7 @@ Reusable workflow procedures invoked via `/skill-name`:
 Each project has a dedicated PD agent that:
 - Owns the project from spec to ship
 - Maintains the task pipeline
-- Reports to team-lead
+- Reports to the parent AI (the main session)
 - Persists state via memory system
 
 ## Data Flow
@@ -68,13 +130,30 @@ Each project has a dedicated PD agent that:
 5. **On session end**: `/save-state` writes session log
 6. **Next session**: agent reads memory, resumes
 
+### Example: three workstreams in parallel
+
+```
+You:  Build the REST API: auth, database, and all endpoints.
+
+PD:   Decomposing. Spawning Auth Coord, DB Coord, API Coord in parallel.
+
+Auth Coord:   JWT complete. Tests passing. Health score 94.
+DB Coord:     Schema migrated. Seed data loaded. Health score 88.
+API Coord:    Endpoints wired. Integration tests passing. Health score 91.
+
+PD:   All three workstreams complete. QA gate passed. Ready for your review.
+```
+
 ## Extensibility
 
 The system is designed to be extended:
 
-- **New skills**: drop in `skills/` directory, register in INDEX.md
-- **New agents**: add agent spec in `core/agents/` and copy to `~/.claude/agents/{folder}/` — see `docs/DEVELOPER.md`
-- **New projects**: run `agency init --project name`
+- **New projects**: `agency new <slug> "<description>"`.
+- **New skills**: create `skills/{skill-name}/SKILL.md`, register it in `skills/INDEX.md`, add its skill-router overlay entry (`python3 scripts/skill-route-overlay-add.py {skill-name} [--domain D --hint H]`; CI's menu gate requires it for contributors), then invoke it with `/{skill-name}`.
+- **New agents**: add the spec in `agents/{folder}/{agent-name}.md` with the frontmatter convention (name, role, modelTier), and list it in the folder's `INDEX.md`. Register an agent only for a PD, Coord, critic, council seat or service agent; domain work is `general-purpose` plus skills.
+- **New agent folders**: create `agents/{folder}/` with an `INDEX.md`; project PD definitions live in these folders and `project-scaffolder` writes new PDs there.
+
+The step-by-step guide is [DEVELOPER.md](DEVELOPER.md).
 
 ---
 
@@ -95,12 +174,12 @@ PD  (L1→L3 decomposition, spawns Coords)
 |-------|-------|-----------|--------|-------|
 | L1–L3 | PD | L1 → L2 → L3 | Coord | Opus |
 | L3–L6 | Coord | L3 → L4 → L5 → L6 | Exec or Mini-Coord | Sonnet |
-| L6+ | Mini-Coord | L6 → L7 → L8 → L9... | Exec | Opus |
+| L6+ | Mini-Coord | L6 → L7 → L8 → L9... | Exec | Sonnet |
 | Atomic | Exec (general-purpose + Skills) | No | — | Sonnet |
 
 **Critics.** `critique-*` agents and `sag-critique` are spawned directly by the PD or Coord and report to whoever spawned them (the caller). They sit outside any folder hierarchy.
 
-**Agent folders.** `agents/<folder>/` directories (engineering, design, content-creation, testing, project-management, specialized, critiques, video-studio) stay as homes for PD definitions (`project-scaffolder` writes new PDs there). They have no heads and no coordinators.
+**Agent folders.** `agents/<folder>/` directories (`council`, `critiques`, `project-management`, `specialized`) stay as homes for PD definitions (`project-scaffolder` writes new PDs there). They have no heads and no coordinators.
 
 **Content.** One pipeline: PD → Coord → writer → `/content-polish` → critics via `/cc-loop` (`runbooks/content-request-protocol.md`).
 
@@ -124,11 +203,27 @@ PD  (L1→L3 decomposition, spawns Coords)
 
 Every Project Director follows a mandatory 3-rule protocol:
 
-1. **Decompose** — break every task into the smallest independent sub-tasks before acting
-2. **Parallelize** — spawn one subagent per sub-task simultaneously
-3. **Report** — send each completion to team-lead immediately (not at the end)
+1. **Decompose**: break every task into the smallest independent sub-tasks before acting.
+2. **Parallelize**: spawn one subagent per sub-task simultaneously.
+3. **Report**: send each completion immediately, not at the end.
+
+When the right agent or skill is not obvious, the PD spawns the [Delegator](#delegator--agency-routing-agent) first.
 
 This protocol applies to every PD spawn, every time, without exception.
+
+### Model Routing
+
+Every agent carries a `modelTier` tag in its frontmatter, and routing follows it.
+
+| Model | Role | Used for |
+|-------|------|---------|
+| Opus | Leadership, planning | PDs, architecture and final review |
+| Sonnet | Orchestration, execution | Coords, Mini-Coords, Execs, QA agents |
+| Haiku | Menial, high-volume | Scraping, research, data extraction, the Delegator |
+
+**1M context (`[1m]`) is selective, not fleet-wide.** Only orchestrator roles (PD, Coord, Mini-Coord) carry the `[1m]` model suffix, because their context grows with the size of the work rather than the size of their own brief. Everything below them stays plain. Policy and rationale: `core/ORG.md` (Model tiering).
+
+`modelTier:` is a documentation tag only. `model:` is the key Claude Code reads, and it is the one `[1m]` attaches to. Reasoning effort per task type is a separate policy; see [SKILLS.md](SKILLS.md#effort-policy).
 
 ### Tool Access Stays Restricted Even With Tool Search
 
@@ -147,23 +242,25 @@ redundant once tool search exists — the two mechanisms fail independently.
 
 ## Delegator — Agency Routing Agent
 
-The Delegator is a stateless Sonnet agent that routes work to the correct agent, skill, pipeline, or protocol. Any agent (PD or Coord) can spawn the Delegator when the right route is not obvious.
+The Delegator is a stateless Haiku agent that routes work to the correct agent, skill, pipeline, or protocol. Any agent (PD or Coord) can spawn the Delegator when the right route is not obvious.
 
 Member-level specialist roles are not registered agents. The Delegator returns `general-purpose` plus 1-3 skills from `skills/INDEX.md`. Coords, PDs, critics, council seats, and service agents (codebase-search) stay registered and are still returned by name.
 
 ```
 Agent({
   subagent_type: "general-purpose",
-  model: "sonnet",
+  model: "haiku",
   description: "Delegator — route: {task-summary}",
-  prompt: "Read ~/.agency/agents/specialized/delegator.md fully.\n\nRouting question: {task}\nCaller: {your name}"
+  prompt: "Read ~/.claude/agents/specialized/delegator.md fully.\n\nRouting question: {task}\nCaller: {your name}"
 })
 ```
 
 The Delegator:
-- Reads the agency catalog, org chart, and skill index
+- Reads the agency catalog (`memory/agency-dispatch.md`), org chart, agent-folder INDEX files and skill index
 - Returns a structured routing recommendation (AGENT | SKILL | PIPELINE | PROTOCOL | INTER-SPAWN)
 - Dies immediately after returning the recommendation — it holds no state
+
+**Routing rules:** skills before agents (cheaper), PDs for project deliverables, Coords for one gated task, an Exec (`general-purpose` plus 1-3 skills) for the work itself, inter-spawn for cross-authority tasks.
 
 **Routing exceptions** — spawn Delegator is NOT required when:
 - The correct agent or skill is already known (e.g. `general-purpose` + `/frontend` for a UI task)
@@ -177,7 +274,7 @@ Definition: `agents/specialized/delegator.md`
 
 An advisory board of five seats: `council-fable`, `council-opus`, `council-sonnet`, `council-haiku` (one per Claude model tier, in `agents/council/`) plus an optional fifth seat run through the `codex` CLI when it is installed. Seats are read-only and answer in at most 300 words (`VERDICT`, `REASONS`, `RISKS`, `CONFIDENCE`, `DISSENT`).
 
-The caller sends one identical brief to every seat in a single message (one wave, no `TeamCreate`); no seat sees another's answer. The caller synthesises a table of verdicts, agreements, disagreements, and a recommendation. Three of five seats is a quorum, and `council-opus` breaks a tie when the caller is a cheap model. Triggers: "BOD", "assemble", "the board", "the council", "convene the council"; `/resume-bod` restores context and then runs it. Protocol: `core/memory/agency-council.md`.
+The caller sends one identical brief to every seat in a single message (one wave, no `TeamCreate`); no seat sees another's answer. The caller synthesises a table of verdicts, agreements, disagreements, and a recommendation. Three of five seats is a quorum, and `council-opus` breaks a tie when the caller is a cheap model. Triggers: "BOD", "assemble", "the board", "the council", "convene the council"; `/resume-bod` restores context and then runs it. Protocol: `core/memory/agency-council.md` (installed at `{agency-root}/core/memory/agency-council.md`). Approval tiers for the actions a council advises on are in [Project Scope Management](#project-scope-management).
 
 ---
 
@@ -212,17 +309,7 @@ Deliverables:
 
 ## Skills Library
 
-The repo ships its full skill library (the catalog is `skills/INDEX.md`). The core lifecycle skills:
-
-| Category | Skills |
-|----------|--------|
-| Memory | `save-state`, `recall`, `pd-resume`, `project-status`, `wrap` |
-| Coordination | `swarm`, `delegate`, `nexus-gatekeeper` |
-| Ops | `self-healing`, `investigate`, `guard`, `task-store` |
-| Planning | `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review`, `office-hours`, `retro` |
-| Execution | `ship`, `land-and-deploy`, `setup-deploy`, `canary`, `qa` |
-| Quality | `design-review`, `codex`, `cso`, `qa-only`, `document-release` |
-| Engineering | `backend`, `frontend`, `tech-writer`, `github-deploy`, `vercel-deploy`, `railway-deploy`, `supabase-deploy` |
+The repo ships its full skill library; the catalog is `skills/INDEX.md` and the guide is [SKILLS.md](SKILLS.md).
 
 ## Technology
 
@@ -284,15 +371,17 @@ Each active project can define a `scope.json` at `{project-root}/scope.json`:
 ```json
 {
   "directories": ["src/", "docs/"],
-  "departments": ["engineering", "testing"],
   "financialImportance": "medium",
   "directorId": "{project}-pd"
 }
 ```
 
 **Authority tiers:**
-| Tier | Scope | Approver |
-|------|-------|----------|
-| 1 | <10 line edits, read-only, docs | PD (self-approve) |
-| 2 | Code >10 lines, new files | Parent AI |
-| 3 | Deploy, secrets, destructive | Human operator |
+
+| Tier | Approver | Examples |
+|------|----------|----------|
+| 1 | Project Director, within `scope.json` | File edits under 10 lines, read-only, docs within project scope |
+| 2 | Council chair (parent AI) | New files, code over 10 lines, config changes, dependencies, migrations |
+| 3 | Human operator | Deployments, secrets, destructive operations, external comms, financial |
+
+Tier 1 bypass is limited to the scope defined in the project's `scope.json`.

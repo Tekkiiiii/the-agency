@@ -101,9 +101,7 @@ Every other tree in the matrix is shipped content: the newest copy always wins.
 the running system appends rows to **at their installed path** — the
 active-projects registry (`project-scaffolder` writes it on every
 `/new-project`), the delegator route cache, the operator's quality thresholds.
-All four deploy paths used to blind-overwrite them, so every reinstall and
-every `agency upgrade` destroyed real user data with exit code 0 and no
-warning. Losing `medium-term.md` breaks slug-to-path resolution for
+A blind overwrite on any of the four deploy paths would destroy real user data on every reinstall and every `agency upgrade`, with exit code 0 and no warning. Losing `medium-term.md` breaks slug-to-path resolution for
 `codebase-search`, `wrap` and every PD.
 
 `core/.preserve` is the **single** definition of which paths are exempt — one
@@ -199,12 +197,10 @@ shipping nothing:
   hooks appended to the wrong log, `startup-sync.sh` git-synced the wrong repo, and
   `skill-audit.py` reported every deployed skill's references as dead. Nothing
   failed loudly, because a hook writing to the wrong file still exits 0.
-- **A deploy step that destroys user data.** All four paths blind-overwrote
-  `core/`, including the `core/memory/` tables the running system appends rows
-  to at their installed path. Every reinstall and every `agency upgrade` wiped
-  the project registry and the delegator cache — exit code 0, no warning. This
-  doc previously documented it as an accepted tradeoff. It was not a tradeoff;
-  it was a bug, and `core/.preserve` is the fix.
+- **A deploy step that destroys user data.** A blind overwrite of
+  `core/` on all four paths would hit the `core/memory/` tables the running system appends rows
+  to at their installed path. Every reinstall and every `agency upgrade` would wipe
+  the project registry and the delegator cache — exit code 0, no warning. `core/.preserve` is the guard.
 
 The lesson in all four cases: a deploy step that cannot fail loudly will drift
 silently. That is why the CI workflow asserts *outcomes* (a file exists, an event

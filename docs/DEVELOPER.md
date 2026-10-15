@@ -4,15 +4,24 @@
 
 ```
 the-agency/
-├── core/                # Core system files
-│   ├── agents/         # Agent templates (PD, Coord, Mini-Coord; Execs are general-purpose + Skills)
-│   ├── memory/         # Memory system documentation
-│   ├── tasks/          # Task store schema and patterns
-│   ├── nexus/          # Coordination protocol
-│   └── bootstrap/       # Bootstrap system
-├── skills/             # Skills library
-├── docs/               # Documentation
-└── cli/                # CLI tool
+├── core/                # core system files
+│   ├── agents/          # PD/Coord/Mini-Coord/Delegator templates (Execs are general-purpose + Skills)
+│   ├── runbooks/        # boot, escalation, kickoff, quality loop, content pipeline
+│   ├── memory/          # memory system specification
+│   ├── nexus/           # NEXUS coordination protocol
+│   ├── tasks/           # task store pattern
+│   ├── bootstrap/       # bootstrap system
+│   ├── ORG.md           # org chart, authority model
+│   └── PD_PROTOCOL.md   # PD quick reference
+├── agents/              # structural agents: PDs, Coords, critics, council seats, service agents
+├── skills/              # reusable workflow skills; catalog in skills/INDEX.md
+├── hooks/               # lifecycle hook scripts and hooks.json (see docs/HOOKS.md)
+├── mods/                # optional Claude Code mods (see docs/MODS.md)
+├── runbooks/            # protocols the agents follow
+├── scripts/             # helper scripts called by hooks and skills
+├── design-system/       # brand tokens the design skills read
+├── cli/                 # Node.js CLI (agency init/new/tasks/skill/status/mods/hooks/prune)
+└── docs/                # documentation
 ```
 
 ## Quick Start
@@ -20,7 +29,7 @@ the-agency/
 ### Clone and Install
 
 ```bash
-git clone https://github.com/the-agency/the-agency ~/the-agency
+git clone https://github.com/Tekkiiiii/the-agency.git ~/the-agency
 cd ~/the-agency
 npm install   # optional — CLI is plain Node.js
 ```
@@ -202,49 +211,15 @@ The bootstrap system is in `core/bootstrap/`. To customize:
 ---
 
 
-## [Unreleased]
+## Removing a Shipped File
 
-### Tiếng Việt
+Installs only add and update files, so a skill, agent, runbook or core doc deleted from the repo would stay on every user's disk. To make a removal reach installed roots:
 
-#### Added
-- ...
+1. Delete the file from `skills/`, `agents/`, `runbooks/` or `core/` in the normal way.
+2. Run `python3 scripts/gen-retired-manifest.py` to regenerate `retired-manifest.json`. It lists each path the repo no longer ships, with the checksum of every version that was ever shipped there. It needs the full git history; CI checks it with `--check`.
+3. For a hook, move its entry in `hooks/hooks.json` to `retired` instead (see [HOOKS.md](HOOKS.md#extending-the-hook-system)).
 
-#### Fixed
-- ...
-
-### English
-
-#### Added
-- ...
-
-#### Fixed
-- ...
-```
-
-Each language sub-section repeats the full Keep-a-Changelog category set
-(`#### Added`, `#### Fixed`, `#### Changed`, `#### Deprecated`, `#### Removed`,
-`#### Security`) one level deeper than before, since it now nests under the
-language heading — `##` → `###` → `####`, never skipped or inverted. This
-keeps both languages grep-able (`grep "### Tiếng Việt"` / `grep "### English"`
-finds every block of that language) and requires zero changes to
-`cli/commands/upgrade.js`'s `printChangelogSince()` — that function only
-splits on `^## \[.+\]` and prints the body between headers verbatim, so the
-nested VN/EN sub-structure flows through untouched. The upgrade-time display
-prints both languages exactly as written in the file; there is no
-language-filtering logic anywhere in the CLI.
-
-Commit hashes, file paths, and code identifiers inside a Vietnamese entry are
-carried over unchanged from the English entry — never translated.
-
-**Before the commit lands, the Vietnamese text must go through the
-`content-polish` skill's Vietnamese pipeline**
-(`~/.claude/skills/content-polish/SKILL.md`, Vietnamese branch): a
-`translationese-cleaner-vi` pre-pass (mandatory here — the VN draft is
-translated from an English source, exactly the scenario that pre-pass exists
-for) → `humanizer-vi` → an anti-fragmentation check → `grammar-checker-vi`.
-Apply this to the VN prose only, not to code/URLs/identifiers embedded in it
-— those skills already know not to touch them. Fix anything flagged before
-committing, same as the pass that first introduced this format did.
+On `install`, `agency upgrade` and `agency prune`, an installed file that matches a shipped version byte for byte is deleted. One the user edited is archived to `{root}/archive/agency-retired-<date>/` or deleted, per `--retired=archive|delete|ask` (`install.ps1`: `-Retired`; env `AGENCY_RETIRED`). The default is `ask` on a terminal and `archive` otherwise, so an edit is never silently lost. A path the manifest does not list, such as a user's own skill, is never touched. The user-facing description is in [SETUP.md](SETUP.md#retired-files).
 
 ## Upgrading
 

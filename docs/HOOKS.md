@@ -9,7 +9,7 @@ The Agency ships a lifecycle hook system that runs shell scripts at key Claude C
 > every hook resolves its own root via `hooks/lib/resolve-root.sh`. See
 > [INSTALL-LAYOUT.md](INSTALL-LAYOUT.md#where-the-root-comes-from).
 
-This is a significant security and observability upgrade over a bare Claude Code install: 2 → 17 hooks across 4 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below). Of those 17, 14 are wired into `settings.json` by every install and upgrade — they are the entries of `hooks/hooks.json` (see [Settings Wiring](#settings-wiring) below); the remaining 3 — telemetry/convenience hooks — ship on disk but are not registered until an operator adds them manually.
+Seventeen hooks across four lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop) give a bare Claude Code install security gating and observability. Also shipped: a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below). The optional Claude Code [mods](MODS.md) complement the shell hooks with a prompt band, context alerts, stall detection and a spawn ledger. Of those 17, 14 are wired into `settings.json` by every install and upgrade — they are the entries of `hooks/hooks.json` (see [Settings Wiring](#settings-wiring) below); the remaining 3 — telemetry/convenience hooks — ship on disk but are not registered until an operator adds them manually.
 
 ---
 
@@ -103,7 +103,7 @@ Three of the 17 shipped lifecycle hooks are copied to `hooks/` but are not in `h
 | `spawn-completion.sh` | PostToolUse: Agent | telemetry, opt-in is defensible | No `spawn_end` events (outcome, tokens, duration) |
 | `bg-job-warn.sh` | PostToolUse: Bash | convenience, opt-in is defensible | No warning when a render/build is backgrounded |
 
-All three are unwired on purpose, as telemetry and convenience. Nothing in this list is a safety gap: `spawn-gate.sh`, `loop-detector.sh`, `write-evidence.sh`, and `artifact-verify.sh` — the four hooks previously documented here as an installer gap — are wired by every install path. See [Settings Wiring](#settings-wiring) above for their entries in `hooks/hooks.json`, and [spawn-gate.sh](#spawn-gatesh-pretooluse-agent) / [loop-detector.sh](#loop-detectorsh-posttooluse-all-tools) / [write-evidence.sh](#write-evidencesh-posttooluse-write-edit) / [artifact-verify.sh](#artifact-verifysh-posttooluse-agent) below for full behavior.
+All three are unwired on purpose, as telemetry and convenience. Nothing in this list is a safety gap: `spawn-gate.sh`, `loop-detector.sh`, `write-evidence.sh`, and `artifact-verify.sh` are wired by every install path. See [Settings Wiring](#settings-wiring) above for their entries in `hooks/hooks.json`, and [spawn-gate.sh](#spawn-gatesh-pretooluse-agent) / [loop-detector.sh](#loop-detectorsh-posttooluse-all-tools) / [write-evidence.sh](#write-evidencesh-posttooluse-write-edit) / [artifact-verify.sh](#artifact-verifysh-posttooluse-agent) below for full behavior.
 
 To wire any of the three in yourself, merge an entry into the corresponding array in your `settings.json` `hooks` block (don't replace the entries already there — add alongside them). For example, for `spawn-logger.sh`:
 
@@ -254,7 +254,7 @@ Also scans write content for JWT/API key patterns. Output by profile:
 
 The hook emits no metric.
 
-Respects the `.hook-profile` system: in `minimal` profile, the hook exits immediately with `{}` (all spawns allowed). It reads `{agency-root}/.hook-profile`, the same file as every other profile-aware hook. (Before Wave 16 this one hook read `~/.agency/.hook-profile` — a path nothing has ever written, so the documented way to turn this gate off silently did nothing.)
+Respects the `.hook-profile` system: in `minimal` profile, the hook exits immediately with `{}` (all spawns allowed). It reads `{agency-root}/.hook-profile`, the same file as every other profile-aware hook.
 
 ### spawn-logger.sh (PreToolUse: Agent)
 
@@ -378,7 +378,7 @@ The single source of truth for **where the agency is installed**. Sourced (never
 
 Callers source it by a path relative to *their own* location — `. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh"` — because resolving the root is precisely the thing they cannot do yet. Each call site appends `2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"` as a degraded fallback, so a partial install cannot hard-fail a hook on Claude Code's hot path.
 
-Before this existed, every hook and script hardcoded `$HOME/.claude` while the installers honoured `AGENCY_HOME` — so a custom-root install wrote to one directory and was read from another, silently. `.github/scripts/check-hardcoded-root.sh` now fails the build if that pattern returns. Python scripts use the documented inline twin (`os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") or Path.home()/".claude"`) rather than importing, because several are run by absolute path from arbitrary working directories.
+Hooks and scripts never hardcode `$HOME/.claude`: a hardcoded root would let a custom-root install write to one directory and be read from another, silently. `.github/scripts/check-hardcoded-root.sh` fails the build if that pattern appears. Python scripts use the documented inline twin (`os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") or Path.home()/".claude"`) rather than importing, because several are run by absolute path from arbitrary working directories.
 
 ### resolve-project.sh
 
