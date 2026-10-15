@@ -99,4 +99,4 @@ Evaluate your code against this matrix before delivering. This is the last filte
 
 ## Design Quality Principles
 
-Before producing any output, read `~/.claude/agents/design/memory/design-quality-principles.md` and verify your output passes its quality bar.
+Before producing any output, read `~/.claude/agents/design/design-quality-principles.md` and verify your output passes its quality bar.

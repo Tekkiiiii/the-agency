@@ -3,7 +3,7 @@
 **Source:** NotebookLM research (33 sources: IxDF, NNG, HubSpot, Unbounce, Material Design, Hootsuite + internal synthesis)
 **Research notebook:** private NotebookLM notebook (not published; sources listed above)
 **Produced:** 2026-06-12 by PD-overseer
-**Integrated:** 2026-06-12 by PD-system-improvement
+**Integrated:** 2026-06-12
 **Audience:** critique-design, critique-brand, design agents, ad copywriters, social content creators
 
 ---
