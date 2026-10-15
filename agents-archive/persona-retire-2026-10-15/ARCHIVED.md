@@ -1,6 +1,6 @@
 # Persona leftovers - ARCHIVED 2026-10-15
 
-Tekki ruling: "archive them or turn them into skill if possible". The live model is the generalist
+Owner ruling: "archive them or turn them into skill if possible". The live model is the generalist
 agent plus the skills the spawner picks, with a flat roster of structural agents only. The files here
 were the last pieces of the named-persona era. Moved with `git mv`, old relative path kept, nothing
 deleted. No file carried reusable method that a skill does not already cover, so none was converted.

@@ -74,7 +74,7 @@ Memory consolidation REV001 (2026-10-12): Pinecone, the Obsidian MCP and the mem
 | `skills/save-state-pinecone-upsert/pinecone_upsert.py` | `skills/save-state/pinecone_upsert.py`: the Pinecone session upsert that `scripts/save-state.py` no longer fires |
 
 ## persona-retire-2026-10-15
-Leftover persona-era files archived (Tekki ruling: "archive them or turn them into skill if possible"). Moved with `git mv` into `agents-archive/persona-retire-2026-10-15/` under their old relative path, never deleted; `ARCHIVED.md` there has the table, the credit to `msitarzewski/agency-agents` (MIT) and the restore steps. No file carried reusable method, so no skill was created. `agency upgrade` prunes the unedited installed copies of the .md files.
+Leftover persona-era files archived (owner ruling: "archive them or turn them into skill if possible"). Moved with `git mv` into `agents-archive/persona-retire-2026-10-15/` under their old relative path, never deleted; `ARCHIVED.md` there has the table, the credit to `msitarzewski/agency-agents` (MIT) and the restore steps. No file carried reusable method, so no skill was created. `agency upgrade` prunes the unedited installed copies of the .md files.
 
 | Archived (now in `agents-archive/persona-retire-2026-10-15/`) | Was |
 |---|---|
