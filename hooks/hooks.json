@@ -28,7 +28,7 @@
       "event": "PreToolUse",
       "matcher": "Agent",
       "command": "bash {root}/hooks/spawn-gate.sh",
-      "purpose": "Generalist-switch gate: unknown or archived agent types get an ask pointing to agents-archive/ROLE-MAP.md"
+      "purpose": "Generalist-switch gate: unknown agent types get an ask pointing to general-purpose + skills"
     },
     {
       "id": "track-edits",

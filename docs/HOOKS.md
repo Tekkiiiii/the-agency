@@ -22,7 +22,7 @@ This is a significant security and observability upgrade over a bare Claude Code
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
 | `gate-guard.sh` | PreToolUse | Edit, Write | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
-| `spawn-gate.sh` | PreToolUse | Agent | Generalist-switch gate — `general-purpose` + structural agent types pass; an unknown `subagent_type` (typo or archived specialist name) gets an `ask` pointing to `agents-archive/ROLE-MAP.md` |
+| `spawn-gate.sh` | PreToolUse | Agent | Spawn gate: `general-purpose` + structural agent types pass; an unknown `subagent_type` (typo or specialist name) gets an `ask` pointing to `general-purpose` + skills |
 | `spawn-logger.sh` | PreToolUse | Agent | Log a `spawn_start` event for every agent spawn; injects a `[[CLAUDE_SPAWN_META]]` lineage marker into the child prompt |
 | `secret-scanner.sh` | PreToolUse | Bash | Scan shell commands for credential-looking patterns |
 | `config-protection.sh` | PreToolUse | Edit, Write | Block modification of existing linter/formatter configs |
@@ -58,7 +58,7 @@ These are the hooks it wires (the table is generated from `hooks/hooks.json`):
 | `gate-guard` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/gate-guard.sh` | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
 | `config-protection` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/config-protection.sh` | Block modification of existing linter/formatter configs |
 | `secret-scanner` | PreToolUse | `Bash` | `bash {root}/hooks/secret-scanner.sh` | Scan shell commands for credential-looking patterns |
-| `spawn-gate` | PreToolUse | `Agent` | `bash {root}/hooks/spawn-gate.sh` | Generalist-switch gate: unknown or archived agent types get an ask pointing to agents-archive/ROLE-MAP.md |
+| `spawn-gate` | PreToolUse | `Agent` | `bash {root}/hooks/spawn-gate.sh` | Spawn gate: unknown agent types get an ask pointing to general-purpose + skills |
 | `track-edits` | PostToolUse | `Edit\|Write` | `bash {root}/hooks/track-edits.sh` | Buffer edited file paths for batch checking at session end |
 | `write-evidence` | PostToolUse | `Edit\|Write` | `bash {root}/hooks/write-evidence.sh` | Log path + byte count of deliverable-shaped writes (paper trail against fabricated completions) |
 | `loop-detector` | PostToolUse | (all) | `bash {root}/hooks/loop-detector.sh` | Detect stall loops: 5 identical tool calls in a row triggers a warning |
@@ -283,7 +283,7 @@ Also scans write content for JWT/API key patterns. Output by profile:
 
 **Status: wired into `settings.json` by every install path (`hooks/hooks.json`)** — see [Settings Wiring](#settings-wiring) above.
 
-Since the generalist switch (2026-10-06), `general-purpose` plus 1-3 named skills is the default spawn, and it passes without a question. The specialist agents are archived; their role-to-skills table is `{agency-root}/agents-archive/ROLE-MAP.md`. The gate only catches a `subagent_type` that is not recognized, such as a typo or a stale archived name. It never blocks: its strongest answer is an `ask`.
+`general-purpose` plus 1-3 named skills is the default spawn, and it passes without a question. The gate only catches a `subagent_type` that is not recognized, such as a typo or a specialist name. It never blocks: its strongest answer is an `ask`.
 
 **Passes immediately (no marker needed):**
 
@@ -299,7 +299,7 @@ Since the generalist switch (2026-10-06), `general-purpose` plus 1-3 named skill
 - A prompt with an explicit routing marker: `DELEGATOR ROUTING`, `HARDCODED ROUTING:`, or `SKILL SPAWN:`.
 - A prompt that matches a skill-owned spawn pattern: `You own the save-state ritual`, `You own the cc-loop ritual`, `You are {name}, resuming work`, or `You are resuming work on inbox task`.
 
-**Unknown type:** anything else receives `hookSpecificOutput.permissionDecision: "ask"`. The `permissionDecisionReason` names the unknown type, says the default is `general-purpose` + 1-3 skills, points to `{agency-root}/agents-archive/ROLE-MAP.md` for archived names, and says how to keep the type anyway (`HARDCODED ROUTING: {task-type} -> {agent}` in the prompt).
+**Unknown type:** anything else receives `hookSpecificOutput.permissionDecision: "ask"`. The `permissionDecisionReason` names the unknown type, says the default is `general-purpose` + 1-3 skills, points to `skills/INDEX.md` for picking skills, and says how to keep the type anyway (`HARDCODED ROUTING: {task-type} -> {agent}` in the prompt).
 
 The hook emits no metric.
 

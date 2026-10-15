@@ -150,7 +150,7 @@ skills:
 ---
 ```
 
-> **Generalist switch (2026-10-06).** Member-level roles are no longer registered as agent types. A new member role goes into `agents-archive/` as a role file with a row in `agents-archive/ROLE-MAP.md` (role to 1-3 skills), and callers spawn it as `general-purpose` + those skills. Register an agent under `agents/` only for a PD, coord, critic, council seat, or service agent. `agents-archive/` is deployed beside `agents/`, never under it (see `docs/INSTALL-LAYOUT.md`).
+> **Member roles.** Member-level roles are not registered as agent types: callers spawn `general-purpose` + 1-3 skills from `skills/INDEX.md`. Register an agent under `agents/` only for a PD, coord, critic, council seat, or service agent.
 
 ### Agent model tiers
 
@@ -314,17 +314,6 @@ After creating a new skill, register it in `skills/INDEX.md` immediately — the
 system will not discover unregistered skills.
 Also add its router overlay entry (`python3 scripts/skill-route-overlay-add.py
 <name> [--domain D --hint H]`); without it CI's skill-router menu gate fails.
-
----
-
-## Agency Rooms
-
-Agents coordinate via file-based rooms in `{agency-root}/agency-rooms/`. Each room
-is a directory with an append-only message log, shared context extracts, and a
-`handoffs/` directory for NEXUS handoff JSON files.
-
-See `docs/ROOMS.md` for the full room structure, PD status protocol, agent request
-protocol, and handoff format.
 
 ---
 

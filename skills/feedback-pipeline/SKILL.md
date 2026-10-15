@@ -4,12 +4,12 @@ description: "Use when customer feedback must reach the right owner without manu
 metadata:
   triggers: "[\"/feedback-pipeline\", \"feedback pipeline\", \"process feedback\", \"new feedback submissions\"]"
   aliases: "[]"
-  scope: "agency-rooms"
+  scope: "the-agency"
   dept: "[\"ops\"]"
   team: "[\"team-lead\"]"
   priority: "ops"
-  author: "agency-rooms"
-  provenance: "agency-rooms"
+  author: "the-agency"
+  provenance: "the-agency"
   last_updated: "2026-04-10"
   trust_level: "agent-authored"
 ---
@@ -58,7 +58,7 @@ ${CLAUDE_SKILL_DIR}/
 └── scripts/
     └── run.sh            ← bash entry for cron
 
-~/.claude/agency-rooms/feedback/feedback-pipeline/
+~/.claude/state/feedback-pipeline/
 └── state.json            ← pipeline state (checkpoints, per-row state)
 ```
 
@@ -99,7 +99,7 @@ Tab: `Feedback`
 
 ```bash
 # Edit state.json — set your sheet ID
-cat ~/.claude/agency-rooms/feedback/feedback-pipeline/state.json
+cat ~/.claude/state/feedback-pipeline/state.json
 # Set "sheet_id" to the ID from step 1.5
 
 # Verify routing.json has your PDs
@@ -167,7 +167,7 @@ Either mechanism triggers resolution. Both together is fine too.
 
 ## State File
 
-`~/.claude/agency-rooms/feedback/feedback-pipeline/state.json`
+`~/.claude/state/feedback-pipeline/state.json`
 
 ```json
 {

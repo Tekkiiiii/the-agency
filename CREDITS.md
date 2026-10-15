@@ -2,7 +2,7 @@
 
 Not everything in The Agency was made by one person. This system stands on other people's work: ideas I read and borrowed, skills I copied in and bent to fit, and tools I lean on every day. This page names them, links to where they live, and says what each one is for. If I got a name, a licence or a description wrong, please open an issue and I will fix it.
 
-Licences below are the upstream project's own, as listed on its repository. The Agency itself is MIT (see the README). Where a source ships without a licence file, it is listed as such, not guessed at. Every folder under `skills/` that was copied or adapted from a licensed upstream carries that upstream's licence text (`LICENSE`, plus `NOTICE` where the upstream has one) next to its `SKILL.md`; `agents-archive/LICENSE-agency-agents` does the same for the archived persona catalog.
+Licences below are the upstream project's own, as listed on its repository. The Agency itself is MIT (see the README). Where a source ships without a licence file, it is listed as such, not guessed at. Every folder under `skills/` that was copied or adapted from a licensed upstream carries that upstream's licence text (`LICENSE`, plus `NOTICE` where the upstream has one) next to its `SKILL.md`.
 
 ## Ideas and patterns
 
@@ -109,7 +109,7 @@ These nine skills came into the library through Claude Code plugins and apps tha
 
 | Source | Author | Licence | Use | Ships in |
 |---|---|---|---|---|
-| agency-agents | [msitarzewski](https://github.com/msitarzewski/agency-agents) | MIT | The early persona catalog and its tooling derive from it; the retired files are kept for reference | `agents-archive/` |
+| agency-agents | [msitarzewski](https://github.com/msitarzewski/agency-agents) | MIT | Early agent definitions and their tooling derive from it | `agents/` |
 
 ## Tools and platforms
 

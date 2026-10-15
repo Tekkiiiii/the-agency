@@ -75,13 +75,12 @@ The system is designed to be extended:
 - **New skills**: drop in `skills/` directory, register in INDEX.md
 - **New agents**: add agent spec in `core/agents/` and copy to `~/.claude/agents/{folder}/` — see `docs/DEVELOPER.md`
 - **New projects**: run `agency init --project name`
-- **Custom coordination**: add rooms in `{agency-root}/agency-rooms/` — see `docs/ROOMS.md`
 
 ---
 
 ## Tiered Agent Architecture
 
-Work runs as one chain: PD → Coord → Exec. The department layer (lead agents and coordinators) was retired in the 2026-10-08 sunset; the archived files and restore steps are in `{agency-root}/agents-archive/MANIFEST.md`.
+Work runs as one chain: PD → Coord → Exec.
 
 ### Project Delivery Chain (PD-Coord)
 
@@ -150,7 +149,7 @@ redundant once tool search exists — the two mechanisms fail independently.
 
 The Delegator is a stateless Sonnet agent that routes work to the correct agent, skill, pipeline, or protocol. Any agent (PD or Coord) can spawn the Delegator when the right route is not obvious.
 
-Since the generalist switch (2026-10-06) the member-level specialist roles are archived. The Delegator does not pick a specialist agent for them. It returns `general-purpose` plus 1-3 skills, and names the role file to read first. Role files live in `{agency-root}/agents-archive/` (deployed by all four installers), and `agents-archive/ROLE-MAP.md` maps each archived role to its skills. Coords, PDs, critics, council seats, and service agents (codebase-search) stay registered and are still returned by name.
+Member-level specialist roles are not registered agents. The Delegator returns `general-purpose` plus 1-3 skills from `skills/INDEX.md`. Coords, PDs, critics, council seats, and service agents (codebase-search) stay registered and are still returned by name.
 
 ```
 Agent({
@@ -230,30 +229,8 @@ The repo ships its full skill library (the catalog is `skills/INDEX.md`). The co
 - **Runtime**: Claude Code (Anthropic)
 - **Task Store**: SQLite (zero-dependency)
 - **Memory**: filesystem (markdown files)
-- **Coordination**: NEXUS file protocol + Agency Rooms
+- **Coordination**: NEXUS file protocol
 - **Skills**: markdown-based skill definitions
-
----
-
-## Agency Rooms
-
-File-based inter-agent chat system for persistent coordination between agents.
-
-```
-{agency-root}/agency-rooms/{room}/
-├── messages.mdl        # Append-only message log
-├── room.json           # Room metadata and member list
-├── members.json        # Active members
-├── handoffs/           # Pending NEXUS handoffs (JSON)
-└── context/
-    └── shared.md       # Shared summary, maintained by hand
-```
-
-Room types:
-- **Project rooms** — one per active project, owned by the project's PD
-- **Oversight room** — `project-oversight/` aggregates all PD statuses
-
-Rooms are plain files written by `agents/scripts/room-utils.sh`; there is no polling process (the `room-manager` skill was archived in the 2026-10-08 sunset). Read rooms on demand. See `docs/ROOMS.md`.
 
 ---
 

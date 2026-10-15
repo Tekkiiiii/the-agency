@@ -76,8 +76,7 @@ echo "--- 3. Distill ---"
 
 echo "--- 4. Rebuild ---"
 # Retired 2026-10-08 (memory consolidation M4): the memory-graph rebuild no
-# longer runs anywhere (builder archived 2026-10-12 to
-# agents-archive/rev001-curator-2026-10-12/scripts/). The scorecard checks that
+# longer runs anywhere (builder removed). The scorecard checks that
 # measured the graph are RETIRED; link health is R2 + lint-memory Step 2.
 
 echo "--- 5. Evaluate ---"

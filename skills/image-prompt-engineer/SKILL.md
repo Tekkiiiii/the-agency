@@ -206,9 +206,9 @@ Common negative-prompt targets:
   composition rules (one-image-per-section, hero composition bias, app-native UI patterns).
   Route there first for website/app design-reference image tasks; this skill is the
   general fallback for everything else.
-- **Image-prompt role file** (`{agency-root}/agents-archive/generalist-2026-10-06/design/design-image-prompt-engineer.md`; archived, spawn `general-purpose` + /image-prompt-engineer, /gpt-image-prompts) —
+- **Photography-genre prompts** (spawn `general-purpose` + /image-prompt-engineer, /gpt-image-prompts) —
   a role specializing in photography-genre prompts (portrait, product, landscape,
-  fashion) with deep genre-specific templates. Spawn general-purpose with that role file for hands-on photography prompt
+  fashion) with deep genre-specific templates. Spawn general-purpose with those skills for hands-on photography prompt
   production; read this skill directly when you (or any agent) need the general cross-generator
   methodology, non-photography styles, or a generator the agent's templates don't cover
   (Higgsfield, Leonardo, Ideogram, Stable Diffusion parameter tuning).

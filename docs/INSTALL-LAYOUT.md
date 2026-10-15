@@ -57,7 +57,6 @@ resolve.
 | `mods/` | ✓ | ✓ | ✓ | ✓ | copied to `{agency-root}/mods/<name>/` and wired into `settings.json` `env.CLAUDE_CODE_PLUGIN_DIRS` by one engine, `cli/lib/mods-merge.js`; Claude Code 2.1.287+ only; opt out with `AGENCY_NO_MODS=1` (see below) |
 | `runbooks/` | ✓ | ✓ | ✓ | ✓ | docs only |
 | `scripts/` | ✓ | ✓ | ✓ | ✓ | `+x` on `.sh`/`.py`/`.js`; `__pycache__` excluded at any depth; **`scripts/tests/` is not deployed** (see below); includes `scripts/skill-route/` (the optional, disabled-by-default skill router's overlay and `README.md`) and `scripts/jev-spawn-gate.py` (the router's spawn gate, also disabled by default) |
-| `agents-archive/` | ✓ | ✓ | ✓ | ✓ | role files + `ROLE-MAP.md` read by spawners at runtime; plain copy to `{agency-root}/agents-archive/`, **never under `agents/`** so nothing registers as an agent type |
 | `design-system/` | ✓ | ✓ | ✓ | ✓ | brand-token SSOT; `+x` on `.js`; skills resolve `{agency-root}/design-system/brands/{name}.json` at generation time |
 
 ### What the installers create outside the repo trees
@@ -90,13 +89,6 @@ or holds a user's own tests, so a delete could destroy someone's files. An exist
 `{agency-root}/scripts/tests` is also never refreshed. It is inert (nothing reads it); delete it by
 hand with `rm -rf "{agency-root}/scripts/tests"` if you want the space back. The guards above assert this too
 (a `keep-me.py` already in `scripts/tests` survives an install and nothing is added beside it).
-
-`agents-archive/` is worth calling out too, for the opposite reason: it is
-deployed, but its position is the whole point. Claude Code registers every `.md`
-under `agents/` recursively, so an archived role file placed there would come
-back as a spawnable agent type. It sits beside `agents/` instead, and the CI
-step "Assert agents-archive deployed beside agents/, not under it" fails if it
-ever leaks inside.
 
 `design-system/` is worth calling out separately because its failure mode is the
 quietest on this list. A missing `hooks/` tree makes a hook not run; a missing
@@ -138,7 +130,7 @@ write to means adding it to `core/.preserve` in the same commit; see
 Change all four in the same commit:
 
 - `install.sh` — one `*_SRC` / `*_DEST` block per tree
-- `install.ps1` — the `foreach ($tree in @("hooks", "runbooks", "scripts", "design-system", "agents-archive"))` loop
+- `install.ps1` — the `foreach ($tree in @("hooks", "runbooks", "scripts", "design-system")` loop
 - `cli/commands/init.js` — `sync*` calls in steps 3–5
 - `cli/commands/upgrade.js` — the matching `sync*` calls in the post-pull section
 
@@ -188,7 +180,7 @@ node .github/scripts/check-retired-prune.js
 
 `verify-agency-refs.sh` scans the deployed `agents/`, `core/`, `skills/` and
 `runbooks/` trees for `{agency-root}/<tree>/…` and `~/.claude/<tree>/…` references
-(`<tree>` is one of `runbooks hooks scripts core design-system agents-archive`)
+(`<tree>` is one of `runbooks hooks scripts core design-system`)
 and asserts each one resolves to a real file. `verify-agency-refs.ps1` is its
 Windows twin.
 

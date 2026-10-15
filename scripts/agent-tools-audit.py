@@ -29,9 +29,7 @@ Checks per agent file:
                            pd | coord | executor | specialist
                            | unknown.
 
-Excludes: {agency-root}/agents-archive/ (sibling dir of {agency-root}/agents/,
-naturally out of scope for the **/*.md walk, guarded anyway in case of
-symlinks) and any path with a `state` directory component — state/*.md
+Excludes: any path with a `state` directory component — state/*.md
 files (runtime state, state/incoming/*)
 are runtime logs, not agent definitions.
 
@@ -134,7 +132,7 @@ def role_hint(fm, path):
 
 def is_excluded(path):
     parts = path.parts
-    return "agents-archive" in parts or "state" in parts
+    return "state" in parts
 
 
 def load_corpus(dirs):

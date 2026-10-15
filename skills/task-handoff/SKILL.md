@@ -51,4 +51,4 @@ ts-gate "$feature_task_id" "passed" "qa-agent"
 
 ## Relationship to Tier-B (future)
 
-Tier-B adds a file-based FIFO queue (`~/.claude/agency-rooms/{room}/queue/`) so agents can poll asynchronously. Tier A is the prerequisite — implement this first to establish the discipline.
+Tier-B adds a file-based FIFO queue (`~/.claude/state/handoff-queue/`) so agents can poll asynchronously. Tier A is the prerequisite — implement this first to establish the discipline.

@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # spawn-gate.sh — PreToolUse hook for Agent tool
-# Since 2026-10-06 (generalist switch ACTIVE): `general-purpose` + 1-3 named
-# skills is the DEFAULT spawn and passes without an ask. The specialist agents are
-# archived; their role -> skills table is {agency-root}/agents-archive/ROLE-MAP.md.
+# `general-purpose` + 1-3 named skills is the DEFAULT spawn and passes without an ask.
 # Kept structural types pass too. Only an unknown type with no routing marker is
-# interrupted (an ask, never a block), so a typo or a stale archived name is caught.
+# interrupted (an ask, never a block), so a typo or a stale specialist name is caught.
 # Returns {} (pass) or {"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask",
 # "permissionDecisionReason":"..."}} (interrupt). Top-level permissionDecision/message is ignored.
 set -euo pipefail
@@ -61,12 +59,11 @@ emit_decision() { # $1=deny|ask $2=reason
   python3 -c 'import json,sys; print(json.dumps({"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":sys.argv[1],"permissionDecisionReason":sys.argv[2]}}))' "$1" "$2"
 }
 
-# --- Unknown type: ask (catches typos and archived specialist names) ---
+# --- Unknown type: ask (catches typos and specialist names) ---
 MSG="[spawn-gate] Unknown subagent_type=\"${SUBAGENT_TYPE}\".
 
-The default since 2026-10-06 is general-purpose + 1-3 skills named in the prompt.
-If this was a specialist name, it is archived: see ${AGENCY_ROOT}/agents-archive/ROLE-MAP.md
-for its skills and role file, and spawn general-purpose instead.
+The default is general-purpose + 1-3 skills named in the prompt.
+If this was a specialist name, spawn general-purpose + 1-3 skills from ${AGENCY_ROOT}/skills/INDEX.md instead.
 To keep this type anyway, add 'HARDCODED ROUTING: {task-type} -> {agent}' to the prompt."
 
 emit_decision ask "$MSG"

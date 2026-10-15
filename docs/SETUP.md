@@ -124,20 +124,7 @@ For each project, create a per-project routing doc using the template in
 This file is the first thing a PD reads on spawn (~500 tokens) and contains
 pre-written routing entries so the PD can delegate without loading the full agent catalog.
 
-## 8. Initialize agency-rooms
-
-```bash
-mkdir -p ~/.claude/agency-rooms/project-oversight/handoffs
-mkdir -p ~/.claude/agency-rooms/project-oversight/context
-touch ~/.claude/agency-rooms/project-oversight/messages.mdl
-touch ~/.claude/agency-rooms/project-oversight/context/shared.md
-touch ~/.claude/agency-rooms/project-oversight/context/rolling.md
-```
-
-Create a room for each active project as needed. See `docs/ROOMS.md`
-for the full directory structure and setup instructions.
-
-## 9. Enable graphify knowledge-graph MCP (optional)
+## 8. Enable graphify knowledge-graph MCP (optional)
 
 graphify builds a per-project knowledge graph that the `/graphify` skill queries on demand.
 It is optional. Project-knowledge lookups do not use it (they read your memory files first), so nothing breaks without it.
@@ -161,7 +148,7 @@ bash ~/.claude/scripts/setup-graphify.sh --upgrade   # also bumps graphifyy to l
 After running, restart your Claude Code session. Graph data populates automatically via
 `/save-state` Step 11b (per-project graph build + merge into unified).
 
-## 10. Bootstrap a new machine (optional)
+## 9. Bootstrap a new machine (optional)
 
 For full machine setup — all uv tools, CLI tools, and MCP servers in one pass:
 
@@ -184,7 +171,7 @@ After running, complete the **manual auth checklist** printed at the end of the
 script (nlm login, gws auth login, railway login — these require OAuth flows that
 cannot be scripted).
 
-## 11. Context Window Budget (MCP-heavy setups)
+## 10. Context Window Budget (MCP-heavy setups)
 
 MCP tool schemas are the dominant session-startup cost in MCP-heavy setups — many
 servers × many tools each adds up to a large fixed token overhead before any real

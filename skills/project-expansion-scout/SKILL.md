@@ -15,7 +15,6 @@ An autonomous strategic growth agent that runs on a configurable schedule, finds
 
 | File | Purpose |
 |------|---------|
-| `{agency-root}/agents-archive/generalist-2026-10-06/specialized/project-expansion-scout.md` | Archived role definition (read as the scout's role file) |
 | `~/.claude/memory/expansion-scouts/` | Storage for drafts and voting state |
 | `~/.claude/memory/expansion-scouts/voting-state.json` | Configuration + per-project voting state |
 
@@ -60,7 +59,6 @@ Run the scout inline, or spawn `general-purpose` with `/project-expansion-scout`
 
 ```
 Skills: /project-expansion-scout
-Role: read {agency-root}/agents-archive/generalist-2026-10-06/specialized/project-expansion-scout.md first.
 
 Run one complete expansion scan cycle:
 1. Read medium-term.md for active projects
