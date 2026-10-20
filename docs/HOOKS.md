@@ -412,7 +412,7 @@ Called by `spawn-completion.sh` on every completion, with the spawn log path as 
 
 ### context-pct-publish.sh
 
-Reads the current context-window usage (from `$CLAUDE_CONTEXT_PCT`, or parsed out of `$CLAUDE_USAGE` JSON as a fallback) and publishes it to `~/.claude/state/context-pct.txt` as an integer 0-100, so agents can self-monitor their own context budget per the Self-Respawn Protocol. Emits a `CONTEXT_PCT_ALERT` to stderr at the 70% (warning — complete current task, no new L3s) and 80% (mandatory `/save-state` + `/respawn-self`) thresholds.
+Reads the current context-window usage (from `$CLAUDE_CONTEXT_PCT`, or parsed out of `$CLAUDE_USAGE` JSON as a fallback) and publishes it to `~/.claude/state/context-pct.txt` as an integer 0-100, so agents can self-monitor their own context budget per the Self-Respawn Protocol. It measures the main session only, so it emits a `CONTEXT_PCT_ALERT` to stderr at 70% of the window (warning: complete the current task, no new L3s) and 80% (mandatory `/save-state` + `/respawn-self`). Subagents are not measured in percent. The `agent-ctx` mod tells them at absolute 200k (warn), 250k (finish the current task) and 300k (stop and save) tokens, and adds a 75% line for the main session; see [MODS.md](MODS.md).
 
 ---
 

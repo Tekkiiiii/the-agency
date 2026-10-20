@@ -50,23 +50,26 @@ This creates `~/.claude/` on your machine with:
 ### Create a New Project
 
 ```bash
-agency new my-project
+agency new taskboard "Task manager with auth and billing"
 ```
 
-This scaffolds `~/.claude/projects/my-project/` with:
-- `memory/` — state, heartbeat, next-session, sessions, lessons
-- Agent prompts and task folders
+This scaffolds `~/.claude/projects/taskboard/` with:
+- `STATE.md` — phase, status and next steps
+- an empty `memory/` directory, which `/save-state` fills with next-session, heartbeat, decisions and session logs
 
-### Register for /pd-resume
+It also registers the project in `{root}/memory/medium-term.md`, the table `/recall` and `/pd-resume` read.
 
-Once your project is set up, register it for autonomous resume:
+### Resume with /pd-resume
+
+Start the project's PD from its saved state:
 
 ```
-/pd-resume my-project
+/pd-resume taskboard
 ```
 
-On first run, the PD creates its memory structure. On subsequent runs, it reads
-`memory/next-session.md` and picks up where it left off.
+The PD reads `memory/next-session.md` (and, on a project that was never saved, starts from the
+goal in `memory/tasks/ongoing/`) and begins on the Next line. A project with no `taskboard-pd`
+agent definition falls back to the generic `pd-coordinator`.
 
 ---
 

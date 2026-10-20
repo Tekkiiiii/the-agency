@@ -19,8 +19,8 @@ Skills are reusable workflows that agents invoke to handle common tasks. Each sk
 | `unwrap` | Resume inbox tasks — briefing + spawn task workers | Start inbox session |
 
 ```
-/save-state my-project
-/recall my-project
+/save-state taskboard
+/recall taskboard
 /pd-resume all
 ```
 
@@ -117,7 +117,7 @@ All critique skills:
 ```
 /ship
 /qa https://localhost:3000
-/qa-only https://my-staging.app
+/qa-only http://localhost:3000
 ```
 
 ### Content & Writing
@@ -184,7 +184,7 @@ agency skill install save-state
 In Claude Code, type `/skill-name` to invoke:
 
 ```
-/save-state my-project
+/save-state taskboard
 /pipeline-feature "add search functionality"
 /security-critique
 /swarm

@@ -130,19 +130,29 @@ Each project has a dedicated PD agent that:
 5. **On session end**: `/save-state` writes session log
 6. **Next session**: agent reads memory, resumes
 
-### Example: three workstreams in parallel
+### Worked example: adding billing to a task manager
 
-```
-You:  Build the REST API: auth, database, and all endpoints.
+The project is `taskboard`, a task-manager app whose sign-up and login already shipped. The goal: "Add subscription billing: monthly and annual Stripe plans, a checkout page, and a webhook that marks an account as paid." The paths below are illustrative.
 
-PD:   Decomposing. Spawning Auth Coord, DB Coord, API Coord in parallel.
+**1. Plan.** The PD reads `next-session.md`, finds no `memory/dev-plan.md`, and writes one. It decomposes the goal into three L3 chunks and applies the two-condition parallel rule (no dependency edge, disjoint `writes-to[]`):
 
-Auth Coord:   JWT complete. Tests passing. Health score 94.
-DB Coord:     Schema migrated. Seed data loaded. Health score 88.
-API Coord:    Endpoints wired. Integration tests passing. Health score 91.
+| L3 chunk | Writes to | Depends on | Layer |
+|----------|-----------|------------|-------|
+| Billing schema (plans and subscriptions tables) | `db/migrations/`, `src/db/types.ts` | none | 1 |
+| Stripe webhook handler | `src/api/stripe-webhook.ts`, its tests | schema | 2 |
+| Checkout page | `src/app/billing/` | schema | 2 |
 
-PD:   All three workstreams complete. QA gate passed. Ready for your review.
-```
+The webhook and the checkout page both need the tables, so they wait for layer 1. They share no dependency and no file, so they run in parallel once it is done. A freshly written plan with layers and cross-L3 dependencies counts as structurally complex, so the PD runs `/save-state taskboard` and asks the main session for a fresh PD (a `RESPAWN_REQUEST taskboard` line) to deploy it with a clean context window. A single-layer plan skips this step and runs in the same session.
+
+**2. Layer 1.** The PD spawns one Coord, `Coord-schema-Architect`, with its scoped structure file. The migration fits one Exec, so the Coord does not decompose it. It spawns one Exec (`general-purpose` plus `/backend`). The migration touches two files, so the Exec is TIER_B: it writes an APPROACH request to its checkpoint file before editing, and the Coord replies `ACK_APPROACH`. At about 50% effort the Exec writes a CHECKPOINT and gets `ACK_CONTINUE`. It finishes with `DONE` plus evidence: the migration applying and rolling back on a scratch database. A database migration also needs the four-item evidence bundle (script diff, dry-run and rollback output, affected-row or schema-diff confirmation, no-data-loss confirmation) before the Coord accepts it.
+
+**3. Gate.** The Coord accepts an Exec report at health 85 or higher with no CRITICAL or HIGH issue. Accepting means not re-spawning the Exec. A lower score spawns a continuation Exec that carries the fix list. When every child is accepted, the Coord spawns a QA Exec (`/qa-only`) over the combined L3 output, then delivers `L3 COMPLETE + QA GATE COMPLETE` with the health score as its final result and stops. The PD checks the score against the same bar and logs the ACK to `memory/agents/pd-status-live.md`.
+
+**4. Layer 2.** In one message the PD spawns the webhook Coord and the checkout Coord, and tells each how many Execs it may run (`Exec slots allotted: 3` and `2`), because a PD tree runs at most five Execs at once. The webhook Coord runs the handler first and its tests after, since the tests depend on the handler. The checkout Coord needs one Exec. Each follows the same gate as in step 3.
+
+**5. Integration.** With all three Coords accepted, the PD reads `pd-structure.md` for the integration contracts and spawns an integration tester (`general-purpose` plus `/qa-only`, `/run-acceptance-tests`, `/webapp-testing`). It drives the whole path: pick a plan on the checkout page, receive a Stripe test event, see the account flip to paid. A pass needs a score of 85 or higher and no CRITICAL violation. A failure sends targeted fix Execs and repeats only this phase.
+
+**6. Report and save.** Before it claims any file as delivered, the PD runs `ls -la` and `wc -l` on it and pastes the output into the final digest (overall health, per-L3 scores, open CRITICAL and HIGH issues, report path). It sends the digest to the main session and waits for your ACK or NACK. After an ACK it writes a `Session Delta` block to `memory/agents/pd-scratch.md`, runs `/save-state taskboard`, and stops. The next `/recall taskboard` shows the saved next action.
 
 ## Extensibility
 
@@ -185,7 +195,7 @@ PD  (L1→L3 decomposition, spawns Coords)
 
 ### Naming Convention
 
-- PD = `PD-{slug}` — project-level orchestrator (e.g. `PD-my-saas-app`)
+- PD = `PD-{slug}` — project-level orchestrator (e.g. `PD-taskboard`)
 - Coord = `Coord-{l3-name}-{pun}` — L3 owner (e.g. `Coord-auth-Gatekeeper`)
 - Mini-Coord = `Mini-{l3-name}-{pun}-{branch}` — L6 owner (e.g. `Mini-auth-Gatekeeper-loginFlow`)
 - Exec = `Exec-{task}-{pun}` — implementation unit (e.g. `Exec-login-Keymaster`)
@@ -205,7 +215,7 @@ Every Project Director follows a mandatory 3-rule protocol:
 
 1. **Decompose**: break every task into the smallest independent sub-tasks before acting.
 2. **Parallelize**: spawn one subagent per sub-task simultaneously.
-3. **Report**: send each completion immediately, not at the end.
+3. **Report**: log each completion to `memory/agents/pd-status-live.md` as it lands, not at the end. The main session is messaged only for an escalation, a blocker, or when all work is complete and awaiting your ACK.
 
 When the right agent or skill is not obvious, the PD spawns the [Delegator](#delegator--agency-routing-agent) first.
 
@@ -284,8 +294,8 @@ Every agent-to-agent handoff has a mandatory QA gate before approval:
 
 | Handoff | Reporter | Reviewer | ACK condition | NACK condition |
 |---------|----------|----------|---------------|----------------|
-| Exec → Coord | Exec sends DONE + QA | Coord reviews QA report | Health ≥ 70, no CRITICAL | Health < 70 OR CRITICAL/HIGH present |
-| Coord → PD | Coord sends L3 complete + QA | PD reviews Coord QA report | Health ≥ 70, no CRITICAL | Health < 70 OR CRITICAL/HIGH present |
+| Exec → Coord | Exec sends DONE + QA | Coord reviews QA report | Health ≥ 85 (≥ 90 design/visual), no CRITICAL/HIGH | Health < 85 (< 90 design/visual) OR CRITICAL/HIGH present |
+| Coord → PD | Coord sends L3 complete + QA | PD reviews Coord QA report | Health ≥ 85 (≥ 90 design/visual), no CRITICAL | Health < 85 (< 90 design/visual) OR CRITICAL/HIGH present |
 | PD → root | PD sends final digest + QA | root (operator) | Explicit ACK | Explicit NACK with fix list |
 
 Reports are asynchronous: an agent's report lands when the agent stops, and the agent is gone by then.
@@ -295,15 +305,17 @@ Reports are asynchronous: an agent's report lands when the agent stops, and the 
 
 **Consent for a permission-gated action** is not an ACK in chat. It is a file the main session writes under `{project}/memory/tasks/revisions/acks/`, which the re-dispatched agent must verify before it acts. See `runbooks/escalation-protocol.md` (Permission-Gated Action Consent Path).
 
-### PD-Level Pre-Aggregate QA Gate
+### Two-Phase QA
 
-After all Coords report DONE, PD spawns `Coord-qa-Canary` (Sonnet, QA Coord) to QA the combined L3 output before reporting to root.
+**Phase A, per L3.** Before a Coord reports to the PD, it spawns a QA Exec (`general-purpose` plus `/qa-only`) over the combined output of that L3 and writes the result to `{project}/memory/qa/qa-report-l3-{name}-{timestamp}.md`. The L3 has to pass at the bar above before the Coord may report it.
 
-Deliverables:
-- Health score (0–100 integer)
+**Phase B, integration.** After every Coord is accepted, the PD spawns an integration tester (`general-purpose` plus `/qa-only`, `/run-acceptance-tests`, `/webapp-testing`) against the contracts in `pd-structure.md`. A score of 85 or higher with no CRITICAL violation passes, 70 to 84 passes with warnings in the digest, and a CRITICAL violation or a score under 60 sends fix Execs and repeats Phase B only.
+
+Deliverables of a QA run:
+- Health score (0-100 integer)
 - Issues by severity (CRITICAL/HIGH/MEDIUM/LOW)
 - Screenshots in `{project}/memory/qa/screenshots/`
-- Report at `{project}/memory/qa/qa-report-final-{timestamp}.md`
+- Report at `{project}/memory/qa/qa-report-final-{timestamp}.md` for the final run
 
 ---
 

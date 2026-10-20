@@ -78,7 +78,7 @@ Requires `agency init` to have been run first.
 ## 4. Start a project
 
 ```bash
-agency new my-project "Build a task manager app"
+agency new taskboard "Task manager with auth and billing"
 ```
 
 This creates the project structure and registers it with the agency. Skip this step
@@ -89,15 +89,15 @@ if you used `agency onboard` — it already created a project for you.
 In Claude Code:
 
 ```
-/recall my-project
+/recall taskboard
 ```
 
-Or start fresh:
+A new project has no saved state, so `/recall` answers "no prior session found". Tell Claude the
+goal (for example "add email and password sign-up, login and password reset"), put it in a short
+task file under `memory/tasks/ongoing/`, and start the project lead:
 
 ```
-I'm starting a new project. Use the agency system.
-Project: my-project
-Goal: Build a task manager app with React and Supabase.
+/pd-resume taskboard
 ```
 
 ## 6. Install individual skills (optional)
@@ -233,10 +233,10 @@ weird under a proxy.
 
 ## First project in 5 minutes
 
-1. `agency new my-project "My first project"`
-2. In Claude Code: `/recall my-project`
-3. Tell the PD what to build
-4. PD creates tasks, spawns Coords and Execs (workers are `general-purpose` + skills)
+1. `agency new taskboard "Task manager with auth and billing"`
+2. In Claude Code: `/recall taskboard` (a new project answers "no prior session found")
+3. Tell Claude what to build and put the goal in `memory/tasks/ongoing/`, then run `/pd-resume taskboard`
+4. The PD plans, then spawns Coords and Execs (workers are `general-purpose` + skills)
 5. Their reports land as each agent stops, and the PD gates completed work
 6. `/save-state` at end of session
 
