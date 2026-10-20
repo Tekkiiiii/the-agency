@@ -5,7 +5,7 @@
 
 **Claude Code gives you a team. The Agency gives it the habits of a good one.**
 
-The Agency is a set of plain files for Claude Code that you can open and read: agent roles for a project lead, coordinators and specialists, plus the skills, hooks and mods (small Claude Code plugins) that keep them on process.
+The Agency is a set of plain files for Claude Code that you can open and read: agent definitions for the project lead and coordinators, skills that specialists load, and the hooks and mods (small Claude Code plugins) that carry out the rules.
 
 ```bash
 git clone https://github.com/Tekkiiiii/the-agency.git ~/the-agency && cd ~/the-agency && bash install.sh
@@ -32,7 +32,7 @@ The Agency is built on ideas and skills from these sources:
 | Andrej Karpathy, LLM Wiki | The memory design is inspired by it: an index plus cross-linked markdown pages the agents write, with a periodic lint pass. His raw-folder habit is behind `/graphify`. |
 | Nous Research, Hermes Agent | `/self-healing` is inspired by the way Hermes recovers and learns from failed turns. |
 | WikiProject AI Cleanup, Wikipedia | The catalogue of AI-writing patterns behind `/humanizer`. |
-| Julius Brussee (caveman) and Dietrich Gebert (ponytail) | Caveman's compressed replies and ponytail's laziest-solution mode, both installed separately, plus the `ponytail:` comment that marks a deliberate shortcut. |
+| Julius Brussee (caveman) and Dietrich Gebert (ponytail) | Caveman's compressed replies and ponytail's minimal-solution mode, plus the `ponytail:` comment that marks a deliberate shortcut. Both plugins install separately. |
 | HeyGen HyperFrames, Cloudflare, HashiCorp, Supabase, Google Labs Stitch, Browser Use, Firecrawl | Their agent skills ship inside. |
 | Microsoft, markitdown | `/markitdown` wraps the library. |
 
@@ -123,7 +123,7 @@ When a specialist reports a finished file, such as a PDF or a page, a hook looks
   MISSING: /path/to/report.pdf
 ```
 
-Each deliverable write adds a row with its path and byte count to `logs/write-evidence.jsonl` under your Claude Code config folder. `/cc-loop` then sends the deliverable past critics who score it and return it for fixes, for up to three rounds.
+Each deliverable write adds a row with its path and byte count to `logs/write-evidence.jsonl` under your Claude Code config folder. `/cc-loop` sends the deliverable past critics who score it and return it for fixes, for up to three rounds.
 
 On a fresh install the file check is a hook that warns while the run carries on. The QA gate is a written instruction the project lead follows.
 
@@ -133,7 +133,7 @@ On a fresh install the file check is a hook that warns while the run carries on.
 
 Finance logs what each session spent. Each time a session stops, `metrics/costs.jsonl` gets a row with its tokens and cost, priced model by model. Each subagent run writes its own rows to `spawns.jsonl`, with model and cost. A band above your prompt shows context, tokens, model, cost so far, a prompt-cache countdown and when your 5-hour and 7-day usage windows reset. `/ctx` opens the detail.
 
-The code-search agent's file pins the small Haiku model, and a written instruction sends project questions to your memory files before a subagent spawns. If you use the caveman or ponytail plugins, the `voice-compact` mod rewrites their long startup instructions into about 150 tokens of rules.
+The code-search agent runs on the small Haiku model, and the lookup-first rule tells agents to read your memory files before they spawn a subagent. If you use the caveman or ponytail plugins, the `voice-compact` mod rewrites their long startup instructions into about 150 tokens of rules.
 
 On a fresh install the session row comes from a hook, and the subagent rows and the band run as mods. `voice-compact` waits idle until you install caveman or ponytail.
 
@@ -162,7 +162,7 @@ On a fresh install `/guard` is off until you invoke it, and the hooks run on the
 
 ## Three strikes, escalate
 
-The on-call rule sends a problem up a level after the third failed try. `/investigate` stops after three hypotheses fail and asks you how to proceed. `/qa-only` escalates after three failed attempts with what it tried and a recommendation. A `/cc-loop` deliverable still under the bar after three rounds goes back to the project lead, who can hand it to a fresh writer with the critics' fix list.
+Under the on-call rule, a problem goes up a level after the third failed try. `/investigate` stops after three hypotheses fail and asks you how to proceed. `/qa-only` escalates after three failed attempts with what it tried and a recommendation. A `/cc-loop` deliverable still under the bar after three rounds goes back to the project lead, who can hand it to a fresh writer with the critics' fix list.
 
 A loop that repeats one call trips a hook. After five identical tool calls in a row, the agent sees:
 
