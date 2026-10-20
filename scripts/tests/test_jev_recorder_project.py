@@ -131,9 +131,10 @@ class RecorderEndToEndTests(unittest.TestCase):
             tj.SpawnProjectTests().table(e, [("billing-app", "/home/dev/projects/billing-app/memory/")])
             os.environ["CLAUDE_PROJECT_DIR"] = os.path.expanduser("~/.claude")
             e.record(payload("Skills: /frontend\nBuild", parent_agent="billing-app-pd"))
+            # a {slug}-pd subagent_type is exempt (F3): shadow row only, NO feedback record
             e.record(payload("Skills: /frontend\nBuild 2", parent_agent=None, subagent_type="billing-app-pd"))
             e.record(payload("Skills: /frontend\nBuild 3", parent_agent=None))
-            self.assertEqual([f["project"] for f in e.feedbacks()], ["billing-app", "billing-app", "global"])
+            self.assertEqual([f["project"] for f in e.feedbacks()], ["billing-app", "global"])
 
 
 if __name__ == "__main__":

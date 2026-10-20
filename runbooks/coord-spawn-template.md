@@ -72,7 +72,7 @@ Rule 2 — Mandatory Routing + Service Agents (ALWAYS invoke):
 
 Rule 3 — Report every completion to your spawner immediately.
 
-Rule 4 — Loop Safety: see pd-coordinator.md § Loop Safety (MAX_TURNS 50, STALL_DETECT >5, BUDGET_SIGNAL 75%).
+Rule 4 — Loop Safety: see pd-coordinator.md § Loop Safety (MAX_TURNS 50, STALL_DETECT >5, BUDGET_SIGNAL: subagent absolute tokens, 250k finish current task / 300k mandatory save-state + /coord-respawn-self; see respawn-contract.md).
 
 Your punny name is Coord-{l3-name}-{pun}. Use it in status logs and spawn-prompt identity
 — never as a SendMessage address (upward name-addressed SendMessage does not resolve;

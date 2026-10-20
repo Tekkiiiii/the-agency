@@ -8,6 +8,7 @@ Public API (pinned; downstream: skill-route.py and the spawn recorder; also the 
 -----------
     VERDICTS = ("accept","modify","reject","unavailable");  LINE_RE (re.I|re.M);  REASON_CAP = 200
     EXEMPT_TYPES / EXEMPT_PREFIXES / EXEMPT_SUFFIXES         # one commented block; empty it to make all binding
+                                                              # (suffixes: -critique, -pd)
     is_binding(subagent_type, fork=False) -> bool
     parse_verdict_line(text) -> None | {"id","verdict","reason","line"}   # first match wins
     strip_verdict_line(text) -> str                                       # drops EVERY Jev line
@@ -44,6 +45,13 @@ Effective gate: "pass" only when gate == "pass" AND not none_fired AND not confi
 reason checks (low_confidence needs a reason for ANY verdict; modify/reject always need one) -> accept rows
 (empty Skills -> inject Jev's; differing Skills -> deny) -> otherwise-valid pass. So `Jev: accept` with no reason
 on a low_confidence gate is denied even when Skills are empty.
+No-line rows (after the line rows; amended 2026-10-19, F1/F2): confidential (router=grep, Jev never saw the text) ->
+rewrite `Jev[r=id]: unavailable — confidential: routed locally (grep), not reviewed` (unreviewed /
+confidential_local), checked FIRST; J empty AND S empty -> rewrite `Jev[r=id]: accept — auto: Jev found nothing,
+spawner lists nothing` (accept / auto_empty) whatever the gate; then gate pass (auto_default / auto_match / deny on
+differing Skills); anything else is a low_confidence deny (includes S non-empty with J empty). A line that IS present
+always wins over F1/F2 (explicit verdict, normal reason rules).
+Exempt (is_binding False): see the EXEMPT_* block; since 2026-10-19 that includes every `*-pd` subagent_type.
 """
 from __future__ import annotations
 
@@ -77,7 +85,10 @@ EXEMPT_TYPES = (
     "tour-builder",
 )
 EXEMPT_PREFIXES = ("critique-", "council-", "caveman:")
-EXEMPT_SUFFIXES = ("-critique",)
+# "-pd" (PD decision 2026-10-19): {slug}-pd identity files carry their own skills; Jev picks for a PD spawn were
+# noise. coord / mini-coord / pd-coordinator STAY binding (they carry Exec skills on the PD's behalf). Trade-off:
+# exempt = no enforcement AND no jev-feedback record; the shadow-log row is still written for every spawn type.
+EXEMPT_SUFFIXES = ("-critique", "-pd")
 # --- end exempt block ---
 
 
@@ -214,6 +225,16 @@ def evaluate(jev, spawner_skills, line, route_id="", denies=0, outage=None):
             return deny("accept but Skills differ: use modify")
         inj = add_id()
         return _out("rewrite" if inj else "pass", norm, "explicit", line["reason"], inject_line=inj)
+    if jev.get("confidential"):
+        # F2 (2026-10-19): Jev never saw the text (router=grep), so there is no Jev pick to accept or reject and
+        # demanding a reason is theatre. Rewrite as unreviewed (same shape as the outage path); checked BEFORE F1.
+        r = "confidential: routed locally (grep), not reviewed"
+        return _out("rewrite", "unreviewed", "confidential_local", r,
+                    inject_line=format_line(rid, "unavailable", r))
+    if not J and not S:
+        # F1 (2026-10-19): Jev found nothing and the spawner lists nothing - no pick to dispute, no reason to demand.
+        r = "auto: Jev found nothing, spawner lists nothing"
+        return _out("rewrite", "accept", "auto_empty", r, inject_line=format_line(rid, "accept", r))
     if gate_pass:
         if J and not S:
             r = "auto: Jev default (gate pass)"

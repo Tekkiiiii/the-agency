@@ -74,12 +74,13 @@ key (setup: `{agency-root}/scripts/skill-route/README.md`). Two modes:
   them from spawn_end rows).
 - JB8: exempt (no line): fixed-role types, defined in ONE constant block in
   `{agency-root}/scripts/jev_spawn.py` — `fork`, codebase-search, save-state-runner,
-  project-scaffolder, Delegator, `critique-*`, `*-critique`, `council-*`, Explore, Plan,
+  project-scaffolder, Delegator, `critique-*`, `*-critique`, `*-pd`, `council-*`, Explore, Plan,
   statusline-setup, claude-code-guide, `caveman:*`, the understand-* analyzers.
-  Everything else (general-purpose, coord, mini-coord, pd-coordinator, `*-pd`) is binding.
+  Everything else (general-purpose, coord, mini-coord, pd-coordinator) is binding. `*-pd` spawns (`{slug}-pd`: the PD identity file carries its own skills): the Jev line is optional and ignored; exempt = no enforcement and no feedback record, the shadow-log row is still written.
 - JB9: the jev gate (when enabled) denies a binding spawn missing a required line
   up to twice per spawn (same spawner + task, or same route id), with Jev's result inline;
-  re-issue with the line added. The 3rd attempt passes as `deny_cap` and is recorded. The gate ships
+  re-issue with the line added. The 3rd attempt passes as `deny_cap` and is recorded.
+  No-line auto-passes (no deny): Jev found nothing AND you list nothing = `auto_empty`; confidential prompt (router=grep, Jev never saw it) = `Jev: unavailable — confidential: routed locally (grep), not reviewed`, source `confidential_local`. A line you write always wins. Every deny is also logged: one `gate_deny` line in the skill-route shadow log. The gate ships
   DISABLED: the spawn-ledger mod runs `scripts/jev-spawn-gate.py` only when `AGENCY_SKILL_ROUTER=1`
   (`mods/README.md`, section Jev spawn gate); with the router off, or the mod not installed, JB2 is a rule you follow.
   Detail: `scripts/skill-route/README.md`.

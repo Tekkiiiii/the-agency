@@ -25,6 +25,26 @@ export const alertText = (pct: number): string =>
     ? `CONTEXT_PCT_ALERT: ${pct}% — MANDATORY RESPAWN THRESHOLD (80%). Run /save-state and /respawn-self now.`
     : `CONTEXT_PCT_ALERT: ${pct}% — WARNING THRESHOLD (${levelOf(pct)}%). Complete current task. No new L3s.`
 
+// Subagents: ABSOLUTE tokens, whatever their window (cap decision 2026-10-19): 200k warn, 250k finish, 300k stop.
+export const SUB_CAP = 300_000
+export const subLevelOf = (tokens: number): number => (tokens >= 300_000 ? 300 : tokens >= 250_000 ? 250 : tokens >= 200_000 ? 200 : 0)
+
+export const subAlertText = (tokens: number): string => {
+  const head = `CONTEXT_PCT_ALERT: ${Math.floor(tokens / 1000)}k tokens (subagent cap 300k) — `
+  return tokens >= 300_000
+    ? `${head}STOP (300k). MANDATORY: Coord run /save-state and /coord-respawn-self; Exec write your final report now and stop.`
+    : tokens >= 250_000
+      ? `${head}FINISH CURRENT TASK (250k). No new work; wrap up and report.`
+      : `${head}WARNING (200k). Complete current task, keep it small.`
+}
+
+const isSub = (id: string | undefined): boolean => !!id && id !== 'main'
+const k = (tokens: number): number => Math.floor(tokens / 1000)
+const subPct = (tokens: number): number => Math.floor((tokens * 100) / SUB_CAP)
+// A record from an older build ({pct, level, told}) has no tokens: nothing to report, never NaN.
+const hasTokens = (f: { tokens?: unknown } | undefined): f is { tokens: number } => typeof f?.tokens === 'number' && Number.isFinite(f.tokens)
+
+
 // The agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else <home>/.claude (hooks/lib/resolve-root.sh); <home> per OS
 // (platform.ts pickHome: USERPROFILE first on Windows, HOME elsewhere).
 async function agencyRoot($: EngineInterface): Promise<string> {
@@ -54,14 +74,17 @@ export const register: Register = on => {
     const u = result.usage
     if (!u) return result
     const tokens = u.input_tokens + u.cache_read_input_tokens + u.cache_creation_input_tokens
-    const window = e.agentId ? windowFor(e.model, tokens) : (await $.session.usage()).context.window
+    const sub = isSub(e.agentId)
+    const window = e.agentId && !sub ? windowFor(e.model, tokens) : sub ? SUB_CAP : (await $.session.usage()).context.window
     const pct = Math.floor((tokens * 100) / window)
-    const level = levelOf(pct)
+    const level = sub ? subLevelOf(tokens) : levelOf(pct)
     // A drop (compaction) lowers `told`, so a later crossing is told again.
     await update($, { ...FILL, id: e.agentId ?? 'main' }, (prev): Fill => ({
       pct,
+      tokens,
       level,
       told: Math.min(prev?.told ?? 0, level),
+      parentTold: Math.min(prev?.parentTold ?? 0, level),
     }))
     return result
   })
@@ -69,11 +92,53 @@ export const register: Register = on => {
   // The loop's next tool result carries the alert once per crossing; no file to read.
   on('tool.call', async ($, e, next) => {
     const ran = await next(e)
-    if (ran.deny !== undefined) return ran
+    if (ran.deny !== undefined || (await isMinimal($))) return ran
+    const lines: string[] = []
     const ref = { ...FILL, id: e.agentId ?? 'main' }
     const fill = (await $.state.get(ref)).value
-    if (!fill || fill.level <= fill.told || (await isMinimal($))) return ran
-    await $.state.set(ref, { ...fill, told: fill.level })
-    return { ...ran, context: [...(ran.context ?? []), alertText(fill.pct)] }
+    if (fill && (!isSub(e.agentId) || hasTokens(fill))) {
+      if (isSub(e.agentId) && fill.level >= 300) {
+        lines.push(subAlertText(fill.tokens)) // every tool result until the agent ends; never a deny
+      } else if (fill.level > fill.told) {
+        await $.state.set(ref, { ...fill, told: fill.level })
+        lines.push(isSub(e.agentId) ? subAlertText(fill.tokens) : alertText(fill.pct))
+      }
+    }
+    lines.push(...(await childLines($, e, ran)))
+    return lines.length ? { ...ran, context: [...(ran.context ?? []), ...lines] } : ran
   })
+}
+
+type Agents = Awaited<ReturnType<EngineInterface['agent']['list']>>
+
+// What a controller sees of its children: CHILD_CTX after Agent/SendMessage, CHILD_CTX_ALERT at 250k/300k.
+async function childLines($: EngineInterface, e: { tool: unknown; agentId?: string; to?: unknown }, ran: { result?: unknown }): Promise<string[]> {
+  const agents: Agents = await $.agent.list().catch(() => [])
+  // The child's name (what SendMessage addresses), else its spawn description minus a trailing "[task:...]" tag, else its id.
+  const label = (id: string) => {
+    const a = agents.find(x => x.id === id)
+    return a?.name || a?.description?.replace(/\s*\[[^\]]*\]\s*$/, '').trim() || id
+  }
+  const lines: string[] = []
+  const tool = String(e.tool)
+  let childId: string | undefined
+  if (tool === 'Agent') childId = (ran.result as { agentId?: unknown } | undefined)?.agentId as string | undefined
+  else if (tool === 'SendMessage') {
+    const to = String(e.to ?? '')
+    childId = agents.find(a => a.id === to)?.id ?? agents.find(a => a.name === to)?.id
+  }
+  if (childId) {
+    const f = (await $.state.get({ ...FILL, id: childId }).catch(() => ({ value: undefined }))).value
+    if (hasTokens(f)) lines.push(`CHILD_CTX: ${label(childId)} ${k(f.tokens)}k/300k (${subPct(f.tokens)}%)`)
+  }
+  for (const a of agents) {
+    if ((a.parentId ?? 'main') !== (e.agentId ?? 'main') || a.status !== 'running') continue
+    const ref = { ...FILL, id: a.id }
+    const f = (await $.state.get(ref)).value
+    if (!hasTokens(f) || f.level < 250 || f.level <= (f.parentTold ?? 0)) continue
+    await $.state.set(ref, { ...f, parentTold: f.level })
+    const tail = f.level >= 300 ? 'must stop, request report now' : 'finish current task'
+    lines.push(`CHILD_CTX_ALERT: ${label(a.id)} ${k(f.tokens)}k/300k — ${tail}`)
+  }
+  return lines
 }

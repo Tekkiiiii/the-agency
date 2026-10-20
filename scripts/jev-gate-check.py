@@ -462,7 +462,9 @@ def check_window(now):
     thr = ">= %d days OR >= %d gated tasks" % (WINDOW_DAYS, WINDOW_TASKS)
     src = "%s + %s" % (p_skill_shadow(), p_feedback())
 
-    stamps = [parse_ts(r.get("ts")) for r in skill_sh + fb]
+    # gate_deny rows (jev-spawn-gate F4) share the shadow log but are not routed tasks: they never
+    # open or move the window start.
+    stamps = [parse_ts(r.get("ts")) for r in skill_sh + fb if r.get("event") != "gate_deny"]
     stamps = [s for s in stamps if s is not None]
 
     n_route = sum(1 for r in skill_sh if r.get("actual_skills"))

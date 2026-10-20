@@ -17,6 +17,7 @@ Flow:
   0. DISABLED (the default): AGENCY_SKILL_ROUTER is not "1" -> print {"action":"pass"} and exit 0. No network, no
      Jev or Haiku call, no subprocess, no state write, no router import.
      FAIL OPEN. Any exception -> {"action":"pass"}. A router timeout / error is an OUTAGE, never a deny.
+     Stdin that is not valid JSON, or not a JSON object -> {"action":"pass","reason":"malformed_stdin"} (still a pass).
      OFF SWITCHES (pass, nothing else done): env JEV_GATE_OFF=1; the file jev-gate.off in {root}/state or in the
      router state dir ($SKILL_ROUTE_STATE_DIR, default {root}/state/skill-route); {root}/.hook-profile == minimal.
      SKILL_ROUTE_CHILD=1 (the Haiku child of jev_client) also passes: the child's own spawns must never recurse
@@ -37,8 +38,16 @@ Flow:
 
 Test overrides: JEV_GATE_DEADLINE (seconds, default 10), AGENCY_HOME (the root), SKILL_ROUTE_STATE_DIR, plus every
 skill-route / jev_client variable (SKILL_ROUTE_SKILLS_DIR, SKILL_ROUTE_OVERLAY, SKILL_ROUTE_LOG,
-SKILL_ROUTE_SHADOW_LOG, JEV_ENDPOINT, JEV_USAGE_LOG, ...). The gate never writes jev-feedback.jsonl (the recorder
-does).
+SKILL_ROUTE_SHADOW_LOG, JEV_ENDPOINT, JEV_USAGE_LOG, ...).
+
+The gate never writes jev-feedback.jsonl (the recorder does). It DOES append ONE `"event": "gate_deny"` JSON line to the
+skill-route shadow log ($SKILL_ROUTE_SHADOW_LOG) on every deny and every deny_cap pass (F4), written with skill-route's
+own fail-silent appender. FAIL OPEN: any error in building or writing the line is swallowed and never changes the
+output, stdout or stderr. Keys: ts, event, decision ("deny"|"deny_cap"), route_id, rule (the evaluate() reason), gate,
+router, none_fired, confidential, jev_skills, spawner_skills, subagent_type, parent_agent, spawner (parent_spawn_id or
+parent_agent or "root"), denies_after (the deny counter after this call), task_excerpt (first 200 chars of the routed
+text, whitespace squashed and redacted; "[REDACTED:confidential]" when Jev flagged the prompt confidential). Pass /
+rewrite outcomes write nothing.
 """
 import importlib.util
 import json
@@ -150,6 +159,10 @@ def _note(dec, rid, jev):
         return "jev-gate: injected Jev default skills %s (gate pass)" % _slash(dec.get("inject_skills") or [])
     if src == "auto_match":
         return "jev-gate: Skills match Jev (gate pass); injected Jev line, recorded accept"
+    if src == "auto_empty":
+        return "jev-gate: Jev found nothing and no Skills named; injected Jev line, recorded accept"
+    if src == "confidential_local":
+        return "jev-gate: confidential prompt routed locally (grep), not reviewed by Jev; injected unavailable line"
     if dec.get("inject_skills"):
         return "jev-gate: accept with no Skills; injected Jev skills %s" % _slash(dec["inject_skills"])
     if dec.get("inject_line"):
@@ -168,15 +181,42 @@ def _spawner_guard_key(sr, jev_spawn, spawner, prompt, description):
         return ""
 
 
+def _log_gate_deny(sr, jev_spawn, decision, dec, rid, jev, actual, denies_after, subagent_type, parent_agent, spawner,
+                   prompt, description):
+    """Append ONE gate_deny line to the shadow log. Fail open: ANY exception is swallowed, nothing is printed, the
+    gate output is never affected (callers ignore the return value)."""
+    try:
+        confidential = bool(jev.get("confidential"))
+        excerpt = "[REDACTED:confidential]"
+        if not confidential:
+            try:
+                _full, text = sr._spawn_text(prompt, description, list(sr.load_menu()["skills"]))
+                excerpt = sr._excerpt(text)
+            except Exception:
+                excerpt = ""
+        sr._append_jsonl(sr._shadow_log_path(), {
+            "ts": sr._now_iso(), "event": "gate_deny", "decision": decision, "route_id": rid or "",
+            "rule": dec.get("reason"), "gate": jev.get("gate"), "router": jev.get("router"),
+            "none_fired": bool(jev.get("none_fired")), "confidential": confidential,
+            "jev_skills": list(jev.get("skills") or []), "spawner_skills": list(actual or []),
+            "subagent_type": subagent_type, "parent_agent": parent_agent, "spawner": spawner,
+            "denies_after": int(denies_after or 0), "task_excerpt": excerpt})
+    except BaseException:
+        pass
+
+
 def decide(raw):
     """Pure-ish core: raw stdin text -> the output dict. May raise; main() fails open."""
     if not router_enabled():  # shipped disabled: no kill-switch file reads, no imports, no state, no network
         return {"action": "pass"}
     if not raw or not raw.strip():
         return {"action": "pass"}
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except ValueError:  # not JSON: still fail open, but say why (a bare pass is indistinguishable from a real one)
+        return {"action": "pass", "reason": "malformed_stdin"}
     if not isinstance(data, dict):
-        return {"action": "pass"}
+        return {"action": "pass", "reason": "malformed_stdin"}
     if kill_switch():
         return {"action": "pass"}
     if data.get("fork") or data.get("is_teammate") or data.get("workflow"):
@@ -238,12 +278,18 @@ def decide(raw):
     if rid:
         out["route_id"] = rid
     if dec["decision"] == "deny":
+        after = 0
         if rid:
-            jev_spawn.cache_bump_denies(rid)
+            after = jev_spawn.cache_bump_denies(rid) or 0
         if skey:
-            jev_spawn.spawner_bump_denies(skey)
+            after = max(after, jev_spawn.spawner_bump_denies(skey) or 0)
+        _log_gate_deny(sr, jev_spawn, "deny", dec, rid, jev, actual, after, subagent_type, parent_agent, spawner,
+                       prompt, description)
         out.update(action="deny", deny=dec["deny_message"], reason=dec["reason"])
         return out
+    if dec.get("verdict_source") == "deny_cap":
+        _log_gate_deny(sr, jev_spawn, "deny_cap", dec, rid, jev, actual, denies, subagent_type, parent_agent,
+                       spawner, prompt, description)
     if dec.get("verdict_source"):
         out["reason"] = "deny_cap" if dec["verdict_source"] == "deny_cap" else dec["verdict_source"]
     new_prompt = jev_spawn.apply_decision(prompt, dec) if dec["decision"] == "rewrite" else prompt

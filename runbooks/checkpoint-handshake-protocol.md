@@ -127,8 +127,8 @@ than needing to detect whether content exists under a heading.
 - APPROACH replies: `ACK_APPROACH — proceed` -> go. `REVISE_APPROACH — {feedback}` -> update plan, rewrite request (`Status: AWAITING`), poll again; max 2 revision rounds, then ESCALATE.
 - CHECKPOINT replies: `ACK_CONTINUE` -> go. `COURSE_CORRECT — {instructions}` -> adjust and continue; no new APPROACH needed.
 - Timeout: APPROACH -> `APPROACH_UNREVIEWED`; CHECKPOINT -> `CHECKPOINT_UNREVIEWED`; both MUST appear in the final report.
-- Context >=70%: finish the current atomic unit, write a CHECKPOINT with `Issues: Context at {PCT}% — may need continuation`, poll as above (timeout -> proceed, `CHECKPOINT_UNREVIEWED`).
-- Context >=80%: stop; final report `ESCALATE — context at {PCT}%, cannot continue safely` with `Needed: spawner to spawn a continuation Exec for the remaining work` and `Scope: {what is left}`. Delivered as the final task result, never SendMessage.
+- Context >=250k tokens (subagent absolute cap): finish the current atomic unit, write a CHECKPOINT with `Issues: Context at {K}k tokens — may need continuation`, poll as above (timeout -> proceed, `CHECKPOINT_UNREVIEWED`).
+- Context >=300k tokens (STOP line): stop; final report `ESCALATE — context at {K}k tokens, cannot continue safely` with `Needed: spawner to spawn a continuation Exec for the remaining work` and `Scope: {what is left}`. Delivered as the final task result, never SendMessage.
 - Interim state (IN_PROGRESS, QA_GATE) goes in the scratch `## Status` table or this file; upward SendMessage NEVER used.
 - Stop immediately after delivering the final report; the spawner reads it only when you stop. A NACK arrives as a fresh spawn.
 

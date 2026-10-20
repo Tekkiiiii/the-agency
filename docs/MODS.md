@@ -5,7 +5,7 @@ Five optional Claude Code plugins in `mods/` add what shell hooks cannot: a live
 | Mod | Gap it closes | What you get |
 |---|---|---|
 | `context-band` | Claude Code shows no context, cache or usage-window figures above the prompt | A band with context %, cost, cache countdown and 5h/7d reset timers |
-| `agent-ctx` | An agent does not notice its context filling up | The agent is told at 70% and 80% |
+| `agent-ctx` | An agent does not notice its context filling up | The main session is told at 70/75/80% of its window; helpers at 200k/250k/300k tokens; leads see `CHILD_CTX` and `CHILD_CTX_ALERT` for their helpers |
 | `loop-guard` | An agent repeats the same tool call forever | A stall warning after five identical calls |
 | `spawn-ledger` | Subagent spawns leave no record, and nothing pins their model or caps parallel Execs | A JSONL spawn ledger, model pin, Exec cap, artifact check and the [effort policy](SKILLS.md#effort-policy) |
 | `voice-compact` | The CAVEMAN / PONYTAIL startup injections cost tokens every session | Compact rules of about 150 tokens |

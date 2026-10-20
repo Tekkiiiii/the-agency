@@ -39,7 +39,7 @@ If this file does not exist and the project has active L3 Coord work, create it 
 using the schema in pd-coordinator.md § Structural Oversight. Takes 2 minutes, saves
 hours of cross-L3 conflict resolution later.
 
-**Step 3:** Proceed with your role.
+**Step 3:** Proceed with your role. Context cap: you are a subagent, so your fill is counted in absolute tokens (200k warn, 250k finish current task / no new L3s, 300k mandatory `/respawn-self`; a STOP line rides every tool result from 300k). Children's fill arrives as `CHILD_CTX:` / `CHILD_CTX_ALERT:` lines; spec in `runbooks/respawn-contract.md`.
 
 ---
 
@@ -53,7 +53,7 @@ hours of cross-L3 conflict resolution later.
 ```
 python3 {agency-root}/scripts/skill-route.py --role exec "<task>"   # --role lead for Coord spawns
 ```
-Router on is binding on every spawn (rules JB1-JB9, runbooks/service-lookups.md §Routing): the prompt carries `Skills: /a, /b` + `Jev[r=<route_id>]: accept|modify|reject — <reason>`. gate=pass: Jev's skills are the default; `low_confidence` or zero skills: explicit verdict + reason, you pick alternatives yourself.
+Router on is binding on every spawn (rules JB1-JB9, runbooks/service-lookups.md §Routing): the prompt carries `Skills: /a, /b` + `Jev[r=<route_id>]: accept|modify|reject — <reason>`. gate=pass: Jev's skills are the default; `low_confidence` or zero skills: explicit verdict + reason, you pick alternatives yourself. A `*-pd` spawn (`{slug}-pd`) is exempt: the Jev line is optional there and ignored.
 
 **Step 3:** Delegate per Agent Dispatch Priority below. Spawn `general-purpose` (model sonnet) with 1-3 named skills in the prompt (`Skills: /x, /y`). Only structural agents spawn by name (see Agent Dispatch Priority step 2 below).
 

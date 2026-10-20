@@ -207,7 +207,7 @@ Decomposition burns heavy context. Planning (decomposition) and deployment (exec
 should run in separate contexts wherever possible.
 
 **Rule:** After PD completes dev-plan generation AND Coord writes its L4-L6 structure
-back to the master, check context pressure. If context ≥ 70%, or if the decomposition
+back to the master, check context pressure. If context > 250k tokens, or if the decomposition
 was complex (many tasks, many dependency edges), run /save-state then RESPAWN to
 enter the deployment phase with a clean context window.
 

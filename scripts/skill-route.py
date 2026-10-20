@@ -1453,7 +1453,7 @@ def _record_spawn_feedback(data, text, line, cached, rid, actual, rs, res, none_
                "jev_verdict": rs[0] if rs else "(none)",
                "router": res.get("router"), "pd_review": review, "pd_reason": reason or "",
                "outcome": None, "outcome_mismatch": None,
-               "task_text": _excerpt(text),
+               "task_text": "" if verdict_source == "confidential_local" else _excerpt(text),  # F2: no text for a locally-routed confidential prompt
                "spawn_verdict": spawn_verdict, "verdict_raw": verdict.lower() if verdict else None,
                "verdict_source": verdict_source, "gate": res.get("gate"), "none_fired": bool(none_fired),
                "jev_skills": list(rs), "spawner_skills": list(actual),
@@ -1518,7 +1518,10 @@ def shadow_run(raw):
         else:
             agree1 = agree_any = agree_fam = None
         if line and line["verdict"].lower() == "unavailable":
-            spawn_verdict, verdict_source = "unreviewed", "jev_unavailable"
+            spawn_verdict = "unreviewed"
+            # gate-injected confidential line (F2, 2026-10-19) vs a real Jev outage
+            verdict_source = ("confidential_local" if line["reason"].lower().startswith("confidential:")
+                              else "jev_unavailable")
         else:
             spawn_verdict = jev_spawn.normalise_verdict(actual, rs) if jev_spawn else "unreviewed"
             reason = ((line or {}).get("reason") or "").lower()
@@ -1528,6 +1531,8 @@ def shadow_run(raw):
                 verdict_source = "auto_default"
             elif reason.startswith("auto: matches jev"):
                 verdict_source = "auto_match"
+            elif reason.startswith("auto: jev found nothing"):
+                verdict_source = "auto_empty"
             else:
                 verdict_source = "explicit"
         _append_jsonl(_shadow_log_path(), {
@@ -1563,7 +1568,8 @@ def _read_jsonl(path):
 
 
 def shadow_report():
-    recs = _read_jsonl(_shadow_log_path())
+    # jev-spawn-gate appends event=="gate_deny" rows to this log (F4): they are not shadow records, never count them
+    recs = [r for r in _read_jsonl(_shadow_log_path()) if r.get("event") != "gate_deny"]
     usage = _read_jsonl(_usage_log_path())
     lines = ["skill-route shadow report", "log: %s" % _shadow_log_path()]
     lines.append("window start: %s" % (recs[0].get("ts") if recs else "n/a (no records)"))

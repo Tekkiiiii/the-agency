@@ -1,14 +1,14 @@
 ---
 name: coord-respawn-self
-description: "Used by a Coord agent when context reaches 80% mid-L3. Saves mid-L3 state, writes a continuation manifest, notifies the spawner (PD) and stops so a fresh Coord resumes. Max 3 respawns per Coord per 24h. Only at clean task boundaries, never mid-Executor-spawn or mid-ACK/NACK."
+description: "Used by a Coord agent when context reaches 300k tokens mid-L3. Saves mid-L3 state, writes a continuation manifest, notifies the spawner (PD) and stops so a fresh Coord resumes. Max 3 respawns per Coord per 24h. Only at clean task boundaries, never mid-Executor-spawn or mid-ACK/NACK."
 ---
 
 # /coord-respawn-self — Coord Context-Aware Self-Respawn
 
 ## When to Invoke
 
-- **Mandatory:** when context window reaches 80% (CONTEXT_PCT_ALERT fires)
-- **Proactive:** at a clean sub-task boundary within L3 when context > 70%
+- **Mandatory:** when context reaches 300k tokens (subagent cap; CONTEXT_PCT_ALERT STOP line fires)
+- **Proactive:** at a clean sub-task boundary within L3 when context > 250k tokens
 - **Never mid-Exec:** do not invoke while an Executor is awaiting APPROACH or CHECKPOINT
   response — finish that exchange first, then respawn
 

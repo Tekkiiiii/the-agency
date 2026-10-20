@@ -110,9 +110,14 @@ class GateEnv(tr.RouterEnv):
     def denies(self, rid):
         return jev_spawn.cache_get(rid)["denies"]
 
+    def gate_denies(self):
+        return [r for r in self.shadows() if r.get("event") == "gate_deny"]
+
     def assert_no_side_logs(self, tc):
+        """The gate never writes feedback or decision rows; the shadow log may hold ONLY gate_deny rows (F4), and
+        only for deny / deny_cap outcomes (checked per test via gate_denies())."""
         tc.assertEqual(self.feedbacks(), [])          # the gate never writes feedback
-        tc.assertEqual(self.shadows(), [])
+        tc.assertEqual([r for r in self.shadows() if r.get("event") != "gate_deny"], [])
         tc.assertEqual(self.decisions(), [])
 
 
@@ -191,9 +196,15 @@ class DisabledDefaultTests(unittest.TestCase):
 class CliContractTests(unittest.TestCase):
     def test_malformed_stdin_passes(self):
         with GateEnv() as e:
-            for raw in ("", "   \n", "not json", "{", "[]", "null", "42", '"str"'):
+            for raw in ("", "   \n"):   # nothing on stdin is a plain pass
                 rc, out, err = e.run_raw(raw)
                 self.assertEqual((rc, out, err), (0, '{"action": "pass"}\n', ""), raw)
+            # not JSON / not an object: still fail open, but self-explaining (a zsh `echo` that expands \\n inside
+            # the JSON string produced raw newlines: the bare pass looked like a legitimate one)
+            for raw in ("not json", "{", "[]", "null", "42", '"str"', '{"prompt": "a\nb"}'):
+                rc, out, err = e.run_raw(raw)
+                self.assertEqual((rc, out, err), (0, '{"action": "pass", "reason": "malformed_stdin"}\n', ""), raw)
+                self.assertIsNotNone(parse_jev_gate(out), raw)   # the mod still accepts it as a pass
             self.assertEqual(e.stub.count, 0)
 
     def test_nothing_to_route_passes(self):
@@ -295,7 +306,7 @@ class ExemptTests(unittest.TestCase):
                       "project-scaffolder", "Delegator", "sag-critique", "council-opus", "caveman:cavecrew-builder",
                       "statusline-setup", "claude-code-guide", "architecture-analyzer", "article-analyzer",
                       "assemble-reviewer", "domain-analyzer", "file-analyzer", "graph-reviewer",
-                      "knowledge-graph-guide", "project-scanner", "tour-builder")]
+                      "knowledge-graph-guide", "project-scanner", "tour-builder", "foo-pd", "demo-project-pd")]
             cases += [spawn("Build a landing page", fork=True), spawn("Build a landing page", is_teammate=True),
                       spawn("Build a landing page", workflow=True)]
             for c in cases:
@@ -305,7 +316,7 @@ class ExemptTests(unittest.TestCase):
 
     def test_binding_types_are_routed(self):
         with GateEnv(winners=WINNERS) as e:
-            for t in ("general-purpose", "claude", "", "coord", "mini-coord", "pd-coordinator", "foo-pd",
+            for t in ("general-purpose", "claude", "", "coord", "mini-coord", "pd-coordinator",
                       "never-heard-of"):
                 e.stub.reset()
                 obj = e.run(spawn("Build a landing page", subagent_type=t))
@@ -402,6 +413,18 @@ class RoutedDecisionTests(unittest.TestCase):
         with GateEnv(winners=WINNERS) as e:
             obj = e.run(spawn("Build a landing page"))
             self.assertNotIn("\n", obj["note"])
+
+
+    def test_cold_cache_idless_accept_with_differing_skills_denies(self):
+        """No fail-open on a cold cache (empty state dir, no route cache): an id-less accept whose Skills header
+        differs from Jev's is routed and denied. /humanizer stands in for a skill that differs from the fixture's
+        Jev pick (/frontend)."""
+        with GateEnv(winners=WINNERS) as e:
+            self.assertEqual(e.cache_files(), [])
+            obj = e.run(spawn("Skills: /humanizer\nJev: accept\nBuild a landing page"))
+            self.assertEqual(obj["action"], "deny")
+            self.assertIn("accept but Skills differ", obj["deny"])
+            self.assertRegex(obj["route_id"], r"^[0-9a-f]{8}$")
 
 
 class CacheHitTests(unittest.TestCase):
@@ -728,6 +751,150 @@ class SpawnerLoopGuardTests(unittest.TestCase):
             for f in self.guard_files(e):
                 with open(os.path.join(d, f)) as fh:
                     self.assertNotIn("ACME-UNIQUE-TOKEN", fh.read())
+
+
+class GateDenyLogTests(unittest.TestCase):
+    """F4: every deny and deny_cap appends ONE gate_deny line to the shadow log (fail open); nothing else does."""
+
+    KEYS = {"ts", "event", "decision", "route_id", "rule", "gate", "router", "none_fired", "confidential",
+            "jev_skills", "spawner_skills", "subagent_type", "parent_agent", "spawner", "denies_after",
+            "task_excerpt"}
+
+    def test_deny_writes_exactly_one_full_gate_deny_row(self):
+        with GateEnv() as e:
+            rid = put_cache()
+            obj = e.run(spawn("Skills: /frontend\nJev[r=%s]: accept\nBuild the page" % rid, parent_agent="demo-project-pd",
+                              parent_spawn_id="sp-9"))
+            self.assertEqual(obj["action"], "deny")
+            rows = e.gate_denies()
+            self.assertEqual(len(rows), 1)
+            r = rows[0]
+            self.assertEqual(set(r), self.KEYS)
+            self.assertEqual((r["event"], r["decision"], r["route_id"]), ("gate_deny", "deny", rid))
+            self.assertIn("accept but Skills differ: use modify", r["rule"])
+            self.assertEqual((r["gate"], r["router"], r["none_fired"], r["confidential"]),
+                             ("pass", "jev", False, False))
+            self.assertEqual(r["jev_skills"], J)
+            self.assertEqual(r["spawner_skills"], ["frontend"])
+            self.assertEqual((r["subagent_type"], r["parent_agent"], r["spawner"]),
+                             ("general-purpose", "demo-project-pd", "sp-9"))
+            self.assertEqual(r["denies_after"], 1)
+            self.assertIn("Build the page", r["task_excerpt"])
+            self.assertRegex(r["ts"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+            self.assertEqual(e.feedbacks(), [])
+            self.assertEqual(e.decisions(), [])
+
+    def test_spawner_defaults_to_parent_agent_then_root(self):
+        with GateEnv() as e:
+            rid = put_cache()
+            e.run(spawn("Skills: /frontend\nJev[r=%s]: accept\nBuild one" % rid, parent_agent="coord"))
+            e.run(spawn("Skills: /frontend\nJev[r=%s]: accept\nBuild two" % rid))
+            self.assertEqual([r["spawner"] for r in e.gate_denies()], ["coord", "root"])
+
+    def test_denies_after_counts_up_and_deny_cap_row_follows(self):
+        with GateEnv() as e:
+            rid = put_cache(gate="low_confidence")
+            p = spawn("Skills: /frontend\nJev[r=%s]: modify\nBuild" % rid)
+            outs = [e.run(p) for _ in range(3)]
+            self.assertEqual([o["action"] for o in outs], ["deny", "deny", "pass"])
+            rows = e.gate_denies()
+            self.assertEqual([(r["decision"], r["denies_after"]) for r in rows],
+                             [("deny", 1), ("deny", 2), ("deny_cap", 2)])
+            self.assertTrue(rows[2]["rule"])
+
+    def test_deny_cap_pass_on_prebumped_entry_logs_deny_cap(self):
+        with GateEnv() as e:
+            rid = put_cache(gate="low_confidence", denies=2)
+            obj = e.run(spawn("Jev[r=%s]: accept\nBuild" % rid))
+            self.assertEqual((obj["action"], obj["reason"]), ("pass", "deny_cap"))
+            (r,) = e.gate_denies()
+            self.assertEqual((r["event"], r["decision"], r["route_id"], r["denies_after"]),
+                             ("gate_deny", "deny_cap", rid, 2))
+            self.assertEqual(set(r), self.KEYS)
+
+    def test_confidential_deny_excerpt_is_redacted_literal(self):
+        with GateEnv() as e:
+            rid = put_cache(confidential=True, router="grep")
+            obj = e.run(spawn("Skills: /frontend\nJev[r=%s]: accept\nSECRET-CONFIDENTIAL-TOKEN build" % rid))
+            self.assertEqual(obj["action"], "deny")
+            self.assertIn("reason required on low_confidence", obj["deny"])
+            (r,) = e.gate_denies()
+            self.assertTrue(r["confidential"])
+            self.assertEqual(r["task_excerpt"], "[REDACTED:confidential]")
+            with open(e.shadow_log, encoding="utf-8") as fh:
+                self.assertNotIn("SECRET-CONFIDENTIAL-TOKEN", fh.read())
+
+    def test_task_excerpt_is_capped_at_200_and_whitespace_squashed(self):
+        with GateEnv() as e:
+            rid = put_cache()
+            body = "word   \n\n  " * 120
+            e.run(spawn("Skills: /frontend\nJev[r=%s]: accept\n%s" % (rid, body)))
+            (r,) = e.gate_denies()
+            self.assertLessEqual(len(r["task_excerpt"]), 200)
+            self.assertGreater(len(r["task_excerpt"]), 100)
+            self.assertNotIn("\n", r["task_excerpt"])
+            self.assertNotIn("  ", r["task_excerpt"])
+
+    def test_task_excerpt_redacts_secrets(self):
+        with GateEnv() as e:
+            rid = put_cache()
+            e.run(spawn("Skills: /frontend\nJev[r=%s]: accept\nUse API_KEY=sk-supersecretvalue1234567890 here" % rid))
+            (r,) = e.gate_denies()
+            self.assertNotIn("sk-supersecretvalue1234567890", r["task_excerpt"])
+
+    def test_unwritable_shadow_log_changes_nothing(self):
+        with GateEnv() as e:
+            blocker = os.path.join(e.tmp, "log-is-a-file")
+            open(blocker, "w").close()
+            bad = os.path.join(blocker, "sub", "shadow.jsonl")
+            rid = put_cache()
+            rc, out, err = e.run_raw(json.dumps(spawn("Skills: /frontend\nJev[r=%s]: accept\nBuild" % rid)),
+                                     {"SKILL_ROUTE_SHADOW_LOG": bad})
+            self.assertEqual((rc, err), (0, ""))
+            obj = json.loads(out)
+            self.assertEqual(out.count("\n"), 1)
+            self.assertEqual(obj["action"], "deny")                 # same output as with a healthy log
+            self.assertIn("accept but Skills differ: use modify", obj["deny"])
+            self.assertEqual(e.denies(rid), 1)                      # counters still bumped
+            self.assertEqual(e.shadows(), [])
+
+    def test_pass_and_rewrite_paths_write_no_gate_deny_row(self):
+        with GateEnv(winners=WINNERS) as e:
+            e.run(spawn("Build a landing page"))                                    # rewrite auto_default
+            e.run(spawn("Skills: /frontend\nBuild a landing page"))                  # rewrite auto_match
+            e.run(spawn("Skills: /frontend\nJev: accept \u2014 fits\nBuild a page"))   # rewrite explicit
+            e.run(spawn("Build", subagent_type="Explore"))                          # exempt pass
+            rid = put_cache()
+            e.run(spawn("Skills: /frontend, /tailwind\nJev[r=%s]: accept\nBuild" % rid))   # cached pass
+            self.assertEqual(e.shadows(), [])
+            e.assert_no_side_logs(self)
+
+    def test_outage_writes_no_gate_deny_row(self):
+        with GateEnv(stub_mode="slow", slow_seconds=5.0) as e:
+            e.run(spawn("Build a landing page"), {"JEV_GATE_DEADLINE": "0.4"})
+            self.assertEqual(e.shadows(), [])
+
+    def test_logging_never_touches_feedback_and_keeps_one_stdout_line(self):
+        with GateEnv(winners=WINNERS, peak=0.3) as e:
+            for _ in range(3):
+                e.run(spawn("Build a landing page"))        # deny, deny, deny_cap pass (run() asserts one line, no stderr)
+            self.assertEqual([r["decision"] for r in e.gate_denies()], ["deny", "deny", "deny_cap"])
+            self.assertEqual(e.feedbacks(), [])
+
+
+class AutoEmptyAndConfidentialLocalTests(unittest.TestCase):
+    """F1/F2 gate surface: the spawner note names the real reason (not the generic "set the route id" fallback)."""
+
+    def test_auto_empty_note_and_line(self):
+        with GateEnv(winners={"skill": "none"}, peak=0.9) as e:
+            obj = e.run(spawn("Build a landing page"))
+            self.assertEqual((obj["action"], obj["reason"]), ("rewrite", "auto_empty"))
+            self.assertEqual(obj["note"], "jev-gate: Jev found nothing and no Skills named; injected Jev line, "
+                                          "recorded accept")
+            self.assertNotIn("set the route id", obj["note"])
+            line = jev_spawn.parse_verdict_line(obj["prompt"])
+            self.assertEqual((line["id"], line["verdict"]), (obj["route_id"], "accept"))
+            self.assertIsNotNone(jev_spawn.cache_get(obj["route_id"]))
 
 
 if __name__ == "__main__":

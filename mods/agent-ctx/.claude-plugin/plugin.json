@@ -1,7 +1,7 @@
 {
   "name": "agent-ctx",
   "version": "0.1.0",
-  "description": "Each agent loop's own context %, measured per request; a one-line CONTEXT_PCT_ALERT rides that agent's next tool result when it crosses 70% or 80%",
+  "description": "Each agent loop's own context fill, measured per request; a one-line CONTEXT_PCT_ALERT rides that agent's next tool result. Subagents: absolute 200k warn / 250k finish / 300k stop (stop line on every result); main: 70/75/80% of its window. Controllers get CHILD_CTX on Agent and SendMessage results and CHILD_CTX_ALERT when a live child passes 250k/300k",
   "author": { "name": "The Agency" },
   "types": "./types/index.d.ts"
 }

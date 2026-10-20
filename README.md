@@ -84,7 +84,7 @@ The check confirms a file exists, not that it is right, and it warns while the r
 
 ### Context fills up without a word
 
-An agent deep in a job has no sense of how full its context is. The `agent-ctx` mod tells it when its context passes 70 percent. At 80 percent it asks the agent to save and hand over:
+An agent deep in a job has no sense of how full its context is. The `agent-ctx` mod tells it. The main session gets a warning at 70 percent of its window and a save-and-hand-over request at 80. Helpers count in absolute tokens: a warning at 200k, "finish the current task" at 250k, and from 300k a stop line on every tool result. A project lead or Coord also sees a `CHILD_CTX` line on each helper result, and a `CHILD_CTX_ALERT` when a running helper passes 250k or 300k. The main-session request reads:
 
 ```
 CONTEXT_PCT_ALERT: 80% — MANDATORY RESPAWN THRESHOLD (80%). Run /save-state and /respawn-self now.
