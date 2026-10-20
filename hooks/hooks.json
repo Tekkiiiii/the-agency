@@ -87,5 +87,11 @@
       "purpose": "Mark the session cleanly ended, typecheck/shellcheck edited files, record session cost"
     }
   ],
-  "retired": []
+  "retired": [
+    {
+      "id": "fable-on-opus",
+      "event": "UserPromptSubmit",
+      "command": "bash {root}/hooks/fable-on-opus.sh"
+    }
+  ]
 }

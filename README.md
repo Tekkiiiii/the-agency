@@ -103,7 +103,7 @@ You didn't explain anything the second day. The agent remembered.
 - **4-tier autonomous chain**: PD → Coord → Mini-Coord → Exec (general-purpose + Skills) decomposes any project to atomic units. Mini-Coords keep drilling L6→L7→L8 without escalating to PD.
 - **QA gates on every handoff**: No work gets ACK'd without a health-score pass. Gate: score ≥ 70 + zero CRITICALs. Example: 70 = tests pass but docs missing; 90+ = ship-ready.
 - **Explicit ACK/NACK protocol**: An agent's report lands when it stops. If it is not re-spawned, that is the ACK. A NACK spawns a fresh continuation agent with the fix list, and the rework loops back through QA. Consent for a permission-gated action is a file the main session writes under `{project}/memory/tasks/revisions/acks/`, never chat prose.
-- **Hook lifecycle system**: shell scripts across 5 lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop, UserPromptSubmit) — security gating, secret scanning, config protection, crash detection, cost tracking, plus an opt-in Fable-on-Opus hook (ships unwired) that injects Fable-style reasoning discipline (`hooks/fable/`) whenever the active model is Opus-line. Profile-aware (`standard` / `strict` / `minimal`). See `docs/HOOKS.md`.
+- **Hook lifecycle system**: shell scripts across 4 lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop) — security gating, secret scanning, config protection, crash detection, cost tracking. Profile-aware (`standard` / `strict` / `minimal`). See `docs/HOOKS.md`.
 - **Production-ready skills**: Memory, execution, QA, engineering, deployment, design, content, video, and more — all invoked via `/skill-name`.
 - **SQLite task store — nothing leaves your machine**: Task pipeline, gates, retries, blocking in `~/.claude/`. No servers. No API keys.
 - **Session persistence**: `/save-state` and `/recall` make Claude Code fully resume-capable. Come back days later; the PD shows you exactly where it left off.
@@ -173,8 +173,6 @@ The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. 
 │   ├── gate-guard.sh
 │   ├── secret-scanner.sh
 │   ├── cost-tracker.sh
-│   ├── fable-on-opus.sh # UserPromptSubmit: inject Fable reasoning discipline on Opus
-│   ├── fable/           # Fable playbook modules read by fable-on-opus.sh
 │   └── ...
 ├── mods/                ← Claude Code mods, wired into settings.json (Claude Code 2.1.287+)
 ├── archive/             ← retired files you had edited, moved here by install/upgrade
@@ -549,9 +547,7 @@ the-agency/
 │   ├── check-session-state.sh    # SessionStart: detect unclean exit
 │   ├── session-end.sh   # Stop: mark session clean
 │   ├── batch-check.sh   # Stop: typecheck + shellcheck edited files
-│   ├── cost-tracker.sh  # Stop: compute session token cost
-│   ├── fable-on-opus.sh # UserPromptSubmit: inject Fable reasoning discipline on Opus
-│   └── fable/           # Fable playbook modules read by fable-on-opus.sh
+│   └── cost-tracker.sh  # Stop: compute session token cost
 ├── agents/              # agent definitions (PD/Coord/critic/council + project PDs)
 ├── skills/              # 235+ reusable workflow skills
 └── plans/               # Architecture decision records
@@ -601,7 +597,7 @@ Everything above describes what the system does. This section describes how it w
 
 **NEXUS Protocol** — file-based 6-phase handoff doctrine for inter-agent coordination. Handoff artifacts are JSON files, read on demand with `room-utils.sh`.
 
-**Hook System** — shell scripts wired into Claude Code's 5 lifecycle events. Live at `{root}/hooks` (root = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`); install and `agency upgrade` copy them and wire them into `settings.json` from `hooks/hooks.json` (`agency hooks sync|remove` does the wiring on demand). Profile-aware (`standard` / `strict` / `minimal`).
+**Hook System** — shell scripts wired into Claude Code's 4 lifecycle events. Live at `{root}/hooks` (root = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`); install and `agency upgrade` copy them and wire them into `settings.json` from `hooks/hooks.json` (`agency hooks sync|remove` does the wiring on demand). Profile-aware (`standard` / `strict` / `minimal`).
 
 **Skills** — markdown-based reusable workflows loaded from `~/.claude/skills/`, registered in `INDEX.md`.
 
@@ -769,11 +765,10 @@ Use `/pd-spawn` for the full protocol.
 
 ### Hook System
 
-Bash scripts across 5 lifecycle events, copied to `{root}/hooks` (root = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`) by `install.sh`, `agency init` and `agency upgrade`, which also wire the hooks listed in `hooks/hooks.json` into `settings.json`; `agency hooks sync|remove` does the wiring on demand.
+Bash scripts across 4 lifecycle events, copied to `{root}/hooks` (root = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`) by `install.sh`, `agency init` and `agency upgrade`, which also wire the hooks listed in `hooks/hooks.json` into `settings.json`; `agency hooks sync|remove` does the wiring on demand.
 
 | Script | Event | What it does |
 |--------|-------|-------------|
-| `fable-on-opus.sh` | UserPromptSubmit | Inject Fable-style reasoning discipline (`hooks/fable/`) when the active model is Opus-line |
 | `startup-sync.sh` | SessionStart | Auto-pull `~/.claude` from GitHub — every session starts fresh |
 | `check-settings-secrets.sh` | SessionStart | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | Detect unclean prior exit (crash/Ctrl+C) |

@@ -9,6 +9,7 @@
 - **Long-term first, simple, minimal.** Prefer the durable root-cause fix unless the operator says ship fast; the durable fix is usually the simple one; touch only what the task needs.
 - **Use the reason.** Connect the work to why the operator wants it. If a missing "why" would change what you build, ask one sharp question.
 - **Plan first** for anything with 3+ steps or an architecture call; if it goes sideways, stop and re-plan.
+- **Reasoning discipline**: order work by risk, not chronology: the step most likely to kill the plan runs first. Plan only to the depth you know; past that, plant a checkpoint ("after step 3 we know X; branch there") and name scope-out plus the abort signal. Tag every fact observed / inferred / assumed and never let prose outrun that ledger. A second occurrence is a pattern: fix the generator, not the instance; the third manual repetition is the signal to script it. Leverage order, weakest to strongest: patch outputs → tune parameters → add a check → change structure → change the goal.
 
 ## Verification Before Done (evidence gate)
 Never call something done without evidence produced this session, and read the full output before claiming:

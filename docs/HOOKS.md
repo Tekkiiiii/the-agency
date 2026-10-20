@@ -9,7 +9,7 @@ The Agency ships a lifecycle hook system that runs shell scripts at key Claude C
 > every hook resolves its own root via `hooks/lib/resolve-root.sh`. See
 > [INSTALL-LAYOUT.md](INSTALL-LAYOUT.md#where-the-root-comes-from).
 
-This is a significant security and observability upgrade over a bare Claude Code install: 2 → 18 hooks across 5 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below). Of those 18, 14 are wired into `settings.json` by every install and upgrade — they are the entries of `hooks/hooks.json` (see [Settings Wiring](#settings-wiring) below); the remaining 4 — telemetry/convenience hooks plus the deliberately-unregistered `fable-on-opus.sh` — ship on disk but are not registered until an operator adds them manually.
+This is a significant security and observability upgrade over a bare Claude Code install: 2 → 17 hooks across 4 lifecycle events, plus a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below). Of those 17, 14 are wired into `settings.json` by every install and upgrade — they are the entries of `hooks/hooks.json` (see [Settings Wiring](#settings-wiring) below); the remaining 3 telemetry/convenience hooks ship on disk but are not registered until an operator adds them manually.
 
 ---
 
@@ -17,7 +17,6 @@ This is a significant security and observability upgrade over a bare Claude Code
 
 | Script | Event | Trigger | Purpose |
 |--------|-------|---------|---------|
-| `fable-on-opus.sh` | UserPromptSubmit | ships unwired — opt-in; self-gates on model when wired | Inject Fable-style operating-discipline guidance (`hooks/fable/*.md`) when the active model is Opus-line |
 | `startup-sync.sh` | SessionStart | always | Auto-pull the agency root's config from GitHub on session open |
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
@@ -68,7 +67,9 @@ These are the hooks it wires (the table is generated from `hooks/hooks.json`):
 | `check-session-state` | SessionStart | (all) | `bash {root}/hooks/check-session-state.sh` | Detect an unclean prior exit (crash / Ctrl+C) |
 | `stop-chain` | Stop | (all) | `bash {root}/hooks/session-end.sh && bash {root}/hooks/batch-check.sh && bash {root}/hooks/cost-tracker.sh` | Mark the session cleanly ended, typecheck/shellcheck edited files, record session cost |
 
-Retired (pruned from `settings.json` on the next sync): none.
+Retired (pruned from `settings.json` on the next sync):
+
+- `fable-on-opus` (UserPromptSubmit): `bash {root}/hooks/fable-on-opus.sh`
 <!-- hooks-manifest:end -->
 
 The three Stop scripts stay one chained command, exactly as earlier installers wrote it, so an existing install is recognised as already wired instead of getting a duplicate.
@@ -92,38 +93,21 @@ The three Stop scripts stay one chained command, exactly as earlier installers w
 
 **Finding Git Bash on Windows.** The installer does not rely on the PowerShell `PATH` (Git Bash is often not on it). `cli/lib/hooks-merge.js` looks for `bash.exe` in this order and stops at the first hit: (1) the file `CLAUDE_CODE_GIT_BASH_PATH` names, (2) `git --exec-path` (`C:/Program Files/Git/mingw64/libexec/git-core`): `Git\bin\bash.exe` is three folders up, and two and four are tried too, (3) `%ProgramFiles%\Git\bin\bash.exe`, (4) `%LOCALAPPDATA%\Programs\Git\bin\bash.exe`, (5) a `bash.exe` on `PATH`, ignoring `%WINDIR%\System32\bash.exe` and anything under `\WindowsApps\` (the WSL launcher, which would run hooks inside WSL). Hook commands stay `bash {root}/hooks/x.sh` because they run inside Git Bash, where `bash` resolves. If Git Bash was found in step 2 or 5 (a non-standard place) and Claude Code cannot find it, set `"env": {"CLAUDE_CODE_GIT_BASH_PATH": "C:\\path\\to\\bash.exe"}` in `settings.json`; the installer prints that line but never writes it.
 
-**Fable-on-Opus is not wired.** `fable-on-opus.sh` is not in `hooks/hooks.json`. Recent Opus-line models carry the reasoning/behavioral discipline this hook injects natively, so wiring it by default duplicated guidance the model already applies on its own. The script and its `hooks/fable/` playbooks still ship and stay useful for operators on older model lines, or anyone who wants that discipline injected explicitly regardless of model tier. An entry you added yourself is yours: the merge never removes it.
-
-To wire it in yourself, this is the block under `hooks`:
-
-```json
-"UserPromptSubmit": [
-  {
-    "hooks": [
-      { "type": "command", "command": "bash ~/.claude/hooks/fable-on-opus.sh" }
-    ]
-  }
-]
-```
-
-See [fable-on-opus.sh](#fable-on-opussh-userpromptsubmit) below for full behavior and the playbook inventory.
-
 ---
 
 ### Hooks Not Wired By Default
 
-Four of the 18 shipped lifecycle hooks are copied to `hooks/` but are not in `hooks/hooks.json`, so no install or upgrade path wires them:
+Three of the 17 shipped lifecycle hooks are copied to `hooks/` but are not in `hooks/hooks.json`, so no install or upgrade path wires them:
 
 | Hook | Event | Unwired because | What you lose |
 |------|-------|-----------------|---------------|
 | `spawn-logger.sh` | PreToolUse: Agent | telemetry, opt-in is defensible | No `spawn_start` events or lineage markers |
 | `spawn-completion.sh` | PostToolUse: Agent | telemetry, opt-in is defensible | No `spawn_end` events (outcome, tokens, duration) |
 | `bg-job-warn.sh` | PostToolUse: Bash | convenience, opt-in is defensible | No warning when a render/build is backgrounded |
-| `fable-on-opus.sh` | UserPromptSubmit | deliberate — superseded on recent Opus-line models | No Fable discipline injection on older model lines |
 
-All four are unwired on purpose — three are telemetry and convenience, and `fable-on-opus.sh` was deliberately unregistered because recent model lines carry its discipline natively. Nothing in this list is a safety gap: `spawn-gate.sh`, `loop-detector.sh`, `write-evidence.sh`, and `artifact-verify.sh` — the four hooks previously documented here as an installer gap — are wired by every install path. See [Settings Wiring](#settings-wiring) above for their entries in `hooks/hooks.json`, and [spawn-gate.sh](#spawn-gatesh-pretooluse-agent) / [loop-detector.sh](#loop-detectorsh-posttooluse-all-tools) / [write-evidence.sh](#write-evidencesh-posttooluse-write-edit) / [artifact-verify.sh](#artifact-verifysh-posttooluse-agent) below for full behavior.
+All three are unwired on purpose — telemetry and convenience. Nothing in this list is a safety gap: `spawn-gate.sh`, `loop-detector.sh`, `write-evidence.sh`, and `artifact-verify.sh` — the four hooks previously documented here as an installer gap — are wired by every install path. See [Settings Wiring](#settings-wiring) above for their entries in `hooks/hooks.json`, and [spawn-gate.sh](#spawn-gatesh-pretooluse-agent) / [loop-detector.sh](#loop-detectorsh-posttooluse-all-tools) / [write-evidence.sh](#write-evidencesh-posttooluse-write-edit) / [artifact-verify.sh](#artifact-verifysh-posttooluse-agent) below for full behavior.
 
-To wire any of the remaining four in yourself, merge an entry into the corresponding array in your `settings.json` `hooks` block (don't replace the entries already there — add alongside them). For example, for `spawn-logger.sh`:
+To wire any of the remaining three in yourself, merge an entry into the corresponding array in your `settings.json` `hooks` block (don't replace the entries already there — add alongside them). For example, for `spawn-logger.sh`:
 
 ```json
 "PreToolUse": [
@@ -212,37 +196,6 @@ The template `hooks/.hook-profile.template` ships `standard` as the default.
 ---
 
 ## Hook Details
-
-### fable-on-opus.sh (UserPromptSubmit)
-
-**Status: ships in `hooks/` but is not in `hooks/hooks.json`, so no install path wires it** — recent Opus-line models carry this discipline natively, so the default registration was removed. See [Settings Wiring](#settings-wiring) above for the rationale and the opt-in wiring block.
-
-Reads the incoming prompt payload from stdin (`session_id`, `transcript_path`, `model`, `prompt`) and determines the active model in order: the hook's own `.model` field, then the last assistant-model entry in the transcript JSONL, then the `model` key in `settings.json`. If the resolved model is not Opus-line, it clears any per-session marker files for that session and exits — a no-op on every other model tier.
-
-On an Opus-line model:
-
-- **Once per session:** injects `hooks/fable/core.md` (the reasoning-engine + behavioral-layer discipline) via a per-session marker file in `$TMPDIR` (`fable-core-<session_id>`) so it's added exactly once, not on every prompt.
-- **Keyword-routed, once each per session:** scans the prompt text against a keyword profile per task-type module (`visual`, `content`, `delegation`, `research`, `coding`, `planning`, `systems`, `security`, `efficiency`) and injects the matching module(s) from `hooks/fable/`. A prompt can match zero, one, or several modules.
-- **Otherwise:** emits a one-line reminder that core discipline is already loaded and names the on-demand modules available in `hooks/fable/`.
-
-Output is a `hookSpecificOutput.additionalContext` JSON block (the standard `UserPromptSubmit` hook contract) — never blocks the prompt. Requires `jq`; portable for macOS's bundled `/bin/bash` 3.2 (no bash-4-only syntax).
-
-**Playbook inventory (`hooks/fable/`):**
-
-| File | Covers |
-|------|--------|
-| `core.md` | Reasoning engine (intent reconstruction, hypothesis-first investigation, risk-ordered decomposition, epistemic ledger, blast-radius simulation) + behavioral layer (outcome-first replies, calibrated completion claims, one sharp question, pre-send checklist) |
-| `visual.md` | UI, pages, slides, charts, images — render-and-judge discipline, hierarchy, design tokens, accessibility as correctness |
-| `content.md` | Articles, posts, emails, scripts, teaching material — reader-first drafting, point-before-prose, slop removal |
-| `coding.md` | Implementation, bugfixes, refactors, tests — read-before-write, root-cause fixes, leave-a-check-behind |
-| `planning.md` | Implementation plans, proposals, roadmaps — plan from the end state, sequence by risk retirement |
-| `delegation.md` | Spawning, briefing, verifying agents — self-contained briefings, independent decomposition, verify like an outsider |
-| `research.md` | Comparisons, evaluations, investigations — source weighting, triangulation, confidence-leveled synthesis |
-| `systems.md` | Workflows, pipelines, recurring problems — structure over instance, blast radius, leverage points |
-| `security.md` | Auth, secrets, untrusted input, attacker modeling, operator hygiene (own credentials/environment/data) |
-| `efficiency.md` | Bottlenecks, cost, tokens, performance — measure first, optimize the bottleneck, price every optimization |
-
-Each module is self-contained; `core.md` is the only one injected unconditionally.
 
 ### startup-sync.sh (SessionStart)
 
@@ -413,7 +366,7 @@ A shared one-line utility, not itself wired into `settings.json`. Other hooks (`
 
 Always exits 0 and never raises; if the input is missing or unparseable, it's a silent no-op.
 
-`hooks/fable/` is the one other subdirectory under `hooks/` — it holds the Fable playbook modules read by `fable-on-opus.sh` above, not additional registered hooks. `install.sh` copies it explicitly, as a separate step from the generic `hooks/*.sh` glob it uses for flat hook scripts (that glob does not pick up `*.md` files or subdirectories). `agency init` and `agency upgrade` copy the whole `hooks/` tree, `fable/` and `lib/` included.
+`hooks/lib/` holds shared helpers, not registered hooks — see Helper Scripts below. `install.sh` copies it explicitly, as a separate step from the generic `hooks/*.sh` glob it uses for flat hook scripts (that glob does not pick up subdirectories). `agency init` and `agency upgrade` copy the whole `hooks/` tree.
 
 ---
 
