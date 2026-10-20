@@ -113,14 +113,23 @@ class BindingTests(unittest.TestCase):
                   "backend-critique"):
             self.assertFalse(js.is_binding(t), t)
         self.assertEqual(js.EXEMPT_PREFIXES, ("critique-", "council-", "caveman:"))
-        self.assertEqual(js.EXEMPT_SUFFIXES, ("-critique",))
+        self.assertEqual(js.EXEMPT_SUFFIXES, ("-critique", "-pd"))
+
+    def test_pd_spawns_exempt(self):
+        # F3 (PD decision 2026-10-19): *-pd identity spawns carry their own skills; exempt = no enforcement/feedback
+        for t in ("demo-project-pd", "foo-pd", "Demo-PD", "example-pd"):
+            self.assertFalse(js.is_binding(t), t)
+
+    def test_coord_family_stays_binding(self):
+        for t in ("coord", "mini-coord", "pd-coordinator"):
+            self.assertTrue(js.is_binding(t), t)
 
     def test_fork_exempt(self):
         self.assertFalse(js.is_binding("general-purpose", fork=True))
         self.assertFalse(js.is_binding(None, fork=True))
 
     def test_binding(self):
-        for t in ("general-purpose", "claude", "", None, "coord", "mini-coord", "pd-coordinator", "foo-pd",
+        for t in ("general-purpose", "claude", "", None, "coord", "mini-coord", "pd-coordinator",
                   "unknown-thing", "critique", "Explorer", "councilor", "curator"):
             self.assertTrue(js.is_binding(t), repr(t))
 
@@ -281,9 +290,60 @@ class EvaluateTests(unittest.TestCase):
 
     # row 11
     def test_no_line_low_confidence(self):
-        for kw in ({"gate": "low_confidence"}, {"none_fired": True}, {"confidential": True, "router": "grep"}, {"gate": None}):
+        for kw in ({"gate": "low_confidence"}, {"none_fired": True}, {"gate": None}):
             self.assertDeny(self.ev(jev(**kw), ["a", "b"], None), "no Jev line and gate is low_confidence")
+        # J non-empty, S empty, low_confidence: still a deny (the spawner must say why it ignores Jev's picks)
         self.assertDeny(self.ev(jev(gate="low_confidence"), [], None), "no Jev line and gate is low_confidence")
+        # S non-empty with J empty and no line: unchanged deny (F1 only covers empty/empty)
+        self.assertDeny(self.ev(jev(skills=(), gate="low_confidence", none_fired=True), ["a"], None),
+                        "no Jev line and gate is low_confidence")
+
+    # F1: both empty + no line -> auto pass (rewrite injects the line so the recorder sees it)
+    def test_no_line_both_empty_auto_empty(self):
+        line = "Jev[r=%s]: accept — auto: Jev found nothing, spawner lists nothing" % RID
+        for kw in ({"gate": "pass"}, {"gate": "low_confidence"}, {"none_fired": True},
+                   {"gate": "low_confidence", "none_fired": True}, {"gate": None}):
+            out = self.ev(jev(skills=(), **kw), [], None)
+            self.assertEqual((out["decision"], out["spawn_verdict"], out["verdict_source"]),
+                             ("rewrite", "accept", "auto_empty"), kw)
+            self.assertEqual(out["inject_line"], line)
+            self.assertEqual(out["inject_skills"], [])
+            self.assertIsNone(out["deny_message"])
+        # the injected line round-trips through the grammar
+        self.assertEqual(js.parse_verdict_line(line)["verdict"], "accept")
+
+    def test_no_line_both_empty_unchanged_when_line_present(self):
+        out = self.ev(jev(skills=(), gate="low_confidence", none_fired=True), [], L("accept"))
+        self.assertDeny(out, "reason required on low_confidence")
+        out = self.ev(jev(skills=(), gate="low_confidence"), [], L("accept", "nothing fits"))
+        self.assertEqual((out["decision"], out["verdict_source"]), ("pass", "explicit"))
+
+    def test_both_empty_outage_still_unavailable(self):
+        out = self.ev(jev(skills=(), router="haiku"), [], None)
+        self.assertEqual(out["verdict_source"], "jev_unavailable")
+
+    # F2: confidential (router=grep, so not an outage) + no line -> rewrite unreviewed, never a deny
+    def test_confidential_no_line_rewrites_local(self):
+        line = "Jev[r=%s]: unavailable — confidential: routed locally (grep), not reviewed" % RID
+        for j_skills, s in ((("a", "b"), ["a", "b"]), (("a", "b"), []), (("a", "b"), ["z"]), ((), []), ((), ["z"])):
+            out = self.ev(jev(skills=j_skills, confidential=True, router="grep", gate="low_confidence",
+                              none_fired=True), s, None)
+            self.assertEqual((out["decision"], out["spawn_verdict"], out["verdict_source"]),
+                             ("rewrite", "unreviewed", "confidential_local"), (j_skills, s))
+            self.assertEqual(out["inject_line"], line)
+            self.assertEqual(out["inject_skills"], [])
+            self.assertIsNone(out["deny_message"])
+        out = self.ev(jev(confidential=True, router="grep"), ["a", "b"], None)  # even with gate=pass
+        self.assertEqual(out["verdict_source"], "confidential_local")
+        self.assertEqual(js.parse_verdict_line(line)["verdict"], "unavailable")
+
+    def test_confidential_with_line_unchanged(self):
+        j = jev(confidential=True, router="grep")
+        self.assertDeny(self.ev(j, ["a", "b"], L("accept")), "reason required on low_confidence")
+        out = self.ev(j, ["a", "b"], L("accept", "checked"))
+        self.assertEqual((out["decision"], out["spawn_verdict"], out["verdict_source"]), ("pass", "accept", "explicit"))
+        out = self.ev(j, ["z"], L("reject", "none fit"))
+        self.assertEqual((out["decision"], out["verdict_source"]), ("pass", "explicit"))
 
     # row 12
     def test_deny_cap_loop_guard(self):
@@ -318,6 +378,44 @@ class EvaluateTests(unittest.TestCase):
         for line in msg.splitlines():
             if line.startswith("Jev["):
                 self.assertIsNotNone(js.parse_verdict_line(line))
+
+
+class GateDenyReplayTests(unittest.TestCase):
+    """The five 2026-10-19 JEV_SPAWN_DENY evidence rows (example session) replayed through the core."""
+
+    def test_rows_1_2_pd_spawn_exempt(self):
+        # main -> demo-project-pd, no Jev line, low_confidence: now exempt, the gate never evaluates it
+        self.assertFalse(js.is_binding("demo-project-pd"))
+        self.assertFalse(js.is_binding("demo-project-pd", fork=False))
+
+    def test_row_3_accept_but_skills_differ_still_denies(self):
+        self.assertTrue(js.is_binding("coord"))
+        j = jev(skills=("supabase-sql",), gate="pass")
+        s = ["supabase-sql", "superpowers-test-driven-development"]
+        out = js.evaluate(j, s, L("accept"), route_id=RID)
+        self.assertEqual(out["decision"], "deny")
+        self.assertIn("accept but Skills differ", out["deny_message"])
+
+    def test_row_4_empty_empty_none_fired_passes(self):
+        self.assertTrue(js.is_binding("coord"))
+        j = jev(skills=(), gate="low_confidence", none_fired=True)
+        out = js.evaluate(j, [], None, route_id=RID)
+        self.assertEqual((out["decision"], out["spawn_verdict"], out["verdict_source"]),
+                         ("rewrite", "accept", "auto_empty"))
+        self.assertEqual(out["inject_line"],
+                         "Jev[r=%s]: accept — auto: Jev found nothing, spawner lists nothing" % RID)
+
+    def test_row_5_confidential_grep_rewrites_unreviewed(self):
+        self.assertTrue(js.is_binding("coord"))
+        j = jev(skills=("superpowers-systematic-debugging", "superpowers-test-driven-development",
+                        "superpowers-writing-plans"),
+                gate="low_confidence", router="grep", none_fired=True, confidential=True)
+        out = js.evaluate(j, [], None, route_id=RID)
+        self.assertEqual((out["decision"], out["spawn_verdict"], out["verdict_source"]),
+                         ("rewrite", "unreviewed", "confidential_local"))
+        self.assertEqual(out["inject_skills"], [])
+        self.assertEqual(out["inject_line"],
+                         "Jev[r=%s]: unavailable — confidential: routed locally (grep), not reviewed" % RID)
 
 
 class ApplyDecisionTests(unittest.TestCase):

@@ -290,6 +290,46 @@ class RecorderTests(unittest.TestCase):
                 self.assertEqual(e.valid(fb), [])
             self.assertEqual([s["verdict_source"] for s in e.shadows()], ["auto_default", "auto_match"])
 
+    def test_auto_empty_source(self):
+        with RecEnv() as e:
+            rid = put_cache(skills=[], gate="low_confidence", none_fired=True)
+            e.record(payload("Jev[r=%s]: accept — auto: Jev found nothing, spawner lists nothing\nTask: build" % rid))
+            (fb,) = e.feedbacks()
+            self.assertEqual((fb["verdict_source"], fb["consult"], fb["spawn_verdict"], fb["pd_review"]),
+                             ("auto_empty", "gate", "accept", "agree"))
+            self.assertEqual(e.valid(fb), [])
+            self.assertEqual([s["verdict_source"] for s in e.shadows()], ["auto_empty"])
+            self.assertEqual(e.stub.count, 0)
+
+    def test_confidential_local_source(self):
+        with RecEnv() as e:
+            rid = put_cache(skills=["frontend"], gate="low_confidence", router="grep", confidential=True,
+                            none_fired=True)
+            e.record(payload("Jev[r=%s]: unavailable — confidential: routed locally (grep), not reviewed\n"
+                             "Task: build" % rid))
+            (fb,) = e.feedbacks()
+            self.assertEqual((fb["verdict_source"], fb["consult"], fb["spawn_verdict"], fb["pd_review"]),
+                             ("confidential_local", "gate", "unreviewed", "unreviewed"))
+            self.assertEqual(fb["task_text"], "")
+            self.assertEqual(e.valid(fb), [])
+            self.assertEqual([s["verdict_source"] for s in e.shadows()], ["confidential_local"])
+            self.assertEqual(e.stub.count, 0)
+
+    def test_unavailable_non_confidential_stays_jev_unavailable(self):
+        with RecEnv() as e:
+            rid = put_cache(skills=[], gate="low_confidence", router="haiku", jev_down=True)
+            e.record(payload("Jev[r=%s]: unavailable — router=haiku\nTask: build" % rid))
+            (fb,) = e.feedbacks()
+            self.assertEqual(fb["verdict_source"], "jev_unavailable")
+
+    def test_pd_spawn_gets_shadow_record_but_no_feedback(self):
+        with RecEnv() as e:
+            rid = put_cache()
+            e.record(payload("Skills: /frontend\nJev[r=%s]: modify — x\nTask: build" % rid,
+                             subagent_type="demo-project-pd"))
+            self.assertEqual(len(e.shadows()), 1)
+            self.assertEqual(e.feedbacks(), [])
+
     def test_exempt_types_get_shadow_record_but_no_feedback(self):
         for kw in ({"subagent_type": "Explore"}, {"subagent_type": "critique-code"},
                    {"subagent_type": "general-purpose", "fork": True}, {"subagent_type": "codebase-search"}):
@@ -302,7 +342,7 @@ class RecorderTests(unittest.TestCase):
                 self.assertEqual(e.appended, [])
 
     def test_binding_types(self):
-        for st in ("general-purpose", "", "coord", "demo-project-pd", "something-new"):
+        for st in ("general-purpose", "", "coord", "mini-coord", "pd-coordinator", "something-new"):  # *-pd is exempt (F3)
             with RecEnv() as e:
                 e.record(payload("Skills: /frontend\nBuild", subagent_type=st))
                 self.assertEqual(len(e.feedbacks()), 1, st)

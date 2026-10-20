@@ -577,6 +577,21 @@ class TestGate(Fx):
                                                       {"ts": "2026-10-02T00:00:00Z", "tool": "skill-route", "task_id": "z"}])
         self.assertTrue(self.check()[1]["shadow-window"]["pass"])
 
+    def test_gate_deny_rows_do_not_open_or_move_the_window(self):
+        # F4: jev-spawn-gate appends gate_deny rows to the skill-route shadow log; they are not routed tasks.
+        self.skill_result(); self.drill_result()
+        write_jsonl(os.environ["JEV_GATE_SKILL_ROUTE_SHADOW"],
+                    [{"ts": "2026-09-01T00:00:00Z", "event": "gate_deny", "rule": "x", "spawner_skills": ["a"]}])
+        res, c = self.check()
+        self.assertFalse(c["shadow-window"]["pass"])
+        self.assertIn("no shadow records", c["shadow-window"]["value"])
+        write_jsonl(os.environ["JEV_GATE_SKILL_ROUTE_SHADOW"],
+                    [{"ts": "2026-09-01T00:00:00Z", "event": "gate_deny", "rule": "x", "spawner_skills": ["a"]},
+                     {"ts": "2026-10-18T00:00:00Z", "actual_skills": ["a"]}])
+        res, c = self.check()
+        self.assertFalse(c["shadow-window"]["pass"])
+        self.assertEqual(res["info"]["shadow"]["window_start"], "2026-10-18T00:00:00Z")
+
     def test_sample_records_ignored(self):
         self.skill_result(); self.drill_result()
         write_jsonl(os.environ["JEV_GATE_FEEDBACK"], [{"ts": "2026-09-01T00:00:00Z", "tool": "skill-route", "sample": True,

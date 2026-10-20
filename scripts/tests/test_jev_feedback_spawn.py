@@ -105,7 +105,8 @@ class TestValidate(Base):
     def test_all_enum_values_accepted(self):
         for v in ("accept", "modify", "reject", "unreviewed"):
             self.assertEqual(jf.validate_record(spawn_rec(spawn_verdict=v)), [])
-        for v in ("explicit", "auto_default", "auto_match", "inferred", "jev_unavailable", "deny_cap"):
+        for v in ("explicit", "auto_default", "auto_match", "auto_empty", "confidential_local", "inferred",
+                  "jev_unavailable", "deny_cap"):
             self.assertEqual(jf.validate_record(spawn_rec(verdict_source=v)), [])
         for v in ("pre", "gate", "post"):
             self.assertEqual(jf.validate_record(spawn_rec(consult=v)), [])

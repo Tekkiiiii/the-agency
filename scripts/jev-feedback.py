@@ -15,7 +15,7 @@ Spawn records (automatic, written per Agent spawn by scripts/jev_spawn.py via ap
 "skill-route", jev_verdict is Jev's top-1 skill or "(none)", pd_review is agree (accept) | disagree
 (modify/reject) | unreviewed, and these optional keys are allowed:
   source "spawn"; spawn_verdict accept|modify|reject|unreviewed; verdict_raw (str); verdict_source
-  explicit|auto_default|auto_match|inferred|jev_unavailable|deny_cap; gate (str); none_fired (bool);
+  explicit|auto_default|auto_match|auto_empty|confidential_local|inferred|jev_unavailable|deny_cap; gate (str); none_fired (bool);
   jev_skills / spawner_skills (lists of str); subagent_type, parent_agent, role, route_id, spawn_id (str);
   consult pre|gate|post.
 For source spawn, pd_reason may be empty on disagree. Records without "source" validate exactly as before.
@@ -77,7 +77,8 @@ OUTCOMES = ("ok", "wrong_skill")
 REQUIRED = ("ts", "project", "task_id", "tool", "jev_verdict", "router",
             "pd_review", "pd_reason", "outcome", "outcome_mismatch", "task_text")
 SPAWN_VERDICTS = ("accept", "modify", "reject", "unreviewed")
-VERDICT_SOURCES = ("explicit", "auto_default", "auto_match", "inferred", "jev_unavailable", "deny_cap")
+VERDICT_SOURCES = ("explicit", "auto_default", "auto_match", "auto_empty", "confidential_local", "inferred",
+                   "jev_unavailable", "deny_cap")
 CONSULTS = ("pre", "gate", "post")
 SPAWN_STR_KEYS = ("verdict_raw", "gate", "subagent_type", "parent_agent", "role", "route_id", "spawn_id")  # str or null
 SPAWN_LIST_KEYS = ("jev_skills", "spawner_skills")

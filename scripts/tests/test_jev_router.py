@@ -746,6 +746,12 @@ class ShadowTests(unittest.TestCase):
             with open(e.shadow_log, "w") as fh:
                 for r in rows:
                     fh.write(json.dumps(r) + "\n")
+            with open(e.shadow_log, "a") as fh:      # gate_deny rows (jev-spawn-gate F4) must not count
+                for r in [{"ts": "2026-10-07T00:00:00Z", "event": "gate_deny", "decision": "deny", "router": "jev",
+                           "gate": "low_confidence", "spawner_skills": ["a"]},
+                          {"ts": "2026-10-08T05:00:00Z", "event": "gate_deny", "decision": "deny_cap",
+                           "router": "grep", "gate": "low_confidence", "spawner_skills": []}]:
+                    fh.write(json.dumps(r) + "\n")
             with open(e.usage_log, "w") as fh:
                 for u in [{"router": "jev", "shadow": True, "usd": 0.001, "ok": True, "input_tokens": 100,
                            "purpose": "skill-route"},
