@@ -5,17 +5,19 @@
 
 **Claude Code gives you a team. The Agency gives it the habits of a good one.**
 
-The Agency is a layer of plain files for Claude Code that you can open and read.
+The Agency is a set of plain files for Claude Code that you can open and read: agent roles for a project lead, coordinators and specialists, plus the skills, hooks and mods (small Claude Code plugins) that keep them on process.
 
 ```bash
 git clone https://github.com/Tekkiiiii/the-agency.git ~/the-agency && cd ~/the-agency && bash install.sh
 ```
 
-Windows, and what the installer changes: [Install](#install).
+Then run `agency onboard`. The installer backs up `settings.json` before it merges its hooks in; Windows steps: [Install](#install).
 
-An established team runs on habits. A project lead scopes the job and gives each piece to the person who fits it. QA signs off on evidence, and every session and subagent run lands in a cost log. Change control checks a risky command before it runs. A task that fails a third time goes up a level, and a hard call gets a second opinion. Whoever closes the shift writes a handover for whoever opens the next one, and the finished work arrives as a document you can read.
+An established team runs on habits. A project lead scopes the job and gives each piece to the person who fits it. QA signs off on evidence, and every session and subagent run lands in a cost log.
 
-The Agency installs those habits into Claude Code. Each section below names the role that owns one habit and says which of its parts run as code on a fresh install and which are written instructions the agents follow. [What a fresh install runs](#what-a-fresh-install-runs) puts them all in one table.
+Change control checks a risky command before it runs. A task that fails a third time goes up a level, and a hard call gets a second opinion. The closing shift writes a handover for the next one, and the finished work arrives as a document you can read.
+
+The Agency installs those habits into Claude Code. Each section below names the role that owns one habit and says which parts run as code on a fresh install and which are written instructions. [What a fresh install runs](#what-a-fresh-install-runs) puts them in one table.
 
 ---
 
@@ -25,12 +27,12 @@ The Agency is built on ideas and skills from these sources:
 
 | From | What it gave The Agency |
 |---|---|
-| Anthropic | Claude Code, the host everything runs in. `/webapp-testing` and `/mcp-builder` ship from anthropics/skills, and `/impeccable` builds on Anthropic's frontend-design skill. |
+| Anthropic | Claude Code, the host the skills, hooks and mods run in. `/webapp-testing` and `/mcp-builder` ship from anthropics/skills, and `/impeccable` builds on Anthropic's frontend-design skill. |
 | Jesse Vincent (obra), superpowers | The skills for brainstorming, writing plans, test-driven development, systematic debugging and subagent-driven development. |
 | Andrej Karpathy, LLM Wiki | The memory design is inspired by it: an index plus cross-linked markdown pages the agents write, with a periodic lint pass. His raw-folder habit is behind `/graphify`. |
 | Nous Research, Hermes Agent | `/self-healing` is inspired by the way Hermes recovers and learns from failed turns. |
 | WikiProject AI Cleanup, Wikipedia | The catalogue of AI-writing patterns behind `/humanizer`. |
-| Julius Brussee (caveman) and Dietrich Gebert (ponytail) | Token-saving modes for Claude Code, and the `ponytail:` comment that marks a deliberate shortcut. Both plugins install separately. |
+| Julius Brussee (caveman) and Dietrich Gebert (ponytail) | Caveman's compressed replies and ponytail's laziest-solution mode, both installed separately, plus the `ponytail:` comment that marks a deliberate shortcut. |
 | HeyGen HyperFrames, Cloudflare, HashiCorp, Supabase, Google Labs Stitch, Browser Use, Firecrawl | Their agent skills ship inside. |
 | Microsoft, markitdown | `/markitdown` wraps the library. |
 
@@ -54,7 +56,9 @@ Mid-flight: templates/invoice.html, half styled
 Context: export works for one-page invoices, multi-page breaks
 ```
 
-`/pd-resume invoice-app` starts a project lead from the same file, so a job that runs for days picks up at the step it reached. Each project also keeps an index plus plain markdown memory pages that the agents write and cross-link, and `/lint-memory` checks them for orphans and dead links.
+`/pd-resume invoice-app` starts a project lead from the same file, so a job that runs for days picks up at the step it reached.
+
+Each project also keeps an index plus plain markdown memory pages that the agents write and cross-link. `/lint-memory` checks them for orphans and dead links.
 
 When a session ends before its handover, the next one opens with:
 
@@ -63,13 +67,13 @@ NOTICE: Previous session may have ended uncleanly (last clean stop: <timestamp>)
   Run /recall [slug] or /save-state [slug] to check project state.
 ```
 
-A shift also ends when the context window fills. The `agent-ctx` mod (mods are small Claude Code plugins that ship in `mods/`) warns your main session at 70 and 75 percent of its window, and at 80 percent prints:
+A shift also ends when the context window fills. The `agent-ctx` mod warns your main session at 70 and 75 percent of its window, and at 80 percent prints:
 
 ```
 CONTEXT_PCT_ALERT: 80% — MANDATORY RESPAWN THRESHOLD (80%). Run /save-state and /respawn-self now.
 ```
 
-Subagents get the same warnings at 200k, 250k and 300k tokens, and the agent that started one can watch its fill ([docs/MODS.md](docs/MODS.md)). A project lead that needs a fresh session prints `RESPAWN_REQUEST <project>`, a toast names the `/pd-resume` to run, and the new session starts from the handover.
+Subagents count absolute tokens: a warning at 200k, "finish the current task" at 250k and a stop at 300k ([docs/MODS.md](docs/MODS.md)). A project lead that needs a fresh session prints `RESPAWN_REQUEST <project>`, a toast names the `/pd-resume` to run, and the new session starts from the handover.
 
 On a fresh install `/save-state`, `/recall` and `/pd-resume` are ready, and you run the save. The crash notice runs as a hook and the context alerts as a mod.
 
@@ -99,11 +103,11 @@ A team lead matches each ticket to the right person and the right amount of thou
 - **Specialists:** Sonnet. A request for another model is pinned back to Sonnet. An opt-in setting lets a specialist ask for Opus with a reason.
 - **Code search:** Haiku at low effort.
 
-Specialists also get an effort level, how hard the model thinks before it answers, set by the kind of task: high for hard code, visual work and English writing, xhigh for Vietnamese writing, low for quick lookups and medium for the rest. [docs/SKILLS.md](docs/SKILLS.md#effort-policy) has the table.
+With the router on, specialists also get an effort level, how hard the model thinks before it answers, set by the kind of task: high for hard code, visual work and English writing, xhigh for Vietnamese writing, low for quick lookups and medium for the rest. [docs/SKILLS.md](docs/SKILLS.md#effort-policy) has the table.
 
 On a fresh install the model pin and the effort by role run as code in the `spawn-ledger` mod. `AGENCY_SKILL_ROUTER` is unset, so the router stays off and offline, and a specialist gets medium effort unless its brief carries a `MODEL-CATEGORY:` line such as `debug` or `lookup`.
 
-Set `AGENCY_SKILL_ROUTER=1` with your own key for Jev, TypeSafe's hosted routing service, and the router picks up to three skills for each specialist's task and names the kind of job, which sets the effort. A spawn gate checks that each brief carries the pick as a `Jev[r=<route_id>]` line, and a router outage lets spawns through unchanged. Setup: [`scripts/skill-route/README.md`](scripts/skill-route/README.md).
+Set `AGENCY_SKILL_ROUTER=1` with your own key for Jev, a hosted routing service, and the router picks up to three skills for each specialist's task and names the kind of job, which sets the effort. A spawn gate checks that each brief carries the pick as a `Jev[r=<route_id>]` line, and a router outage lets spawns through unchanged. Setup: [`scripts/skill-route/README.md`](scripts/skill-route/README.md).
 
 ---
 
@@ -119,7 +123,7 @@ When a specialist reports a finished file, such as a PDF or a page, a hook looks
   MISSING: /path/to/report.pdf
 ```
 
-Each deliverable write adds a row with its path and byte count to `logs/write-evidence.jsonl`. The hook confirms the file exists, and `/cc-loop` sends the deliverable past critics who score it and return it for fixes, for up to three rounds.
+Each deliverable write adds a row with its path and byte count to `logs/write-evidence.jsonl` under your Claude Code config folder. `/cc-loop` then sends the deliverable past critics who score it and return it for fixes, for up to three rounds.
 
 On a fresh install the file check is a hook that warns while the run carries on. The QA gate is a written instruction the project lead follows.
 
@@ -129,7 +133,7 @@ On a fresh install the file check is a hook that warns while the run carries on.
 
 Finance logs what each session spent. Each time a session stops, `metrics/costs.jsonl` gets a row with its tokens and cost, priced model by model. Each subagent run writes its own rows to `spawns.jsonl`, with model and cost. A band above your prompt shows context, tokens, model, cost so far, a prompt-cache countdown and when your 5-hour and 7-day usage windows reset. `/ctx` opens the detail.
 
-Code search runs on the small Haiku model, and project questions go to your memory files before a subagent spawns. If you use the caveman or ponytail plugins, the `voice-compact` mod rewrites their long startup instructions into about 150 tokens of rules.
+The code-search agent's file pins the small Haiku model, and a written instruction sends project questions to your memory files before a subagent spawns. If you use the caveman or ponytail plugins, the `voice-compact` mod rewrites their long startup instructions into about 150 tokens of rules.
 
 On a fresh install the session row comes from a hook, and the subagent rows and the band run as mods. `voice-compact` waits idle until you install caveman or ponytail.
 
@@ -152,13 +156,13 @@ Hooks watch the rest of the time:
 
 `~/.claude/.hook-profile` sets how hard the hooks push: `standard` (the default) asks on keys and warns on sensitive files, `strict` refuses both, `minimal` turns them off. The key scanner reads shell commands; [docs/HOOKS.md](docs/HOOKS.md) lists what each hook reads. For review, `/security` checks code against the common web risks and `/cso` runs a full audit.
 
-On a fresh install `/guard` is off until you invoke it, and the hooks run on the `standard` profile. A rule such as "wait for my yes before a deploy" is an instruction the agent follows.
+On a fresh install `/guard` is off until you invoke it, and the hooks run on the `standard` profile. Approval rules, such as "wait for my yes before a deploy", are instructions the agent follows.
 
 ---
 
 ## Three strikes, escalate
 
-On call takes a problem up a level after the third failed try. `/investigate` stops after three hypotheses fail and asks you how to proceed. `/qa-only` escalates after three failed attempts with what it tried and a recommendation. A `/cc-loop` deliverable still under the bar after three rounds goes back to the project lead, who can hand it to a fresh writer with the critics' fix list.
+The on-call rule sends a problem up a level after the third failed try. `/investigate` stops after three hypotheses fail and asks you how to proceed. `/qa-only` escalates after three failed attempts with what it tried and a recommendation. A `/cc-loop` deliverable still under the bar after three rounds goes back to the project lead, who can hand it to a fresh writer with the critics' fix list.
 
 A loop that repeats one call trips a hook. After five identical tool calls in a row, the agent sees:
 
@@ -176,7 +180,7 @@ On a fresh install the three-strike rules are skill instructions. The loop warni
 
 The review board takes the calls that need a second view. `/codex` hands your diff to the Codex CLI for a review or an attempt to break it. For a decision, convene the council: one read-only reviewer per Claude model tier gets the same brief at once, and you get back a table of where the seats agree and where they split. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#agency-council).
 
-On a fresh install the four council seats ship as agent files in `agents/council/`, and `/codex` runs once you install the Codex CLI.
+On a fresh install the four council seats ship as agent files in `agents/council/`, and `/codex` runs once you install the Codex CLI. The council protocol is a written instruction the caller follows.
 
 ---
 
