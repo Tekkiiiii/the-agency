@@ -7,7 +7,25 @@
 
 A team that has worked together for a while runs on a handful of habits. Whoever closes the shift writes a handover for whoever opens it. A project lead scopes the job and gives each piece to the person who fits it. QA signs off before anything ships, and every hour lands on a cost code. A second pair of eyes reads any change headed for production. When a task fails for the third time it goes up a level, and a hard call gets a second opinion. The finished work arrives as a document someone can read.
 
-The Agency installs those habits into Claude Code as plain files you can open and read. Each section below is one habit and the role that owns it, with the lines that role prints and how far it goes on a fresh install.
+The Agency installs those habits into Claude Code as plain files you can open and read. Each habit below comes with the role that owns it, the lines that role prints and how far it goes on a fresh install.
+
+---
+
+## Where the habits came from
+
+A good team adopts the best practice it can find and says where it came from. The Agency is built on ideas and skills from these people and projects:
+
+| From | What it gave The Agency |
+|---|---|
+| Andrej Karpathy, LLM Wiki | The memory design is inspired by it: an index plus plain markdown pages the agents write, linked to each other, with a periodic lint pass. His raw-folder habit is behind `/graphify`. |
+| Nous Research, Hermes Agent | `/self-healing` is inspired by the way Hermes recovers and learns from failed turns. |
+| Anthropic | Claude Code, the host everything runs in, plus skills built on anthropics/skills and the frontend-design skill behind `/impeccable`. |
+| Jesse Vincent (obra), superpowers | The skills for brainstorming, writing plans, test-driven development, systematic debugging and subagent-driven development. |
+| WikiProject AI Cleanup, Wikipedia | The catalogue of AI-writing patterns behind `/humanizer`. |
+| Julius Brussee (caveman) and Dietrich Gebert (ponytail) | The token discipline, and the `ponytail:` comment that marks a deliberate shortcut. |
+| HeyGen HyperFrames, Cloudflare, HashiCorp, Supabase, Google Labs Stitch, Browser Use, Firecrawl | Skills from their own repositories ship inside. `/markitdown` is built on Microsoft's markitdown library. |
+
+[CREDITS.md](CREDITS.md) lists every source with its author, link and licence.
 
 ---
 
@@ -231,7 +249,7 @@ Skills are instructions Claude Code loads for one kind of work, called as `/name
 
 ## Credits
 
-Credit goes where the ideas came from. The memory design is inspired by Andrej Karpathy's LLM Wiki idea. The token-saving setup builds on the caveman and ponytail plugins, and `/self-healing` is inspired by Hermes Agent. Many skills began as other people's open-source work. [CREDITS.md](CREDITS.md) names each source, its author and its licence.
+The sources behind The Agency are summed up in [Where the habits came from](#where-the-habits-came-from). Many more skills began as other people's open-source work, and [CREDITS.md](CREDITS.md) names each one with its author and its licence.
 
 ---
 
