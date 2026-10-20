@@ -79,7 +79,7 @@ No servers. No API keys beyond Claude Code. Everything stays on your machine.
 
 ```bash
 # Clone next to your Claude Code config, not into it (~/.claude already exists)
-git clone https://github.com/Tekkiiii/the-agency.git ~/the-agency
+git clone https://github.com/Tekkiiiii/the-agency.git ~/the-agency
 cd ~/the-agency
 
 # Sync skills, agents and hooks into your Claude Code root and put `agency` on PATH
