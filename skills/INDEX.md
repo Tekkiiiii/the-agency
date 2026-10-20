@@ -380,15 +380,15 @@ Loaded by hand or by another skill; still invokable by name.
 |-------|-----|
 | `agent-dispatch` | internal: Main-session/PD routing procedure (act directly vs delegate, spawn choice); loaded via the CLAUDE.md on-demand table... |
 | `connect-chrome` | renamed: Alias of open-gstack-browser (frontmatter name = open-gstack-browser); route to the real dir |
-| `context-pressure` | internal: Agent context-% lifecycle procedure (save-state/respawn at 75/80%); triggered by CONTEXT_PCT_ALERT, no Exec task loads... |
-| `coord-respawn-self` | internal: Coord self-respawn at context 80% mid-L3; invoked by the Coord itself, never an Exec skill |
+| `context-pressure` | internal: Agent context lifecycle procedure (subagents: 200k warn, 250k finish, 300k save-state/respawn; main: 70/75/80%)... |
+| `coord-respawn-self` | internal: Coord self-respawn at context 300k tokens mid-L3; invoked by the Coord itself, never an Exec skill |
 | `hw` | meta: Pure /hw shortcut that invokes humanizer-writing; route to humanizer-writing instead |
 | `inbox-tasks` | internal: Main-session rule for where an ownerless task's tracking file lives; filing plumbing, no Exec task loads it |
 | `memory-crosslink` | internal: Memory-file linking convention (See also: [[stem]] wikilinks) loaded via the CLAUDE.md on-demand table when editing... |
 | `pd-resume` | internal: Session-start lifecycle command run by parent/PD boot; no Exec task loads it |
 | `pd-routing` | internal: Main-session procedure for forwarding project work to a running PD or spawning one; no Exec task loads it |
 | `pd-showcase` | internal: Toggle for live-demo mode of pd-spawn/pd-resume; session switch, never an Exec task |
-| `respawn-self` | internal: PD self-respawn at context >=80%; invoked by the PD itself, never chosen for an Exec task |
+| `respawn-self` | internal: PD self-respawn at context >=300k tokens; invoked by the PD itself, never chosen for an Exec task |
 | `resume-bod` | internal: Board/council session-restore command run by parent session; no Exec task loads it |
 | `save-state` | internal: Session-end lifecycle command; no Exec task loads it |
 | `unwrap` | internal: Inbox task pickup lifecycle command run by parent session; no Exec task loads it |

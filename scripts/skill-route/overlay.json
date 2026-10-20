@@ -344,7 +344,7 @@
   },
   "context-pressure": {
    "exclude": "internal",
-   "why": "Agent context-% lifecycle procedure (save-state/respawn at 75/80%); triggered by CONTEXT_PCT_ALERT, no Exec task loads it"
+   "why": "Agent context lifecycle procedure (subagents: 200k warn, 250k finish, 300k save-state/respawn; main: 70/75/80%); triggered by CONTEXT_PCT_ALERT, no Exec task loads it"
   },
   "context-restore": {
    "domain": "claude-system-ops",
@@ -367,7 +367,7 @@
   },
   "coord-respawn-self": {
    "exclude": "internal",
-   "why": "Coord self-respawn at context 80% mid-L3; invoked by the Coord itself, never an Exec skill",
+   "why": "Coord self-respawn at context 300k tokens mid-L3; invoked by the Coord itself, never an Exec skill",
    "triggers": [
     "coord respawn self",
     "/coord-respawn-self"
@@ -1664,7 +1664,7 @@
   },
   "respawn-self": {
    "exclude": "internal",
-   "why": "PD self-respawn at context >=80%; invoked by the PD itself, never chosen for an Exec task",
+   "why": "PD self-respawn at context >=300k tokens; invoked by the PD itself, never chosen for an Exec task",
    "triggers": [
     "respawn self",
     "/respawn-self"

@@ -153,7 +153,7 @@ async function warnedSubagent($: Parameters<TestBody>[0], on: On, env: Record<st
   mock.env(on, env)
   const reads: string[] = []
   on('turn.step', async function* (_$, e) {
-    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'tool_use', usage: { ...usage(150_000), model: e.model } }
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'tool_use', usage: { ...usage(210_000), model: e.model } }
   })
   on('fs.read', (_$, e) => (reads.push(seen(e.path)), { value: seen(e.path) === profilePath ? 'minimal' : 'standard' }))
   on('tool.call', () => ({ result: 'ok' }) as never)
@@ -183,5 +183,5 @@ test('win32: HOMEDRIVE+HOMEPATH when neither HOME nor USERPROFILE is set', async
 test('mac: the hook profile is read under HOME, alert unchanged', async ($, on) => {
   const { reads, context } = await warnedSubagent($, on, { HOME: '/home/t' }, '/nowhere', seenPosix)
   expect(reads).toEqual(['/home/t/.claude/.hook-profile'])
-  expect(context).toEqual(['CONTEXT_PCT_ALERT: 75% — WARNING THRESHOLD (75%). Complete current task. No new L3s.'])
+  expect(context).toEqual(['CONTEXT_PCT_ALERT: 210k tokens (subagent cap 300k) — WARNING (200k). Complete current task, keep it small.'])
 })

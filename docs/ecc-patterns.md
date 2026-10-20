@@ -35,7 +35,7 @@ Any autonomous loop must have: stall detection (5 identical consecutive tool cal
 
 **Our gap:** PDs run in background with no formal loop guard. A stuck PD burns tokens until context exhaustion.
 
-**Action:** Add three rules to `pd-coordinator.md` spawn template: MAX_TURNS 50, STALL_DETECT on 5 identical calls, BUDGET_SIGNAL at context > 70%.
+**Action:** Add three rules to `pd-coordinator.md` spawn template: MAX_TURNS 50, STALL_DETECT on 5 identical calls, BUDGET_SIGNAL at context > 250k tokens (subagent absolute cap; the main session keeps 70/75/80%).
 
 ### 4. Strategic Compaction — Active Suggestion
 

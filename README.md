@@ -797,7 +797,7 @@ Full reference: [`docs/HOOKS.md`](docs/HOOKS.md)
 Five plugins in `mods/`. `install.sh`, `install.ps1`, `agency init` and `agency upgrade` copy them to `{root}/mods/` and wire them into your user `settings.json` (`env.CLAUDE_CODE_PLUGIN_DIRS`) for you:
 
 - `context-band`: Claude Code shows no context, cache or usage-window figures above the prompt -> a band with context %, cost, cache countdown and 5h/7d reset timers.
-- `agent-ctx`: an agent does not notice its context filling up -> it is told at 70% and 80%.
+- `agent-ctx`: an agent does not notice its context filling up -> it is told at 200k / 250k / 300k tokens (subagents) or 70/75/80% of the window (main session); parents see each child's fill.
 - `loop-guard`: an agent repeats the same tool call forever -> a stall warning after five identical calls.
 - `spawn-ledger`: subagent spawns leave no record and nothing pins their model or caps parallel Execs -> a JSONL spawn ledger, model pin, Exec cap and artifact check.
 - `voice-compact`: the CAVEMAN / PONYTAIL startup injections cost tokens every session -> compact ~150-token rules.

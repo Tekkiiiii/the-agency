@@ -139,7 +139,7 @@ Decomposition can burn heavy context, so for genuinely heavy work the planning p
 (heavy) is separated from the deployment phase (fresh) by a save-state/respawn boundary.
 RULE: cross that boundary (run /save-state then respawn) when EITHER is true
 (matches task-decomposition-methodology.md §8):
-  (a) context is actually high — >70% of the window (protects against hitting the
+  (a) context is actually high — >250k tokens (protects against hitting the
       ceiling mid-execution, for ANY task), OR
   (b) the task is structurally complex per the Complexity Ladder Gate (§2.6):
       multi-layer DAG / cross-L3 dependencies — NOT mere item count (6 independent
@@ -174,7 +174,7 @@ SendMessage is the fast path; the flag is the guarantee.
       memory/tasks/ongoing/*.md and next-session.md. Apply the two-condition rule
       to assign parallel layers. Log: "Generated dev-plan.md — N tasks, M layers."
    c. IF present: read it. Skip completed tasks. Identify pending layers.
-   d. IF dev-plan is newly generated AND (context is >70% OR it is structurally complex
+   d. IF dev-plan is newly generated AND (context is >250k tokens OR it is structurally complex
       — multi-layer / cross-L3 deps, NOT mere item count):
       → Phase checkpoint: run /save-state {slug}, then respawn to enter the deployment
         phase with a clean context window. On a background PD, emit RESPAWN_REQUEST
@@ -618,35 +618,33 @@ Context-aware self-respawn prevents context overflow from corrupting work mid-fl
 
 ### Thresholds
 
-| Context % | Action |
-|-----------|--------|
-| < 75% | Normal operation |
-| 75–79% | WARN — complete current L3, no new L3s, prepare for respawn |
-| ≥ 80% | MANDATORY — invoke /respawn-self immediately |
+Spawned PD = subagent: absolute tokens (cap decision 2026-10-19). Main session keeps 70/75/80 % of its window.
+
+| Context (tokens) | Action |
+|------------------|--------|
+| < 200k | Normal operation (200k–249k: WARN, keep work small) |
+| 250k–299k | FINISH CURRENT TASK — complete current L3, no new L3s, prepare for respawn |
+| ≥ 300k | MANDATORY — invoke /respawn-self immediately |
 
 **Compaction retention policy (P2-3):** When compacting, preserve: (1) Primers — first messages defining rules and identity; (2) Semantic summary of the middle — synthesized, not verbatim; (3) Recents — last 20 messages. Primary compression target: tool results (largest context consumers). File paths and URLs MUST be preserved in the summary so the session is recoverable after compaction. Rollback signal: if sessions lose critical context (file paths missing from summaries after compaction), revert to 70% trigger.
 
 ### How to Monitor
 
-Context percentage is available in the statusline (yellow = 75%+, red = 80%+).
-The `context-pct-publish.sh` hook also writes `~/.claude/state/context-pct.txt`.
-
-```bash
-PCT=$(cat ~/.claude/state/context-pct.txt 2>/dev/null || echo "0")
-echo "Context: ${PCT}%"
-```
+Your OWN context arrives in your tool results: the `agent-ctx` mod measures every agent loop
+separately. A subagent (any agentId != main) is measured in absolute tokens; at 200k and 250k
+one `CONTEXT_PCT_ALERT: {K}k tokens (subagent cap 300k) — ...` line rides your next tool
+result, and from 300k a STOP line rides EVERY tool result until you end (nothing is denied;
+you must obey). Without the mod there is no automatic signal: estimate from your own transcript length.
+Spec and line wording: `runbooks/respawn-contract.md`.
 
 ### Context Check Gate (MANDATORY — runs after EACH Coord ACK)
 
-After ACKing each Coord in step 7, before processing the next Coord report:
+After ACKing each Coord in step 7, before processing the next Coord report, take the latest
+`CONTEXT_PCT_ALERT` line in your tool results (none seen = below 200k):
 
-```bash
-PCT=$(cat ~/.claude/state/context-pct.txt 2>/dev/null || echo "0")
-```
-
-- If PCT ≥ 80 → invoke `/respawn-self` immediately. Do not start next Coord exchange.
-- If PCT 75–79 → log warning to pd-scratch.md: "Context at {PCT}% — completing current Coord, no new L3s". Complete the current Coord ACK/NACK exchange, then invoke `/respawn-self`.
-- If PCT < 75 → continue normally.
+- If ≥ 300k (STOP line) → invoke `/respawn-self` immediately. Do not start next Coord exchange.
+- If 250k–299k → log warning to pd-scratch.md: "Context at {K}k — completing current Coord, no new L3s". Complete the current Coord ACK/NACK exchange, then invoke `/respawn-self`.
+- If < 250k → continue normally (200k–249k: keep work small).
 
 This gate fires between Coord ACK steps — not just on session start. A PD that skips this gate and hits context overflow mid-session will corrupt its own work.
 
@@ -678,7 +676,7 @@ Three hard limits that prevent runaway sessions:
       (what you tried, what the stall looks like, suggested workaround), then
       `/save-state` and stop. Never die silently.
 
-3. **BUDGET_SIGNAL** — If context exceeds 75% (visible in statusline), complete your
+3. **BUDGET_SIGNAL** — If context exceeds 250k tokens (`CONTEXT_PCT_ALERT` line), complete your
    current L3 task and stop. Do NOT start new L3 tasks. `/save-state` with remaining
    L3s listed in next-session.md for the next session.
 

@@ -3,7 +3,7 @@
 Optional Claude Code plugins that ship with The Agency. Each one is a plugin of function hooks that hot-reloads in a running session. Mods need Claude Code 2.1.287 or newer. The installer and `agency upgrade` wire them for you.
 
 - **context-band**: Claude Code shows no running context, cache or usage-window figures above the prompt -> a band with context %, tokens, model, cost, cache warm/cold countdown and 5h/7d reset timers, plus `/ctx` for a detail pane.
-- **agent-ctx**: A long-running agent does not notice its own context filling up -> it tells the agent when its own context crosses 70% and 80% (respawn threshold).
+- **agent-ctx**: A long-running agent does not notice its own context filling up -> it tells the agent when its own context crosses a threshold. Subagents: absolute tokens, warn at 200k, finish at 250k, stop line on every tool result from 300k. Main session: 70/75/80% of its window. Controllers (PD/Coord) also get `CHILD_CTX` on Agent and SendMessage results and `CHILD_CTX_ALERT` when a live child passes 250k/300k.
 - **loop-guard**: An agent repeats the same tool call forever and nobody notices -> it injects a stall warning after five identical calls in a row.
 - **spawn-ledger**: Subagent spawns leave no record, the `model` param leaks Opus onto sonnet-pinned agents and nothing caps parallel Execs -> it logs every spawn to JSONL, pins the model, caps Execs per PD, verifies claimed artifacts and relays `RESPAWN_REQUEST`. With the skill router on (`AGENCY_SKILL_ROUTER=1`) it also runs the optional Jev spawn gate (see below).
 - **voice-compact**: The CAVEMAN / PONYTAIL startup injections cost a lot of tokens every session -> it rewrites them into ~150-token compact rules.

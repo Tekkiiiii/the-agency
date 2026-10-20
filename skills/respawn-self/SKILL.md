@@ -1,14 +1,14 @@
 ---
 name: respawn-self
-description: "Use when a PD session hits context >= 80% (or >70% at a clean phase boundary) to save state, write a continuation manifest and emit RESPAWN_REQUEST so the parent respawns a fresh PD. Max 3 context-pressure respawns per project per 24h. Not for finishing decomposition alone."
+description: "Use when a PD session hits context >= 300k tokens (or >250k at a clean phase boundary) to save state, write a continuation manifest and emit RESPAWN_REQUEST so the parent respawns a fresh PD. Max 3 context-pressure respawns per project per 24h. Not for finishing decomposition alone."
 ---
 
 # /respawn-self — PD Context-Aware Self-Respawn
 
 ## When to Invoke
 
-- **Mandatory:** when context window reaches 80% (CONTEXT_PCT_ALERT fires)
-- **Proactive:** at a clean phase boundary (all current L3s done) when context > 70%
+- **Mandatory:** when context reaches 300k tokens (subagent cap; CONTEXT_PCT_ALERT STOP line fires)
+- **Proactive:** at a clean phase boundary (all current L3s done) when context > 250k tokens
 - **Never mid-L3:** do not invoke while an L3 Coord is in flight — wait for ACK/NACK
   from the current Coord, complete the phase, then respawn
 
