@@ -196,9 +196,15 @@ class DisabledDefaultTests(unittest.TestCase):
 class CliContractTests(unittest.TestCase):
     def test_malformed_stdin_passes(self):
         with GateEnv() as e:
-            for raw in ("", "   \n", "not json", "{", "[]", "null", "42", '"str"'):
+            for raw in ("", "   \n"):   # nothing on stdin is a plain pass
                 rc, out, err = e.run_raw(raw)
                 self.assertEqual((rc, out, err), (0, '{"action": "pass"}\n', ""), raw)
+            # not JSON / not an object: still fail open, but self-explaining (a zsh `echo` that expands \\n inside
+            # the JSON string produced raw newlines: the bare pass looked like a legitimate one)
+            for raw in ("not json", "{", "[]", "null", "42", '"str"', '{"prompt": "a\nb"}'):
+                rc, out, err = e.run_raw(raw)
+                self.assertEqual((rc, out, err), (0, '{"action": "pass", "reason": "malformed_stdin"}\n', ""), raw)
+                self.assertIsNotNone(parse_jev_gate(out), raw)   # the mod still accepts it as a pass
             self.assertEqual(e.stub.count, 0)
 
     def test_nothing_to_route_passes(self):
@@ -407,6 +413,18 @@ class RoutedDecisionTests(unittest.TestCase):
         with GateEnv(winners=WINNERS) as e:
             obj = e.run(spawn("Build a landing page"))
             self.assertNotIn("\n", obj["note"])
+
+
+    def test_cold_cache_idless_accept_with_differing_skills_denies(self):
+        """No fail-open on a cold cache (empty state dir, no route cache): an id-less accept whose Skills header
+        differs from Jev's is routed and denied. /humanizer stands in for a skill that differs from the fixture's
+        Jev pick (/frontend)."""
+        with GateEnv(winners=WINNERS) as e:
+            self.assertEqual(e.cache_files(), [])
+            obj = e.run(spawn("Skills: /humanizer\nJev: accept\nBuild a landing page"))
+            self.assertEqual(obj["action"], "deny")
+            self.assertIn("accept but Skills differ", obj["deny"])
+            self.assertRegex(obj["route_id"], r"^[0-9a-f]{8}$")
 
 
 class CacheHitTests(unittest.TestCase):

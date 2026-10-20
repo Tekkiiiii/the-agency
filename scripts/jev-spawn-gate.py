@@ -17,6 +17,7 @@ Flow:
   0. DISABLED (the default): AGENCY_SKILL_ROUTER is not "1" -> print {"action":"pass"} and exit 0. No network, no
      Jev or Haiku call, no subprocess, no state write, no router import.
      FAIL OPEN. Any exception -> {"action":"pass"}. A router timeout / error is an OUTAGE, never a deny.
+     Stdin that is not valid JSON, or not a JSON object -> {"action":"pass","reason":"malformed_stdin"} (still a pass).
      OFF SWITCHES (pass, nothing else done): env JEV_GATE_OFF=1; the file jev-gate.off in {root}/state or in the
      router state dir ($SKILL_ROUTE_STATE_DIR, default {root}/state/skill-route); {root}/.hook-profile == minimal.
      SKILL_ROUTE_CHILD=1 (the Haiku child of jev_client) also passes: the child's own spawns must never recurse
@@ -210,9 +211,12 @@ def decide(raw):
         return {"action": "pass"}
     if not raw or not raw.strip():
         return {"action": "pass"}
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except ValueError:  # not JSON: still fail open, but say why (a bare pass is indistinguishable from a real one)
+        return {"action": "pass", "reason": "malformed_stdin"}
     if not isinstance(data, dict):
-        return {"action": "pass"}
+        return {"action": "pass", "reason": "malformed_stdin"}
     if kill_switch():
         return {"action": "pass"}
     if data.get("fork") or data.get("is_teammate") or data.get("workflow"):
