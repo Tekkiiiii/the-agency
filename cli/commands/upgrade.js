@@ -498,7 +498,7 @@ module.exports = async function upgrade({ args, AGENCY_ROOT, console }) {
   const core = syncCore(repoDir, coreDest, console);
   console.log(`Core: ${core.updated} updated, ${core.preserved} preserved`);
 
-  // Retired files: skills/agents/runbooks/core docs the repo deleted since they were
+  // Retired files: skills/agents/runbooks/core/hooks files the repo deleted since they were
   // installed. The syncs above only add, so they stay forever. Runs LAST, after
   // every sync, through the one shared engine (cli/lib/retired-prune.js): an
   // untouched retired file is deleted, an edited one is archived (or deleted/asked

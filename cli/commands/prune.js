@@ -1,6 +1,6 @@
 // agency prune [status] [--dry-run] [--force] [--json] [--root <dir>] [--retired=archive|delete|ask]
 //
-// Removes files the repo retired (skills/agents/runbooks/core paths it shipped
+// Removes files the repo retired (skills/agents/runbooks/core/hooks paths it shipped
 // once and deleted since) from the agency root. The engine lives in
 // cli/lib/retired-prune.js, shared with install.sh, install.ps1,
 // `agency init` and `agency upgrade`. Skips a root that is a git work tree

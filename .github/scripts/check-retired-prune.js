@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // check-retired-prune.js — regression guard for cli/lib/retired-prune.js, the
-// shared step that deletes files the repo RETIRED (skills/agents/runbooks/core
+// shared step that deletes files the repo RETIRED (skills/agents/runbooks/core/hooks
 // paths shipped once, deleted since) from an installed agency root on
 // `agency upgrade`, install.sh, install.ps1 and `agency prune`.
 //
@@ -32,13 +32,16 @@
 //  18  env AGENCY_RETIRED honoured; invalid answer -> archive
 //  19  CLI: json, --retired=delete, exit codes
 //  20  autoPrune never throws, prints the summary
-//  21  manifest paths that escape the four trees are ignored
+//  21  manifest paths that escape the five trees are ignored
 //  22  legacy clone (root != repoDir, remote matches repoDir's) pruned without force, marked 'legacy-clone'
 //  23  a git root whose remote does not match is still skipped ('git-root'); no remote at all too
 //  24  remote forms match: https, user@, trailing .git and /, scp host:owner/repo, host case
 //  25  root == repoDir == the resolved config root: only manifest paths NOT tracked by git are pruned
 //  26  root == repoDir but NOT the resolved config root (developer checkout): refused 'repo-root'
 //  27  repoDir without a git remote falls back to the repository URL in cli/package.json
+//  28  hooks/ tree: retired hook (and nested hooks/fable/x.md) removed on shipped hash; shipped and user-added
+//      hook files untouched; edited retired hook archived; retired hook still named in settings.json kept
+//      (also with Windows-style backslash paths); unreadable settings.json keeps every hooks/ file
 'use strict';
 
 const crypto = require('crypto');
@@ -71,7 +74,7 @@ const DATE = '2026-10-09';
 // manifest: { 'skills/a/SKILL.md': ['v1 text', 'v2 text'] }
 function fakeRepo(paths) {
   const dir = mk('repo');
-  const m = { version: 1, generated_from: 'x', trees: ['skills/', 'agents/', 'runbooks/', 'core/'], paths: {} };
+  const m = { version: 1, generated_from: 'x', trees: ['skills/', 'agents/', 'runbooks/', 'core/', 'hooks/'], paths: {} };
   for (const [p, vs] of Object.entries(paths)) m.paths[p] = vs.map(sha).sort();
   fs.writeFileSync(path.join(dir, 'retired-manifest.json'), JSON.stringify(m, null, 2));
   return dir;
@@ -362,16 +365,75 @@ async function main() {
     const mp = path.join(repo, 'retired-manifest.json');
     const m = JSON.parse(fs.readFileSync(mp, 'utf8'));
     m.paths['../outside.txt'] = [sha('x')];
-    m.paths['hooks/live-hook.sh'] = [sha('x')];
+    m.paths['scripts/live-script.sh'] = [sha('x')];
     m.paths['/etc/passwd'] = [sha('x')];
     fs.writeFileSync(mp, JSON.stringify(m));
     const root = mk('root');
     put(root, 'skills/ok/SKILL.md', 'v');
     put(path.dirname(root), 'outside.txt', 'x');
-    put(root, 'hooks/live-hook.sh', 'x');
+    put(root, 'scripts/live-script.sh', 'x');
     const r = await run(base(repo, root, {}));
-    check('21 only the four trees are ever touched', r.removed.length === 1 && exists(path.join(path.dirname(root), 'outside.txt')) && exists(path.join(root, 'hooks/live-hook.sh')), JSON.stringify(r));
+    check('21 only the five trees are ever touched', r.removed.length === 1 && exists(path.join(path.dirname(root), 'outside.txt')) && exists(path.join(root, 'scripts/live-script.sh')), JSON.stringify(r));
     fs.rmSync(path.join(path.dirname(root), 'outside.txt'), { force: true });
+  }
+  // 28: hooks/ tree
+  {
+    const repo = fakeRepo({
+      'hooks/fable-on-opus.sh': ['#!/bin/bash\nold hook'],
+      'hooks/fable/core.md': ['playbook'],
+      'hooks/fable/coding.md': ['v1', 'v2'],
+      'hooks/ed-hook.sh': ['shipped'],
+      'hooks/wired.sh': ['wired'],
+      'hooks/wired.sh.bak': ['wired bak'],
+    });
+    const root = mk('root');
+    put(root, 'hooks/fable-on-opus.sh', '#!/bin/bash\r\nold hook');           // CRLF copy still counts as shipped
+    put(root, 'hooks/fable/core.md', 'playbook');
+    put(root, 'hooks/fable/coding.md', 'v2');
+    put(root, 'hooks/fable/mine.md', 'user note');                                // user-added, not in manifest
+    put(root, 'hooks/ed-hook.sh', 'edited by user');
+    put(root, 'hooks/session-end.sh', 'currently shipped hook');                  // not retired
+    put(root, 'hooks/lib/resolve-root.sh', 'currently shipped lib');
+    put(root, 'hooks/wired.sh', 'wired');
+    put(root, 'hooks/wired.sh.bak', 'wired bak');
+    put(root, 'settings.json', JSON.stringify({ hooks: { Stop: [{ matcher: '', hooks: [{ type: 'command', command: `bash ${root.replace(/\\/g, '/')}/hooks/wired.sh` }] }] } }));
+    const r = await run(base(repo, root, {}));
+    const h = (rel) => path.join(root, ...rel.split('/'));
+    check('28 retired hook with a shipped hash removed', !exists(h('hooks/fable-on-opus.sh')) && r.removed.includes('hooks/fable-on-opus.sh'), JSON.stringify(r));
+    check('28 nested hooks/fable/*.md removed with native separators, empty fable dir stays (mine.md in it)', !exists(h('hooks/fable/core.md')) && !exists(h('hooks/fable/coding.md')) && exists(h('hooks/fable/mine.md')), JSON.stringify(r));
+    check('28 currently shipped hooks and lib untouched', exists(h('hooks/session-end.sh')) && exists(h('hooks/lib/resolve-root.sh')));
+    check('28 user-added hooks/ file untouched', fs.readFileSync(h('hooks/fable/mine.md'), 'utf8') === 'user note');
+    check('28 user-edited retired hook archived, not deleted', !exists(h('hooks/ed-hook.sh')) && fs.readFileSync(path.join(root, 'archive', `agency-retired-${DATE}`, 'hooks', 'ed-hook.sh'), 'utf8') === 'edited by user' && r.edited.some((e) => e.kind === 'hook' && e.name === 'ed-hook.sh'), JSON.stringify(r));
+    check('28 retired hook still named in settings.json kept and reported', exists(h('hooks/wired.sh')) && r.skipped.some((x) => x.path === 'hooks/wired.sh' && x.reason === 'still registered in settings.json'), JSON.stringify(r.skipped));
+    check('28 reference match is a whole path (wired.sh.bak is not wired.sh)', !exists(h('hooks/wired.sh.bak')) && r.removed.includes('hooks/wired.sh.bak'), JSON.stringify(r));
+    check('28 kept line is printed', lib.formatResult(r).includes('Retired file skipped (still registered in settings.json): hooks/wired.sh'), lib.formatResult(r).join(' | '));
+    const r2 = await run(base(repo, root, {}));
+    check('28 rerun leaves the registered hook alone', r2.status === 'unchanged' && exists(h('hooks/wired.sh')), JSON.stringify(r2));
+
+    // Windows-style command: backslash path, ~/.claude form and $HOME form all count
+    for (const cmd of ['bash C:\\Users\\me\\.claude\\hooks\\wired.sh', 'bash ~/.claude/hooks/wired.sh', 'bash "$HOME/.claude/hooks/wired.sh" --x']) {
+      const rr = mk('root');
+      put(rr, 'hooks/wired.sh', 'wired');
+      put(rr, 'settings.json', JSON.stringify({ hooks: { Stop: [{ matcher: '', hooks: [{ type: 'command', command: cmd }] }] } }));
+      const x = await run(base(repo, rr, {}));
+      check(`28 reference form kept: ${cmd}`, exists(path.join(rr, 'hooks', 'wired.sh')) && x.skipped.some((s) => s.path === 'hooks/wired.sh'), JSON.stringify(x));
+    }
+    // statusLine and a different hook name do not confuse it
+    const rs = mk('root');
+    put(rs, 'hooks/wired.sh', 'wired'); put(rs, 'hooks/fable-on-opus.sh', '#!/bin/bash\nold hook');
+    put(rs, 'settings.json', JSON.stringify({ statusLine: { type: 'command', command: 'bash ~/.claude/hooks/wired.sh' }, hooks: { Stop: [{ matcher: '', hooks: [{ type: 'command', command: 'bash ~/.claude/hooks/session-end.sh' }] }] } }));
+    const xs = await run(base(repo, rs, {}));
+    check('28 statusLine reference keeps the file; unrelated retired hook still removed', exists(path.join(rs, 'hooks', 'wired.sh')) && !exists(path.join(rs, 'hooks', 'fable-on-opus.sh')), JSON.stringify(xs));
+    // no settings.json at all: nothing references it, so it is pruned
+    const rn = mk('root');
+    put(rn, 'hooks/wired.sh', 'wired');
+    const xn = await run(base(repo, rn, {}));
+    check('28 no settings.json -> retired hook removed', !exists(path.join(rn, 'hooks', 'wired.sh')) && xn.removed.length === 1, JSON.stringify(xn));
+    // unreadable settings.json: keep every hooks/ file, still prune other trees
+    const rb = mk('root');
+    put(rb, 'hooks/fable-on-opus.sh', '#!/bin/bash\nold hook'); put(rb, 'settings.json', '{ not json');
+    const xb = await run(base(fakeRepo({ 'hooks/fable-on-opus.sh': ['#!/bin/bash\nold hook'] }), rb, {}));
+    check('28 unreadable settings.json keeps the hook file', exists(path.join(rb, 'hooks', 'fable-on-opus.sh')) && xb.skipped.some((s) => s.reason === 'settings.json unreadable'), JSON.stringify(xb));
   }
   // 22-27: legacy git installs (real `git init` repos in temp dirs)
   const GENV = { ...process.env, GIT_CONFIG_NOSYSTEM: '1', GIT_AUTHOR_NAME: 'ci', GIT_AUTHOR_EMAIL: 'ci@example.invalid', GIT_COMMITTER_NAME: 'ci', GIT_COMMITTER_EMAIL: 'ci@example.invalid' };

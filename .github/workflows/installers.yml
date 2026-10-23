@@ -254,7 +254,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: bash .github/scripts/check-mods-install.sh
 
-      # Retired files: skills/agents/runbooks/core docs the repo deleted (the 6 dept
+      # Retired files: skills/agents/runbooks/core/hooks files the repo deleted (the 6 dept
       # skills, 15 dept agents, ...) stayed installed forever because every sync
       # only adds. retired-manifest.json (generated from git history) lists them
       # with the hash of every version ever shipped; cli/lib/retired-prune.js

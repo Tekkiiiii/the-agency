@@ -110,6 +110,17 @@ Windows: CI unit/TS tests only; the live `turn.step` relay is unproven on a real
 
 A spawn's rows (`spawn_start`, `spawn_launched`, `spawn_end`) go to ONE `spawns.jsonl`, chosen by `hooks/lib/spawn_project.py` in this order: a `Project:` line in the prompt (a path on it, else its first word if it is a slug in `<root>/memory/medium-term.md`), then a parent agent named `{slug}-pd`, then a subagent type `{slug}-pd`, then the working directory (longest path-boundary match against the project table), else `<root>/logs/spawns.jsonl`. `<root>/logs/spawns.jsonl` therefore holds only spawns with no project hint; looking only there makes a healthy ledger look empty. `ledger.py launched` and `end` find the start row in whichever log holds it, `model-pin.py` counts the Exec cap across every known log, and `reconcile-stale-spawns.sh` checks all of them before it closes a spawn as ABANDONED.
 
+### Cost attribution
+
+`spawn_start` rows carry `skills` (parsed from a `Skills:` line in the prompt, case-insensitive, leading `/` stripped) and `jev_route_id` (the `<id>` of a `Jev[r=<id>]` line, read from the FULL prompt and not the 200-char `prompt_excerpt`; `""` when absent; the last key of the row). `scripts/os-cost-report.py` joins every spawns log (global, per-project, `projects/*/memory/spawns.jsonl`) with the skill-route decision log (`SKILL_ROUTE_LOG`, else `<root>/memory/metrics/skill-route.jsonl`): each `spawn_end` is matched to its `spawn_start` by `spawn_id`, and the start's `jev_route_id` to a route log `route_id` (exact match). It writes `<root>/state/os/cost-weekly.json` with API-equivalent USD and raw tokens per `by_skill` (split evenly across a spawn's skills), `by_agent_type`, `by_project` and `by_model`, plus attributed and unattributed totals. Rows written before the field existed are reported as `pre_change`. It never enforces a budget and always exits 0.
+
+```bash
+python3 scripts/os-cost-report.py                      # last 7 days -> <root>/state/os/cost-weekly.json
+python3 scripts/os-cost-report.py --days 30 --out /tmp/cost.json
+```
+
+With the skill router off (the default; `AGENCY_SKILL_ROUTER=1` enables it) no spawn carries a Jev route id, so every row lands as unattributed. `by_skill` (from the prompt's `Skills:` line), `by_agent_type`, `by_project` and `by_model` still work.
+
 ## Shared code: `mods/_shared/`
 
 `mods/_shared/` is for developers of the mods; it is not a mod. It holds `platform.ts` (home directory, path joining, python launcher), `testpaths.ts` (test-only: the kit runs every path through the host's `path.resolve`, which rewrites `C:\x/y` on Windows, so tests compare through `seenWin` / `seenPosix`; no `register` file imports it) and a test that fails when a copy drifts. A mod cannot import a file outside its own plugin folder, so agent-ctx, context-band, loop-guard and spawn-ledger each carry a byte-identical copy of both at `hooks/platform.ts` and `hooks/testpaths.ts`. Edit the file in `_shared/`, copy it over the four, then run `python3 mods/_shared/test_copies_identical.py`. `_shared/` has no plugin manifest, so the installer neither copies it to `<root>/mods/` nor adds it to `CLAUDE_CODE_PLUGIN_DIRS` (`check-mods-merge.js` and `check-mods-install.sh` pin this).

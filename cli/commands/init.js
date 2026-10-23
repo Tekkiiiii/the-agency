@@ -127,7 +127,7 @@ module.exports = async function init({ args, AGENCY_ROOT, console }) {
   const core = syncCore(repoRoot, coreDest, console);
   console.log(`  ✓ ${core.updated} core docs installed, ${core.preserved} preserved`);
 
-  // 5b. Retired files (skills/agents/runbooks/core docs the repo deleted that an
+  // 5b. Retired files (skills/agents/runbooks/core/hooks files the repo deleted that an
   // older install still has). Last of the syncs; same engine as install.sh and
   // `agency upgrade`; --retired=archive|delete|ask. Never throws.
   await require('../lib/retired-prune.js').autoPrune({

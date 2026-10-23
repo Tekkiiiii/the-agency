@@ -238,7 +238,7 @@ else
     node "$MODS_MERGE" sync --root "$CLAUDE_HOME" --repo "$SCRIPT_DIR" --auto 2>&1 | sed 's/^/  /' || true
 fi
 # --- Retired files ---
-# Files the repo RETIRED (a skill, agent, runbook or core doc it shipped once and
+# Files the repo RETIRED (a skill, agent, runbook, core doc or hook script it shipped once and
 # deleted since) stay installed forever because the copies above only add. The ONE
 # helper cli/lib/retired-prune.js reads retired-manifest.json: an untouched
 # retired file is deleted; one you EDITED is listed under "You changed these" and
@@ -247,6 +247,9 @@ fi
 # piped (CI, `curl | bash`) "ask" degrades to archive. Nothing outside the
 # manifest is touched, a git work-tree root is skipped, and it never fails the
 # install: when skipped or on error, the command to finish is printed.
+# Runs AFTER the hooks wiring above on purpose: a retired hook's registration is
+# pruned first, so its file is not still referenced in settings.json (a hook that
+# is still referenced is kept anyway).
 RETIRED_PRUNE="$SCRIPT_DIR/cli/lib/retired-prune.js"
 retired_manual() {
     echo "    agency prune"

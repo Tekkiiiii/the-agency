@@ -151,7 +151,7 @@ class StartResolution(Base):
         self.start(prompt="Project: gamma")
         self.assertEqual(list(self.rows(self.gamma_log)[0]), [
             "event", "spawn_id", "tool_use_id", "parent_spawn_id", "parent_agent", "child_agent", "subagent_type",
-            "description", "prompt_hash", "prompt_excerpt", "model", "model_source", "skills", "ts", "project"])
+            "description", "prompt_hash", "prompt_excerpt", "model", "model_source", "skills", "ts", "project", "jev_route_id"])
 
 
 class LaunchedAndEndFollowStart(Base):

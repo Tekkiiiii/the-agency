@@ -5,7 +5,8 @@
   "skills/",
   "agents/",
   "runbooks/",
-  "core/"
+  "core/",
+  "hooks/"
  ],
  "paths": {}
 }
