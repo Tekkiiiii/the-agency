@@ -262,9 +262,10 @@ def start(d):
     if not model:
         model, model_source = "inherit", "inherit"
     skills = []
-    for sl in re.findall(r"^\s*SKILLS:\s*(.+)$", prompt, re.M):
+    for sl in re.findall(r"^\s*SKILLS:\s*(.+)$", prompt, re.M | re.I):
         skills += [x.strip(" `/") for x in re.split(r"[,\s]+", sl) if x.strip(" `/")]
     skills += re.findall(r"Skill\(\{\s*skill:\s*[\"\x27]([\w:.-]+)", prompt)
+    m = re.search(r"Jev\[r=([0-9A-Za-z_-]+)\]", prompt)
     log_file = resolve_log_file(d)
     spawn_id = str(uuid.uuid4())
     append(log_file, {
@@ -283,6 +284,7 @@ def start(d):
         "skills": sorted(set(skills)),
         "ts": now_iso(),
         "project": project_label(log_file),
+        "jev_route_id": m.group(1) if m else "",
     })
     fire_shadow(spawn_id, d, subagent_type, prompt)
     print(spawn_id)
