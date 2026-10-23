@@ -89,6 +89,24 @@ async function isMinimal($: EngineInterface): Promise<boolean> {
   return String(profile).trim() === 'minimal'
 }
 
+// Higgsfield fence: bare general-purpose carries disallowedTools mcp__claude_ai_Higgsfield (<agency root>/agents/general-purpose.md).
+// Higgsfield work runs as the unfenced file agent general-purpose-media instead. Kill switch: remove agents/general-purpose.md.
+const HF_SKILLS = /^[ \t]*Skills?:.*\/higgsfield-(?:functions|stickman-video)\b/im
+const HF_MARKER = /^[ \t]*MEDIA-WORK:[ \t]*higgsfield[ \t]*$/im
+export const isHiggsfieldWork = (prompt: string): boolean =>
+  HF_SKILLS.test(prompt) || prompt.includes('mcp__claude_ai_Higgsfield') || HF_MARKER.test(prompt)
+
+const MEDIA_TYPE = 'general-purpose-media'
+// The unfenced variant exists as a file or the rewrite is skipped (fail open: plain, fenced general-purpose).
+async function mediaVariantPresent($: EngineInterface): Promise<boolean> {
+  try {
+    await $.fs.read(joinPath(await agencyRoot($), 'agents', `${MEDIA_TYPE}.md`))
+    return true
+  } catch {
+    return false
+  }
+}
+
 type Pending = Map<string, { effort: string; category?: string; toolUseId: string }>
 const effortKey = (type: string, description: string | undefined) => `${type}\u0000${description ?? ''}`
 
@@ -274,7 +292,13 @@ export const register: Register = on => {
       parent_spawn_id: parent?.spawnId ?? '',
       parent_agent: parent?.type ?? 'root',
     }).catch(() => '')
+    // Higgsfield fence: gate, pin, cap and ledger 'start' above all saw the ORIGINAL type; only the spawn itself is swapped.
+    const originalType = e.subagentType
+    if ((originalType === '' || originalType === 'general-purpose') && isHiggsfieldWork(e.prompt ?? '') && (await mediaVariantPresent($))) {
+      e = { ...e, subagentType: MEDIA_TYPE }
+    }
     // Remember the effort BEFORE next(e): the agent's first turn.step can run before this hook gets the agentId back.
+    // Keyed on the ACTUAL type: turn.step's $.agent.list() fallback shows the type the engine really spawned.
     const key = effortKey(e.subagentType, e.description)
     if (pin?.effort) pendingEffort.set(key, { effort: pin.effort, category: pin.effort_category, toolUseId: e.tool_use_id })
     try {
@@ -283,8 +307,9 @@ export const register: Register = on => {
         const spawn: Spawn = {
           spawnId,
           toolUseId: e.tool_use_id,
-          type: e.subagentType,
-          description: e.description || e.subagentType,
+          type: originalType,
+          ...(e.subagentType !== originalType ? { actualType: e.subagentType } : {}),
+          description: e.description || originalType,
           parentAgentId: e.parentAgentId ?? null,
           ...(pin?.effort ? { effort: pin.effort, effortCategory: pin.effort_category } : {}),
         }
@@ -293,6 +318,7 @@ export const register: Register = on => {
           tool_use_id: e.tool_use_id,
           agent_id: result.agentId,
           resolved_model: result.model,
+          ...(e.subagentType !== originalType ? { actual_type: e.subagentType } : {}),
         }).catch(() => '')
       }
       return result
