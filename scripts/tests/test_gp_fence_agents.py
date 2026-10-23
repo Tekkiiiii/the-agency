@@ -27,8 +27,9 @@ class GpFence(unittest.TestCase):
 
     def test_fenced_body_is_the_exec_prompt(self):
         body = parse(FENCED)[1]
-        self.assertIn("You are an agent for Claude Code", body)
-        self.assertIn("do not re-delegate your entire assignment", body)
+        self.assertIn("You are a general-purpose worker agent", body)
+        self.assertIn("Do the work yourself", body)
+        self.assertNotIn("Anthropic's official CLI", body)
 
     def test_media_unfenced_same_body(self):
         fm, body = parse(MEDIA)
