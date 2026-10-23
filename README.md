@@ -153,7 +153,7 @@ The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. 
 
 **Mods.** The five Claude Code mods in `mods/` are installed too (Claude Code 2.1.287+): each is copied to `{root}/mods/<name>/` and added to `env.CLAUDE_CODE_PLUGIN_DIRS` in your user `settings.json`, after your own value, skipping any mod you already provide. Older Claude Code: one `Mods: skipped` line. Opt out with `AGENCY_NO_MODS=1`; undo with `agency mods remove`. See [Mods](#mods-optional-claude-code-21287) below.
 
-**Retired files.** `install` and `agency upgrade` also remove files the repo has since deleted (old skills, agents, runbooks, core docs), using `retired-manifest.json`. An untouched leftover is deleted. One you edited is archived to `{root}/archive/agency-retired-<date>/` (or deleted if you ask), never silently lost: choose with `--retired=archive|delete|ask` (`install.ps1`: `-Retired`; env `AGENCY_RETIRED`), default `ask` on a terminal and `archive` otherwise. Files the manifest does not list, such as your own skills, are never touched. Preview with `agency prune --dry-run`.
+**Retired files.** `install` and `agency upgrade` also remove files the repo has since deleted (old skills, agents, runbooks, core docs, hook scripts), using `retired-manifest.json`. An untouched leftover is deleted. One you edited is archived to `{root}/archive/agency-retired-<date>/` (or deleted if you ask), never silently lost: choose with `--retired=archive|delete|ask` (`install.ps1`: `-Retired`; env `AGENCY_RETIRED`), default `ask` on a terminal and `archive` otherwise. Files the manifest does not list, such as your own skills, are never touched. Preview with `agency prune --dry-run`.
 
 **What gets installed:**
 

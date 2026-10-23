@@ -13,17 +13,26 @@
 //        without one; nothing edited is ever deleted unless the choice is delete)
 //   path not in the manifest                    -> never touched
 //
-// Layout: skills/ agents/ runbooks/ core/ map 1:1 under <root>, exactly as
-// install.sh, install.ps1 and cli/commands/sync-assets.js write them. (Only
-// exception: the installers copy agents/ as *.md only, so a retired non-.md file
-// under agents/ is simply absent from an install; harmless here.)
+// Layout: skills/ agents/ runbooks/ core/ hooks/ map 1:1 under <root>, exactly as
+// install.sh, install.ps1 and cli/commands/sync-assets.js write them. (Exceptions,
+// harmless here: the installers copy agents/ as *.md only, and install.sh copies
+// only hooks/*.sh, hooks/lib/{sh,py,json} and hooks.json, so a retired hooks/ file of
+// another shape, such as hooks/fable/*.md, is on disk only after a CLI sync; a path
+// that was never installed is simply absent.)
+//
+// hooks/ has one extra rail: a retired hooks/ file that any string in
+// <root>/settings.json still names (a live registration, e.g. the user set
+// AGENCY_NO_HOOKS=1 or wired it by hand) is KEPT and reported as "still registered
+// in settings.json", and so is every hooks/ file when settings.json is unreadable.
+// The installers and upgrade/init run hooks-merge (which prunes retired
+// registrations) BEFORE this step, so a normal install has none left to keep.
 //
 // Safety, in order: the repo checkout itself is refused (even with force) unless
 // it is the user's own Claude config root (legacy shape A, below); a root that is
 // a git work tree is skipped unless force (a live, git-managed root can
 // legitimately hold files the repo dropped) unless it is a legacy install
 // (shape B, below); symlinks are never followed; a manifest path outside the
-// four trees is ignored.
+// five trees is ignored.
 //
 // Legacy installs. The old `git clone <repo> ~/.claude` and the old rescue.sh made
 // the Claude root itself a git clone of this repo. Two shapes, both pruned without
@@ -56,9 +65,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { resolveRoot } = require('./hooks-merge.js');
+const { resolveRoot, readSettings } = require('./hooks-merge.js');
 
-const TREES = ['skills', 'agents', 'runbooks', 'core'];
+const TREES = ['skills', 'agents', 'runbooks', 'core', 'hooks'];
 const MANIFEST_NAME = 'retired-manifest.json';
 const LOG_REL = path.join('logs', 'agency-retired.log');
 const CHOICES = ['archive', 'delete', 'ask'];
@@ -182,8 +191,44 @@ function classify(p) {
     case 'skills': return { kind: 'skill', name: parts.length > 2 ? parts[1] : base };
     case 'agents': return { kind: 'agent', name: base };
     case 'runbooks': return { kind: 'runbook', name: base };
+    case 'hooks': return { kind: 'hook', name: parts.slice(1).join('/') };
     default: return { kind: 'core', name: parts.slice(1).join('/') };
   }
+}
+
+// Every string value in settings.json (hook commands, statusLine, env ...), with
+// backslashes turned into '/', or null when settings.json exists but cannot be
+// read (then no hooks/ file is pruned: we cannot prove it is unreferenced).
+function settingsStrings(root) {
+  let st;
+  try { st = readSettings(path.join(root, 'settings.json')); } catch { return null; }
+  if (st.error) return null;
+  const out = [];
+  const walk = (v) => {
+    if (typeof v === 'string') out.push(v.replace(/\\/g, '/'));
+    else if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === 'object') Object.values(v).forEach(walk);
+  };
+  walk(st.data);
+  return out;
+}
+
+// True when a settings.json string mentions <p> as a whole path ("hooks/x.sh" must
+// not match "hooks/x.sh.bak" or "other-hooks/x.sh"). Deliberately loose on the
+// root part ({root}, ~/.claude, an absolute or MSYS path all match): a false
+// "referenced" only keeps a file, a miss would break a live registration.
+function referencedIn(strings, p, platform) {
+  const needle = platform === 'win32' ? p.toLowerCase() : p;
+  const isPathChar = (c) => /[A-Za-z0-9_.\-]/.test(c);
+  for (const raw of strings) {
+    const str = platform === 'win32' ? raw.toLowerCase() : raw;
+    for (let at = str.indexOf(needle); at !== -1; at = str.indexOf(needle, at + 1)) {
+      const before = at === 0 ? '' : str[at - 1];
+      const after = str[at + needle.length] || '';
+      if ((!before || !isPathChar(before)) && (!after || !isPathChar(after))) return true;
+    }
+  }
+  return false;
 }
 
 function safeManifestPath(p) {
@@ -310,6 +355,7 @@ async function pruneRetired(opts = {}) {
   // 1. Scan: classify every manifest path that is present on disk.
   const unmodified = [];
   const edited = [];
+  let settingsRefs; // lazily read, only if a hooks/ file is on disk
   for (const p of Object.keys(paths).sort()) {
     if (!safeManifestPath(p)) continue;
     if (tracked && tracked.has(p)) { res.trackedKept++; continue; }
@@ -334,6 +380,13 @@ async function pruneRetired(opts = {}) {
     if (!st) continue;
     if (st.isSymbolicLink()) { res.skipped.push({ path: p, reason: 'symlink' }); continue; }
     if (!st.isFile()) { res.skipped.push({ path: p, reason: 'not-a-file' }); continue; }
+    if (parts[0] === 'hooks') {
+      // Safety rail: a hook still wired in settings.json (AGENCY_NO_HOOKS=1, or
+      // registered by hand) must keep its file, else every event errors.
+      if (settingsRefs === undefined) settingsRefs = settingsStrings(root);
+      if (settingsRefs === null) { res.skipped.push({ path: p, reason: 'settings.json unreadable' }); continue; }
+      if (referencedIn(settingsRefs, p, platform)) { res.skipped.push({ path: p, reason: 'still registered in settings.json' }); continue; }
+    }
     try {
       const h = sha256Lf(fs.readFileSync(file));
       const shipped = Array.isArray(paths[p]) ? paths[p] : [];
@@ -462,7 +515,7 @@ async function autoPrune({ root, repoDir, console: out, indent = '', retired, is
 
 const USAGE = [
   'Usage: agency prune [status] [--dry-run] [--force] [--json] [--root <dir>] [--retired=archive|delete|ask]',
-  '  Removes files the agency repo retired (skills/agents/runbooks/core) from your agency root.',
+  '  Removes files the agency repo retired (skills/agents/runbooks/core/hooks) from your agency root.',
   '  An untouched retired file is deleted; one you edited is archived to archive/agency-retired-<date>/',
   '  (or deleted/asked per --retired). Anything not in retired-manifest.json is never touched.',
   '  --force  also prune a root that is a git work tree (never the agency repo checkout itself)',

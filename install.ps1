@@ -351,7 +351,7 @@ if ($env:AGENCY_NO_MODS -and $env:AGENCY_NO_MODS -ne "0") {
     }
 }
 # --- Retired files ---
-# Files the repo RETIRED (a skill, agent, runbook or core doc it shipped once and
+# Files the repo RETIRED (a skill, agent, runbook, core doc or hook script it shipped once and
 # deleted since) stay installed because the copies above only add. The ONE helper
 # cli\lib\retired-prune.js reads retired-manifest.json: an untouched retired file
 # is deleted; one you EDITED is listed under "You changed these" and archived to
@@ -359,6 +359,9 @@ if ($env:AGENCY_NO_MODS -and $env:AGENCY_NO_MODS -ne "0") {
 # real console it runs directly, so "ask" prompts; when redirected its output is
 # captured and "ask" degrades to archive. Nothing outside the manifest is
 # touched, a git work-tree root is skipped, and it never fails the install.
+# Runs AFTER the hooks wiring above on purpose: a retired hook's registration is
+# pruned first, so its file is not still referenced in settings.json (a hook that
+# is still referenced is kept anyway).
 $RetiredPrune = Join-Path $ScriptDir "cli\lib\retired-prune.js"
 function Write-RetiredManual {
     Write-Host "    agency prune"

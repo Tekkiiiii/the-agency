@@ -1,11 +1,12 @@
 {
  "version": 1,
- "generated_from": "e0f6dee48ea7df9628c4e9e4f922fa2d8084f880",
+ "generated_from": "976fcf48c61057163db0062065bddde0b860dd6c",
  "trees": [
   "skills/",
   "agents/",
   "runbooks/",
-  "core/"
+  "core/",
+  "hooks/"
  ],
  "paths": {
   "agents/CONTRIBUTING.md": [
@@ -1408,6 +1409,41 @@
    "7bdb938b1ac9ef2f37aa41f2a7d1e0818ec7ea67e4ad74d735a053ba23e3bbe6",
    "7d0d4ef2cd7c4ac366a4aab89105f274b5b8acf1835f07ab0097f0c09d37f760",
    "8af6c70f8e288d79b8624c8269b47823e62a53d7f2c7b4656e6fbb65c4ccd5cc"
+  ],
+  "hooks/fable-on-opus.sh": [
+   "07c091883e36ad178152b3b8a2b23dcdae1298a915f0d9e03c5f7b8c2f4035f9",
+   "1caa847f687b6cf35de7f2760d9554aa87a31862b4ce2acd416d501c63edb61e"
+  ],
+  "hooks/fable/coding.md": [
+   "a5de12b9da2d798cf0650c22ea4e5cb9acf7a40fd8b0235a1b8a86fe2f8c896f"
+  ],
+  "hooks/fable/content.md": [
+   "78b330b0257d0e74c033009fb2af39f8f23aac8e7c72517851ad4845a75aba13"
+  ],
+  "hooks/fable/core.md": [
+   "c5c1467d0182ea814055fd17de7e8db5a2344651806fd2134e75083d4434b263",
+   "fbbbc34b20a16d6213cc213606eac6bf07ecf92efd03876eb7b4c3ed4a324878"
+  ],
+  "hooks/fable/delegation.md": [
+   "bd9cf516f0d10b3e985f86e70fdad31fe19e417b6ed8b62205a6afdff8f00637"
+  ],
+  "hooks/fable/efficiency.md": [
+   "cb08ee1704cf4f22c933a62bb588d47de0988558f4176aabc93ab333fc40a0ae"
+  ],
+  "hooks/fable/planning.md": [
+   "824634e3fcfed2edabf4db593072a7e8f9439a1fe64f634d2f465e81893dd7bb"
+  ],
+  "hooks/fable/research.md": [
+   "76107a2a28559040dc29f815caa8767c0ef0aff52837db13a46ce731cd9e0076"
+  ],
+  "hooks/fable/security.md": [
+   "e4d673558a23abf289f684c15681fa1d604cea0cba31b5fa34e224612aeb4306"
+  ],
+  "hooks/fable/systems.md": [
+   "b93dccc55ce62ccc86d049eb69ad1fce6cbaa11b3d228cfda4c9a87d988f6544"
+  ],
+  "hooks/fable/visual.md": [
+   "b4752f22b2a8439b184078a16f6653849a3e7f24af4177b385f113aded38ee6d"
   ],
   "runbooks/department-lead-protocol.md": [
    "0e1f080d84562009882bb1a0a697dbe0ff6d71a11907f7df8c578b3cec1a9083"

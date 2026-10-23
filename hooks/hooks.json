@@ -1,5 +1,5 @@
 {
-  "$comment": "Single source of truth for which hooks The Agency wires into settings.json. Read by cli/lib/hooks-merge.js (install.sh, install.ps1, agency init, agency upgrade, agency hooks sync|remove). {root} is replaced by the resolved agency root. The table in docs/HOOKS.md is generated from this file: node .github/scripts/check-hooks-manifest.js --write. To stop shipping a hook, move its entry to \"retired\" (id, event, command) so existing installs get it pruned.",
+  "$comment": "Single source of truth for which hooks The Agency wires into settings.json. Read by cli/lib/hooks-merge.js (install.sh, install.ps1, agency init, agency upgrade, agency hooks sync|remove). {root} is replaced by the resolved agency root. The table in docs/HOOKS.md is generated from this file: node .github/scripts/check-hooks-manifest.js --write. To stop shipping a hook, move its entry to \"retired\" (id, event, command) so existing installs get its registration pruned; the script file itself is pruned from installs by retired-manifest.json (python3 scripts/gen-retired-manifest.py).",
   "version": 1,
   "hooks": [
     {

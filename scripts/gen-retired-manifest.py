@@ -2,7 +2,7 @@
 """gen-retired-manifest.py - generate (or check) retired-manifest.json.
 
 The manifest lists every file the repo once shipped under skills/, agents/,
-runbooks/ or core/ and no longer ships, with the sha256 of EVERY version that
+runbooks/, core/ or hooks/ and no longer ships, with the sha256 of EVERY version that
 was ever shipped at that path. cli/lib/retired-prune.js reads it to delete stale
 files from an installed agency root on `agency upgrade`, install.sh, install.ps1
 and `agency prune`: a file whose hash matches a shipped version is an untouched
@@ -14,7 +14,7 @@ or kept; a path that is not in this file is never touched.
                                                      committed file differs (CI guard)
 
 Needs the FULL git history (CI: actions/checkout fetch-depth: 0). A path is
-RETIRED when it existed in any commit reachable from HEAD under one of the four
+RETIRED when it existed in any commit reachable from HEAD under one of the five
 trees and does not exist at HEAD. Excluded: paths listed in core/.preserve (now
 or in any past version - user data, never ours to delete), OS/cache noise, and any
 path whose name contains a personal term from .github/scripts/check-privacy.js (the
@@ -32,7 +32,7 @@ import re
 import subprocess
 import sys
 
-TREES = ["skills/", "agents/", "runbooks/", "core/"]
+TREES = ["skills/", "agents/", "runbooks/", "core/", "hooks/"]
 MANIFEST = "retired-manifest.json"
 NOISE_BASENAMES = {".DS_Store", "Thumbs.db"}
 ZERO = "0" * 40  # sha1 repos; sha256 repos use 64 zeros, handled by set(c) == {"0"}
