@@ -1,0 +1,159 @@
+---
+name: skill-import
+description: "Use on /skill-import, \"import skills\", \"apply skills to this project\", or when onboarding a project or adding a stack. Wires skills from ~/.claude/skills/ into the project's nested CLAUDE.md files by stack detection or by name, with duplicate/contradiction/additive checks; appends only."
+---
+
+# Skill Import — Import Library Skills into Project CLAUDE.md Files
+
+Scans the skills library at `~/.claude/skills/`, matches relevant skills to the
+current project's nested CLAUDE.md files, and writes ready-to-use skill content.
+External URLs are handled by Skill Seekers' `install-agent` command.
+
+---
+
+## Step 0: Check for External URL
+
+If the user says "import from [URL]" or "pull from [GitHub repo]":
+1. Ensure skill-seekers is installed: `which skill-seekers || pip3 show skill-seekers`
+2. Run: `skill-seekers install-agent "[URL]" --target claude`
+3. The skill installs to `~/.claude/skills/[derived-name]/`
+4. Proceed to Step 3 with that skill as the import target
+
+If no URL, proceed to Step 1.
+
+---
+
+## Step 1: Read the Indexes
+
+Always read both:
+1. **`~/.claude/skills/INDEX.md`** — master list (name + description)
+2. **`${CLAUDE_SKILL_DIR}/INDEX.md`** — import-specific (target + stack + description)
+
+The master `skills/INDEX.md` is GENERATED from the SKILL.md files on disk; never hand-edit it. Regenerate it if missing or stale, then check:
+```bash
+python3 {agency-root}/scripts/skill-registry.py
+python3 {agency-root}/scripts/skill-registry.py --check
+```
+The import-specific `${CLAUDE_SKILL_DIR}/INDEX.md` is a separate hand-kept table (not generated).
+
+---
+
+## Step 2: Scan the Current Project
+
+1. **Folder structure** — which domain folders exist (backend/, frontend/, database/, etc.)
+2. **Existing CLAUDE.md content** — avoid duplicate rules
+3. **Stack clues** — `package.json`, `requirements.txt`, `pyproject.toml`, file extensions
+
+---
+
+## Step 3: Match Skills to Project
+
+### Auto-match (user said "import all relevant" or "import all skills")
+Stack-match the skill descriptions and router domains in `INDEX.md` against the project stack.
+
+### Named import (user said "import [skill-name]")
+Look up in `INDEX.md`, verify the skill exists at `~/.claude/skills/[name]/SKILL.md`.
+
+### Present matches for confirmation:
+```
+Based on your project stack, I matched:
+  backend           → /backend/CLAUDE.md
+  frontend         → /frontend/CLAUDE.md
+  security         → /backend/CLAUDE.md
+
+Proceed? (yes / skip [skill] / add [skill])
+```
+
+### Placement Logic
+
+| Skill target | Destination |
+|---|---|
+| `database` | `/database/CLAUDE.md` |
+| `backend` | `/backend/CLAUDE.md` |
+| `frontend` | `/frontend/CLAUDE.md` |
+| `infra` | `/infra/CLAUDE.md` |
+| `root` | Root `CLAUDE.md` |
+| `all` | Split across relevant folders |
+
+---
+
+## Step 4: Conflict Detection
+
+- **Duplicate:** same rule already present → skip, notify user
+- **Contradiction:** conflicts with existing rule → flag, ask user
+- **Additive:** no conflict → safe to import
+
+```
+⚠️ Conflict in /backend/CLAUDE.md:
+  Existing:  "Use pandas for data processing"
+  Importing: "Never use pandas — use openpyxl only"
+Which wins? (existing / importing / keep both)
+```
+
+---
+
+## Step 5: Write to CLAUDE.md Files
+
+Append under a labelled section per skill:
+```markdown
+## [skill-name] (imported from library)
+
+[content from skill's SKILL.md body]
+```
+
+Confirm each write:
+```
+✓ backend  → /backend/CLAUDE.md  (backend, security)
+✓ frontend → /frontend/CLAUDE.md  (frontend, vercel-deploy)
+```
+
+---
+
+## Step 6: Summary
+
+```
+Import complete.
+
+Files updated:
+- /backend/CLAUDE.md   ← backend, security, superpowers-tdd
+- /frontend/CLAUDE.md ← frontend, vercel-deploy
+
+Skipped (duplicate): [skill]
+Conflicts resolved: [rule] → [user choice]
+```
+
+---
+
+## Step 7: Import Lesson Files
+
+After writing CLAUDE.md files, propagate lesson files:
+1. Read `~/.claude/memory/lessons/` — check available stacks
+2. For each stack present in the project with a lesson file at `~/.claude/memory/lessons/{stack}.md`:
+   a. Create `{project}/memory/lessons/` if missing
+   b. Copy `~/.claude/memory/lessons/{stack}.md` → `{project}/memory/lessons/{stack}.md`
+3. Create `{project}/memory/decisions.md` if missing
+4. Create `{project}/memory/sessions/` directory if missing
+
+---
+
+## Step 8: Register After External Import
+
+If Step 0 imported from an external URL, register the new skill. The registry is generated from disk, so there is nothing to append: add the router overlay entry (a skill with no entry is left out of the router menu), lint the skill, then regenerate `skills/INDEX.md`.
+```bash
+python3 {agency-root}/scripts/skill-route-overlay-add.py [new-skill]   # default: hidden from the router; add --domain D --hint H to make it routable
+python3 {agency-root}/scripts/skill-registry.py --lint --changed-only {agency-root}/skills/[new-skill]/SKILL.md
+python3 {agency-root}/scripts/skill-registry.py
+```
+Lint: for a vendor skill you cloned or installed as-is, treat `LINT FAIL` as report-only; never edit vendor files to satisfy it, accept them instead with `python3 {agency-root}/scripts/skill-registry.py --lint --update-baseline --changed-only {agency-root}/skills/[new-skill]/SKILL.md`. For a skill you own, exit 1 means STOP until fixed, then re-run.
+
+End the import report with: `New top-level skill folder: restart Claude Code (or run /reload-skills if your version has it) before it is invocable.`
+
+---
+
+## Key Rules
+
+- Always read INDEX.md first — never scan raw folders if INDEX.md exists and current
+- Never overwrite existing CLAUDE.md content — always append under a labelled section
+- Always split multi-domain skills into the correct folders
+- Always run conflict detection before writing
+- External URLs use Skill Seekers `install-agent` — do not manually fetch and parse

@@ -1,0 +1,89 @@
+/* editorial-minimal.css — layout/density/type-scale/motion overlay.
+ * ZERO HEX. References var(--brand-*) only — load a brands/{name}.css BEFORE
+ * this file so the vars resolve. See ../README.md for the consumption contract.
+ *
+ * Feel: airy, centered, generous whitespace, flat elevation, calm precise motion.
+ * Suits: any brand with a light canvas (--brand-bg light, --brand-ink dark),
+ * which is the shipped `neutral` brand's shape. The least opinionated overlay —
+ * the safest first pick when you have not measured a pairing yet.
+ */
+
+:root {
+  /* Layout */
+  --overlay-max-width: 1200px;
+  --overlay-content-pad: 2rem;
+  --overlay-section-pad-y: clamp(80px, 10vw, 140px);
+
+  /* Type scale — 1.25 (major third-ish, editorial restraint) */
+  --overlay-font-base: 22px;
+  --overlay-scale-ratio: 1.25;
+  --overlay-h1: 2.7rem;
+  --overlay-h2: 2.1rem;
+  --overlay-h3: 1.5rem;
+  --overlay-h4: 1.2rem;
+
+  /* Corner radius — soft but not rounded-pill */
+  --overlay-radius-sm: 6px;
+  --overlay-radius: 12px;
+  --overlay-radius-lg: 20px;
+
+  /* Elevation — flat, no hard shadows */
+  --overlay-shadow: none;
+  --overlay-border-width: 1px;
+
+  /* Motion — durations/easings sourced from emil-design-eng (button/modal ranges) */
+  --overlay-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --overlay-duration-button: 140ms;   /* emil-design-eng: button press feedback 100-160ms */
+  --overlay-duration-modal: 320ms;    /* emil-design-eng: modals/drawers 200-500ms */
+}
+
+body {
+  max-width: none;
+  background: var(--brand-bg);
+  color: var(--brand-ink);
+  font-family: var(--brand-font-body);
+}
+
+.overlay-container {
+  max-width: var(--overlay-max-width);
+  margin: 0 auto;
+  padding: 0 var(--overlay-content-pad);
+}
+
+.overlay-section {
+  padding: var(--overlay-section-pad-y) 0;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--brand-font-display);
+  color: var(--brand-primary);
+}
+h1 { font-size: var(--overlay-h1); }
+h2 { font-size: var(--overlay-h2); }
+h3 { font-size: var(--overlay-h3); }
+h4 { font-size: var(--overlay-h4); }
+
+.overlay-card {
+  background: var(--brand-surface);
+  border: var(--overlay-border-width) solid var(--brand-border);
+  border-radius: var(--overlay-radius-lg);
+  box-shadow: var(--overlay-shadow);
+  transition: transform var(--overlay-duration-button) var(--overlay-ease-out),
+              border-color var(--overlay-duration-button) var(--overlay-ease-out);
+}
+.overlay-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--brand-primary);
+}
+
+.overlay-button {
+  background: var(--brand-accent);
+  color: var(--brand-ink);
+  border-radius: var(--overlay-radius-sm);
+  transition: transform var(--overlay-duration-button) var(--overlay-ease-out),
+              background var(--overlay-duration-button) var(--overlay-ease-out);
+}
+.overlay-button:hover {
+  transform: translateY(-1px);
+  background: var(--brand-accent-dark);
+}

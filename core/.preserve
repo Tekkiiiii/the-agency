@@ -1,0 +1,53 @@
+# core/.preserve — the ONE definition of which core/ files survive an upgrade.
+#
+# Read by all four deploy paths: install.sh, install.ps1,
+# cli/commands/init.js and cli/commands/upgrade.js (both via syncCore() in
+# cli/commands/sync-assets.js). If you add a path here it is honoured
+# everywhere; there is deliberately no second list.
+#
+# SEMANTICS — skip-if-exists:
+#   destination has the file  -> leave it exactly as-is, never overwrite
+#   destination does not      -> seed it from the repo copy
+# That single rule is both first-install seeding and upgrade preservation.
+# There is no merge: merging would need per-file format knowledge, and a
+# wrong merge loses rows just as surely as an overwrite does.
+#
+# WHAT BELONGS HERE — files the RUNNING SYSTEM writes rows into at their
+# installed path. Not "files that look like state": something shipped in this
+# repo must actually instruct an agent to write to it. Grep before adding.
+#
+# WHAT DOES NOT BELONG HERE — shipped content. Listing a template freezes
+# every existing install on the version it happens to have; users would stop
+# receiving new agent routes, new lessons and new tier definitions forever.
+# That is a real cost, not a safe default. `memory/agency-dispatch.md`,
+# `memory/autonomy-tiers.json` and `memory/lessons/*.md` are read-only at
+# runtime and are deliberately absent from this list.
+#
+# FORMAT: one path per line, relative to core/, forward slashes, exact file
+# paths only (no globs, no directories). `#` starts a comment.
+# .github/scripts/check-core-preserve.js fails the build if a path listed
+# here does not exist in the repo — a typo here preserves nothing, silently.
+
+# Legacy copy of the Active Projects registry. The live registry is
+# {agency-root}/memory/medium-term.md (what /recall and /pd-resume read, and what
+# `agency new` and project-scaffolder write); the installers seed it from THIS
+# file only when it is absent. Older installs accumulated their rows here (that is
+# where project-scaffolder used to write), so it must survive an upgrade to be
+# carried over once. Losing it would lose those rows.
+memory/medium-term.md
+
+# Delegator route cache. CLAUDE.md instructs every caller to append the
+# resolved (task-pattern -> route) pair here on a cache miss.
+memory/delegator-cache.md
+
+# NOTE: quality-prefs.md used to be listed here as a shipped seed under
+# core/memory/. It is user data, not shipped content — the canonical copy now
+# lives at {agency-root}/memory/quality-prefs.md (the operator's runtime
+# memory dir, never touched by core/ sync), created on first write by
+# skills/quality-loop-router/SKILL.md. It does not belong in this list: this
+# list only covers files that ship a seed copy under core/ AND get written to
+# at their installed path (see the "skip-if-exists" semantics above) — with no
+# repo copy under core/, there is nothing to seed or preserve here, and
+# .github/scripts/check-core-preserve.js fails the build on any listed path
+# that doesn't exist under core/, so a dangling entry is actively wrong, not
+# just harmless.

@@ -1,0 +1,7 @@
+{
+  "name": "spawn-ledger",
+  "version": "0.1.0",
+  "description": "Spawn log (spawn_start/launched/end + cost, native agentId lineage), artifact check and in-session RESPAWN_REQUEST pickup for every subagent, background included",
+  "author": { "name": "The Agency" },
+  "types": "./types/index.d.ts"
+}

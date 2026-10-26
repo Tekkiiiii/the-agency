@@ -1,0 +1,48 @@
+# Coord-qa-Canary Configuration
+# LAZY-LOAD source for pd-coordinator.md — extracted F19 (2026-06-23)
+# Load this file when spawning a Coord-qa-Canary (Phase A per-L3 QA).
+
+## Coord-qa-Canary Configuration (spawned by Coord, not PD)
+
+PD spawns Coord-qa-Canary when all L3 Coords have been ACKed, before reporting to root.
+
+**Spawn config:**
+- Name: `Coord-qa-{slug}`
+- Model: Sonnet
+- Task type: `qa-only`
+- Agent type: general-purpose + /qa-only, /browse, /webapp-testing
+
+**Spawner provides:**
+- `target`: project directory or URL for the combined L3 output
+- `mode`: `qa-only` (report only — no fixes)
+- `baseline`: path to previous session's QA report, or "none"
+- `auth`: cookie file path or "none"
+- `scope`: `full` | `quick` (30s) | `regression`
+
+**Deliverables required:**
+- Health score (0–100 integer)
+- Issues by severity (CRITICAL/HIGH/MEDIUM/LOW)
+- Screenshots in `{project}/memory/qa/screenshots/`
+- Delta vs baseline (regression mode)
+- Report at `{project}/memory/qa/qa-report-final-{timestamp}.md`
+
+## ACK/NACK Reference Table
+
+| Handoff | Reporter | Reviewer | ACK condition | NACK condition |
+|---------|----------|----------|---------------|----------------|
+| Exec → Coord | Exec sends DONE + QA | Coord reviews QA report | Health ≥ 85 (≥ 90 design/visual), no CRITICAL | Health < 85 (< 90 design/visual) OR CRITICAL/HIGH present |
+| Coord → PD | Coord sends L3 complete + QA | PD reviews Coord QA report | Health ≥ 85 (≥ 90 design/visual), no CRITICAL | Health < 85 (< 90 design/visual) OR CRITICAL/HIGH present |
+| PD → root | PD sends final digest + QA | root (the user) | Explicit ACK | Explicit NACK with fix list |
+
+**ACK/NACK are asynchronous** (all child→parent rows): the reporter delivers its report as its
+FINAL TASK RESULT and stops; it never waits in-session for a reply.
+**ACK** = the reviewer does not re-spawn; it records the ACK in its own scratch `## Status`/`## Children` row and digest. No message arrives.
+**NACK** = the reviewer spawns a CONTINUATION agent whose spawn prompt carries the fix list + the original agent's archived scratch path + the same scope → fix → re-run QA gate → re-report.
+**PD → root row only** (PD is spawned by the main session, so this channel is bidirectional): explicit ACK / NACK-with-fix-list arrives from root as a reply, and the PD waits for it.
+
+## Domain-Specific Evidence Requirements
+
+Some domains carry higher blast-radius or irreversibility risk than default QA covers. For these, Coord requires the evidence below IN ADDITION to the standard health-score gate before ACK.
+
+- **DB migrations:** require a 4-item evidence bundle before ACK — (1) migration script diff, (2) dry-run/rollback test output, (3) affected-row count or schema-diff confirmation, (4) confirmation no data loss occurred.
+- **Creative deliverables** (content, design, video, etc.): require a confirmed `quality-loop-router` PASS (not just "ran") before Coord ACK — i.e. Coord must see evidence the quality-loop-router's critic gate returned PASS, not merely that the loop was invoked.

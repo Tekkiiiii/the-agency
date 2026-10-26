@@ -1,0 +1,447 @@
+# Hook System
+
+The Agency ships a lifecycle hook system that runs shell scripts at key Claude Code events. Every install path — `install.sh`, `install.ps1`, `agency init` and `agency upgrade` — copies the scripts to `{agency-root}/hooks/` and then wires the hooks listed in [`hooks/hooks.json`](../hooks/hooks.json) into `{agency-root}/settings.json`, keeping every hook and key you added yourself. `agency hooks sync` and `agency hooks remove` do the same wiring on demand. See [Settings Wiring](#settings-wiring) below.
+
+> **`{agency-root}`** = `$AGENCY_HOME`, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`.
+> Every path in this document is written with the default (`~/.claude`) for
+> readability. If you installed with a custom root, substitute it everywhere —
+> the installers already write the resolved path into `settings.json` for you, and
+> every hook resolves its own root via `hooks/lib/resolve-root.sh`. See
+> [INSTALL-LAYOUT.md](INSTALL-LAYOUT.md#where-the-root-comes-from).
+
+Seventeen hooks across four lifecycle events (SessionStart, PreToolUse, PostToolUse, Stop) give a bare Claude Code install security gating and observability. Also shipped: a statusLine badge hook and a set of shared helper scripts under `hooks/lib/` (sourced by other hooks, not registered as hooks themselves — see [Helper Scripts](#helper-scripts-hookslib) below). The optional Claude Code [mods](MODS.md) complement the shell hooks with a prompt band, context alerts, stall detection and a spawn ledger. Of those 17, 14 are wired into `settings.json` by every install and upgrade — they are the entries of `hooks/hooks.json` (see [Settings Wiring](#settings-wiring) below); the remaining 3 — telemetry/convenience hooks — ship on disk but are not registered until an operator adds them manually.
+
+---
+
+## Hook Map
+
+| Script | Event | Trigger | Purpose |
+|--------|-------|---------|---------|
+| `startup-sync.sh` | SessionStart | always | Auto-pull the agency root's config from GitHub on session open |
+| `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
+| `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
+| `unsaid-check.sh` | PreToolUse | Write, Edit, Bash, SendMessage, Agent | Warn-only: flag brief lines that carry instructions the user never said |
+| `gate-guard.sh` | PreToolUse | Edit, Write | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
+| `spawn-gate.sh` | PreToolUse | Agent | Spawn gate: `general-purpose` + structural agent types pass; an unknown `subagent_type` (typo or specialist name) gets an `ask` pointing to `general-purpose` + skills |
+| `spawn-logger.sh` | PreToolUse | Agent | Log a `spawn_start` event for every agent spawn; injects a `[[CLAUDE_SPAWN_META]]` lineage marker into the child prompt |
+| `secret-scanner.sh` | PreToolUse | Bash | Scan shell commands for credential-looking patterns |
+| `config-protection.sh` | PreToolUse | Edit, Write | Block modification of existing linter/formatter configs |
+| `track-edits.sh` | PostToolUse | Edit, Write | Buffer edited file paths for batch checking at session end |
+| `write-evidence.sh` | PostToolUse | Write, Edit | Log a `write_evidence` event (path + byte count) for deliverable-shaped paths — paper trail against fabricated completions |
+| `loop-detector.sh` | PostToolUse | all tools | Detect stall loops — 5 identical tool calls in a row triggers warning + stall marker |
+| `artifact-verify.sh` | PostToolUse | Agent | Scan a completed agent's output for "done/complete" claims and verify the deliverable file paths it cites actually exist on disk |
+| `spawn-completion.sh` | PostToolUse | Agent | Log a `spawn_end` event for every agent spawn completion (outcome, tokens, tool uses, duration) |
+| `bg-job-warn.sh` | PostToolUse | Bash (`run_in_background`) | Track fire-and-forget background jobs; warn immediately when a render/build command is backgrounded |
+| `session-end.sh` | Stop | always | Mark session as cleanly ended (idempotent) |
+| `batch-check.sh` | Stop | always | Run typecheck + shellcheck on files edited this session |
+| `cost-tracker.sh` | Stop | always | Compute token usage and estimated cost (per-model rates from `hooks/lib/claude_pricing.py`); append to `costs.jsonl` in the `metrics/` folder of the agency root |
+| `caveman-statusline.sh` | StatusLine | always | Render the `[CAVEMAN]` mode badge (+ optional token-savings suffix) in the terminal status line — wired via the `statusLine` settings key, not `hooks` |
+| `emit-metric.sh` | — (utility) | called by other hooks / agents | Append one JSON event line (with a `ts` timestamp) to the shared metrics log; not itself registered under a lifecycle event |
+
+---
+
+## Settings Wiring
+
+`hooks/hooks.json` is the single list of hooks The Agency wires. Each entry has an `id`, the Claude Code `event`, a `matcher` (`""` = every tool / always), the `command` with the agency root written as `{root}`, and a one-line `purpose`. `cli/lib/hooks-merge.js` merges that list into `{agency-root}/settings.json`. It runs:
+
+- on every `install.sh` / `install.ps1` run (not only when `settings.json` is new — that was the old behaviour, and it left every existing Claude Code user with no agency hooks at all);
+- on `agency init`, and on `agency upgrade` right after the hook scripts are synced;
+- on demand: `agency hooks sync` (wire), `agency hooks remove` (unwire), `agency hooks disable <id>` / `agency hooks enable <id>` (per-hook opt-out, below). Without the `agency` command on PATH: `node <repo>/cli/lib/hooks-merge.js sync --root "<agency-root>"`.
+
+These are the hooks it wires (the table is generated from `hooks/hooks.json`):
+
+<!-- hooks-manifest:begin -->
+<!-- Generated from hooks/hooks.json by `node .github/scripts/check-hooks-manifest.js --write`. Do not edit by hand: CI fails when it drifts. -->
+
+| ID | Event | Matcher | Command | Purpose |
+|----|-------|---------|---------|---------|
+| `unsaid-check` | PreToolUse | `Write\|Edit\|Bash\|SendMessage\|Agent` | `bash {root}/hooks/unsaid-check.sh` | Warn-only: flag brief lines (PD briefs, revision/incoming files, SendMessage) that carry instructions the user never said |
+| `gate-guard` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/gate-guard.sh` | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
+| `config-protection` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/config-protection.sh` | Block modification of existing linter/formatter configs |
+| `secret-scanner` | PreToolUse | `Bash` | `bash {root}/hooks/secret-scanner.sh` | Scan shell commands for credential-looking patterns |
+| `spawn-gate` | PreToolUse | `Agent` | `bash {root}/hooks/spawn-gate.sh` | Generalist-switch gate: unknown agent types get an ask pointing to general-purpose + skills |
+| `track-edits` | PostToolUse | `Edit\|Write` | `bash {root}/hooks/track-edits.sh` | Buffer edited file paths for batch checking at session end |
+| `write-evidence` | PostToolUse | `Edit\|Write` | `bash {root}/hooks/write-evidence.sh` | Log path + byte count of deliverable-shaped writes (paper trail against fabricated completions) |
+| `loop-detector` | PostToolUse | (all) | `bash {root}/hooks/loop-detector.sh` | Detect stall loops: 5 identical tool calls in a row triggers a warning |
+| `artifact-verify` | PostToolUse | `Agent` | `bash {root}/hooks/artifact-verify.sh` | Check that files an agent claims to have delivered exist on disk |
+| `startup-sync` | SessionStart | (all) | `bash {root}/hooks/startup-sync.sh` | Fast-forward the agency root's config from GitHub on session open |
+| `check-settings-secrets` | SessionStart | (all) | `bash {root}/hooks/check-settings-secrets.sh` | Warn if settings.json has plaintext tokens in MCP env blocks |
+| `check-session-state` | SessionStart | (all) | `bash {root}/hooks/check-session-state.sh` | Detect an unclean prior exit (crash / Ctrl+C) |
+| `stop-chain` | Stop | (all) | `bash {root}/hooks/session-end.sh && bash {root}/hooks/batch-check.sh && bash {root}/hooks/cost-tracker.sh` | Mark the session cleanly ended, typecheck/shellcheck edited files, record session cost |
+
+Retired (pruned from `settings.json` on the next sync): none.
+<!-- hooks-manifest:end -->
+
+The three Stop scripts stay one chained command, exactly as earlier installers wrote it, so an existing install is recognised as already wired instead of getting a duplicate.
+
+**What the merge changes, and what it never touches.** An entry in `settings.json` is the agency's when its command, with the root spelled `{root}`, equals a command in `hooks/hooks.json`, in its `retired` list, or in `{agency-root}/hooks/.agency-hooks-state.json` (the record of what the last sync wired). The same file also holds a `mods` key: the mod entries and copied mod folders that `agency mods sync` and the installers added to `env.CLAUDE_CODE_PLUGIN_DIRS`, so `agency mods remove` can undo exactly that. The hooks merge carries that key through every rewrite and never edits it. Everything else is yours and is never edited, moved or reordered — including scripts of your own that live in `{agency-root}/hooks/` but are not in the manifest, composite commands that happen to call one of our scripts, and every other top-level key (`permissions`, `env`, `mcpServers`, `statusLine`, ...).
+
+- **Add:** a manifest hook that is not wired yet goes into an existing group with the same matcher that holds only agency hooks, or into a new `{matcher, hooks: [...]}` group at the end of that event.
+- **Already wired:** an entry counts as present in any equivalent spelling of the root — the resolved path with forward or back slashes, the Git Bash form `/c/Users/...`, and, when the root is the default `<home>/.claude`, `~/.claude`, `$HOME/.claude` and `${HOME}/.claude`. A working `bash ~/.claude/hooks/x.sh` entry is left exactly as it is, under whatever matcher you put it.
+- **Opt-out (a hook you removed stays removed):** if the last sync wired a hook (it is recorded in the state file) and you then deleted it from `settings.json` by hand, the next sync, upgrade or install does not put it back. It is marked `disabled` in `{agency-root}/hooks/.agency-hooks-state.json` and every run prints `skipped <id> (you removed it; agency hooks enable <id> to restore)` while it stays off. A hook counts as deleted only when neither its recorded command nor its current manifest command is present anywhere in its event: a release that changes the command of a hook you still have is an update, not a deletion. With no state file (the first install) nothing counts as deleted, so everything is added. Putting the entry back by hand ends the opt-out too.
+- **`agency hooks disable <id>` / `agency hooks enable <id>`:** `disable` removes our entry for that id (your own hooks are not touched) and records the opt-out, the same state as deleting it by hand; `enable` clears it and wires the hook now. Both are safe to repeat (`already disabled` / `already enabled`, exit 0). An unknown or retired id exits 1 and lists the valid ids. `agency hooks remove` removes every agency entry, including ones of disabled ids that you re-added by hand, and deletes the hook part of the state file, so the next sync is a first install again. If mods are recorded there, the file stays with only the `mods` record (`{ "version": 1, "hooks": {}, "mods": ... }`), because `agency hooks remove` does not unwire mods; use `agency mods remove` for that. Removing the mods leaves the hook record alone in the same way.
+- **Update:** when a release changes the command or matcher of a hook the last sync wired, that one entry is changed or moved.
+- **Remove:** an agency hook that is no longer shipped (listed under `retired`, or recorded in the state file but gone from the manifest) is pruned. Groups and events that this leaves empty are removed; groups you left empty are not.
+- **Retired hook files:** pruning the registration leaves the script on disk, so the installers, `agency init` and `agency upgrade` also delete the retired files themselves (a hook script, or a folder of files beside it, that a later release drops) through the shared retired-files step (`cli/lib/retired-prune.js`, `retired-manifest.json`), which runs after the hooks merge. The rule is the one used for skills and agents: a file whose checksum equals a version the repo once shipped is deleted (and its folder, if that leaves it empty); a file you edited is archived to `{root}/archive/agency-retired-<YYYY-MM-DD>/hooks/...` (or deleted per `--retired=archive|delete|ask`); a file the manifest does not list, such as your own script in `{agency-root}/hooks/`, is never touched. One extra rule applies to hooks: if any string in `{root}/settings.json` (a hook command, `statusLine`, ...) still names the file, it is kept and reported as `Retired file skipped (still registered in settings.json): hooks/<name>`, because deleting it would make every event run a missing script. That happens when you set `AGENCY_NO_HOOKS=1` or registered the hook by hand; remove the registration, then run `agency prune`. A `settings.json` that cannot be read keeps every `hooks/` file. Preview with `agency prune --dry-run`, run on demand with `agency prune` (see [Setup](SETUP.md#retired-files)).
+- **Safety:** before any change the previous file is copied to `settings.json.bak-YYYYMMDD-HHMMSS` next to it, and the new file is written to a temporary file in the same folder and renamed into place. When nothing changed, nothing is written — no backup, no rewrite. A `settings.json` that is not valid JSON is never written; you get the error and the command to run once it is fixed.
+- **Paths:** commands are written with the resolved root and forward slashes (`bash C:/Users/me/.claude/hooks/gate-guard.sh` on Windows). A root that contains a space or another shell-special character is quoted per path.
+
+**What you see.** When hooks were added, updated or removed, the installer or upgrade prints one line per hook (name, event, purpose, what was done), the backup path and `Restart Claude Code to activate the hooks.` — Claude Code reads `settings.json` at start-up. When nothing changed it prints one line: `Hooks: 12 wired, up to date`. When wiring is skipped it prints why and the exact command to finish it:
+
+- `AGENCY_NO_HOOKS=1` — opt out of the automatic wiring in the installers, `agency init` and `agency upgrade`. An explicit `agency hooks sync` still works.
+- Windows without Git Bash — Claude Code runs a command hook inside Git Bash when Git for Windows is installed (and in PowerShell when it is not, where `bash ...` would fail), so wiring is skipped. The message links https://git-scm.com/downloads/win and says to run `agency hooks sync` afterwards (`agency hooks sync --force` wires them anyway).
+- `node` not installed (installers only) — install Node.js, then run the command printed.
+
+**Finding Git Bash on Windows.** The installer does not rely on the PowerShell `PATH` (Git Bash is often not on it). `cli/lib/hooks-merge.js` looks for `bash.exe` in this order and stops at the first hit: (1) the file `CLAUDE_CODE_GIT_BASH_PATH` names, (2) `git --exec-path` (`C:/Program Files/Git/mingw64/libexec/git-core`): `Git\bin\bash.exe` is three folders up, and two and four are tried too, (3) `%ProgramFiles%\Git\bin\bash.exe`, (4) `%LOCALAPPDATA%\Programs\Git\bin\bash.exe`, (5) a `bash.exe` on `PATH`, ignoring `%WINDIR%\System32\bash.exe` and anything under `\WindowsApps\` (the WSL launcher, which would run hooks inside WSL). Hook commands stay `bash {root}/hooks/x.sh` because they run inside Git Bash, where `bash` resolves. If Git Bash was found in step 2 or 5 (a non-standard place) and Claude Code cannot find it, set `"env": {"CLAUDE_CODE_GIT_BASH_PATH": "C:\\path\\to\\bash.exe"}` in `settings.json`; the installer prints that line but never writes it.
+
+---
+
+### Hooks Not Wired By Default
+
+Three of the 17 shipped lifecycle hooks are copied to `hooks/` but are not in `hooks/hooks.json`, so no install or upgrade path wires them:
+
+| Hook | Event | Unwired because | What you lose |
+|------|-------|-----------------|---------------|
+| `spawn-logger.sh` | PreToolUse: Agent | telemetry, opt-in is defensible | No `spawn_start` events or lineage markers |
+| `spawn-completion.sh` | PostToolUse: Agent | telemetry, opt-in is defensible | No `spawn_end` events (outcome, tokens, duration) |
+| `bg-job-warn.sh` | PostToolUse: Bash | convenience, opt-in is defensible | No warning when a render/build is backgrounded |
+
+All three are unwired on purpose, as telemetry and convenience. Nothing in this list is a safety gap: `spawn-gate.sh`, `loop-detector.sh`, `write-evidence.sh`, and `artifact-verify.sh` are wired by every install path. See [Settings Wiring](#settings-wiring) above for their entries in `hooks/hooks.json`, and [spawn-gate.sh](#spawn-gatesh-pretooluse-agent) / [loop-detector.sh](#loop-detectorsh-posttooluse-all-tools) / [write-evidence.sh](#write-evidencesh-posttooluse-write-edit) / [artifact-verify.sh](#artifact-verifysh-posttooluse-agent) below for full behavior.
+
+To wire any of the three in yourself, merge an entry into the corresponding array in your `settings.json` `hooks` block (don't replace the entries already there — add alongside them). For example, for `spawn-logger.sh`:
+
+```json
+"PreToolUse": [
+  {
+    "matcher": "Agent",
+    "hooks": [
+      { "type": "command", "command": "bash ~/.claude/hooks/spawn-logger.sh" }
+    ]
+  }
+]
+```
+
+Mod counterparts (optional, Claude Code 2.1.287+): `mods/loop-guard` does the job of `loop-detector.sh`, and `mods/spawn-ledger` covers `artifact-verify.sh`, `spawn-logger.sh` and `spawn-completion.sh` and adds a model pin and Exec cap. The installers and `agency upgrade` wire the mods automatically (opt out with `AGENCY_NO_MODS=1`; `agency mods sync|remove|status`). Running a mod next to its shell hook gives duplicate warnings or log rows; see [mods/README.md](../mods/README.md) for loading and overlap.
+
+---
+
+## Settings Hygiene Patterns
+
+`settings.json` accumulates cruft over the life of an install — hooks that get superseded, env flags that outlive the behavior they gated, config keys that get expressed two different ways across upgrades. None of this breaks anything outright; it just makes the file progressively less trustworthy as a description of what's actually running. Apply these patterns periodically, not just when something visibly misbehaves.
+
+### Unregistering a hook without deleting it
+
+When a hook's behavior becomes redundant (superseded by newer model/tool behavior, replaced by another hook, or simply not needed for your workflow), remove its event entry from `settings.json` — do not delete the script from `hooks/`.
+
+Note: this sticks for hooks that are **not** in `hooks/hooks.json`. A hook that is in the manifest is wired again by the next install, `agency upgrade` or `agency hooks sync`. To keep one of those off, either set `AGENCY_NO_HOOKS=1` and manage the wiring by hand, or turn it off through the [profile system](#profile-system) instead of unregistering it.
+
+This beats deletion for three reasons:
+- **Reversible.** Re-adding the event entry restores the behavior instantly; no need to re-fetch or rewrite the script.
+- **Keeps the script available to operators who still benefit from it** — e.g. a different model tier, a different profile, or a different risk tolerance.
+- **No installer churn.** Deleting a shipped script means every installer and upgrade path (`install.sh`, `install.ps1`, `cli/`) has to know to stop shipping it, and re-adding it later means re-plumbing all of them again. Leaving it on disk, unregistered, avoids that entirely.
+
+**Verify a hook is unregistered:**
+```bash
+grep -A2 '"<EventName>"' ~/.claude/settings.json | grep '<hook-name>.sh'
+```
+No match means the hook is not wired to that event — it will not run regardless of what's on disk in `hooks/`.
+
+### Pruning dead env flags
+
+Env flags in the `env` block of `settings.json` gate behavior. When that behavior becomes default, gets renamed, or is removed upstream, the flag becomes a no-op — but it stays in your file silently, implying control you no longer have.
+
+Watch specifically for **double-negative flags**: a `DISABLE_<FEATURE>` (or `NO_<FEATURE>`) flag set to a falsy value (`false`, `0`, unset-equivalent) reads as "this is off" when it's actually a no-op either way — a common source of "I set this and nothing changed" confusion, because the flag may no longer be read by anything.
+
+Before keeping any env flag across an upgrade, verify it still exists in the current release:
+```bash
+grep -rn "<FLAG_NAME>" {agency-root}/hooks/ {agency-root}/cli/ 2>/dev/null
+```
+No match means nothing reads it anymore — safe to drop from `settings.json`.
+
+### Consolidating duplicated config keys
+
+Some settings are expressible through more than one key — for example, a reasoning-effort or verbosity setting that can be set at the top-level `env` block, inside a specific tool's config, or via a model-line-specific override. When more than one of these is present at once, precedence between them is version-dependent: which key "wins" can silently change on upgrade, producing behavior that doesn't match any key you actually set.
+
+The pattern: pick exactly one key for a given setting and drop the rest. Do not rely on precedence order to resolve duplicates — resolve it yourself, once, explicitly.
+
+**Verify no duplicate keys remain** for a setting you care about:
+```bash
+grep -n "<setting-name>" ~/.claude/settings.json
+```
+More than one match against the same logical setting is the signal to consolidate — read the current release's docs for which key is canonical, keep that one, and remove the others.
+
+---
+
+## Profile System
+
+Each hook reads `~/.claude/.hook-profile` at runtime. The profile controls behavior without touching `settings.json`.
+
+| Profile | Behavior |
+|---------|----------|
+| `standard` (default) | Gate-guard only warns (`additionalContext`, no `permissionDecision`, the write goes ahead and never asks); secret-scanner asks (`hookSpecificOutput.permissionDecision: "ask"`) |
+| `strict` | Gate-guard and secret-scanner block (`hookSpecificOutput.permissionDecision: "deny"`) |
+| `minimal` | Gate-guard, secret-scanner, config-protection, and batch-check are all disabled |
+
+Config-protection denies an existing linter config under `standard` and `strict` alike (it has no ask or warn mode), and spawn-gate asks on an unknown type under both.
+
+To switch profiles:
+
+```bash
+echo "strict" > ~/.claude/.hook-profile     # block on any warning
+echo "minimal" > ~/.claude/.hook-profile    # disable all safety hooks
+echo "standard" > ~/.claude/.hook-profile   # restore default
+```
+
+The template `hooks/.hook-profile.template` ships `standard` as the default.
+
+---
+
+## Hook Details
+
+### startup-sync.sh (SessionStart)
+
+Fast-forwards `{agency-root}` from `origin/main`. It never stashes and never merges. Steps:
+
+1. `git fetch` runs under a background watchdog, 5 seconds by default (`SYNC_FETCH_TIMEOUT`). On a timeout or fetch failure it prints a warning and skips.
+2. If local equals remote, it prints "Config up to date". If you only have unpushed local commits, it prints "Config ahead of remote" and does nothing.
+3. It pulls (`git pull --ff-only`) only when the branch is `main` and the tracked tree is clean. On any other branch it skips with a warning.
+4. If tracked files have uncommitted changes, it prints one warning (with how many commits the remote is ahead) and leaves your work untouched. Commit, then pull by hand.
+5. If local and remote have diverged, it prints "manual merge needed" and changes nothing.
+
+It always exits 0, so it can never block a session from starting. It uses no coreutils `timeout`, so it works on macOS bash 3.2.
+
+**Effect:** Every new Claude Code session picks up the latest agents, skills, and hooks from your remote when it is safe to do so.
+
+### check-settings-secrets.sh (SessionStart)
+
+Scans `mcpServers.*.env` values in `settings.json` for JWT-shaped tokens (≥50-char `eyJ…` strings) and long hex strings (≥48 chars). Prints a warning to stderr if any are found. Non-blocking.
+
+### check-session-state.sh (SessionStart)
+
+Reads `~/.claude/session-state.json`. If `was_clean` is `false`, the prior session ended without hitting the Stop hook (crash or Ctrl+C). Prints a notice suggesting `/recall` or `/save-state`. Sets `was_clean = false` for the current session; the Stop hook sets it back to `true`.
+
+### unsaid-check.sh (PreToolUse: Write, Edit, Bash, SendMessage, Agent)
+
+Warn-only. Catches briefs (PD spawn prompts, files under `inter-spawn-tasks/revisions/` and `inter-spawn-tasks/incoming/`, `SendMessage` bodies) in which the main session added a removal, restriction or priority instruction the user never said. It reads the user's own turns from the session transcript and checks each brief line:
+- Rule A: a marker word (replace, remove, drop, delete, retire, hide, clear, instead of, no longer, never, priority, must not) whose stem appears nowhere in the user's text.
+- Rule C: a quote attributed to the user (`User verbatim:`, `the user said "..."`) that is not a substring of the user's text.
+
+Lines labelled `Assumption:`, `Question:`, `Source:`, `User verbatim:` or `Main-session addition:`, and `[STRUCK]` lines, are exempt. Output is `{}` or `{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"UNSAID-CHECK: ..."}}`; it never sets `permissionDecision`. Subagent calls (`agent_id` present), unrelated Bash commands, any internal error and the `minimal` profile all return `{}`. Each flagged call appends one summary line to `{agency-root}/logs/unsaid-check.jsonl`. Core logic and a replay/measurement CLI live in `scripts/unsaid_check.py`.
+
+### gate-guard.sh (PreToolUse: Edit, Write)
+
+Checks the target file path against four categories:
+- `settings.json` / `settings.local.json`
+- Agent definitions: `{agency-root}/agents/*.md` and `{agency-root}/core/agents/*.md` only. Scratch files such as `projects/<slug>/memory/agents/*.md` are not agent definitions and pass.
+- Hook scripts (`hooks/*.sh`)
+- Skill entry points (`SKILL.md`)
+
+Also scans write content for JWT/API key patterns. Output by profile:
+- `standard`: warns only. It returns `{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"[gateguard] ..."}}` with no `permissionDecision`, so the write goes ahead and the model sees the warning. It never asks.
+- `strict`: denies with `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"[gateguard] ..."}}`.
+- No match, or `minimal`: `{}` (pass-through).
+
+### spawn-gate.sh (PreToolUse: Agent)
+
+**Status: wired into `settings.json` by every install path (`hooks/hooks.json`)** — see [Settings Wiring](#settings-wiring) above.
+
+`general-purpose` plus 1-3 named skills is the default spawn, and it passes without a question. The gate only catches a `subagent_type` that is not recognized, such as a typo or a specialist name. It never blocks: its strongest answer is an `ask`.
+
+**Passes immediately (no marker needed):**
+
+- `general-purpose`, `claude`, and an empty `subagent_type`
+- Structural types: `pd-coordinator`, `coord`, `mini-coord`, `codebase-search`, `Delegator`, `save-state-runner`, `project-scaffolder`
+- Any `*-pd` project director, `critique-*`, `*-critique`, and `council-*` (the read-only Agency Council seats)
+- The knowledge-graph analyzers (`architecture-analyzer`, `article-analyzer`, `assemble-reviewer`, `domain-analyzer`, `file-analyzer`, `graph-reviewer`, `knowledge-graph-guide`, `project-scanner`, `tour-builder`)
+- Built-in Claude Code types: `Explore`, `Plan`, `statusline-setup`, `claude-code-guide`, `fork`, and `caveman:*`
+
+**Also passes (checked on the prompt, for any other type):**
+
+- A prompt that starts with `You are PD-` (PD boot sequences from `/pd-spawn` and `/pd-resume`).
+- A prompt with an explicit routing marker: `DELEGATOR ROUTING`, `HARDCODED ROUTING:`, or `SKILL SPAWN:`.
+- A prompt that matches a skill-owned spawn pattern: `You own the save-state ritual`, `You own the cc-loop ritual`, `You are {name}, resuming work`, or `You are resuming work on inbox task`.
+
+**Unknown type:** anything else receives `hookSpecificOutput.permissionDecision: "ask"`. The `permissionDecisionReason` names the unknown type, says the default is `general-purpose` + 1-3 skills, points to `skills/INDEX.md` for picking skills, and says how to keep the type anyway (`HARDCODED ROUTING: {task-type} -> {agent}` in the prompt).
+
+The hook emits no metric.
+
+Respects the `.hook-profile` system: in `minimal` profile, the hook exits immediately with `{}` (all spawns allowed). It reads `{agency-root}/.hook-profile`, the same file as every other profile-aware hook.
+
+### spawn-logger.sh (PreToolUse: Agent)
+
+Writes a `spawn_start` JSONL entry for every Agent tool call, then injects a `[[CLAUDE_SPAWN_META: spawn_id=X parent_id=Y]]` marker into the outgoing prompt so the child agent can read its own lineage (env-var propagation is unreliable across Claude Code sub-agent boundaries).
+
+Resolves the target log file by longest-prefix-matching the current working directory against the Active Projects table in `~/.claude/memory/medium-term.md` (falls back to `~/.claude/logs/spawns.jsonl` if no project matches or the table doesn't exist). Any existing `[[CLAUDE_SPAWN_META: ...]]` marker already in the prompt is stripped before the new one is appended, so markers never stack across generations.
+
+Respects the `.hook-profile` system: in `minimal` profile, exits immediately with `{}`. On any internal error, returns `{}` (pass-through, unmodified prompt) — spawns are never blocked by this hook.
+
+### secret-scanner.sh (PreToolUse: Bash)
+
+Scans the bash command string for known credential patterns: JWTs, GitHub tokens, Slack tokens, Google OAuth tokens, AWS access keys, and inline `API_KEY=…` assignments. Returns `hookSpecificOutput.permissionDecision` `ask` (standard) or `deny` (strict) with a tagged `permissionDecisionReason`.
+
+### config-protection.sh (PreToolUse: Edit, Write)
+
+If the target file is an existing linter/formatter config (ESLint, Prettier, Biome, Ruff, Shellcheck, Stylelint, Markdownlint), returns `hookSpecificOutput.permissionDecision: "deny"`. Creation of new config files is allowed. The rule: fix the code, not the linter.
+
+### track-edits.sh (PostToolUse: Edit, Write)
+
+Appends the file path of every edited file to `~/.claude/.edit-buffer.txt`. This buffer is consumed by `batch-check.sh` at session end and cleared after reading.
+
+### session-end.sh (Stop)
+
+Writes `{"last_stop": "<timestamp>", "was_clean": true}` to `~/.claude/session-state.json`. Idempotent.
+
+### batch-check.sh (Stop)
+
+Reads `~/.claude/.edit-buffer.txt`, deduplicates, then:
+- For TypeScript files: finds the nearest `tsconfig.json` and runs `tsc --noEmit --skipLibCheck`
+- For shell scripts: runs `shellcheck -S warning` if shellcheck is on PATH
+
+Clears the buffer after running. Skipped in `minimal` profile.
+
+### write-evidence.sh (PostToolUse: Write, Edit)
+
+Logs a paper trail for deliverable writes. On every Write/Edit whose target path contains `/outputs/`, `/plans/`, `/reports/`, or `/qa/`, or ends in `.html`, `.htm`, `.pdf`, `.docx`, `.pptx`, or `.xlsx`, it stats the file post-write and appends a `write_evidence` entry (path, byte count, `exists` flag) to `~/.claude/logs/write-evidence.jsonl`. It also fire-and-forgets the same event to `{agency-root}/hooks/emit-metric.sh` (if present) so it's queryable alongside other metrics events.
+
+**Effect:** pairs with `artifact-verify.sh` — if an agent claims a deliverable is DONE, there must be a corresponding `write_evidence` entry with non-zero bytes, or the fabrication guard has grounds to flag the claim.
+
+Any internal error is silent; the hook never blocks a write.
+
+### loop-detector.sh (PostToolUse: all tools)
+
+**Status: wired into `settings.json` by every install path (`hooks/hooks.json`)** — see [Settings Wiring](#settings-wiring) above. The `loop-guard` mod now installs with the agency (see [mods/README.md](../mods/README.md)), but the shell hook stays wired next to it for now (owner decision), so with both on you get two stall warnings. Disable one: `agency hooks disable loop-detector` or `agency mods remove`.
+
+Tracks the last 10 tool calls in `~/.claude/.tool-call-tracker.jsonl`. If 5 identical tool+input signatures appear consecutively, prints a stall warning to stderr visible to the running agent and writes a `stall_detected` marker to `session-state.json`.
+
+The warning instructs the agent to:
+1. Restate its objective in one sentence
+2. Verify the actual world state (read the file, check git status)
+3. Try a different approach
+4. If still blocked, `/save-state` and stop
+
+Skipped in `minimal` profile. Clears the tracker file after detecting a stall to give one fresh chance.
+
+**Effect:** Prevents runaway infinite loops from exhausting context or budget without any useful progress.
+
+### artifact-verify.sh (PostToolUse: Agent)
+
+**Status: wired into `settings.json` by every install path (`hooks/hooks.json`), not retired.** The author's own live system replaced this script with the `spawn-ledger` mod (its `verify` command); that was a replacement, not a removal of the check. The mod now installs with the agency, but the shell hook stays shipped and wired next to it for now (owner decision), exactly like `loop-detector.sh`; with both on, `ARTIFACT_MISSING` warnings and `logs/artifact-verify.jsonl` rows are duplicated. Disable one: `agency hooks disable artifact-verify` or `agency mods remove`.
+
+Harness-level backstop against fabricated "build complete" claims. After every Agent tool call returns, scans the completed agent's output text for a completion signal (`DONE`, `COMPLETE`, `BUILD COMPLETE`, `SUCCESS`, `FINISHED`, `SHIPPED`, etc.). If found, it extracts candidate deliverable file paths from the text (absolute paths, `~/`-relative paths, or paths near `out/`/`output/`/`dist/`/`build/`, matching extensions like `.mp4`, `.pdf`, `.html`, `.png`, `.zip`, `.json`, `.csv`, and similar) and runs `os.path.isfile()` on each resolvable one.
+
+If any claimed file is missing on disk, it prints an `ARTIFACT_MISSING WARNING` to stderr (visible to the calling agent, listing both missing and found paths) instructing the agent not to relay the completion to the user, and logs a structured `ARTIFACT_MISSING` entry to `~/.claude/logs/artifact-verify.jsonl`. It fires even when the agent ignores prompt-level "verify before reporting done" instructions.
+
+Any internal error is silent; the hook never blocks the agent.
+
+### spawn-completion.sh (PostToolUse: Agent)
+
+Appends a `spawn_end` JSONL entry for every completed agent spawn. Resolves the project-scoped log file via `hooks/lib/resolve-project.sh` (falls back to `~/.claude/logs/spawns.jsonl`), then matches the completion back to its `spawn_start` entry by `tool_use_id` (walking the log file backwards to find the corresponding `spawn-logger.sh` entry).
+
+Parses the agent's output for an outcome (`DONE`, `BLOCKED`, `ESCALATE`, `KILLED`, or `UNKNOWN` — matched against markers like `STATUS: BLOCKED` or `— ESCALATE`) and for usage figures (tokens, tool uses, duration) from an `<usage>...</usage>` block in the response, with JSON-based fallbacks if that block is absent.
+
+On every completion it first calls `hooks/lib/reconcile-stale-spawns.sh` on the same log file (see [reconcile-stale-spawns.sh](#reconcile-stale-spawnssh)), so spawns that never got a `spawn_end` are closed as `ABANDONED`.
+
+Respects the `.hook-profile` system: in `minimal` profile, exits immediately without logging. Any internal error is silent.
+
+### bg-job-warn.sh (PostToolUse: Bash, `run_in_background`)
+
+Tracks fire-and-forget background Bash jobs. On every Bash tool call made with `run_in_background: true`, appends an entry (command, description, extracted background job ID, `resolved: false`) to `~/.claude/.pending-bg-jobs.jsonl`.
+
+If the backgrounded command matches a render/build signal (`render`, `ffmpeg`, `bun run`, `npm run build`, `make `, `cargo build`, `go build`), it immediately prints a warning to stderr instructing the agent that it **must** await the job and `test -f` the output before reporting DONE — it must not proceed to a summary until the artifact is verified on disk.
+
+Any internal error is silent; the hook never blocks the Bash call.
+
+### cost-tracker.sh (Stop)
+
+Reads the session transcript JSONL (from `transcript_path` in the hook input, or `$CLAUDE_TRANSCRIPT_PATH`) and appends one JSONL row to `costs.jsonl` in the `metrics/` folder of the agency root. It prints one summary line to stderr, for example `Session cost: $1.2345 (...)`. All rate tables and transcript parsing live in `hooks/lib/claude_pricing.py`, the single source for rates (see [claude_pricing.py](#claude_pricingpy)).
+
+- **No double counting.** Usage is de-duplicated by `message.id`. Claude Code writes one API message as several transcript lines, each repeating the same usage.
+- **Priced per model.** A session that switches models is priced message by message, not by the last model seen.
+- **Row fields:** `timestamp`, `session_id`, `model` (the model with the most output tokens), `rate_label`, `rate_source` (`exact`, `family_fallback`, or `unknown_default`), token counts (input, output, cache write 5m and 1h, cache read), `by_model` (cost per model), `estimated_cost_usd`, and `pricing_version`.
+- **Subagent transcripts are not included.**
+- Nothing in it blocks. A parse failure writes nothing; the traceback goes to `.cost-tracker.err` in that same folder, which is overwritten on each run.
+
+### caveman-statusline.sh (StatusLine)
+
+Not a lifecycle hook — wired via the `statusLine` key in `settings.json` (`"statusLine": {"type":"command","command":"bash .../caveman-statusline.sh"}`), not the `hooks` key. Runs on every statusline render (effectively every turn).
+
+Reads the caveman-mode flag file (`~/.claude/.caveman-active` by default, respecting `$CLAUDE_CONFIG_DIR`) and renders a colored `[CAVEMAN]` badge, or `[CAVEMAN:<MODE>]` for a specific mode (`lite`, `full`, `ultra`, `wenyan-*`, `commit`, `review`, `compress`). Refuses to read the flag (or the optional token-savings suffix file) if either is a symlink, hard-caps reads at 64 bytes, and strips any byte outside `[a-z0-9-]` before rendering — hardening against a local attacker planting ANSI-escape or OSC-hyperlink injection payloads in either file. Unrecognized mode values render nothing rather than echoing attacker-controlled bytes.
+
+Optionally appends a pre-rendered token-savings suffix (from `~/.claude/.caveman-statusline-suffix`, written by `/caveman-stats`) unless `CAVEMAN_STATUSLINE_SAVINGS=0` is set.
+
+### emit-metric.sh (utility — not a registered lifecycle hook)
+
+A shared one-line utility, not itself wired into `settings.json`. Other hooks (`write-evidence.sh`) and agents call it directly: `emit-metric.sh '{"event":"...", ...}'`. It appends the given JSON payload — with a `ts` (UTC ISO-8601) field added automatically — as one line to `~/.claude/memory/metrics/events.jsonl`.
+
+Always exits 0 and never raises; if the input is missing or unparseable, it's a silent no-op.
+
+`hooks/lib/` is the only subdirectory under `hooks/`; it holds the shared helpers described below, not registered hooks. `install.sh` copies it explicitly, as a separate step from the generic `hooks/*.sh` glob it uses for flat hook scripts (that glob does not pick up subdirectories). `agency init` and `agency upgrade` copy the whole `hooks/` tree.
+
+---
+
+## Helper Scripts (`hooks/lib/`)
+
+`hooks/lib/` is **not** a set of directly-registered Claude Code hooks — none of these scripts appear in `settings.json`. They are shared bash/python helper scripts that other hooks and agents `source` or invoke directly to avoid duplicating logic (log-file resolution, spawn lineage IDs, context-percentage publishing, token pricing, stale-spawn cleanup). Think of this directory as the hook system's internal library, analogous to a `lib/` or `utils/` folder in an application codebase.
+
+### resolve-root.sh
+
+The single source of truth for **where the agency is installed**. Sourced (never executed) by every script under `hooks/` and `scripts/` that needs to address a sibling tree; it exports one variable, `AGENCY_ROOT`, resolved as `$AGENCY_HOME` → `$CLAUDE_CONFIG_DIR` → `~/.claude`.
+
+Callers source it by a path relative to *their own* location — `. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh"` — because resolving the root is precisely the thing they cannot do yet. Each call site appends `2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"` as a degraded fallback, so a partial install cannot hard-fail a hook on Claude Code's hot path.
+
+Hooks and scripts never hardcode `$HOME/.claude`: a hardcoded root would let a custom-root install write to one directory and be read from another, silently. `.github/scripts/check-hardcoded-root.sh` fails the build if that pattern appears. Python scripts use the documented inline twin (`os.environ.get("AGENCY_HOME") or os.environ.get("CLAUDE_CONFIG_DIR") or Path.home()/".claude"`) rather than importing, because several are run by absolute path from arbitrary working directories.
+
+### resolve-project.sh
+
+Defines a single function, `resolve_project_path`, meant to be `source`d (not executed) by callers: `source {agency-root}/hooks/lib/resolve-project.sh && resolve_project_path`. It reads the Active Projects table in `~/.claude/memory/medium-term.md`, expands each row's backtick-quoted path, and longest-prefix-matches it against the current working directory (`$CLAUDE_PROJECT_DIR` or `$PWD`). On a match it sets `SPAWN_LOG_FILE` to `{project_root}/memory/spawns.jsonl`; otherwise it falls back to `~/.claude/logs/spawns.jsonl`. Used by `spawn-completion.sh` and `spawn-gate.sh`-adjacent tooling to keep spawn logs project-scoped. This is the bash/sourced twin of the `resolve_log_file()` python helper duplicated inline inside `spawn-logger.sh`, `spawn-completion.sh`, and `log-spawn-from-agent.sh`.
+
+### log-spawn-from-agent.sh
+
+Called by a PD/Coord/Mini-Coord **before** each `Agent({...})` call it makes directly (i.e. agent-instrumented spawn logging, as a complement to the automatic `spawn-logger.sh` PreToolUse hook). Takes `--parent-agent`, `--child-subagent-type`, `--description`, and `--prompt-excerpt` flags, writes a `spawn_start` JSONL entry (tagged `"source": "agent-instrumented"`), and prints a freshly generated `spawn_id` (UUID) to stdout for the caller to capture and pass down to the child. On any internal failure it still prints a valid UUID so the caller is never blocked.
+
+### log-spawn-end-from-agent.sh
+
+The completion-side counterpart to `log-spawn-from-agent.sh`. Called by a PD/Coord/Mini-Coord **after** an `Agent({...})` call returns, with `--spawn-id`, `--outcome`, and `--summary` flags. Writes a `spawn_end` JSONL entry (tagged `"source": "agent-instrumented"`) for the given `spawn_id`. Silent no-op if `--spawn-id` is empty; any internal error is silently swallowed.
+
+### claude_pricing.py
+
+A Python module, not a hook. `cost-tracker.sh` imports it. It holds the per-model Claude rates (USD per million tokens: input, 5-minute and 1-hour cache write, cache read, output) as the single source of truth, plus three functions:
+
+- `rate_for(model)` returns the rate and a `rate_source`: `exact` (a known model id), `family_fallback` (an unknown version of a known family gets that family's newest rate, so a stale table shows up instead of silently mispricing), or `unknown_default`.
+- `cost_usd(model, ...)` prices a set of token counts.
+- `usage_from_transcript(path)` sums usage over a Claude Code transcript, de-duplicated by `message.id`, with a per-model breakdown.
+
+The table carries a verification date in its header. Before you edit any rate, check it against the live Anthropic pricing page. Do not copy prices from memory.
+
+### reconcile-stale-spawns.sh
+
+Called by `spawn-completion.sh` on every completion, with the spawn log path as its only argument (`bash reconcile-stale-spawns.sh /path/to/spawns.jsonl`). A completion record can be lost: the session may crash or hit a usage limit before the Agent call returns, or an agent may skip the manual `log-spawn-end-from-agent.sh` step. This script turns that silent gap into a known state. Any `spawn_start` with no `spawn_end` after `SPAWN_STALE_THRESHOLD_SEC` (default 21600, 6 hours) gets a synthetic `spawn_end` with `outcome: "ABANDONED"` and `source: "reconciliation-sweep"`.
+
+- **Append-only and idempotent.** It never rewrites or deletes a line, and a `spawn_id` that already has any `spawn_end` is never touched again.
+- **Throttled.** A `.reconcile-marker` file beside the log limits real work to once per `SPAWN_RECONCILE_INTERVAL_SEC` (default 900 seconds), so it is safe on a hot path.
+- **Fire-and-forget.** It always exits 0 and never writes to stderr in a way that shows in hook output.
+
+### context-pct-publish.sh
+
+Reads the current context-window usage (from `$CLAUDE_CONTEXT_PCT`, or parsed out of `$CLAUDE_USAGE` JSON as a fallback) and publishes it to `~/.claude/state/context-pct.txt` as an integer 0-100, so agents can self-monitor their own context budget per the Self-Respawn Protocol. It measures the main session only, so it emits a `CONTEXT_PCT_ALERT` to stderr at 70% of the window (warning: complete the current task, no new L3s) and 80% (mandatory `/save-state` + `/respawn-self`). Subagents are not measured in percent. The `agent-ctx` mod tells them at absolute 200k (warn), 250k (finish the current task) and 300k (stop and save) tokens, and adds a 75% line for the main session; see [MODS.md](MODS.md).
+
+---
+
+## Extending the Hook System
+
+To add a new hook:
+
+1. Write the script to `hooks/{name}.sh` and document it under [Hook Details](#hook-details)
+2. Add an entry to `hooks/hooks.json` (`id`, `event`, `matcher`, `command` as `bash {root}/hooks/{name}.sh`, `purpose`), then run `node .github/scripts/check-hooks-manifest.js --write` to regenerate the table in [Settings Wiring](#settings-wiring). Every install and `agency upgrade` then wires it, and prints it as new. To stop shipping a hook later, move its entry to `retired` (`id`, `event`, `command`) so existing installs get its registration pruned. Regenerate `retired-manifest.json` with `python3 scripts/gen-retired-manifest.py` (CI checks it) so the deleted script file is pruned from installs too.
+3. Make it profile-aware if it blocks or warns:
+   ```bash
+   PROFILE=$(cat "$HOME/.claude/.hook-profile" 2>/dev/null | tr -d '[:space:]' || echo "standard")
+   if [ "$PROFILE" = "minimal" ]; then echo '{}'; exit 0; fi
+   ```
+4. Return `{}` for pass-through. A PreToolUse hook has two valid non-empty outputs, both nested under `hookSpecificOutput` (Claude Code silently ignores a top-level `permissionDecision` or `message`, so the hook would never block or ask):
+   - a decision: `{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny|ask|allow|defer","permissionDecisionReason":"..."}}` (the reason is required for `deny` and `ask`)
+   - a warning only, the tool call goes ahead: `{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"..."}}` with no `permissionDecision`
+
+   Build the JSON with `python3 -c 'import json,sys; print(json.dumps({...}))' "$arg"`, never by interpolating text into a `printf` template. `hooks/tests/test_pretooluse_output_schema.sh` pins the shape for the shipped guards.
+
+To disable a single hook without removing it from settings, use the `minimal` profile or comment out the command in `settings.json`.

@@ -1,0 +1,12 @@
+{
+ "version": 1,
+ "generated_from": "",
+ "trees": [
+  "skills/",
+  "agents/",
+  "runbooks/",
+  "core/",
+  "hooks/"
+ ],
+ "paths": {}
+}

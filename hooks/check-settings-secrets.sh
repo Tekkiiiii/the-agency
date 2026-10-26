@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# check-settings-secrets.sh — SessionStart hook
+# Warns if settings.json has plaintext secrets in env blocks. Non-blocking.
+set -euo pipefail
+
+. "$(dirname "${BASH_SOURCE[0]:-$0}")/lib/resolve-root.sh" 2>/dev/null || AGENCY_ROOT="${AGENCY_HOME:-$HOME/.claude}"
+
+SETTINGS="$AGENCY_ROOT/settings.json"
+[ -f "$SETTINGS" ] || exit 0
+SETTINGS_DIR=$(dirname "$SETTINGS")
+SETTINGS_BASE=$(basename "$SETTINGS")
+
+# Same idiom as hooks/emit-metric.sh (Wave 13, 3383ea9): cd into SETTINGS's
+# directory and hand python a bare filename, never the MSYS-style absolute
+# path a Windows box's native python3 cannot open.
+COUNT=$( cd "$SETTINGS_DIR" 2>/dev/null || exit 0
+python3 -c "
+import json, re
+try:
+    d = json.load(open('$SETTINGS_BASE'))
+    count = 0
+    for srv in d.get('mcpServers', {}).values():
+        for v in srv.get('env', {}).values():
+            s = str(v)
+            if re.search(r'eyJ[A-Za-z0-9_-]{50,}', s):
+                count += 1
+            elif re.search(r'[a-fA-F0-9]{48,}', s):
+                count += 1
+    print(count)
+except:
+    print(0)
+" 2>/dev/null
+) || true
+COUNT="${COUNT:-0}"
+
+if [ "$COUNT" -gt 0 ]; then
+  echo "SECURITY: settings.json has $COUNT plaintext token(s) in mcpServers env blocks." >&2
+  echo "  Consider moving to keychain: security add-generic-password -s '<svc>' -a '<user>' -w '<token>'" >&2
+fi

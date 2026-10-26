@@ -1,0 +1,237 @@
+const { existsSync, mkdirSync, writeFileSync, symlinkSync, unlinkSync, realpathSync, readdirSync } = require('fs');
+const path = require('path');
+const os = require('os');
+const { execFileSync } = require('child_process');
+const { syncSkills, syncAgents, syncScripts, syncHooks, syncRunbooks, syncDesignSystem, syncCore } = require('./sync-assets.js');
+const { routerLine } = require('../lib/skill-router.js');
+
+// Repo skill count vs installed skill count — a silent mismatch is exactly
+// the failure mode this whole sync rewrite exists to catch (see
+// skill-sync-structural-fix). Never fail silently: warn loudly instead.
+function verifySkillCount(repoCount, skillsDest, console) {
+  const installedCount = existsSync(skillsDest)
+    ? readdirSync(skillsDest, { withFileTypes: true }).filter(
+        e => e.isDirectory() && existsSync(path.join(skillsDest, e.name, 'SKILL.md'))
+      ).length
+    : 0;
+  if (installedCount !== repoCount) {
+    console.log(`  ⚠ Skill count mismatch: repo has ${repoCount}, installed has ${installedCount}`);
+  }
+}
+
+// Compare two paths by real (symlink-resolved) location — see matching helper
+// in upgrade.js for why bare path.resolve() is not sufficient here.
+function samePath(a, b) {
+  try {
+    return realpathSync(a) === realpathSync(b);
+  } catch (_) {
+    return path.resolve(a) === path.resolve(b);
+  }
+}
+
+// --retired=archive|delete|ask (or `--retired X`): what to do with a retired file
+// the user EDITED (see cli/lib/retired-prune.js). Returns { value } (undefined when
+// the flag is absent, so the engine falls back to AGENCY_RETIRED, then its default)
+// or { error } for a missing/invalid value, which the caller reports as exit 2
+// BEFORE touching anything.
+function parseRetiredFlag(args) {
+  let value;
+  const list = Array.isArray(args) ? args : [];
+  for (let i = 0; i < list.length; i++) {
+    const a = String(list[i]);
+    if (a === '--retired') { value = i + 1 < list.length ? String(list[++i]) : ''; }
+    else if (a.startsWith('--retired=')) { value = a.slice('--retired='.length); }
+  }
+  if (value !== undefined && !['archive', 'delete', 'ask'].includes(value)) {
+    return { error: `Invalid --retired value '${value}' (use archive, delete or ask). Nothing was changed.` };
+  }
+  return { value };
+}
+
+module.exports = async function init({ args, AGENCY_ROOT, console }) {
+  const retiredFlag = parseRetiredFlag(args);
+  if (retiredFlag.error) {
+    console.error(retiredFlag.error);
+    process.exitCode = 2;
+    return;
+  }
+  const agencyRoot = AGENCY_ROOT;
+  const repoRoot = path.resolve(__dirname, '../..');
+
+  console.log(`\nInitializing The Agency at ${agencyRoot}\n`);
+
+  // 1. Root directory
+  if (!existsSync(agencyRoot)) {
+    mkdirSync(agencyRoot, { recursive: true });
+    console.log('  ✓ Created root directory');
+  } else {
+    console.log('  ✓ Root directory exists');
+  }
+
+  // 2. Subdirectories
+  for (const dir of ['projects', 'sessions', 'memory']) {
+    const d = path.join(agencyRoot, dir);
+    if (!existsSync(d)) {
+      mkdirSync(d, { recursive: true });
+      console.log(`  ✓ Created ${dir}/`);
+    } else {
+      console.log(`  ✓ ${dir}/ exists`);
+    }
+  }
+
+  // 3. Skills
+  const skillsDest = path.join(agencyRoot, 'skills');
+  const skills = syncSkills(repoRoot, skillsDest, console);
+  console.log(`  ✓ ${skills.updated.length} skills installed, ${skills.preserved.length} preserved`);
+  verifySkillCount(skills.skillCount, skillsDest, console);
+
+  // 4. Agents
+  const agentsDest = path.join(agencyRoot, 'agents');
+  const agents = syncAgents(repoRoot, agentsDest, console);
+  console.log(`  ✓ ${agents.updated} agents installed, ${agents.preserved} preserved`);
+
+  // 4b. Scripts (skill support tooling — save-state.py, mem-gardener.sh, etc.)
+  const scriptsDest = path.join(agencyRoot, 'scripts');
+  const scripts = syncScripts(repoRoot, scriptsDest, console);
+  console.log(`  ✓ ${scripts.updated} scripts installed, ${scripts.preserved} preserved`);
+
+  // 4c. Hooks (lifecycle hooks + emit-metric.sh). install.sh always deployed
+  // these; the CLI path did not, which left every `{agency-root}/hooks/...`
+  // reference in shipped agents/runbooks/scripts dangling on a CLI-only install.
+  const hooksDest = path.join(agencyRoot, 'hooks');
+  const hooks = syncHooks(repoRoot, hooksDest, console);
+  console.log(`  ✓ ${hooks.updated} hooks installed, ${hooks.preserved} preserved`);
+  // ...and wire them into settings.json (same merge as install.sh and
+  // `agency upgrade`; non-fatal, non-destructive, AGENCY_NO_HOOKS=1 skips it).
+  require('../lib/hooks-merge.js').autoSync({ root: agencyRoot, repoDir: repoRoot, console, indent: '  ' });
+  // ...and the mods (mods/<name>/ -> env.CLAUDE_CODE_PLUGIN_DIRS), one shared
+  // helper; non-fatal, AGENCY_NO_MODS=1 skips it, Claude Code 2.1.287+ only.
+  require('../lib/mods-merge.js').autoSyncMods({ root: agencyRoot, repoDir: repoRoot, console, indent: '  ' });
+
+  // 4d. Runbooks (protocol docs referenced as `{agency-root}/runbooks/...` by
+  // deployed agents/ files). Never deployed by any installer before this.
+  const runbooksDest = path.join(agencyRoot, 'runbooks');
+  const runbooks = syncRunbooks(repoRoot, runbooksDest, console);
+  console.log(`  ✓ ${runbooks.updated} runbooks installed, ${runbooks.preserved} preserved`);
+
+  // 4e. Design system (brand-token SSOT resolved by design skills as
+  // `{agency-root}/design-system/brands/{name}.json`).
+  const designSystemDest = path.join(agencyRoot, 'design-system');
+  const designSystem = syncDesignSystem(repoRoot, designSystemDest, console);
+  console.log(`  ✓ ${designSystem.updated} design-system files installed, ${designSystem.preserved} preserved`);
+
+  // 5. Core docs. Routed through syncCore (not `cp -r`) so the handful of
+  // core/memory/ tables the running system appends rows to are seeded on a
+  // fresh install and left alone on a reinstall — see core/.preserve.
+  const coreDest = path.join(agencyRoot, 'core');
+  const core = syncCore(repoRoot, coreDest, console);
+  console.log(`  ✓ ${core.updated} core docs installed, ${core.preserved} preserved`);
+
+  // 5b. Retired files (skills/agents/runbooks/core/hooks files the repo deleted that an
+  // older install still has). Last of the syncs; same engine as install.sh and
+  // `agency upgrade`; --retired=archive|delete|ask. Never throws.
+  await require('../lib/retired-prune.js').autoPrune({
+    root: agencyRoot, repoDir: repoRoot, console, indent: '  ', retired: retiredFlag.value,
+  });
+
+  // 6. SQLite task store
+  const dbPath = path.join(agencyRoot, 'task-store.db');
+  if (!existsSync(dbPath)) {
+    try {
+      const Database = require('better-sqlite3');
+      const db = new Database(dbPath);
+      db.exec(require('./schema.js'));
+      db.close();
+      console.log('  ✓ Created task-store.db');
+    } catch {
+      writeFileSync(dbPath, '');
+      console.log('  ⚠ better-sqlite3 not installed — task-store.db is a placeholder');
+      console.log('       Run: npm install better-sqlite3');
+    }
+  } else {
+    console.log('  ✓ task-store.db exists');
+  }
+
+  // 7. CLI link
+  const cliSrc = path.resolve(__dirname, '../bin/agency.js');
+  linkCli(cliSrc, console);
+
+  console.log(`\n✓ The Agency is ready — ${skillsDest}`);
+  // One line: the optional skill router ships disabled (see cli/lib/skill-router.js).
+  console.log(routerLine(agencyRoot, process.env));
+  console.log('\nNext steps:');
+  console.log('  agency initiate                           Install tool deps + register MCP servers');
+  console.log('  agency onboard                            Guided introduction');
+  console.log('  agency new <project-slug> "<description>"  Create your first project');
+  console.log('  agency status                             Show all projects');
+  console.log('  agency skill list                         View installed skills\n');
+};
+
+function linkCli(cliSrc, console) {
+  if (os.platform() === 'win32') {
+    const shimDir = path.join(os.homedir(), '.local', 'bin');
+    mkdirSync(shimDir, { recursive: true });
+    const shimPath = path.join(shimDir, 'agency.cmd');
+    if (!existsSync(shimPath)) {
+      writeFileSync(shimPath, `@node "${cliSrc}" %*`);
+      console.log(`  ✓ CLI shim created → ${shimPath}`);
+    } else {
+      console.log('  ✓ CLI shim already exists');
+    }
+    return;
+  }
+
+  try { execFileSync('chmod', ['+x', cliSrc], { stdio: 'pipe' }); } catch (_) {}
+
+  // Check if 'agency' is already on PATH — but verify it points to THIS repo.
+  // If the symlink points elsewhere (stale clone, different checkout), re-link to cliSrc.
+  try {
+    const existingBin = execFileSync('which', ['agency'], { stdio: 'pipe' }).toString().trim();
+    let existingTarget = '';
+    try {
+      existingTarget = execFileSync('readlink', [existingBin], { stdio: 'pipe' }).toString().trim();
+    } catch (_) {
+      // not a symlink — could be a shim or direct file
+      existingTarget = existingBin;
+    }
+    if (samePath(existingTarget, cliSrc)) {
+      console.log(`  ✓ CLI already linked → ${existingBin}`);
+      return;
+    }
+    // Symlink exists but points to a different path — re-link to this repo
+    console.log(`  ⚠ CLI symlink points to wrong location:`);
+    console.log(`      was: ${existingTarget}`);
+    console.log(`      now: ${cliSrc}`);
+    try {
+      execFileSync('ln', ['-sf', cliSrc, existingBin], { stdio: 'pipe' });
+      console.log(`  ✓ CLI re-linked → ${existingBin}`);
+      return;
+    } catch (_) {
+      console.log(`  ⚠ Could not re-link ${existingBin} (permission error?)`);
+      console.log(`    Run manually: ln -sf "${cliSrc}" "${existingBin}"`);
+      return;
+    }
+  } catch (_) {
+    // 'which agency' failed — not on PATH yet, proceed to install
+  }
+
+  const targets = ['/usr/local/bin/agency', path.join(os.homedir(), '.local', 'bin', 'agency')];
+  for (const target of targets) {
+    try {
+      mkdirSync(path.dirname(target), { recursive: true });
+      try { unlinkSync(target); } catch (_) {}
+      symlinkSync(cliSrc, target);
+      console.log(`  ✓ CLI linked → ${target}`);
+      if (target.includes('.local/bin') && !(process.env.PATH || '').includes('.local/bin')) {
+        const shell = existsSync(path.join(os.homedir(), '.zshrc')) ? '.zshrc' : '.bashrc';
+        console.log(`    Add to PATH: echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/${shell}`);
+      }
+      return;
+    } catch (_) {
+      continue;
+    }
+  }
+
+  console.log('  ⚠ Could not create symlink — add this to your PATH:');
+  console.log(`    ${cliSrc}`);
+}

@@ -1,0 +1,57 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log
+
+# Secrets
+.env
+*.env
+.agency-config
+.agency-secrets
+.install-log
+secrets.json
+
+# Claude Code state (project-local)
+.claude/
+plans/
+
+# PD/Coord/Executor scratch boards written when this repo is used as a
+# {project} dir by a spawn (should live in the PD's real project-memory
+# dir, e.g. ~/.claude/projects/the-agency/memory/ — never in the repo itself)
+# Anchored to repo root only — an unanchored "memory/" also matches
+# core/memory/, agents/*/memory/ (real template dirs) and silently
+# swallows any new file added under them.
+/memory/
+
+# OpenSpec generated files (session artifacts)
+openspec/changes/
+openspec/specs/
+openspec/archive/
+
+# Compiled
+*.pyc
+__pycache__/
+
+# Large binaries
+*.db
+*.zip
+
+# Runtime
+*.log
+
+# Backup files
+*.bak-*
+
+# Machine-local runtime state (if this working tree ever accumulates
+# equivalent local daemon/job/knowledge caches — content already audited
+# as non-portable, this is just the exclude pattern)
+agent-dashboard/
+daemon/
+.tokensave/
+jobs/
+knowledge/
+daemon-auth-*
+.edit-buffer.txt

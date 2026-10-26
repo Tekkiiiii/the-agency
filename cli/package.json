@@ -1,0 +1,18 @@
+{
+  "name": "@the-agency/cli",
+  "version": "2.0.0",
+  "description": "The Agency CLI — manage the skills, agents, memory, and tasks that fix Claude Code, from the terminal",
+  "bin": {
+    "agency": "./bin/agency.js"
+  },
+  "scripts": {
+    "start": "node bin/agency.js",
+    "test": "node ../scripts/check-flat-skills.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^9.0.0"
+  }
+}

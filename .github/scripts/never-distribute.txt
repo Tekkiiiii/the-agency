@@ -1,0 +1,55 @@
+# never-distribute.txt - the blocklist for .github/scripts/check-never-distribute.js.
+#
+# Skills that are NOT licensed for distribution: (1) third-party Vietnamese
+# marketing skills, (2) skills whose origin and licence are unknown (blocked until
+# a licence is found).
+# They must never reach this repo: not as skills/<dir>, not copied into docs, evals
+# or fixtures, not credited by their upstream identifiers.
+#
+# Paths into the repo that could pull them in (all copy from skills/ only):
+#   cli/commands/sync-assets.js, cli/commands/skill.js (`agency skill install`),
+#   scripts/skill-registry.py (INDEX.md lists whatever is in skills/).
+#
+# Format, one per line:
+#   dir    | <name>    fails if a tracked path has a directory segment equal to <name> below a skills/ segment
+#   id     | <text>    fails if ANY tracked file CONTENT contains <text> (case-insensitive)
+#   idhash | <sha256>  fails if any lowercase alphanumeric token in tracked file content hashes to it
+# Exempt from the content rule: this file.
+# Never add an entry to remove a hit; delete the offending files instead.
+
+dir | marketing
+dir | 00-ke-hoach-mkt
+dir | 01-lich-noi-dung
+dir | 02-brief-chien-dich
+dir | 03-danh-gia-hieu-suat
+dir | 04-script-video
+dir | 05-copy-quang-cao
+dir | 06-brief-ugc-egc
+dir | 07-bao-cao-marketing
+dir | 08-nghien-cuu-doi-thu
+dir | 09-insight-khach-hang
+dir | 10-tinh-kpi-nguoc
+dir | 11-thiet-lap-kenh
+dir | 12-brief-landing-page
+dir | 13-phan-tich-du-lieu
+dir | 14-email-marketing
+dir | 15-social-listening
+dir | 16-marketing-psychology
+dir | 17-pricing-strategy
+dir | 18-referral-program
+dir | 19-ab-test-setup
+dir | product-marketing-context
+idhash | 01300e67de0fbf3038f2ec48823deab5b095b5b1a254bd1e8c770db19439ee52
+id | ai-business-skills
+id | fullstack-mkt-skills
+
+# (2) Licence unknown. dir rules only: the names also appear as
+# ordinary words (the ffmpeg binary) and in retired-manifest.json, so no id rules.
+dir | ffmpeg
+dir | xlsx-toolkit
+dir | n8n-automation
+dir | postgresql-schema
+dir | laravel-builder
+dir | webhook-security
+dir | admin-shell-foundation
+dir | subtitle-burner

@@ -1,0 +1,15 @@
+#!/bin/bash
+# mem — memory estate CLI. Subcommands: find <query>.
+# (The `graph` subcommand was retired 2026-10-08, memory consolidation M4.)
+SCRIPTS="$HOME/.claude/scripts"
+
+case "$1" in
+  find)
+    shift
+    "$SCRIPTS/mem-find.sh" "$@"
+    ;;
+  *)
+    echo "Usage: mem find <query>" >&2
+    exit 1
+    ;;
+esac

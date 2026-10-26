@@ -1,0 +1,1115 @@
+name: installers
+
+# Durable verification for the two installers (install.sh, install.ps1): each is
+# executed end to end on its own OS, so a regression cannot reach main unnoticed.
+#
+# Deliberately minimal: no matrix, no caching. Two jobs, one per installer.
+#
+# SECURITY: the only secret is PRIVACY_DENYLIST, handed to the privacy step through
+# `env:` (never pasted into a run: body, never echoed; the script prints only a
+# term count). Fork PRs cannot read secrets, so there the step degrades to the
+# generic checks. The interpolated expressions are `runner.temp` and
+# `github.event_name` (runner-controlled constants, not attacker controlled), always
+# passed through `env:`, so there is no injection surface from PR titles, branch
+# names or commit messages.
+
+on:
+  push:
+    branches: [main, fresh-public]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  install-sh:
+    name: install.sh (ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      # Full history: scripts/gen-retired-manifest.py --check reads git history and
+      # fails loudly on a shallow clone.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run install.sh into a sandboxed AGENCY_HOME
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: bash install.sh
+
+      - name: Assert every repo skill was installed
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: |
+          repo=$(find skills -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')
+          got=$(find "$AGENCY_HOME/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')
+          echo "repo=$repo installed=$got"
+          # The bug this guards: both installers globbed the abandoned flat
+          # skills/*.md layout, installed nothing, and printed success.
+          [ "$repo" -gt 0 ] || { echo "FAIL: repo reports 0 skills — check the layout assumption"; exit 1; }
+          [ "$got" = "$repo" ] || { echo "FAIL: installed $got of $repo skills"; exit 1; }
+
+      - name: Assert deployed {agency-root} references resolve
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: bash .github/scripts/verify-agency-refs.sh "$AGENCY_HOME"
+
+      - name: Assert emit-metric.sh writes an event line
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: |
+          emit="$AGENCY_HOME/hooks/emit-metric.sh"
+          [ -x "$emit" ] || { echo "FAIL: $emit missing or not executable"; exit 1; }
+          bash "$emit" '{"event":"ci_installer_probe","source":"install.sh"}'
+          log="$AGENCY_HOME/memory/metrics/events.jsonl"
+          [ -s "$log" ] || { echo "FAIL: no event written to $log"; exit 1; }
+          grep -q ci_installer_probe "$log" || { echo "FAIL: event line missing"; cat "$log"; exit 1; }
+          # "ts" is added by the script, not the caller — prove that still happens.
+          grep -q '"ts"' "$log" || { echo "FAIL: emitted line carries no ts"; cat "$log"; exit 1; }
+          cat "$log"
+
+      # design-system/ is the quietest tree on the deploy list: a skill that
+      # cannot find its brand file does not error, it falls back to a hardcoded
+      # hex and ships an off-brand deliverable. So assert the DEPLOYED copy is
+      # complete and still functional, not merely that the directory exists.
+      - name: Assert design-system deployed and regenerates identical CSS
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: |
+          ds="$AGENCY_HOME/design-system"
+          [ -f "$ds/brands/neutral.json" ] || { echo "FAIL: brand SSOT not deployed"; exit 1; }
+          [ -f "$ds/brands/neutral.css" ]  || { echo "FAIL: generated brand CSS not deployed"; exit 1; }
+          repo_overlays=$(find design-system/overlays -name '*.css' | wc -l | tr -d ' ')
+          got_overlays=$(find "$ds/overlays" -name '*.css' | wc -l | tr -d ' ')
+          echo "overlays repo=$repo_overlays installed=$got_overlays"
+          [ "$got_overlays" = "$repo_overlays" ] || { echo "FAIL: overlay count mismatch"; exit 1; }
+          # Regenerating from the deployed JSON must reproduce the deployed CSS
+          # byte-for-byte. This catches a truncated copy AND a hand-edited .css.
+          cp "$ds/brands/neutral.css" "$RUNNER_TEMP/neutral.css.before"
+          node "$ds/build.js"
+          diff -u "$RUNNER_TEMP/neutral.css.before" "$ds/brands/neutral.css" \
+            || { echo "FAIL: deployed brand CSS is not what build.js generates"; exit 1; }
+
+      # core/ is deployed by four paths and none may blind-overwrite it. Some
+      # core/memory/ files ship as empty scaffolds that the running system appends
+      # rows to at their INSTALLED path, so a reinstall must not destroy user data.
+      # This is a second install into the SAME root; the "different AGENCY_HOME"
+      # step below cannot see this class of bug.
+      #
+      # Both halves are asserted. (a) the user's row survives. (b) a file that
+      # is NOT preserved still refreshes — without (b) this step would pass just
+      # as happily if core syncing were disabled wholesale, which would freeze
+      # every install on whatever version it already had.
+      - name: Assert a second install.sh preserves accumulated core/memory rows
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}/agency-default
+        run: |
+          set -e
+          registry="$AGENCY_HOME/core/memory/medium-term.md"
+          template="$AGENCY_HOME/core/memory/agency-dispatch.md"
+          [ -f "$registry" ] || { echo "FAIL: $registry was not seeded by the first install"; exit 1; }
+
+          # Shaped like what project-scaffolder actually appends on /new-project.
+          echo '| ci-probe-project | `/tmp/ci-probe/memory/` | ci-probe-pd | Active |' >> "$registry"
+          # A non-preserved file, locally corrupted: the second install must fix it.
+          echo 'STALE SENTINEL' > "$template"
+
+          bash install.sh
+
+          if ! grep -q 'ci-probe-project' "$registry"; then
+            echo "FAIL: reinstall destroyed an accumulated row in core/memory/medium-term.md"
+            echo "--- installed copy ---"; cat "$registry"; exit 1
+          fi
+          if grep -q 'STALE SENTINEL' "$template"; then
+            echo "FAIL: core/ stopped refreshing — a non-preserved file was left stale"
+            echo "(preserving everything is not a fix: users would never receive new agent routes)"
+            exit 1
+          fi
+          if ! diff -u core/memory/agency-dispatch.md "$template"; then
+            echo "FAIL: refreshed template does not match the repo copy"; exit 1
+          fi
+          echo "OK: user row preserved, template refreshed"
+
+      # The CLI half of the same contract. `agency upgrade` needs a pushed
+      # commit, a remote and a re-exec to run end to end, so drive syncCore
+      # directly — the same approach check-design-system-sync.js takes.
+      - name: Assert agency init/upgrade's core sync preserves accumulated rows
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/check-core-preserve.js
+
+      # Custom-root case: every script under hooks/ and scripts/ must resolve the
+      # root from AGENCY_HOME, not a hardcoded $HOME/.claude, or a custom
+      # AGENCY_HOME is installed to one place and read from another.
+      - name: Second install into a DIFFERENT AGENCY_HOME
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: /tmp/agency-custom-root
+        run: bash install.sh
+
+      - name: Assert scripts resolve against the custom root, not $HOME
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: /tmp/agency-custom-root
+        run: |
+          set -e
+          bash .github/scripts/verify-agency-refs.sh "$AGENCY_HOME"
+
+          # emit-metric must land under the custom root...
+          bash "$AGENCY_HOME/hooks/emit-metric.sh" '{"event":"ci_custom_root_probe"}'
+          grep -q ci_custom_root_probe "$AGENCY_HOME/memory/metrics/events.jsonl" \
+            || { echo "FAIL: event did not land under custom root"; exit 1; }
+
+          # ...and must NOT have leaked into $HOME/.claude.
+          if [ -f "$HOME/.claude/memory/metrics/events.jsonl" ] \
+             && grep -q ci_custom_root_probe "$HOME/.claude/memory/metrics/events.jsonl"; then
+            echo "FAIL: event leaked into \$HOME/.claude despite AGENCY_HOME"
+            exit 1
+          fi
+
+          # Every shell script that sources the resolver must agree on the root.
+          ( . "$AGENCY_HOME/hooks/lib/resolve-root.sh"
+            [ "$AGENCY_ROOT" = "$AGENCY_HOME" ] \
+              || { echo "FAIL: resolver returned $AGENCY_ROOT"; exit 1; } )
+
+          # Python twin must agree with the shell resolver. This asserts the
+          # PRECEDENCE only, which is all that is observable on Linux — it is
+          # not the canonical twin and must not be copied into a script. That
+          # form (with the nt branch) lives in hooks/lib/resolve-root.sh and is
+          # exercised on the Windows job.
+          python3 - <<'PY'
+          import os, pathlib, sys
+          root = pathlib.Path(
+              os.environ.get("AGENCY_HOME")
+              or os.environ.get("CLAUDE_CONFIG_DIR")
+              or (pathlib.Path.home() / ".claude")
+          )
+          expected = pathlib.Path(os.environ["AGENCY_HOME"])
+          if root != expected:
+              sys.exit("FAIL: python twin returned %s, expected %s" % (root, expected))
+          print("python twin agrees:", root)
+          PY
+
+      - name: Assert no script still hardcodes the default root
+        if: ${{ !cancelled() }}
+        run: bash .github/scripts/check-hardcoded-root.sh
+
+      # Both runners are bash 5. macOS — where every one of these scripts is
+      # actually run — is bash 3.2, and has already been broken by a construct
+      # bash 5 accepts silently (a literal backtick inside a quoted heredoc
+      # inside `$( )`). This step parses everything with the real 3.2.
+      - name: Assert every shell script parses under bash 3.2 (macOS)
+        if: ${{ !cancelled() }}
+        run: bash .github/scripts/check-bash32-parse.sh
+
+      # install.sh's design-system deployment is asserted above. `agency
+      # upgrade` uses a different code path (syncDesignSystem -> syncTree, with
+      # update/preserve semantics). This runs that exact function end to end.
+      - name: Assert agency upgrade's design-system sync works end to end
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/check-design-system-sync.js
+
+      # A clone whose origin was force-pushed, with a stale .git/index.lock and a
+      # leftover UU file: `agency upgrade` must still stash, `pull --rebase` must not
+      # replay rewritten commits, and rescue.sh must not fall back to an unguarded
+      # `git reset --hard`. This runs both tools on that state, in a sandboxed
+      # HOME/AGENCY_HOME.
+      - name: Assert agency upgrade + rescue.sh recover a rewritten origin safely
+        if: ${{ !cancelled() }}
+        run: bash .github/scripts/check-upgrade-rewrite.sh
+
+      # hooks/hooks.json is the one list of hooks every install path wires;
+      # docs/HOOKS.md carries a table generated from it. This fails when a
+      # manifest command names a script that is not in hooks/, hardcodes a root,
+      # or the docs table drifts from the manifest.
+      - name: Assert hooks manifest matches hooks/ and docs/HOOKS.md
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/check-hooks-manifest.js
+
+      # install.sh and agency upgrade merge hooks into a LIVE settings.json: this asserts that user
+      # hooks and keys survive sync/re-sync/manifest change/remove, that a second
+      # run is byte-identical with no new backup, and runs install.sh twice end
+      # to end. Sandboxed HOME/AGENCY_HOME throughout.
+      - name: Assert hooks merge keeps user hooks and is idempotent
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/check-hooks-merge.js
+
+      # The mods engine (cli/lib/mods-merge.js) wires mods/<name>/ into the user's
+      # settings.json env.CLAUDE_CODE_PLUGIN_DIRS. Unit test first, then the
+      # end-to-end guard: install.sh merges into a user's existing value (dedupe
+      # by plugin name, existing-mod skip), is idempotent, `mods-merge.js remove`
+      # undoes exactly that, Claude Code < 2.1.287 is skipped with one note, and
+      # `agency upgrade` (run from a scratch git clone) deploys the mods. CI has
+      # no claude CLI: the script sets AGENCY_CLAUDE_VERSION per case.
+      - name: Assert the mods engine merges, dedupes and removes safely
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/check-mods-merge.js
+
+      - name: Assert install.sh and agency upgrade wire the mods
+        if: ${{ !cancelled() }}
+        run: bash .github/scripts/check-mods-install.sh
+
+      # Retired files: skills/agents/runbooks/core/hooks files the repo deleted (the 6 dept
+      # skills, 15 dept agents, ...) stayed installed forever because every sync
+      # only adds. retired-manifest.json (generated from git history) lists them
+      # with the hash of every version ever shipped; cli/lib/retired-prune.js
+      # deletes an untouched one and archives one the user edited. First the
+      # manifest must match git history, then the engine's unit test, then the
+      # end-to-end guard: an old install (a worktree of 723a223) is pruned by
+      # install.sh and by `agency upgrade`, an edited file is archived (or deleted
+      # with --retired=delete), a user skill is untouched, a rerun is a no-op and a
+      # bad --retired value exits 2 before changing anything.
+      - name: Assert retired-manifest.json matches git history
+        if: ${{ !cancelled() && github.ref != 'refs/heads/fresh-public' }}
+        run: python3 scripts/gen-retired-manifest.py --check
+
+      - name: Assert the retired-files prune engine keeps what the user edited
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/check-retired-prune.js
+
+      # The PreToolUse guards (config-protection, secret-scanner, gate-guard,
+      # spawn-gate) once printed a top-level permissionDecision, which Claude
+      # Code ignores, so they never blocked or asked. This pins the nested
+      # hookSpecificOutput shape (and gate-guard's warn-only/strict-deny split).
+      - name: Assert PreToolUse guards emit the nested hookSpecificOutput shape
+        if: ${{ !cancelled() }}
+        run: bash hooks/tests/test_pretooluse_output_schema.sh
+
+      # The skill router ships DISABLED, but its menu builder fails loudly on any
+      # shipped skill without an entry in scripts/skill-route/overlay.json. A skill
+      # added to skills/ without an overlay entry would break the router for every
+      # user who enables it. This checks overlay == skills/ exactly, builds the
+      # menu, and proves the builder still refuses a stripped overlay (so this
+      # check cannot go green on a builder that quietly skips skills). A socket
+      # guard asserts zero network attempts; no key, no switch needed.
+      - name: Assert the skill-router overlay matches skills/ and the menu builder fails loudly
+        if: ${{ !cancelled() }}
+        run: python3 .github/scripts/check-skill-route-menu.py
+
+      # "Disabled by default" means no network call and no output change unless
+      # AGENCY_SKILL_ROUTER=1. Same socket-guard approach, run against the router
+      # scripts with the switch off. (Script owned by the router port.)
+      - name: Assert the skill router is inert while disabled (no network, no key)
+        if: ${{ !cancelled() }}
+        run: python3 .github/scripts/check-skill-route-disabled.py
+
+      # Windows PowerShell 5.1 reads a BOM-less script as cp1252, where the em
+      # dash (E2 80 94) contains U+201D, a string terminator. One dash in a
+      # quoted string and the whole script fails to parse. The pwsh job below
+      # reads UTF-8 and never noticed. Any non-ASCII byte in a PowerShell/cmd
+      # source file fails here, on every OS.
+      - name: Assert PowerShell and cmd sources are ASCII-only
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/check-ps1-ascii.js
+
+      # Nothing private ships: no NotebookLM notebook IDs, real e-mail addresses,
+      # /Users/<name> paths, pcsk_/sk-ant- keys or private terms in any tracked
+      # file. The term list is the PRIVACY_DENYLIST secret (newline-separated), never
+      # stored in the repo. Pushes require it (--require-denylist); fork PRs cannot
+      # read secrets, so there the generic checks run and a notice is logged.
+      # Justified hits are listed in .github/scripts/privacy-allowlist.txt.
+      # The self-test plants each kind of leak in a throwaway repo and must catch it.
+      - name: Assert no private data is tracked (NotebookLM IDs, emails, user paths, keys, personal terms)
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
+          REQUIRE_DENYLIST: ${{ github.event_name != 'pull_request' && '--require-denylist' || '' }}
+        run: |
+          node .github/scripts/check-privacy.js --self-test
+          if [ -z "$PRIVACY_DENYLIST" ]; then
+            echo "::notice::PRIVACY_DENYLIST is not available (fork PR or secret unset): running generic checks only"
+          fi
+          node .github/scripts/check-privacy.js $REQUIRE_DENYLIST
+
+      # Skills not licensed for distribution (third-party Vietnamese marketing skills,
+      # and skills pulled 2026-10-26 because their licence is unknown):
+      # no blocked skill directory and no upstream identifier in any tracked file.
+      # The blocklist is .github/scripts/never-distribute.txt; the self-test plants both.
+      - name: Assert no never-distribute skill or identifier is tracked
+        if: ${{ !cancelled() }}
+        run: |
+          node .github/scripts/check-never-distribute.js --self-test
+          node .github/scripts/check-never-distribute.js
+
+      # The first-run path: install -> `agency new demo` -> /recall, /pd-resume and the
+      # spawn-log hooks all resolve demo from ONE registry, {root}/memory/medium-term.md.
+      # Also: a second install leaves an existing registry byte-identical, and a registry
+      # that only exists under core/memory (older installs) is carried over.
+      - name: Assert install seeds the project registry and `agency new` registers into it
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/check-quickstart-registry.js
+
+      # agents/scripts/lint-agents.sh derives the department list from agents/*/INDEX.md, so a new department or agent
+      # with broken frontmatter fails here instead of shipping.
+      - name: Assert every agent definition has valid frontmatter (all departments)
+        if: ${{ !cancelled() }}
+        run: bash agents/scripts/lint-agents.sh
+
+      # Hand-typed counts rot ("280+ skills" shipped while 243 existed; "130+
+      # agents" while 47 did). This derives skills/agents/departments from the
+      # tree and fails on any N skills / N+ agents / N departments claim in the
+      # README, INDEX files, docs/ or CLI strings that no longer matches.
+      - name: Assert skill/agent/department counts in docs and CLI match the tree
+        if: ${{ !cancelled() }}
+        run: python3 .github/scripts/check-counts.py
+
+      # skills/INDEX.md is GENERATED by scripts/skill-registry.py (the menu the
+      # router-off flow reads). The first script is the generator's own test;
+      # the second fails when INDEX.md is stale against skills/ or when the
+      # skill lint (frontmatter, description, size) regresses past its ratchet.
+      - name: Skill registry (INDEX.md generated + lint ratchet)
+        if: ${{ !cancelled() }}
+        run: |
+          python3 .github/scripts/test-skill-registry.py
+          python3 .github/scripts/check-skill-registry.py
+
+      # core/ holds copies of canonical docs (agent defs, every runbook). Byte-compares
+      # each copy to its source so they cannot drift; a documented core-only block is
+      # allowed only when wrapped in explicit exemption markers.
+      - name: Assert core/ mirrors agents/ and runbooks/
+        if: ${{ !cancelled() }}
+        run: python3 scripts/core-mirror-check.py --root .
+
+      # Offline unit suite for the skill router, the Jev client/recorder and the
+      # spawn-ledger guard. Linux only: it asserts POSIX file modes and uses
+      # fcntl locks. No network (127.0.0.1 stubs), no real `claude`, no key.
+      - name: Skill router unit suite (offline)
+        if: ${{ !cancelled() }}
+        run: python3 -m unittest discover -s scripts/tests
+
+      # The mods' Python halves, one step per suite so one red suite never hides the
+      # rest: spawn-ledger (ledger.py, project resolution, Exec cap), the hooks/lib
+      # helpers (model-pin, spawn_project, find_bash, the live-log guard) and the
+      # identity test that every mod's platform.ts / testpaths.ts copy equals
+      # mods/_shared/. (The scripts/tests isolation + win32 subset is part of the
+      # full "Skill router unit suite" step above.) Every suite loads its
+      # test_00_isolation.py first: tests run in a temp HOME and never write a
+      # live log; the test_zz guard fails the run if one did.
+      - name: Mods Python tests (spawn-ledger)
+        if: ${{ !cancelled() }}
+        run: python3 -m unittest discover -s mods/spawn-ledger/tests
+
+      - name: Mods Python tests (hooks/tests)
+        if: ${{ !cancelled() }}
+        run: python3 -m unittest discover -s hooks/tests
+
+      - name: Mods Python tests (mods/_shared identity)
+        if: ${{ !cancelled() }}
+        run: python3 mods/_shared/test_copies_identical.py
+
+      # The TypeScript halves. `claude plugin validate` and `claude plugin test` ship
+      # in @anthropic-ai/claude-code and need no login. Each loop runs every mod and
+      # fails at the end, so one bad mod never hides another.
+      - name: Install the claude CLI (for claude plugin validate / test)
+        if: ${{ !cancelled() }}
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Mods plugin validate (5 mods)
+        if: ${{ !cancelled() }}
+        run: |
+          rc=0
+          for m in agent-ctx context-band loop-guard spawn-ledger voice-compact; do
+            echo "::group::validate $m"
+            claude plugin validate "mods/$m" || rc=1
+            echo "::endgroup::"
+          done
+          exit $rc
+
+      - name: Mods plugin test (5 mods)
+        if: ${{ !cancelled() }}
+        run: |
+          rc=0
+          for m in agent-ctx context-band loop-guard spawn-ledger voice-compact; do
+            echo "::group::test $m"
+            claude plugin test "mods/$m" || rc=1
+            echo "::endgroup::"
+          done
+          exit $rc
+
+  install-ps1:
+    name: install.ps1 (windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run install.ps1 into a sandboxed AGENCY_HOME
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: .\install.ps1
+
+      - name: Assert every repo skill was installed
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: |
+          $repo = (Get-ChildItem skills -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') }).Count
+          $dest = Join-Path $env:AGENCY_HOME 'skills'
+          $got  = (Get-ChildItem $dest -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') }).Count
+          Write-Host "repo=$repo installed=$got"
+          if ($repo -le 0) { throw "repo reports 0 skills - check the layout assumption" }
+          if ($got -ne $repo) { throw "installed $got of $repo skills" }
+
+      - name: Assert deployed {agency-root} references resolve
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: .\.github\scripts\verify-agency-refs.ps1 -AgencyRoot $env:AGENCY_HOME
+
+      # install.ps1 now wires hooks/hooks.json into settings.json through
+      # cli/lib/hooks-merge.js (Git Bash is on PATH on windows-latest, so it must
+      # wire, not skip).
+      - name: Assert install.ps1 wired the hooks
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: |
+          $settings = Join-Path $env:AGENCY_HOME 'settings.json'
+          if (-not (Test-Path $settings)) { throw "install.ps1 did not create settings.json" }
+          $s = Get-Content $settings -Raw | ConvertFrom-Json
+          $cmds = @()
+          foreach ($ev in $s.hooks.PSObject.Properties) {
+            foreach ($g in $ev.Value) { foreach ($h in $g.hooks) { $cmds += $h.command } }
+          }
+          $m = Get-Content hooks\hooks.json -Raw | ConvertFrom-Json
+          Write-Host "wired=$($cmds.Count) manifest=$($m.hooks.Count)"
+          if ($cmds.Count -ne $m.hooks.Count) { throw "expected $($m.hooks.Count) hook entries, got $($cmds.Count)" }
+          if (-not ($cmds | Where-Object { $_ -like 'bash *gate-guard.sh' })) { throw "gate-guard.sh not wired" }
+          if ($cmds | Where-Object { $_ -match '\\' }) { throw "a hook command contains a backslash: $($cmds -join '; ')" }
+          $before = (Get-FileHash $settings).Hash
+          .\install.ps1 | Out-Null
+          if ((Get-FileHash $settings).Hash -ne $before) { throw "second install.ps1 changed settings.json" }
+          if (Get-ChildItem $env:AGENCY_HOME -Filter 'settings.json.bak-*') { throw "no-op install wrote a backup" }
+          Write-Host "OK: hooks wired once, second install is a no-op"
+
+      - name: Assert emit-metric.sh writes an event line
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          # Windows runners ship Git Bash; the hooks are bash scripts and this is
+          # the only way a Windows user runs them at all. If this step fails, the
+          # hooks shipped by install.ps1 are decorative.
+          #
+          # install.ps1 is handed a Windows-style root (D:\a\_temp\...). A bash
+          # hook cannot use that as-is, so convert it the way Git Bash expects.
+          # A real Windows user hits the POSIX form anyway: Claude Code invokes
+          # hooks as `bash ~/.claude/hooks/...` with AGENCY_HOME unset, and
+          # resolve-root.sh then falls back to Git Bash's own $HOME/.claude.
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+          echo "win root:   $AGENCY_HOME_WIN"
+          echo "posix root: $AGENCY_HOME"
+          echo "python3:    $(command -v python3 || echo MISSING)"
+          python3 -c 'import sys; print("interpreter:", sys.executable, sys.platform)' || true
+
+          emit="$AGENCY_HOME/hooks/emit-metric.sh"
+          [ -f "$emit" ] || { echo "FAIL: $emit missing"; exit 1; }
+          # emit-metric.sh is fire-and-forget by design (set +e, stderr muted), so
+          # a missing python3 would look identical to success. Assert it directly.
+          command -v python3 >/dev/null || { echo "FAIL: python3 not on PATH — emit-metric.sh cannot work"; exit 1; }
+
+          bash "$emit" '{"event":"ci_installer_probe","source":"install.ps1"}'
+          log="$AGENCY_HOME/memory/metrics/events.jsonl"
+          if [ ! -s "$log" ]; then
+            echo "FAIL: no event written to $log"
+            echo "--- any events.jsonl under the install: ---"
+            find "$AGENCY_HOME" -name events.jsonl 2>/dev/null || true
+            exit 1
+          fi
+          grep -q ci_installer_probe "$log" || { echo "FAIL: event line missing"; cat "$log"; exit 1; }
+          grep -q '"ts"' "$log" || { echo "FAIL: emitted line carries no ts"; cat "$log"; exit 1; }
+          cat "$log"
+
+      - name: Assert check-session-state.sh and session-end.sh write session-state.json
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          # python3 on the Windows PATH is native and cannot open the MSYS-style
+          # path Git Bash hands it. check-session-state.sh and session-end.sh (both
+          # write $AGENCY_ROOT/session-state.json) use a cd+bare-filename idiom to
+          # avoid that — assert it holds.
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+
+          state="$AGENCY_HOME/session-state.json"
+          rm -f "$state"
+
+          # First run with no state file: check-session-state.sh creates one.
+          bash "$AGENCY_HOME/hooks/check-session-state.sh"
+          [ -s "$state" ] || { echo "FAIL: check-session-state.sh wrote no $state"; exit 1; }
+          grep -q '"was_clean": true' "$state" || { echo "FAIL: unexpected content"; cat "$state"; exit 1; }
+
+          # session-end.sh marks the session cleanly ended with a fresh ts.
+          bash "$AGENCY_HOME/hooks/session-end.sh"
+          grep -q '"was_clean": true' "$state" || { echo "FAIL: session-end.sh did not mark clean"; cat "$state"; exit 1; }
+          grep -q '"last_stop"' "$state" || { echo "FAIL: session-end.sh wrote no last_stop"; cat "$state"; exit 1; }
+          cat "$state"
+
+      - name: Assert bg-job-warn.sh writes .pending-bg-jobs.jsonl
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          # Same MSYS-path defect class as emit-metric.sh. bg-job-warn.sh's
+          # BG_JOB_FILE was crossing the bash -> python3 boundary via argv
+          # (not string interpolation) — proves the fix covers both mechanisms.
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+
+          jobs="$AGENCY_HOME/.pending-bg-jobs.jsonl"
+          rm -f "$jobs"
+
+          echo '{"hook_event_name":"PostToolUse","tool_input":{"run_in_background":true,"command":"npm run build","description":"ci probe"},"tool_response":{"content":[{"type":"text","text":"Command running in background with ID: ci-probe-1"}]}}' \
+            | bash "$AGENCY_HOME/hooks/bg-job-warn.sh"
+
+          [ -s "$jobs" ] || { echo "FAIL: bg-job-warn.sh wrote no $jobs"; exit 1; }
+          grep -q 'ci-probe-1' "$jobs" || { echo "FAIL: bg_id missing from entry"; cat "$jobs"; exit 1; }
+          cat "$jobs"
+
+      - name: Assert the three env-carried-root hooks honour an MSYS-style AGENCY_HOME
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          # Third variant of the Windows path defect. The hooks fixed above
+          # crossed a bash-BUILT path into python3; these three build nothing in
+          # bash — they read AGENCY_HOME from the environment INSIDE python.
+          #
+          # MSYS2_ENV_CONV_EXCL is the whole point of this step, and it is here
+          # because the first version of it was green against the broken code.
+          # Git Bash is MSYS2, and MSYS2 rewrites path-shaped environment
+          # variables into Windows form whenever it spawns a NATIVE binary —
+          # which python3 on the Windows PATH is (verified in the step above:
+          # sys.platform == win32). So `export AGENCY_HOME=/d/a/...` arrives
+          # inside python already reading D:\a\..., and the defect this step was
+          # written to catch cannot occur. Excluding the variable from that
+          # conversion is what reproduces the raw MSYS string a caller outside
+          # MSYS2's conversion rules would deliver. Red against the pre-fix
+          # hooks, green after — checked by PR, not assumed.
+          #
+          # Both cases are asserted: the excluded one because it is the only one
+          # that can fail, and the default one because that is what every real
+          # Git Bash user actually hits.
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+          echo "posix root: $AGENCY_HOME"
+
+          probe_hooks() {
+            local logs="$AGENCY_HOME/logs"
+            rm -rf "$logs"
+
+            # 1. write-evidence.sh -> logs/write-evidence.jsonl
+            echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/proj/outputs/ci-probe.html"}}' \
+              | bash "$AGENCY_HOME/hooks/write-evidence.sh" >/dev/null
+            [ -s "$logs/write-evidence.jsonl" ] \
+              || { echo "FAIL[$1]: write-evidence.sh wrote no $logs/write-evidence.jsonl"; return 1; }
+            grep -q 'ci-probe.html' "$logs/write-evidence.jsonl" \
+              || { echo "FAIL[$1]: write-evidence entry missing the path"; cat "$logs/write-evidence.jsonl"; return 1; }
+
+            # 2. artifact-verify.sh -> logs/artifact-verify.jsonl
+            echo '{"tool_response":{"content":"DONE: /nonexistent-ci/probe.pdf"}}' \
+              | bash "$AGENCY_HOME/hooks/artifact-verify.sh" >/dev/null
+            [ -s "$logs/artifact-verify.jsonl" ] \
+              || { echo "FAIL[$1]: artifact-verify.sh wrote no $logs/artifact-verify.jsonl"; return 1; }
+
+            # 3. spawn-logger.sh -> logs/spawns.jsonl, and it must still return
+            #    the modified toolInput on stdout (an empty return would disable
+            #    the lineage marker without failing anything).
+            local out
+            out=$(echo '{"tool_use_id":"t1","tool_input":{"subagent_type":"ci-probe-agent","description":"d","prompt":"p"}}' \
+              | bash "$AGENCY_HOME/hooks/spawn-logger.sh")
+            grep -q 'ci-probe-agent' "$logs/spawns.jsonl" 2>/dev/null \
+              || { echo "FAIL[$1]: spawn-logger.sh wrote no $logs/spawns.jsonl"; return 1; }
+            case "$out" in
+              *CLAUDE_SPAWN_META*) : ;;
+              *) echo "FAIL[$1]: spawn-logger.sh returned no marker: $out"; return 1 ;;
+            esac
+
+            # Nothing may have leaked into Git Bash's own $HOME/.claude.
+            if [ -e "$HOME/.claude/logs/write-evidence.jsonl" ]; then
+              echo "FAIL[$1]: hook ignored AGENCY_HOME and wrote to \$HOME/.claude"
+              return 1
+            fi
+            echo "OK[$1]"
+            head -c 300 "$logs/write-evidence.jsonl"; echo
+            return 0
+          }
+
+          # The case that can actually fail: MSYS2 hands the raw /d/... string
+          # on. Exported, not prefixed onto the call — the conversion happens in
+          # the INNER bash that spawns python3, so the variable has to be
+          # inherited all the way down.
+          export MSYS2_ENV_CONV_EXCL="AGENCY_HOME"
+          probe_hooks "raw-msys-env" || exit 1
+
+          # The case every real Git Bash user hits: MSYS2 converts it first.
+          unset MSYS2_ENV_CONV_EXCL
+          probe_hooks "msys2-converted" || exit 1
+
+      - name: Assert scripts/*.py resolve the root under Git Bash
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME_WIN: ${{ runner.temp }}\agency-default
+        shell: bash
+        run: |
+          # Windows path defect, scripts/*.py variant: MSYS2 converts path-shaped
+          # ARGUMENTS to native binaries just as it converts path-shaped environment
+          # variables, so the script loads fine and it is the ENV read that breaks —
+          #   FileNotFoundError: '\d\a\_temp\agency-default\skills'
+          # The agency_root() twin normalises the env read; this step is the green
+          # check for it.
+          #
+          # skill-audit.py and agent-tools-audit.py are the right probes: both
+          # read a tree under the resolved root at import time, both print a
+          # count, and neither writes anything. Wrong root -> hard error, never
+          # a quiet zero.
+          export AGENCY_HOME="$(cygpath -u "$AGENCY_HOME_WIN")"
+          echo "posix root: $AGENCY_HOME"
+
+          audit() {   # $1 label, $2 script, $3 expected key
+            local rc=0
+            python3 "$AGENCY_HOME/scripts/$2" >/dev/null 2>"$RUNNER_TEMP/a.err" || rc=$?
+            local line
+            line=$(tail -1 "$RUNNER_TEMP/a.err")
+            echo "[$1] $2 rc=$rc :: $line"
+            [ "$rc" -eq 0 ] || { echo "FAIL[$1]: $2 exited $rc"; tail -3 "$RUNNER_TEMP/a.err"; return 1; }
+            case "$line" in
+              *"$3"=0*|*"$3"=" "*) echo "FAIL[$1]: $2 resolved a root with nothing in it"; return 1 ;;
+              *"$3"=*) : ;;
+              *) echo "FAIL[$1]: $2 printed no $3 summary"; return 1 ;;
+            esac
+          }
+
+          # 1. What every real Git Bash user hits.
+          audit msys2-converted skill-audit.py skills || exit 1
+          audit msys2-converted agent-tools-audit.py agent_files || exit 1
+
+          # 2. The case that actually failed before the fix: the root arrives
+          #    inside python as a raw MSYS string.
+          export MSYS2_ENV_CONV_EXCL="AGENCY_HOME"
+          audit raw-msys-env skill-audit.py skills || exit 1
+          audit raw-msys-env agent-tools-audit.py agent_files || exit 1
+          unset MSYS2_ENV_CONV_EXCL
+
+          # 3. Argument conversion disabled — the one case that is NOT fixable
+          #    from inside the script, because the interpreter never opens the
+          #    file (no code in it runs). The invariant that still has to hold
+          #    is "loud, not silently wrong": either it fails, or it succeeds
+          #    against the correct root. Written as an invariant rather than as
+          #    `must fail` so that a future MSYS2 or python that handles this
+          #    turns the step green, not red.
+          export MSYS2_ARG_CONV_EXCL='*'
+          rc=0
+          python3 "$AGENCY_HOME/scripts/skill-audit.py" >/dev/null 2>"$RUNNER_TEMP/b.err" || rc=$?
+          unset MSYS2_ARG_CONV_EXCL
+          if [ "$rc" -eq 0 ]; then
+            tail -1 "$RUNNER_TEMP/b.err" | grep -qE 'skills=[1-9]' \
+              || { echo "FAIL: raw-msys-arg succeeded against the WRONG root"; tail -3 "$RUNNER_TEMP/b.err"; exit 1; }
+            echo "[raw-msys-arg] now works (rc=0) — the documented limitation has lifted"
+          else
+            echo "[raw-msys-arg] fails loudly with rc=$rc, as documented in hooks/lib/resolve-root.sh"
+            tail -2 "$RUNNER_TEMP/b.err"
+          fi
+
+          # Nothing may have leaked into Git Bash's own $HOME/.claude.
+          if [ -d "$HOME/.claude/skills" ]; then
+            echo "FAIL: a script created \$HOME/.claude/skills despite AGENCY_HOME"
+            exit 1
+          fi
+
+      # rescue.ps1 could `git reset --hard origin/main` on ANY git repository it
+      # was run inside, and searched no install location at all. It now has the same
+      # remote-verified discovery and the same root ladder as rescue.sh. Assert the negative path: found nothing -> exits 1, names the
+      # resolved root, touches nothing.
+      - name: Assert rescue.ps1 honours the root ladder and refuses unknown repos
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\rescue-root
+        run: |
+          $ErrorActionPreference = 'Continue'
+          # Parse check first — a PowerShell syntax error is otherwise only
+          # discovered by the user who needed the rescue.
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path .\rescue.ps1), [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Host $_ }; throw "rescue.ps1 does not parse" }
+
+          # Run it from a temp dir, NOT the checkout: its own script directory
+          # is a legitimate discovery candidate, and adopting the checkout would
+          # mean pulling and resetting the CI working tree.
+          $sandbox = Join-Path $env:RUNNER_TEMP 'rescue-sandbox'
+          Remove-Item -Recurse -Force $sandbox -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
+          Copy-Item .\rescue.ps1 $sandbox
+          $fakeHome = Join-Path $env:RUNNER_TEMP 'rescue-home'
+          New-Item -ItemType Directory -Force -Path $fakeHome | Out-Null
+
+          Push-Location $sandbox
+          $env:USERPROFILE = $fakeHome
+          $out = & pwsh -NoProfile -File (Join-Path $sandbox 'rescue.ps1') 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Pop-Location
+          Write-Host $out
+          if ($code -ne 1) { throw "expected exit 1 when no agency repo exists, got $code" }
+          if ($out -notmatch 'not found') { throw "expected a not-found message" }
+          # The searched root must be the one AGENCY_HOME names, not ~/.claude.
+          if ($out -notmatch [regex]::Escape($env:AGENCY_HOME)) {
+            throw "rescue.ps1 did not search AGENCY_HOME ($env:AGENCY_HOME)"
+          }
+          # rescue.ps1 exited 1 on purpose; without this the step inherits it.
+          $global:LASTEXITCODE = 0
+
+      - name: Assert rescue.ps1 adopts the repo AGENCY_HOME points at
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\rescue-adopt
+        run: |
+          $ErrorActionPreference = 'Continue'
+          # A repo is "the agency repo" by its origin URL. An empty repo with
+          # the right remote is enough to prove discovery, and pulling into an
+          # unborn branch is a normal fast-forward.
+          Remove-Item -Recurse -Force $env:AGENCY_HOME -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $env:AGENCY_HOME | Out-Null
+          git -C $env:AGENCY_HOME init -q
+          # Take the URL rescue.ps1 itself accepts, so this step names no owner.
+          $repoUrl = [regex]::Match((Get-Content -Raw rescue.ps1), 'https://github\.com/[A-Za-z0-9_-]+/the-agency\.git').Value
+          if (-not $repoUrl) { throw 'no repo URL found in rescue.ps1' }
+          git -C $env:AGENCY_HOME remote add origin $repoUrl
+
+          $sandbox = Join-Path $env:RUNNER_TEMP 'rescue-sandbox2'
+          Remove-Item -Recurse -Force $sandbox -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
+          Copy-Item .\rescue.ps1 $sandbox
+          $fakeHome = Join-Path $env:RUNNER_TEMP 'rescue-home2'
+          New-Item -ItemType Directory -Force -Path $fakeHome | Out-Null
+
+          Push-Location $sandbox
+          $env:USERPROFILE = $fakeHome
+          $out = & pwsh -NoProfile -File (Join-Path $sandbox 'rescue.ps1') 2>&1 | Out-String
+          Pop-Location
+          Write-Host $out
+          if ($out -notmatch [regex]::Escape("Repo: $env:AGENCY_HOME")) {
+            throw "rescue.ps1 did not adopt the repo at AGENCY_HOME"
+          }
+          if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'install.ps1'))) {
+            throw "rescue.ps1 reported success but pulled nothing"
+          }
+          $global:LASTEXITCODE = 0
+
+      # Windows twin of the ubuntu core-preserve assertion. A second install
+      # into the SAME root, which no step here did before — and which is also
+      # the only way to see install.ps1's directory-vs-contents copy bug, where
+      # a re-install produced {root}\core\core\ because Copy-Item copies the
+      # DIRECTORY into an existing destination rather than its contents.
+      - name: Assert a second install.ps1 preserves accumulated core/memory rows
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-default
+        run: |
+          $registry = Join-Path $env:AGENCY_HOME 'core\memory\medium-term.md'
+          $template = Join-Path $env:AGENCY_HOME 'core\memory\agency-dispatch.md'
+          if (-not (Test-Path $registry)) { throw "$registry was not seeded by the first install" }
+
+          Add-Content -Path $registry -Value '| ci-probe-project | `/tmp/ci-probe/memory/` | ci-probe-pd | Active |'
+          Set-Content -Path $template -Value 'STALE SENTINEL'
+
+          .\install.ps1
+
+          if (-not (Select-String -Path $registry -Pattern 'ci-probe-project' -Quiet)) {
+            Get-Content $registry | Write-Host
+            throw "reinstall destroyed an accumulated row in core/memory/medium-term.md"
+          }
+          if (Select-String -Path $template -Pattern 'STALE SENTINEL' -Quiet) {
+            throw "core/ stopped refreshing - a non-preserved file was left stale (users would never receive new agent routes)"
+          }
+          # Nesting guard: contents-copy, not directory-copy.
+          if (Test-Path (Join-Path $env:AGENCY_HOME 'core\core')) {
+            throw "install.ps1 copied the core DIRECTORY into the destination - {root}\core\core\ exists"
+          }
+          Write-Host "OK: user row preserved, template refreshed, no core\core nesting"
+
+      - name: Second install into a DIFFERENT AGENCY_HOME
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-custom
+        run: .\install.ps1
+
+      - name: Assert install.ps1 honours the custom root
+        if: ${{ !cancelled() }}
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-custom
+        run: |
+          .\.github\scripts\verify-agency-refs.ps1 -AgencyRoot $env:AGENCY_HOME
+          foreach ($tree in @('skills','agents','core','hooks','runbooks','scripts','design-system')) {
+            $p = Join-Path $env:AGENCY_HOME $tree
+            if (-not (Test-Path $p)) { throw "missing tree under custom root: $tree" }
+          }
+          if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'hooks\lib\resolve-root.sh'))) {
+            throw "resolve-root.sh not deployed - every sourcing script degrades"
+          }
+          # A brand file that did not deploy fails silently at runtime - the
+          # consuming skill just keeps its last hardcoded hex. Assert the SSOT
+          # is actually there rather than trusting the directory's existence.
+          if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'design-system\brands\neutral.json'))) {
+            throw "design-system brand SSOT not deployed"
+          }
+
+      # Same script under Git Bash + Windows node (os.homedir() -> USERPROFILE,
+      # MSYS paths).
+      - name: Assert agency upgrade + rescue.sh recover a rewritten origin
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: bash .github/scripts/check-upgrade-rewrite.sh
+
+      # Same merge test as the ubuntu job, under Git Bash + Windows node
+      # (os.homedir() -> USERPROFILE, C:/ paths, case-insensitive root match).
+      # Its install.sh section skips itself on win32.
+      - name: Assert hooks merge keeps user hooks and is idempotent
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: node .github/scripts/check-hooks-merge.js
+
+      # Same mods checks as the ubuntu job. The unit test runs under Git Bash +
+      # Windows node (';' separator, C:\ paths, case-insensitive root match); the
+      # install check drives install.ps1 and `agency upgrade` natively (pwsh here,
+      # Windows PowerShell 5.1 further down). CI has no claude CLI: the script
+      # sets AGENCY_CLAUDE_VERSION per case.
+      - name: Assert the mods engine merges, dedupes and removes safely
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: node .github/scripts/check-mods-merge.js
+
+      - name: Assert install.ps1 and agency upgrade wire the mods (pwsh)
+        if: ${{ !cancelled() }}
+        run: .\.github\scripts\check-mods-install.ps1
+
+      # Retired-files prune, same as the ubuntu job. The engine's unit test runs
+      # under Git Bash + Windows node; the install check drives install.ps1 and
+      # `agency upgrade` natively (pwsh here, Windows PowerShell 5.1 further down).
+      - name: Assert the retired-files prune engine keeps what the user edited
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: node .github/scripts/check-retired-prune.js
+
+      # Same two skill-router checks as the ubuntu job, on the Windows runner's
+      # python3 under Git Bash (os.path paths, tempfile dirs, no shell-isms). The
+      # router ships disabled; these prove the overlay still matches skills/ and
+      # that nothing reaches the network while it is off.
+      - name: Assert the skill-router overlay matches skills/ and the menu builder fails loudly
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: python3 .github/scripts/check-skill-route-menu.py
+
+      - name: Assert the skill router is inert while disabled (no network, no key)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: python3 .github/scripts/check-skill-route-disabled.py
+
+      # Same skill-registry checks as the ubuntu job (generated INDEX.md + lint
+      # ratchet), on the Windows runner's python3 under Git Bash.
+      - name: Skill registry (INDEX.md generated + lint ratchet)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          python3 .github/scripts/test-skill-registry.py
+          python3 .github/scripts/check-skill-registry.py
+
+      # Real-host evidence for the Windows-portable mods. One step per suite, each under
+      # !cancelled(), so one red suite never hides the rest.
+      - name: Mods Python tests (spawn-ledger)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: python3 -m unittest discover -s mods/spawn-ledger/tests
+
+      - name: Mods Python tests (hooks/tests)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: python3 -m unittest discover -s hooks/tests
+
+      - name: Mods Python tests (mods/_shared identity)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: python3 mods/_shared/test_copies_identical.py
+
+      # test_00_isolation (temp HOME bootstrap) + test_win32_jev + test_zz_real_ledger_guard
+      # (live-log guard): the scripts/tests modules that matter on Windows. The
+      # pattern keeps test_00 in the run so the bootstrap is proven on a real OS.
+      - name: Mods Python tests (scripts win32 + isolation subset)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: python3 -m unittest discover -s scripts/tests -p "test_[0wz]*.py"
+
+      - name: Install the claude CLI (for claude plugin validate / test)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Mods plugin validate (5 mods)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          rc=0
+          for m in agent-ctx context-band loop-guard spawn-ledger voice-compact; do
+            echo "::group::validate $m"
+            claude plugin validate "mods/$m" || rc=1
+            echo "::endgroup::"
+          done
+          exit $rc
+
+      - name: Mods plugin test (5 mods)
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          rc=0
+          for m in agent-ctx context-band loop-guard spawn-ledger voice-compact; do
+            echo "::group::test $m"
+            claude plugin test "mods/$m" || rc=1
+            echo "::endgroup::"
+          done
+          exit $rc
+
+      # ---- Windows PowerShell 5.1 (shell: powershell) ----------------------
+      # Every step above runs under pwsh (PowerShell 7), which defaults to UTF-8.
+      # Real Windows machines run install.ps1 and rescue.ps1 under Windows
+      # PowerShell 5.1, which does not. These steps close that gap: the ASCII and
+      # parse checks and the full install.ps1 / rescue.ps1 runs are all blocking.
+      - name: Assert PowerShell and cmd sources are ASCII-only
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/check-ps1-ascii.js
+
+      # Nothing private ships: no NotebookLM notebook IDs, real e-mail addresses,
+      # /Users/<name> paths, pcsk_/sk-ant- keys or private terms in any tracked
+      # file. The term list is the PRIVACY_DENYLIST secret (newline-separated), never
+      # stored in the repo. Pushes require it (--require-denylist); fork PRs cannot
+      # read secrets, so there the generic checks run and a notice is logged.
+      # Justified hits are listed in .github/scripts/privacy-allowlist.txt.
+      # The self-test plants each kind of leak in a throwaway repo and must catch it.
+      - name: Assert no private data is tracked (NotebookLM IDs, emails, user paths, keys, personal terms)
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
+          REQUIRE_DENYLIST: ${{ github.event_name != 'pull_request' && '--require-denylist' || '' }}
+        run: |
+          node .github/scripts/check-privacy.js --self-test
+          if [ -z "$PRIVACY_DENYLIST" ]; then
+            echo "::notice::PRIVACY_DENYLIST is not available (fork PR or secret unset): running generic checks only"
+          fi
+          node .github/scripts/check-privacy.js $REQUIRE_DENYLIST
+
+      # Skills not licensed for distribution (third-party Vietnamese marketing skills,
+      # and skills pulled 2026-10-26 because their licence is unknown):
+      # no blocked skill directory and no upstream identifier in any tracked file.
+      # The blocklist is .github/scripts/never-distribute.txt; the self-test plants both.
+      - name: Assert no never-distribute skill or identifier is tracked
+        if: ${{ !cancelled() }}
+        run: |
+          node .github/scripts/check-never-distribute.js --self-test
+          node .github/scripts/check-never-distribute.js
+
+      # Same check through install.ps1 (pwsh) with the Windows node CLI. Git Bash supplies
+      # awk for the documented /pd-resume lookup.
+      - name: Assert install.ps1 seeds the project registry and `agency new` registers into it
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\quickstart-registry
+        run: node .github/scripts/check-quickstart-registry.js --installer ps1
+
+      - name: Assert every tracked *.ps1 parses under Windows PowerShell 5.1
+        if: ${{ !cancelled() }}
+        shell: powershell
+        run: |
+          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw "expected Windows PowerShell 5.x" }
+          $files = @(git ls-files '*.ps1')
+          if ($files.Count -eq 0) { throw "git ls-files found no *.ps1 files" }
+          $failed = 0
+          foreach ($f in $files) {
+            $errs = $null
+            $full = (Resolve-Path $f).Path
+            [System.Management.Automation.Language.Parser]::ParseFile($full, [ref]$null, [ref]$errs) | Out-Null
+            if ($errs -and $errs.Count -gt 0) {
+              $failed++
+              Write-Host "PARSE ERRORS in ${f}:"
+              $errs | ForEach-Object { Write-Host ("  line " + $_.Extent.StartLineNumber + ": " + $_.Message) }
+            } else {
+              Write-Host "parsed OK: $f"
+            }
+          }
+          if ($failed -gt 0) { throw "$failed file(s) do not parse under Windows PowerShell 5.1" }
+
+      - name: Run install.ps1 under Windows PowerShell 5.1
+        if: ${{ !cancelled() }}
+        shell: powershell
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\agency-ps51
+        run: |
+          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
+          Remove-Item -Recurse -Force $env:AGENCY_HOME -ErrorAction SilentlyContinue
+          .\install.ps1
+          $repo = (Get-ChildItem skills -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') }).Count
+          $dest = Join-Path $env:AGENCY_HOME 'skills'
+          $got  = (Get-ChildItem $dest -Directory | Where-Object { Test-Path (Join-Path $_.FullName 'SKILL.md') }).Count
+          Write-Host "repo=$repo installed=$got"
+          if ($repo -le 0) { throw "repo reports 0 skills - check the layout assumption" }
+          if ($got -ne $repo) { throw "installed $got of $repo skills" }
+          if (-not (Test-Path (Join-Path $env:AGENCY_HOME 'hooks\lib\resolve-root.sh'))) { throw "resolve-root.sh not deployed" }
+          $settings = Join-Path $env:AGENCY_HOME 'settings.json'
+          if (-not (Test-Path $settings)) { throw "install.ps1 did not create settings.json" }
+          $s = Get-Content $settings -Raw -Encoding UTF8 | ConvertFrom-Json
+          $cmds = @()
+          foreach ($ev in $s.hooks.PSObject.Properties) {
+            foreach ($g in $ev.Value) { foreach ($h in $g.hooks) { $cmds += $h.command } }
+          }
+          $m = Get-Content hooks\hooks.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          Write-Host "wired=$($cmds.Count) manifest=$($m.hooks.Count)"
+          if ($cmds.Count -ne $m.hooks.Count) { throw "expected $($m.hooks.Count) hook entries, got $($cmds.Count)" }
+          Write-Host "OK: install.ps1 ran under Windows PowerShell 5.1"
+
+      - name: Assert install.ps1 and agency upgrade wire the mods (Windows PowerShell 5.1)
+        if: ${{ !cancelled() }}
+        shell: powershell
+        run: |
+          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw "expected Windows PowerShell 5.x" }
+          .\.github\scripts\check-mods-install.ps1
+
+      - name: Run rescue.ps1 under Windows PowerShell 5.1
+        if: ${{ !cancelled() }}
+        shell: powershell
+        env:
+          AGENCY_HOME: ${{ runner.temp }}\rescue-root-ps51
+        run: |
+          $ErrorActionPreference = 'Continue'
+          Write-Host ("PowerShell " + $PSVersionTable.PSVersion)
+          # Same negative path as the pwsh step: no agency repo anywhere ->
+          # exit 1, names the resolved root, touches nothing. Run from a temp
+          # dir so the checkout is not adopted as the repo.
+          $sandbox = Join-Path $env:RUNNER_TEMP 'rescue-sandbox-ps51'
+          Remove-Item -Recurse -Force $sandbox -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
+          Copy-Item .\rescue.ps1 $sandbox
+          $fakeHome = Join-Path $env:RUNNER_TEMP 'rescue-home-ps51'
+          New-Item -ItemType Directory -Force -Path $fakeHome | Out-Null
+          Push-Location $sandbox
+          $env:USERPROFILE = $fakeHome
+          $out = & powershell -NoProfile -File (Join-Path $sandbox 'rescue.ps1') 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Pop-Location
+          Write-Host $out
+          if ($code -ne 1) { throw "expected exit 1 when no agency repo exists, got $code" }
+          if ($out -notmatch 'not found') { throw "expected a not-found message" }
+          if ($out -notmatch [regex]::Escape($env:AGENCY_HOME)) { throw "rescue.ps1 did not search AGENCY_HOME ($env:AGENCY_HOME)" }
+          # rescue.ps1 exited 1 on purpose; without this the step inherits it.
+          $global:LASTEXITCODE = 0

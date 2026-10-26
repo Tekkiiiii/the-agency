@@ -1,0 +1,209 @@
+---
+name: Checkpoint Handshake Protocol
+description: Scratch-board poll handshake for the Exec/Member-facing APPROACH and CHECKPOINT gates. Replaces the old upward-SendMessage-and-wait pattern, which can deadlock because upward name-addressed SendMessage does not resolve.
+type: runbook
+owner: agency-council
+lastUpdated: 2026-10-08
+version: 1.2.0
+---
+
+# Checkpoint Handshake Protocol
+
+## Why this exists
+
+Upward name-addressed SendMessage does not resolve — the team roster is flat, so a
+message from a child agent to a punny name like "Coord-{l3-name}-{pun}"
+misroutes to main, not the intended parent. This is a permanent harness limitation, not
+a bug to work around case-by-case.
+
+The QA gate survives this: the Exec/Member's completion report arrives as its FINAL task
+result (a working channel — that's what the spawner receives when the child finishes),
+and the Coord's NACK travels DOWNWARD via the child's `agentId` (also working). Do
+NOT apply this protocol to the QA gate — it doesn't need it.
+
+The APPROACH gate (pre-work approval) and the CHECKPOINT gate (50% check-in) are
+different: both require an INTERIM upward message — sent mid-task, before the Exec's
+final result — and then a wait for a reply. That interim upward channel does not exist.
+An Exec that tries it (SendMessage-and-wait) deadlocks waiting for a reply that can never
+arrive. This protocol replaces that wait with a file-based poll handshake. The file is
+the single source of truth in both directions.
+
+## Precondition — mandatory, do not regress this
+
+**Execs/Members using this protocol MUST be spawned in the BACKGROUND** (the Agent
+tool's default — `run_in_background: true`, or simply omit the parameter). Background
+spawning is what keeps the Coord alive and free to poll the checkpoint file while its
+children work. If a Coord spawns an Exec/Member with `run_in_background: false`, the
+Coord blocks until that child finishes — it cannot poll, and this handshake becomes
+structurally impossible again (back to the original deadlock risk). Never
+foreground-spawn a child that will use this protocol.
+
+**The spawner must be able to poll.** Opening an APPROACH gate you will not answer is
+worse than having no gate — the Exec burns a 5-minute wait and then proceeds unreviewed
+anyway. If the spawner cannot commit to polling for a given wave (about to save-state,
+respawn, block on a long operation, or hand off), it MUST spawn those Execs as TIER_A
+(explicitly marked in the spawn prompt) so no APPROACH gate is opened. Never leave a
+checkpoint contract unattended.
+
+## The file — one rolling file per Exec/Member
+
+Project tree (PD → Coord → Exec, and Coord → Mini-Coord → Exec):
+```
+{project}/memory/agents/execs/exec-{subtask}-{pun}-checkpoint.md
+```
+
+This is a SEPARATE file from the Exec/Member's own working scratch file
+(`exec-{id}-{pun}-scratch.md` / `member-{id}-scratch.md`) — the checkpoint file exists
+only for this handshake. It is a SINGLE rolling file reused across both gates: the
+APPROACH request/reply is written first; when the CHECKPOINT gate fires later in the
+same task, the Exec overwrites `## Request` and `## Reply` in the same file with the new
+request. There is no history to preserve here — the scratch file already has that.
+
+## Format
+
+```markdown
+# Exec-{subtask}-{pun} Checkpoint — {project} — {timestamp}
+
+## Request
+Type: APPROACH | CHECKPOINT
+Task: {task-name}
+Plan: {2-4 bullets — files to touch, changes, what you won't do}      (APPROACH only)
+Assumptions: {...or "none"}                                            (APPROACH only)
+Risks: {...or "none"}                                                  (APPROACH only)
+Done so far: {1-2 sentences}                                           (CHECKPOINT only)
+Remaining: {1-2 sentences}                                             (CHECKPOINT only)
+Issues: {any blockers or course-correction needs, or "none"}           (CHECKPOINT only)
+Status: AWAITING
+
+## Reply
+```
+
+The Exec writes `## Reply` as an empty heading up front, in the SAME write that creates
+the request — this lets both sides poll for the literal string `Status: REPLIED` rather
+than needing to detect whether content exists under a heading.
+
+## Exec/Member side
+
+1. Write the checkpoint file with `## Request` filled in, `## Reply` present but empty,
+   `Status: AWAITING`.
+2. Poll the SAME file, bounded:
+   ```bash
+   # Bash tool: pass timeout: 330000 on this call. The DEFAULT is 120s, which would
+   # kill this loop around iteration 8 and return a tool error instead of a clean
+   # timeout — the proceed-and-mark-UNREVIEWED branch below would never run.
+   for i in $(seq 1 20); do
+     grep -q '^Status: REPLIED' "{checkpoint-file}" && break
+     sleep 15
+   done
+   grep -q '^Status: REPLIED' "{checkpoint-file}" \
+     && echo CHECKPOINT_REPLIED || echo CHECKPOINT_TIMEOUT
+   ```
+   ~20 iterations x 15s = a 5-minute ceiling. Tune the numbers if you have a specific
+   reason; keep the loop bounded — never poll unbounded.
+   Branch on the emitted signal, not on the exit code — the loop always exits 0.
+   `CHECKPOINT_REPLIED` → step 3. `CHECKPOINT_TIMEOUT` → step 4. If the call returns a
+   tool timeout error instead of either signal, you forgot the `timeout` parameter;
+   treat it as `CHECKPOINT_TIMEOUT` and take step 4.
+3. **On `CHECKPOINT_REPLIED`:** read the `## Reply` block, act on it, continue the Lifecycle.
+4. **On `CHECKPOINT_TIMEOUT`** (loop exhausted without `Status: REPLIED`): PROCEED with your existing
+   plan rather than deadlocking — but mark the gate as unreviewed in your final
+   completion report:
+   - APPROACH timeout → include `APPROACH_UNREVIEWED` in your completion report
+   - CHECKPOINT timeout → include `CHECKPOINT_UNREVIEWED` in your completion report
+   The unreviewed marker is mandatory paperwork, not optional — a silent proceed with no
+   marker deletes the gate while keeping none of its value. Do NOT re-poll indefinitely —
+   one bounded wait, then move on.
+5. The spawner (Coord / Mini-Coord / PD) MAY also send a downward
+   SendMessage (via your `agentId`) as a wake-up nudge — that direction works.
+   Correctness never depends on the message; the file is authoritative. If the message
+   arrives before you finish polling, still read the `## Reply` block before acting (the
+   message is a nudge, not the reply content).
+
+### Exec/Member gate rules (tier, trigger, replies, context)
+
+- TIER_B (default; any task not marked TIER_A in the spawn prompt): MUST write an APPROACH request (Format above) BEFORE any edit, then poll.
+- TIER_A (explicit in spawn prompt): NEVER write an APPROACH request. Record a one-sentence start note instead ("Exec-{subtask}-{pun}: starting {task-name} [TIER_A]") in your scratch/status row, proceed at once. No SendMessage.
+- CHECKPOINT at ~50% effort OR after 25 tool calls (whichever first): MANDATORY for ALL tiers (TIER_A included). Overwrite `## Request`/`## Reply` in the SAME file (`Type: CHECKPOINT`, `Status: AWAITING`), poll with the same bounded loop.
+- APPROACH replies: `ACK_APPROACH — proceed` -> go. `REVISE_APPROACH — {feedback}` -> update plan, rewrite request (`Status: AWAITING`), poll again; max 2 revision rounds, then ESCALATE.
+- CHECKPOINT replies: `ACK_CONTINUE` -> go. `COURSE_CORRECT — {instructions}` -> adjust and continue; no new APPROACH needed.
+- Timeout: APPROACH -> `APPROACH_UNREVIEWED`; CHECKPOINT -> `CHECKPOINT_UNREVIEWED`; both MUST appear in the final report.
+- Context >=250k tokens (subagent absolute cap): finish the current atomic unit, write a CHECKPOINT with `Issues: Context at {K}k tokens — may need continuation`, poll as above (timeout -> proceed, `CHECKPOINT_UNREVIEWED`).
+- Context >=300k tokens (STOP line): stop; final report `ESCALATE — context at {K}k tokens, cannot continue safely` with `Needed: spawner to spawn a continuation Exec for the remaining work` and `Scope: {what is left}`. Delivered as the final task result, never SendMessage.
+- Interim state (IN_PROGRESS, QA_GATE) goes in the scratch `## Status` table or this file; upward SendMessage NEVER used.
+- Stop immediately after delivering the final report; the spawner reads it only when you stop. A NACK arrives as a fresh spawn.
+
+## Spawner side (Coord / Mini-Coord / PD spawning direct Execs)
+
+**Governing rule:** the checkpoint contract is owned by the DIRECT SPAWNER, whoever that
+is. A PD that bypasses the Coord layer and spawns Execs directly (pd-coordinator.md §2.6
+delegation test) inherits this entire section — it is not Coord-only.
+
+1. Between spawn waves and while awaiting Exec/Member completions, poll for outstanding
+   requests:
+   ```bash
+   grep -l '^Status: AWAITING' {project}/memory/agents/execs/*-checkpoint.md 2>/dev/null
+   ```
+   Do this at every natural pause — after each spawn batch, before/after each completion
+   you process — and at minimum once per turn while any Exec/Member is in flight. Do not
+   let an AWAITING request sit unpolled indefinitely.
+2. For each file with `Status: AWAITING`, read `## Request` and decide:
+   - APPROACH: plan correct → `ACK_APPROACH — proceed`
+     plan has issues → `REVISE_APPROACH — {specific feedback}`
+   - CHECKPOINT: on track → `ACK_CONTINUE`
+     needs correction → `COURSE_CORRECT — {specific instructions}`
+3. Write the decision under `## Reply` in the SAME file, then change `Status: AWAITING`
+   to `Status: REPLIED`.
+4. Optionally SendMessage the child (via its `agentId` from spawn) as a wake-up nudge —
+   a courtesy, never required for correctness.
+5. This poll+reply is a file read/write — it does NOT count as, and must never be
+   written as, a final task result. It is interim work, same status as scratch-board
+   progress updates.
+
+## Timeout handling at the QA gate — mandatory, do not fudge
+
+If an Exec/Member's completion report includes `APPROACH_UNREVIEWED` or
+`CHECKPOINT_UNREVIEWED`:
+- Treat it as higher-risk than a normally-gated Exec/Member at the QA gate. Hold it to
+  the stricter QA threshold for its task type (do not fast-ACK it even if the reported
+  health score clears the normal bar).
+- Actually review the diff/output yourself before ACKing — the approval step it should
+  have gone through never happened.
+- A silent proceed-on-timeout with no marker, or a fast-ACK of an unreviewed Exec at the
+  QA gate, both defeat the purpose of this protocol — they delete the gate while leaving
+  the paperwork. Deadlock (the old failure mode) is equally unacceptable. This
+  stricter-QA-on-timeout path is the honest middle: the gate degrades gracefully under
+  the flat-roster constraint instead of disappearing silently.
+
+## What this does NOT change
+
+- The QA gate (Coord review of the Exec/Member's final completion report, and the
+  ACK/NACK that follows) is unaffected — leave it exactly as documented in coord.md.
+  Do not apply this file-poll mechanism there.
+- TIER_A tasks still skip the APPROACH gate entirely (one-sentence "starting" fire-and-
+  forget notice, no checkpoint file, no poll). CHECKPOINT is still mandatory for all
+  tiers, TIER_A included.
+
+## Failure record
+
+the-agency Wave 20 (2026-08-14): two Execs were spawned DIRECTLY BY THE PD (Coord layer
+bypassed via the pd-coordinator.md §2.6 direct-Exec path, then named PARALLEL DIRECT-EXEC,
+now the §2.6 Delegation test). Both opened APPROACH gates, wrote checkpoint files, and
+polled the full 5-minute ceiling — nobody upstream was polling, because this runbook's
+reply-side section was titled for Coords only (since retitled), and a PD acting as a direct spawner
+was not covered by its own text.
+Both Execs correctly proceeded per the timeout branch and marked `APPROACH_UNREVIEWED` in
+their completion reports, but the unattended gates also generated escalation spam to
+main. This is not a one-off: as of this writing, 13 checkpoint files under
+`{project}/memory/agents/execs/*-checkpoint.md` for this project alone still sit at
+`Status: AWAITING`, spanning the Jul 30, Aug 6, and Aug 13 waves — unanswered gates are
+the norm under the direct-spawn path, not an isolated incident. The retitle, the added
+Precondition bullet, and pd-coordinator.md §Checkpoint Polling Duty (see References) are
+the fix: the spawner-side polling duty now explicitly follows the direct-spawn path
+rather than assuming a Coord is always present.
+
+## References
+
+- Coord: `{agency-root}/agents/project-management/coord.md` §6b/6c
+- Mini-Coord: `{agency-root}/agents/project-management/mini-coord.md` §6b/6c
+- Exec spawn message: `{agency-root}/agents/project-management/coord.md` (Exec side = this runbook "Exec/Member side")
+- PD direct-spawn polling duty: `{agency-root}/agents/project-management/pd-coordinator.md` §Checkpoint Polling Duty

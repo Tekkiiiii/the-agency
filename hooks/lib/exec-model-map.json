@@ -1,0 +1,83 @@
+{
+  "_comment": "Model pin policy read by hooks/lib/model-pin.py (spawn-ledger agent.spawn hook). Category entries are EMPTY on purpose: empty = use \"default\". A spawner picks a category with a line `MODEL-CATEGORY: <name>` (or `[category:<name>]`) in the prompt/description. Named agents ignore this file: their frontmatter model: wins. exec_cap: max Execs running per ROOT PD across its whole tree (coords, mini-coords, direct Execs; coords never count); chain with no PD ancestor is exempt, unresolvable chain fails open. Kill switches: MODEL_PIN_OFF=1 | state/model-pin.off | .hook-profile=minimal (everything); SPAWN_CAP_OFF=1 | state/spawn-cap.off (cap only). EFFORT POLICY (Owner ruling 2026-10-15): the `effort` section is the SINGLE source of truth for the reasoning effort of every spawn; model-pin.py decide_effort() picks a category per spawn and returns its value as `effort` + `effort_category` (the spawn-ledger turn.step hook applies it; agent.spawn cannot set effort). Order: PD (-pd / pd-coordinator) -> `agents` table (named non-PD agents) -> general-purpose: MODEL-CATEGORY marker in `marker_categories`, else the Jev route cache entry named by the prompt's Jev[r=<id>] line (domain -> family via `domains`; content + lang vi or domain writing-vi -> content_vi; coding -> coding_complex when a `complexity` domain/skill/marker fires else coding_routine), else `fallback_category`. Allowed values: low, medium, high, xhigh, max. Every PD agent def carries `effort: medium` (mirror); non-PD defs carry no effort line. Kill switches (effort only): EFFORT_POLICY_OFF=1 | state/effort-policy.off | effort.enabled=false; the model-pin switches above cover everything.",
+  "default": "sonnet",
+  "categories": {
+    "lookup": "",
+    "implement": "",
+    "debug": "",
+    "review": "",
+    "research": ""
+  },
+  "escalation": {
+    "enabled": false,
+    "allowed": ["opus"]
+  },
+  "exec_cap": {
+    "enabled": true,
+    "max": 5,
+    "types": ["general-purpose", "task-executor"],
+    "include_root": false,
+    "stale_after_sec": 7200
+  },
+  "effort": {
+    "enabled": true,
+    "categories": {
+      "pd": "medium",
+      "coding_complex": "high",
+      "coding_routine": "medium",
+      "visual": "high",
+      "content_en": "high",
+      "content_vi": "xhigh",
+      "other": "medium",
+      "lookup": "low"
+    },
+    "fallback_category": "other",
+    "domains": {
+      "frontend-ui": "visual",
+      "design-visual": "visual",
+      "image-gen": "visual",
+      "video-audio": "visual",
+      "decks-docs-reports-charts": "visual",
+      "writing-en": "content",
+      "writing-vi": "content",
+      "marketing-growth-seo": "content",
+      "backend-infra-deploy": "coding",
+      "code-quality-testing": "coding",
+      "browser-web-data": "other",
+      "planning-strategy-review": "other",
+      "google-workspace": "other",
+      "claude-system-ops": "other",
+      "research": "other",
+      "career-personal": "other"
+    },
+    "complexity": {
+      "domains": ["code-quality-testing"],
+      "skills": ["investigate", "superpowers-systematic-debugging", "mattpocock-skills:diagnosing-bugs", "security", "security-review", "deprecation-and-migration", "refactor-module", "doubt-driven-development"],
+      "markers": ["architecture", "refactor", "migration", "multi-file", "cross-file", "debug", "root cause", "security"]
+    },
+    "marker_categories": {
+      "lookup": "lookup",
+      "debug": "coding_complex"
+    },
+    "agents": {
+      "critique-design": "visual",
+      "critique-social": "visual",
+      "critique-video": "visual",
+      "critique-data": "visual",
+      "critique-imageprompt": "visual",
+      "critique-product": "visual",
+      "critique-content": "content_en",
+      "critique-brand": "content_en",
+      "critique-marketing": "content_en",
+      "critique-seo": "content_en",
+      "critique-pedagogy": "content_en",
+      "sag-critique": "content_en",
+      "critique-code": "coding_complex",
+      "critique-security": "coding_complex",
+      "coord": "other",
+      "mini-coord": "other",
+      "codebase-search": "lookup",
+      "Delegator": "lookup"
+    }
+  }
+}

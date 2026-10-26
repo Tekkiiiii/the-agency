@@ -1,0 +1,123 @@
+---
+name: PD Boot Sequence
+description: Standard startup sequence for all Project Directors. Two-mode: thin discover on spawn, lazy routing on demand.
+type: template
+owner: agency-council
+lastUpdated: 2026-10-08
+---
+
+# PD Boot Sequence
+
+## Philosophy
+
+- **On spawn**: read as little as possible — one project briefing doc, not 10 INDEX files
+- **On demand**: load routing tables only when you need them, not before
+- **Skills first**: pick 1-3 skills from `skills/INDEX.md`, spawn general-purpose; structural agents by name only
+
+---
+
+## Mode 1: Spawn (do this every time)
+
+**Target context cost: ~600 tokens max**
+
+**Step 1:** Read briefing from spawn prompt. pd-resume passes next-session.md content
+inline -- no file reads needed. If spawned manually without a briefing, read:
+```
+{project}/memory/next-session.md
+```
+
+**Step 2:** Read active tasks:
+```
+{project}/memory/tasks/ongoing/
+```
+
+**Step 2b:** Read structural contract (if it exists):
+```
+{project}/memory/pd-structure.md
+```
+If this file does not exist and the project has active L3 Coord work, create it now
+using the schema in pd-coordinator.md § Structural Oversight. Takes 2 minutes, saves
+hours of cross-L3 conflict resolution later.
+
+**Step 3:** Proceed with your role. Context cap: you are a subagent, so your fill is counted in absolute tokens (200k warn, 250k finish current task / no new L3s, 300k mandatory `/respawn-self`; a STOP line rides every tool result from 300k). Children's fill arrives as `CHILD_CTX:` / `CHILD_CTX_ALERT:` lines; spec in `runbooks/respawn-contract.md`.
+
+---
+
+## Mode 2: Route (do this when you need to delegate)
+
+**Target context cost: load only what you need**
+
+**Step 1:** Check the PD-BRIEFING doc for a pre-written routing entry for this task type.
+
+**Step 2:** If not in briefing, pick skills. The skill router is OFF by default: pick 1-3 skills yourself from `{agency-root}/skills/INDEX.md`, no Jev line. With the router on (`AGENCY_SKILL_ROUTER=1`), pick them with the router (no catalog loads):
+```
+python3 {agency-root}/scripts/skill-route.py --role exec "<task>"   # --role lead for Coord spawns
+```
+Router on is binding on every spawn (rules JB1-JB9, runbooks/service-lookups.md §Routing): the prompt carries `Skills: /a, /b` + `Jev[r=<route_id>]: accept|modify|reject — <reason>`. gate=pass: Jev's skills are the default; `low_confidence` or zero skills: explicit verdict + reason, you pick alternatives yourself. A `*-pd` spawn (`{slug}-pd`) is exempt: the Jev line is optional there and ignored.
+
+**Step 3:** Delegate per Agent Dispatch Priority below. Spawn `general-purpose` (model sonnet) with 1-3 named skills in the prompt (`Skills: /x, /y`). Only structural agents spawn by name (see Agent Dispatch Priority step 2 below).
+
+---
+
+## Agent Dispatch Priority (reference — don't load on spawn)
+
+```
+1. Does the PD-BRIEFING list a specific agent or skill set for this task?
+   YES → use it
+   NO  → step 2
+
+2. Is it a structural role ({slug}-pd, pd-coordinator, coord, mini-coord,
+   critique-* critic, Delegator, codebase-search,
+   save-state-runner, project-scaffolder)?
+   YES → spawn that agent by name
+   NO  → step 3
+
+3. Is this a workflow task (planning, verification, QA, retro)?
+   YES → use a skill from ~/.claude/skills/INDEX.md
+   NO  → step 4
+
+4. Is it knowledge work (analysis, research, planning, memory/state writes)?
+   YES → do it directly
+   NO  → implementation: delegate to an Exec (atomic, independent) or a Coord, as
+         general-purpose + 1-3 skills from skills/INDEX.md;
+         PD QAs direct-Exec results itself (pd-coordinator.md §Role). PD never implements.
+```
+
+Member role names (backend-architect, frontend-developer, etc.) are not `subagent_type` values.
+Spawn `general-purpose` + 1-3 skills from `skills/INDEX.md` instead.
+
+---
+
+## PD-BRIEFING Template
+
+Create at `{project}/.claude/PD-BRIEFING.md`:
+
+```markdown
+# PD Briefing — [project-name]
+Last updated: [date]
+PD: [pd-name]
+
+## This Project's Agents
+
+| Task | Skills (general-purpose) or structural agent |
+|---|---|
+| [task type] | [/skill-a, /skill-b or agent name] |
+
+## Active Priorities
+- [top 2-3 priorities from current session]
+
+## Known Blockers
+- [any blockers with owner]
+```
+
+**The PD-BRIEFING is the only file read on every spawn.** Build it once per project, update it when priorities shift. This is the key to staying under 500 tokens on spawn.
+
+---
+
+## How to Apply to a New PD
+
+1. Create the PD-BRIEFING doc at `{project}/.claude/PD-BRIEFING.md`
+2. Paste Mode 1 (Spawn) + Mode 2 (Route) into the PD agent file, before `## Identity`
+3. Paste Agent Dispatch Priority as a reference block (no file reads on spawn)
+
+Total text added to PD agent file: ~60 lines. No file reads on spawn. Routing text is reference, not runtime-loaded.

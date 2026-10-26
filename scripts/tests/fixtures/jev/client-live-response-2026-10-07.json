@@ -1,0 +1,38 @@
+{
+ "model": "jev-1.13.0",
+ "answers": {
+  "domain": {
+   "type": "choice",
+   "choice": "frontend-ui",
+   "confidence": 1.0,
+   "probabilities": {
+    "frontend-ui": 1.0,
+    "backend-infra-deploy": 0.0,
+    "writing-en": 0.0
+   }
+  },
+  "complexity": {
+   "type": "score",
+   "score": 2.0,
+   "confidence": 0.99,
+   "legend": {
+    "0": "trivial one-liner",
+    "1": "small single-file change",
+    "2": "medium multi-file change",
+    "3": "large cross-module project",
+    "4": "huge multi-week program"
+   },
+   "probabilities": {
+    "0": 0.0,
+    "1": 0.01,
+    "2": 0.99,
+    "3": 0.0,
+    "4": 0.0
+   }
+  }
+ },
+ "usage": {
+  "input_tokens": 422,
+  "output_tokens": 61
+ }
+}

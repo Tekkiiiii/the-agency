@@ -1,0 +1,51 @@
+{
+  "name": "neutral",
+  "label": "Neutral (no brand assigned)",
+  "source": "none — deliberate generic fallback for work with no brand-guidelines.md yet",
+  "colors": {
+    "white": "#ffffff",
+    "black": "#0a0a0a",
+    "gray-100": "#f5f5f5",
+    "gray-300": "#d4d4d4",
+    "gray-500": "#737373",
+    "gray-700": "#404040",
+    "gray-800": "#262626",
+    "accent-blue": "#2563eb"
+  },
+  "roles": {
+    "bg": "white",
+    "surface": "white",
+    "surface-alt": "gray-100",
+    "border": "gray-300",
+    "ink": "black",
+    "text-muted": "gray-500",
+    "primary": "black",
+    "primary-dark": "black",
+    "primary-light": "gray-700",
+    "accent": "accent-blue",
+    "accent-dark": "accent-blue",
+    "secondary": "gray-700",
+    "secondary-dark": "gray-800",
+    "depth": "black",
+    "text-on-primary": "white"
+  },
+  "semantic": {
+    "success": { "accent": "#0F7B4F", "text": "#0B5C3B", "note": "functional signal, not brand expression — this fallback brand has no brand hues to draw from at all, so all four are picked purely for mutual distinguishability and AA text contrast" },
+    "warning": { "accent": "#D98D0B", "text": "#8A5A00", "note": "functional signal, not brand expression" },
+    "danger":  { "accent": "#C2321F", "text": "#962617", "note": "functional signal, not brand expression" },
+    "info":    { "accent": "#1e468c", "text": "#16356B", "note": "functional signal, not brand expression" }
+  },
+  "fonts": {
+    "display": "'Inter', system-ui, sans-serif",
+    "body": "'Inter', system-ui, sans-serif",
+    "mono": "ui-monospace, monospace"
+  },
+  "ratios": {
+    "note": "no brand ratio enforced — this is a placeholder, not a design direction"
+  },
+  "rules": [
+    "No brand assigned yet — this is a deliberate generic fallback, not a design choice",
+    "Swap this brand file reference for your own brands/{name}.json as soon as one exists",
+    "Do not add project-specific color decisions to this file — it must stay generic"
+  ]
+}

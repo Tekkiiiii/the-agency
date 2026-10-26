@@ -1,0 +1,7 @@
+{
+  "name": "loop-guard",
+  "version": "0.1.0",
+  "description": "Stall detector per agent loop: 5 identical tool calls in a row warn that loop and leave the session-state.json stall marker for the next SessionStart",
+  "author": { "name": "The Agency" },
+  "types": "./types/index.d.ts"
+}

@@ -1,0 +1,23 @@
+{"version": 1,
+ "domains": {
+  "frontend-ui": "Building web UIs, components, landing pages, CSS and responsive layout.",
+  "writing-en": "Writing, editing and polishing English prose.",
+  "writing-vi": "Writing, editing and proofreading Vietnamese text.",
+  "google-workspace": "Gmail, Calendar, Drive, Docs, Sheets and other Google Workspace work.",
+  "code-quality-testing": "Code review, testing and quality checks.",
+  "unused-domain": "A domain with no routable skill; it must never be offered to Jev."},
+ "skills": {
+  "frontend": {"domain": "frontend-ui", "hint": "use for building UIs; not for critique passes", "triggers": ["build a landing page", "make it responsive"]},
+  "tailwind": {"domain": "frontend-ui"},
+  "humanizer": {"domain": "writing-en", "hint": "use for AI-sounding prose; not for grammar fixes"},
+  "humanizer-vi": {"domain": "writing-vi"},
+  "proofreader": {"domain": "writing-en"},
+  "grammar-checker-vi": {"domain": "writing-vi"},
+  "simple-english": {"domain": "writing-en"},
+  "content-polish": {"domain": "writing-en", "hint": "handles both English and Vietnamese"},
+  "gws-gmail-send": {"domain": "google-workspace", "triggers": ["send an email", "compose gmail"]},
+  "old-thing": {"exclude": "sunset", "why": "fixture"}},
+ "synthetic": {"code-review": {"description": "Built-in code review of the current diff.", "domain": "code-quality-testing", "hint": "use for reviewing a diff"}},
+ "vi_map": {"humanizer": "humanizer-vi", "proofreader": "grammar-checker-vi"},
+ "en_only": ["simple-english"],
+ "domain_notes": {}}

@@ -1,0 +1,93 @@
+---
+# do not read unless explicitly requested
+# Full agent selection reference — loaded only when spawning subagents
+---
+
+# Agency Agent Selection Hierarchy
+
+When spawning a subagent, follow this order — since 2026-10-06 (generalist switch ACTIVE) **`general-purpose` + 1-3 skills named in the prompt is the DEFAULT**:
+
+## Step 0 — Check protocols first
+
+Before matching agents or skills, check if an active protocol governs the task:
+
+| Task pattern | Protocol | File |
+|---|---|---|
+| Content production (blog, email, ad, social, video script) | content-request | `runbooks/content-request-protocol.md` |
+| Quality gate for any creative or code deliverable | quality-loop | `runbooks/quality-loop-protocol.md` |
+| Escalation, conflict, authority dispute | escalation-protocol | `runbooks/escalation-protocol.md` |
+| Multi-step initiative execution (PD -> Coord -> Exec) | coord-spawn-template | `runbooks/coord-spawn-template.md` |
+
+If a protocol matches → route through the PD -> Coord chain following the protocol. Skills and agents are dispatched **within** the protocol flow, not instead of it.
+
+## Step 0.5 — Lookup-first, Delegator second
+
+**Check `core/memory/delegator-cache.md` for an exact task-pattern match before spawning anything.** Cache hit → use the cached route, skip Delegator, log `delegator_cache_hit`. See `runbooks/service-lookups.md` for the full lookup-first protocol.
+
+No cache hit → spawn the Delegator (`agents/specialized/delegator.md`, haiku). It reads the full agency catalog, org chart, protocol registry, and skill index, and returns a structured routing recommendation. It is a one-shot service agent — spawn, get answer, it dies. Append its answer to the cache and emit `delegator_spawn`.
+
+Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, codebase-search spawns.
+
+## Step 1 — Agency catalog reference (use with Delegator, or for fast-path only)
+
+| Task domain | Prefer this agent type |
+|---|---|
+| Research, analysis, investigation | `Explore`, `research-pd` |
+| Frontend, UI, design | general-purpose + /frontend, /next-best-practices, /tailwind; UI: general-purpose + /ui-ux-pro-max, /impeccable |
+| Backend, API, database | general-purpose + /backend, /plan-eng-review; data: same skills |
+| Full-stack / feature work, Laravel/PHP stack | general-purpose + /backend, /review, domain-specific PD |
+| Full-stack / feature work, non-Laravel stack (Node.js, Python, bash, docs, etc.) | `coord` (or general-purpose + stack-appropriate skills), domain-specific PD |
+| Content creation, writing, copy, editorial, scripts, docs, decks | general-purpose + /content-creator, /copywriting, then /content-polish; critics via /cc-loop (see `runbooks/content-request-protocol.md`) |
+| Security, compliance, legal | general-purpose + /security, /cso; compliance: + /legal-contract-review |
+| Deployment, DevOps, infra | general-purpose + /pipeline-deploy, /vercel-deploy, /railway-deploy |
+| QA, testing, verification | general-purpose + /qa-only, /browse, /webapp-testing, `qa` skill |
+| Experiment design, A/B | general-purpose + /content-experimentation-best-practices, /project-status |
+| Knowledge retrieval, project context, history lookup | direct lookups (wiki -> shared-memory MCP server, if you run one -> NotebookLM); multi-source synthesis = one read-only general-purpose (sonnet) spawn (curator retired 2026-10-12) |
+| Task planning, decomposition, DAG structuring, sprint planning | general-purpose + /superpowers-writing-plans |
+| Voice cloning, TTS, voice generation, text-to-speech, dubbing, voice design | general-purpose (no skill) via OmniVoice Studio (default tool) — MCP: `mcp__omnivoice__generate_speech` |
+| Video editing, transcription, color grade, subtitles, overlays, raw footage | `/video-use` skill (default); strategy: general-purpose + /content-strategy |
+| Video production (scripted, AI-generated, full pipeline) | general-purpose + /video-shotcraft, /video-prompt-director, /hyperframes; PD -> Coord coordinates production |
+| Quality gate for any creative deliverable | `quality-loop-router` skill — always the terminal step; determines Mode A (internal loop) or Mode B (external fix plan) |
+| Code quality review (non-security) | `critique-code` agent or skill |
+| Data/analytics/dashboard critique | `critique-data` agent or skill |
+| Video deliverable critique | `critique-video` agent or skill |
+| New project onboarding / tech stack decision | `pipeline-onboard` skill → `tech-stack` skill |
+| Research task (multi-source synthesis) | `pipeline-research` skill → auto-researcher → firecrawl → graphify → notebooklm |
+| Web scraping, crawling, data extraction from URLs | general-purpose + /lightpanda, /scrape, /firecrawl-crawl — 3-layer routing + social ladder |
+| Social media content extraction (FB/IG/LinkedIn/X/TikTok/YouTube/Reddit) | general-purpose + /lightpanda, /scrape, /firecrawl-crawl — runs social decision ladder (API → Apify → session → FLAG) |
+| Messaging platform read/write (TG/Discord/Slack/WA/Signal/Matrix) | `mcp__hermes__*` tools directly — no web-extraction spawn needed |
+
+## Cross-Function Protocol: Marketing ↔ Content Creation
+
+Marketing owns **strategy** (what, who, when, where, why). Content Creation owns **execution** (the written artifact).
+- Content production tasks → general-purpose writer via PD -> Coord (strategic brief from Marketing; see `runbooks/content-request-protocol.md`)
+- Content strategy, audience targeting, distribution, performance → Marketing
+- Marketing briefs Content Creation → Content Creation produces → Marketing distributes → Marketing feeds back performance data → Content Creation optimizes
+
+## Step 1.5 — Fast-path (rare exception — Delegator already handled in Step 0.5)
+
+The Delegator was already made mandatory in Step 0.5. This section defines the ONLY pre-approved spawns that bypass Delegator. All other spawns require Delegator first.
+
+**Pre-approved spawns** (no Delegator needed — these agents ARE the routing infrastructure):
+
+| subagent_type | When allowed |
+|---|---|
+| `pd-coordinator` | PD spawns via /pd-resume or /pd-spawn only |
+| `coord` | Spawned by a PD as part of PD-Coord architecture |
+| `mini-coord` | Spawned by a Coord as part of PD-Coord architecture |
+| `codebase-search` | Any session — mandatory service agent, spawn freely |
+| `Delegator` | Any session — this IS Delegator |
+| `Explore` | Read-only research (no writes, no agent spawns from within) |
+| `Plan` | Planning mode (no writes, no agent spawns from within) |
+| `statusline-setup` | System setup only |
+| `general-purpose` | DEFAULT since 2026-10-06 — name 1-3 skills in the prompt; the spawner picks the skills from `skills/INDEX.md`. With the router on (`AGENCY_SKILL_ROUTER=1`), `skill-route.py` routes and the spawner writes the `Jev[r=id]` verdict line |
+
+**Other agent types** need a `DELEGATOR ROUTING:` / `HARDCODED ROUTING:` marker in the prompt. spawn-gate.sh asks (never blocks) on an unknown `subagent_type`, which catches typos and stale archived specialist names.
+
+If unsure which skills fit, use `skills/INDEX.md`; spawn Delegator only for ambiguous or cross-domain tasks. Router on (`AGENCY_SKILL_ROUTER=1`, off by default): run `python3 {agency-root}/scripts/skill-route.py --role exec "<task>"` before every spawn and write the `Jev[r=<route_id>]: accept|modify|reject — <reason>` line (JB1-JB9, `runbooks/service-lookups.md`); on low_confidence use ROLE-MAP / INDEX.md only to pick alternatives for the verdict.
+
+## Step 2 — Pick skills from the role map.
+Use `Explore` for research; for domain work spawn general-purpose + the 1-3 skills from `skills/INDEX.md` that fit. Kept named agents (`*-pd`, Coords, critique-*) stay spawnable by name.
+
+## Step 3 — general-purpose is the default.
+No matching row? general-purpose + the 1-3 skills from `skills/INDEX.md` that fit the task.
