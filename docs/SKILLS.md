@@ -4,7 +4,7 @@ Skills are reusable workflows that agents invoke to handle common tasks. Each sk
 
 ## Overview
 
-235+ skills are installed to `{agency-root}/skills/` as `{name}/SKILL.md` directories. Invoke any skill with `/skill-name` in Claude Code.
+225+ skills are installed to `{agency-root}/skills/` as `{name}/SKILL.md` directories. Invoke any skill with `/skill-name` in Claude Code.
 
 ## Skill Categories
 
@@ -152,18 +152,18 @@ All critique skills:
 
 The full categorized registry is [`skills/INDEX.md`](../skills/INDEX.md). By domain:
 
-- **Backend**: `backend`, `security`, `webhook-security`, `postgresql-schema`, `supabase-sql`, `multi-role-auth`, `laravel-builder`, `admin-shell-foundation`
+- **Backend**: `backend`, `security`, `supabase-sql`, `multi-role-auth`
 - **Frontend**: `frontend`, `shadcn-ui`, `cult-ui`, `tailwind`, `next-best-practices`, `css-animations`, `image-to-code`, `svgl`, `extract-design`, `excalidraw-diagram`
 - **Design and UI/UX**: `ui-ux-pro-max`, `impeccable`, `design-html`, `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`, `emil-design-eng`, `gpt-taste`, `brandkit`, `figma-ui-ux-consistency`
-- **Video and media**: `ffmpeg`, `video-use`, `hyperframes`, `hyperframes-cli`, `hyperframes-media`, `remotion-best-practices`, `lottie`, `animejs`, `gsap`, `waapi`, `three`, `gpt-image-prompts`, `imagegen-frontend-web`, `imagegen-frontend-mobile`
+- **Video and media**: `video-use`, `hyperframes`, `hyperframes-cli`, `hyperframes-media`, `remotion-best-practices`, `lottie`, `animejs`, `gsap`, `waapi`, `three`, `gpt-image-prompts`, `imagegen-frontend-web`, `imagegen-frontend-mobile`
 - **Deployment**: `github-deploy`, `vercel-deploy`, `railway-deploy`, `supabase-deploy`
 - **Cloud and infrastructure**: `agents-sdk`, `refactor-module`, `finops`
 - **Ops and debugging**: `self-healing`, `investigate`, `guard`, `health`, `web-perf`, `webapp-testing`
 - **Browser and scraping**: `browse`, `agent-browser`, `lightpanda`, `scrape`, `firecrawl-agent`, `firecrawl-crawl`, `firecrawl-scrape`, `pair-agent`
 - **Quality and critique extras**: `design-review`, `codex`, `cso`, `document-release`, `devex-review`, `careful`, `run-acceptance-tests`
-- **Content and document extras**: `marp`, `markitdown`, `make-pdf`, `xlsx-toolkit`, `vietnamese-language`, `promt-engineering`
+- **Content and document extras**: `marp`, `markitdown`, `make-pdf`, `vietnamese-language`, `promt-engineering`
 - **Workflow (14 `superpowers-*` skills)**: `superpowers-brainstorming`, `superpowers-systematic-debugging`, `superpowers-dispatching-parallel-agents`, `superpowers-executing-plans`, `superpowers-writing-plans`, `superpowers-test-driven-development`, and the rest of the family
-- **Domain-specific**: `better-auth-best-practices`, `legal-contract-review`, `n8n-automation`, `sanity-best-practices`, `tech-stack`
+- **Domain-specific**: `better-auth-best-practices`, `legal-contract-review`, `sanity-best-practices`, `tech-stack`
 
 ## Installing Skills
 

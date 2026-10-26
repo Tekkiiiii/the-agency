@@ -240,15 +240,15 @@ Skills are instructions Claude Code loads for one kind of work, called as `/name
 | Domain | Skills |
 |---|---|
 | Frontend and design | `/frontend`, `/ui-ux-pro-max`, `/impeccable`, `/design-review`, `/gpt-image-prompts` |
-| Backend, data and deploy | `/backend`, `/postgresql-schema`, `/supabase-deploy`, `/vercel-deploy` |
+| Backend, data and deploy | `/backend`, `/supabase-deploy`, `/vercel-deploy` |
 | Debugging, testing and review | `/superpowers-systematic-debugging`, `/superpowers-test-driven-development`, `/review`, `/qa` |
 | Security | `/security`, `/cso`, `/security-critique` |
 | Browser and web data | `/lightpanda`, `/agent-browser`, `/firecrawl-scrape` |
 | English writing | `/content-polish`, `/humanizer`, `/stop-slop`, `/tech-writer` |
 | Vietnamese writing | `/humanizer-vi`, `/grammar-checker-vi`, `/translationese-cleaner-vi`, `/style-guide-vi` |
 | Marketing, content and SEO | `/copywriting`, `/content-strategy`, `/pipeline-seo-geo-aeo`, `/marketing-critique`, `/inbound-sales` |
-| Video and audio | `/hyperframes`, `/video-use`, `/subtitle-burner`, `/musicgen` |
-| Decks, documents and spreadsheets | `/marp`, `/deck-narrative`, `/make-pdf`, `/xlsx-toolkit` |
+| Video and audio | `/hyperframes`, `/video-use`, `/musicgen` |
+| Decks, documents and spreadsheets | `/marp`, `/deck-narrative`, `/make-pdf` |
 | Planning and research | `/superpowers-writing-plans`, `/plan-eng-review`, `/office-hours`, `/auto-researcher`, `/graphify` |
 | Google Workspace | `/gws` |
 | Cloud cost | `/finops` |
