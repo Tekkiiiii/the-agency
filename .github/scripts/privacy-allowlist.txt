@@ -24,7 +24,6 @@ userpath | cli/lib/hooks-merge.js | John Smith | code comment: example Windows p
 email | agents-archive/**/identity-graph-operator.md | wsmith@acme\.com | archived role file: fictional sample record (acme.com)
 email | skills/browse/SKILL.md | user@test\.com | browse skill: generic form-fill example
 email | skills/feedback-pipeline/SKILL.md | x@y\.com | feedback-pipeline: generic placeholder address
-email | skills/postgresql-schema/SKILL.md | password@ep-xxx | postgresql-schema: masked Neon connection-string template
 
 # This file quotes the personal path/term it grandfathers.
 term | .github/scripts/privacy-allowlist.txt | - | entries above name the terms they exempt

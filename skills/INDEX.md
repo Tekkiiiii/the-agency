@@ -45,7 +45,6 @@ Writing web UI code: pages, React/Next components, CSS/Tailwind, shadcn/Cult/Mat
 
 | Skill | Description |
 |-------|-------------|
-| `admin-shell-foundation` | Use when building any admin dashboard that needs the shared layout wrapper: AdminShell, DataTable, StatusBadge, ConfirmDialog, sidebar... |
 | `cult-ui` | Install animated shadcn-compatible components from the Cult UI registry. 75+ components across marketing, onboarding, buttons, cards... |
 | `design-html` | Design finalization: generates production-quality Pretext-native HTML/CSS. Works with approved mockups from /design-shotgun, CEO plans from... |
 | `emil-design-eng` | This skill encodes Emil Kowalski's philosophy on UI polish, component design, animation decisions, and the invisible details that make... |
@@ -111,13 +110,10 @@ Server-side and ops: APIs, databases/SQL schemas, auth, webhooks, MCP servers, n
 | `finops` | Use for cloud cost work on AWS/GCP/Azure: "why is our cloud bill so high", idle-resource audits, Reserved Instance vs Savings Plan... |
 | `github-deploy` | Deploy via GitHub Actions — scaffold or update workflow YAML files, configure repository secrets, trigger workflow dispatches manually or... |
 | `land-and-deploy` | Land and deploy workflow. Merges the PR, waits for CI and deploy, verifies production health via canary checks. Takes over after /ship... |
-| `laravel-builder` | Scaffold a complete Laravel 11 project from scratch — Breeze auth, Filament admin panel, PostgreSQL config, Sail/Docker dev environment... |
 | `mcp-builder` | Create MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools. The quality of... |
 | `multi-role-auth` | Scaffold multi-role authentication: NextAuth.js with admin/guest/owner/customer roles in Next.js, or Laravel Breeze with roles in Laravel.... |
-| `n8n-automation` | Scaffold n8n workflow JSON for common patterns: lead capture → CRM, order → fulfillment, booking → confirmation email, payment → webhook →... |
 | `operations-critique` | Use on "review ops", "critique this pipeline", "check infrastructure", "deployment review", or before shipping infrastructure changes. Acts... |
 | `pipeline-deploy` | Safe deploy pipeline — pre-deploy security and ops checks, baseline capture, deploy, post-deploy canary and benchmark verification. Chains... |
-| `postgresql-schema` | Design PostgreSQL schemas for common patterns: multi-tenant SaaS, reservation systems, CRM, e-commerce. Outputs Prisma migrations for... |
 | `railway-deploy` | Deploy to Railway — link a project, set environment variables, trigger builds, fetch logs, generate a production URL, and validate health... |
 | `refactor-module` | Transform monolithic Terraform configurations into reusable, maintainable modules following HashiCorp's module design principles and... |
 | `run-acceptance-tests` | Guide for running acceptance tests for a Terraform provider. Use this when asked to run an acceptance test or to run a test with the prefix... |
@@ -130,7 +126,6 @@ Server-side and ops: APIs, databases/SQL schemas, auth, webhooks, MCP servers, n
 | `superpowers-finishing-a-development-branch` | Use when all tasks in a plan are complete — run the full ship pipeline from code to merged PR: detect base branch, verify clean working... |
 | `superpowers-using-git-worktrees` | Use after design approval and before starting implementation — creates an isolated Git worktree with verified clean test baseline so new... |
 | `vercel-deploy` | Deploy to Vercel — link project, configure environment variables, trigger deploy (preview or production), fetch logs, and validate health... |
-| `webhook-security` | Build webhook signature verification for Paymob, Stripe, Resend, and generic HMAC. Triggers when user asks to verify webhook signatures... |
 
 ## code-quality-testing
 
@@ -233,7 +228,6 @@ Video and audio production: HyperFrames compositions and animation adapters (GSA
 |-------|-------------|
 | `animejs` | Anime.js adapter patterns for HyperFrames. Use when writing Anime.js animations or timelines inside HyperFrames compositions, registering... |
 | `css-animations` | CSS animation adapter patterns for HyperFrames. Use when authoring CSS keyframes, animation-delay based timing, animation-fill-mode... |
-| `ffmpeg` | FFmpeg/FFprobe command reference for media operations — transcode, probe, extract, concat, filter, stream copy, HW accel. Use when an agent... |
 | `gsap` | GSAP animation reference for HyperFrames. Covers gsap.to(), from(), fromTo(), easing, stagger, defaults, timelines (gsap.timeline()... |
 | `hyperframes` | Create video compositions, animations, title cards, overlays, captions, voiceovers, audio-reactive visuals, and scene transitions in... |
 | `hyperframes-cli` | HyperFrames CLI tool — hyperframes init, lint, inspect, preview, render, transcribe, tts, doctor, browser, info, upgrade, compositions... |
@@ -243,7 +237,6 @@ Video and audio production: HyperFrames compositions and animation adapters (GSA
 | `musicgen` | CLI wrapper for MusicGPT (AudioCraft MusicGen backend) — generates AI music from text prompts. Use for BGM generation in video production.... |
 | `remotion-best-practices` | Best practices for Remotion - Video creation in React |
 | `remotion-to-hyperframes` | Translate an existing Remotion (React-based) video composition into a HyperFrames HTML composition. Use ONLY when the user explicitly asks... |
-| `subtitle-burner` | Burned-in subtitle (open caption) workflow for short-form video. Produces karaoke-style word-highlight captions for TikTok/Reels/Shorts.... |
 | `tailwind` | Tailwind CSS v4.2 browser-runtime patterns for HyperFrames compositions. Use when scaffolding or editing projects created with `hyperframes... |
 | `three` | Three.js and WebGL adapter patterns for HyperFrames. Use when creating deterministic Three.js scenes, WebGL canvas layers, AnimationMixer... |
 | `video-use` | Edit any video by conversation. Transcribe, cut, color grade, generate overlay animations, burn subtitles — for talking heads, montages... |
@@ -263,7 +256,6 @@ Presentation and document artifacts: slide decks, HTML plans/reports, PDFs, char
 | `markitdown` | Convert any file (PDF, DOCX, XLSX, PPTX, HTML, images, audio, video, ZIP) to clean Markdown using Microsoft's markitdown CLI. Use when user... |
 | `marp` | Use when asked to create a presentation, make slides, build a deck, or convert markdown to PDF/PPTX/HTML. Builds slide decks from Markdown... |
 | `strategic-deck` | Use on "build a strategic deck", "audit company X and recommend a bet", "make a strategic pitch deck", "rebuild this deck for [different... |
-| `xlsx-toolkit` | Use when working with any spreadsheet (.xlsx, .xlsm, .csv, .tsv) or Google Sheets: read/parse, edit, formulas (SUM, VLOOKUP, INDEX/MATCH)... |
 
 ## planning-strategy-review
 

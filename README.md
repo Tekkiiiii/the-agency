@@ -159,7 +159,7 @@ The root is `$AGENCY_HOME` if set, else `$CLAUDE_CONFIG_DIR`, else `~/.claude`. 
 
 ```
 ~/.claude/
-├── skills/              ← 235+ skills as {name}/SKILL.md directories
+├── skills/              ← 225+ skills as {name}/SKILL.md directories
 │   ├── backend/SKILL.md
 │   ├── frontend/SKILL.md
 │   ├── ship/SKILL.md
@@ -421,7 +421,7 @@ Each PD spawns independently, runs its workstream, and reports back.
 After this walkthrough:
 
 - **`~/.agency/projects/`** — project state that persists across sessions
-- **`~/.agency/skills/`** — 235+ skills ready to invoke
+- **`~/.agency/skills/`** — 225+ skills ready to invoke
 - **`~/.agency/agents/`** — agent definitions in agent folders
 - **`~/.agency/task-store.db`** — SQLite task pipeline with gate tracking
 
@@ -497,15 +497,15 @@ Spawned via `/recall {project}`. Owns the project end-to-end:
 
 **Quality & Critique**: `design-review`, `review`, `codex`, `cso`, `document-release`, `backend-critique`, `design-critique`, `content-critique`, `marketing-critique`, `operations-critique`, `product-critique`, `security-critique`, `workflow-critique`, `devex-review`, `careful`
 
-**Content & Writing**: `humanizer`, `proofreader`, `content-polish`, `content-creator`, `content-strategy`, `copywriting`, `stop-slop`, `tech-writer`, `marp`, `markitdown`, `make-pdf`, `promt-engineering`, `xlsx-toolkit`, `vietnamese-language`
+**Content & Writing**: `humanizer`, `proofreader`, `content-polish`, `content-creator`, `content-strategy`, `copywriting`, `stop-slop`, `tech-writer`, `marp`, `markitdown`, `make-pdf`, `promt-engineering`, `vietnamese-language`
 
-**Engineering — Backend**: `backend`, `security`, `webhook-security`, `postgresql-schema`, `supabase-sql`, `multi-role-auth`, `laravel-builder`, `admin-shell-foundation`
+**Engineering — Backend**: `backend`, `security`, `supabase-sql`, `multi-role-auth`
 
 **Engineering — Frontend**: `frontend`, `shadcn-ui`, `cult-ui`, `tailwind`, `next-best-practices`, `css-animations`, `image-to-code`, `svgl`, `extract-design`, `excalidraw-diagram`
 
 **Design & UI/UX**: `ui-ux-pro-max`, `impeccable`, `design-html`, `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui`, `emil-design-eng`, `gpt-taste`, `brandkit`, `figma-ui-ux-consistency`
 
-**Video & Media**: `ffmpeg`, `video-use`, `hyperframes`, `hyperframes-cli`, `hyperframes-media`, `remotion-best-practices`, `lottie`, `animejs`, `gsap`, `waapi`, `three`, `gpt-image-prompts`, `imagegen-frontend-web`, `imagegen-frontend-mobile`
+**Video & Media**: `video-use`, `hyperframes`, `hyperframes-cli`, `hyperframes-media`, `remotion-best-practices`, `lottie`, `animejs`, `gsap`, `waapi`, `three`, `gpt-image-prompts`, `imagegen-frontend-web`, `imagegen-frontend-mobile`
 
 **Deployment**: `github-deploy`, `vercel-deploy`, `railway-deploy`, `supabase-deploy`
 
@@ -517,7 +517,7 @@ Spawned via `/recall {project}`. Owns the project end-to-end:
 
 **Superpowers** (14 gstack workflow skills): `superpowers-brainstorming`, `superpowers-systematic-debugging`, `superpowers-dispatching-parallel-agents`, `superpowers-executing-plans`, `superpowers-writing-plans`, `superpowers-test-driven-development`, and 8 more.
 
-**Domain-Specific**: `better-auth-best-practices`, `legal-contract-review`, `n8n-automation`, `sanity-best-practices`, `tech-stack`
+**Domain-Specific**: `better-auth-best-practices`, `legal-contract-review`, `sanity-best-practices`, `tech-stack`
 
 Full categorized registry: [`skills/INDEX.md`](skills/INDEX.md)
 
@@ -549,7 +549,7 @@ the-agency/
 │   ├── batch-check.sh   # Stop: typecheck + shellcheck edited files
 │   └── cost-tracker.sh  # Stop: compute session token cost
 ├── agents/              # agent definitions (PD/Coord/critic/council + project PDs)
-├── skills/              # 235+ reusable workflow skills
+├── skills/              # 225+ reusable workflow skills
 └── plans/               # Architecture decision records
 ```
 

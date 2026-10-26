@@ -19,18 +19,6 @@
   "career-personal": "Job search and personal career work: scoring job offers, ATS CVs, cover letters, interview prep, application tracking. NOT general writing (writing-en)."
  },
  "skills": {
-  "admin-shell-foundation": {
-   "domain": "frontend-ui",
-   "triggers": [
-    "admin panel",
-    "admin dashboard",
-    "admin shell",
-    "back office",
-    "admin layout",
-    "data table",
-    "filament admin theme"
-   ]
-  },
   "agent-browser": {
    "domain": "browser-web-data",
    "hint": "Use for headless automation and QA with health scores; not for the user's real Chrome (browser-harness) or light data fetch (lightpanda).",
@@ -564,15 +552,6 @@
     "feedback to pd"
    ]
   },
-  "ffmpeg": {
-   "domain": "video-audio",
-   "hint": "Use as FFmpeg/FFprobe command reference for media ops; not for conversational editing (video-use).",
-   "triggers": [
-    "ffmpeg",
-    "/ffmpeg",
-    "ffmpegffprobe command reference"
-   ]
-  },
   "figma-ui-ux-consistency": {
    "domain": "design-visual",
    "triggers": [
@@ -1012,18 +991,6 @@
     "show open PR versions"
    ]
   },
-  "laravel-builder": {
-   "domain": "backend-infra-deploy",
-   "triggers": [
-    "build laravel",
-    "laravel project",
-    "laravel 11 scaffold",
-    "filament admin",
-    "laravel sail",
-    "laravel docker",
-    "new laravel app"
-   ]
-  },
   "learn": {
    "domain": "claude-system-ops",
    "triggers": [
@@ -1185,18 +1152,6 @@
     "musicgen",
     "/musicgen",
     "cli wrapper for"
-   ]
-  },
-  "n8n-automation": {
-   "domain": "backend-infra-deploy",
-   "triggers": [
-    "n8n workflow",
-    "n8n automation",
-    "workflow automation",
-    "lead automation",
-    "payment automation",
-    "n8n webhook",
-    "business automation"
    ]
   },
   "new-project": {
@@ -1493,18 +1448,6 @@
     "too many questions",
     "show my profile",
     "show my vibe"
-   ]
-  },
-  "postgresql-schema": {
-   "domain": "backend-infra-deploy",
-   "triggers": [
-    "database schema",
-    "postgresql schema",
-    "prisma migration",
-    "schema design",
-    "database design",
-    "postgresql tables",
-    "sql schema"
    ]
   },
   "product-critique": {
@@ -1926,15 +1869,6 @@
     "chuẩn hóa số ngày giờ tiếng Việt"
    ]
   },
-  "subtitle-burner": {
-   "domain": "video-audio",
-   "hint": "Use to burn karaoke-style captions into short vertical video; not for general video editing (video-use).",
-   "triggers": [
-    "subtitle burner",
-    "/subtitle-burner",
-    "burnedin subtitle open"
-   ]
-  },
   "supabase-deploy": {
    "domain": "backend-infra-deploy",
    "hint": "Use to link Supabase, push migrations and deploy edge functions; not for app hosting (vercel-deploy, railway-deploy).",
@@ -2311,18 +2245,6 @@
     "browser test automation"
    ]
   },
-  "webhook-security": {
-   "domain": "backend-infra-deploy",
-   "triggers": [
-    "webhook signature",
-    "verify webhook",
-    "hmac validation",
-    "paymob webhook",
-    "stripe webhook",
-    "webhook security",
-    "replay attack prevention"
-   ]
-  },
   "website-to-hyperframes": {
    "domain": "video-audio",
    "triggers": [
@@ -2354,15 +2276,6 @@
     "archive completed tasks",
     "session wrap",
     "wrap inbox tasks"
-   ]
-  },
-  "xlsx-toolkit": {
-   "domain": "decks-docs-reports-charts",
-   "hint": "Use for local .xlsx/.csv work (formulas, pivots, merge); for Google Sheets API operations use the gws skills.",
-   "triggers": [
-    "edit spreadsheet",
-    "analyze xlsx",
-    "csv automation"
    ]
   }
  },
