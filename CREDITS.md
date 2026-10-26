@@ -89,21 +89,26 @@ Two community plugins carry most of the token-saving behaviour, and I use them e
 | The review, QA, planning, ship and safety skills that carry the gstack marker: office-hours, plan-ceo-review, plan-eng-review, plan-design-review, plan-devex-review, design-consultation, design-review, design-html, design-shotgun, devex-review, review, qa, qa-only, ship, land-and-deploy, canary, careful, freeze, unfreeze, guard, cso, investigate, retro, learn, health, document-release, autoplan, benchmark, benchmark-models, browse, scrape, make-pdf, context-save, context-restore, pair-agent, plan-tune, setup-browser-cookies, setup-deploy, setup-gbrain, open-gstack-browser (folder `connect-chrome`), landing-report, github-deploy, railway-deploy, vercel-deploy, supabase-deploy, skillify, codex, and the `*-critique` skills | Garry Tan ([garrytan/gstack](https://github.com/garrytan/gstack)) | MIT | Adapted: gstack's workflows, edited for this system's agents and paths | `skills/<same names>` |
 | superpowers-* (brainstorming, writing-plans, executing-plans, test-driven-development, systematic-debugging, subagent-driven-development, dispatching-parallel-agents, using-git-worktrees, finishing-a-development-branch, requesting/receiving-code-review, writing-skills, using-superpowers, unbundle) | Jesse Vincent ([obra/superpowers](https://github.com/obra/superpowers)) | MIT | Adapted | `skills/superpowers-*` |
 
-### Skills from Claude Code plugins and apps
+### Skills that came with an MCP platform
 
-These nine skills came into the library through Claude Code plugins and apps that I installed. I could not match their text to any plugin or repository that is installed on my machine today, so the original plugin name, author and licence are not recorded here and I am not guessing them. If you recognise one of these, please open an issue with the link and I will credit it properly and add its licence file.
+These eight skills came into the library with an MCP platform/server I installed. Their origin is unknown: I could not match their text to any plugin, server or repository installed on my machine today, so no author or licence is recorded here and I claim no credit for them. If you recognise one of these, please open an issue with the link and I will credit it properly and add its licence file.
 
 | Skill | Origin | Licence | Ships in |
 |---|---|---|---|
-| ffmpeg | A Claude Code plugin/app (source not pinned) | not recorded | `skills/ffmpeg` |
-| xlsx-toolkit | A Claude Code plugin/app (source not pinned) | not recorded | `skills/xlsx-toolkit` |
-| n8n-automation | A Claude Code plugin/app (source not pinned) | not recorded | `skills/n8n-automation` |
-| postgresql-schema | A Claude Code plugin/app (source not pinned) | not recorded | `skills/postgresql-schema` |
-| laravel-builder | A Claude Code plugin/app (source not pinned) | not recorded | `skills/laravel-builder` |
-| webhook-security | A Claude Code plugin/app (source not pinned) | not recorded | `skills/webhook-security` |
-| admin-shell-foundation | A Claude Code plugin/app (source not pinned) | not recorded | `skills/admin-shell-foundation` |
-| subtitle-burner | A Claude Code plugin/app (source not pinned). Its text says it replaces the `jurczykpawel/subtitle-burner` project (now ReelStack), which is too heavy for caption-only use; the implementation here is Whisper plus ffmpeg and no ReelStack code is used | not recorded | `skills/subtitle-burner` |
-| self-healing | A Claude Code plugin/app (source not pinned); inspired by Hermes Agent, see Ideas and patterns above | not recorded | `skills/self-healing` |
+| ffmpeg | Came with an MCP platform/server; origin unknown | not recorded | `skills/ffmpeg` |
+| xlsx-toolkit | Came with an MCP platform/server; origin unknown | not recorded | `skills/xlsx-toolkit` |
+| n8n-automation | Came with an MCP platform/server; origin unknown | not recorded | `skills/n8n-automation` |
+| postgresql-schema | Came with an MCP platform/server; origin unknown | not recorded | `skills/postgresql-schema` |
+| laravel-builder | Came with an MCP platform/server; origin unknown | not recorded | `skills/laravel-builder` |
+| webhook-security | Came with an MCP platform/server; origin unknown | not recorded | `skills/webhook-security` |
+| admin-shell-foundation | Came with an MCP platform/server; origin unknown | not recorded | `skills/admin-shell-foundation` |
+| subtitle-burner | Came with an MCP platform/server; origin unknown. Its text says it replaces the `jurczykpawel/subtitle-burner` project (now ReelStack), which is too heavy for caption-only use; the implementation here is Whisper plus ffmpeg and no ReelStack code is used | not recorded | `skills/subtitle-burner` |
+
+### Original skills with an idea credit
+
+| Skill | Author | Licence | Ships in |
+|---|---|---|---|
+| self-healing | The author of The Agency (original work); inspired by Hermes Agent, see Ideas and patterns above | MIT, as The Agency | `skills/self-healing` |
 
 ### Agent catalog heritage
 
