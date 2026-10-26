@@ -91,7 +91,7 @@ Two community plugins carry most of the token-saving behaviour, and I use them e
 
 ### Original skills with an idea credit
 
-| Skill | Author | Licence | Ships in |
+| Skill | Idea credit | Licence | Ships in |
 |---|---|---|---|
 | self-healing | Inspired by Hermes Agent, see Ideas and patterns above | MIT, as The Agency | `skills/self-healing` |
 
