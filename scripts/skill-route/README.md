@@ -154,7 +154,7 @@ One JSON object on stdout:
 | `skills` | 0-3 menu names. Rank 1 whenever a skill fits; ranks 2-3 only at probability >= 0.15. `[]` = no listed skill fits (the `none` option won, the grep router found no word overlap, or the text was empty); `gate` is then `low_confidence`. Treat `[]` as "spawn without a skill". |
 | `scores` | top-3 real candidates with probability > 0 (`none` is never a key). Two-stage: raw stage-2 probabilities. Flat: merged probability. Grep: relative overlap share, not calibrated. |
 | `domain` | stage-1 answer (two-stage), or the domain of `skills[0]` (flat, grep); `null` when `skills` is `[]` and no domain was chosen |
-| `model` | `haiku` / `sonnet` / `opus`. `tools`: `read-only` / `edit` / `web` / `full`. Grep and passthrough use `sonnet` / `edit`. |
+| `model` | `haiku` / `sonnet`. `tools`: `read-only` / `edit` / `web` / `full`. Grep and passthrough use `sonnet` / `edit`. |
 | `router` | `jev`, `haiku`, `grep`, or `passthrough` |
 | `gate` | `pass` or `low_confidence`. Two-stage passes when domain p x skill p >= 0.50 and domain p x (skill p1 - skill p2) >= 0.10. Flat passes when top-1 >= 0.45 and top-1 - top-2 >= 0.10. The grep router is always `low_confidence`. |
 | `pre_rules` | rules that fired: `explicit`, `vietnamese` |

@@ -144,6 +144,16 @@ bash {agency-root}/hooks/emit-metric.sh \
 
 ---
 
+## Event 14 — coord_fanout (PD step 5b, moved from pd-coordinator.md 2026-10-23)
+
+Emitted by the PD after spawning each layer's wave. Fields: `ts`, `event`, `width` (tasks spawned in the layer), `layer` (L), `task_type`.
+`task_type`: `single_domain` if width=1 AND all tasks are single-domain L3s; `multi_domain` if width>1 OR tasks span multiple L3 domains; `unknown` if decomposition metadata is unavailable. Purpose: separate valid serial work (single-domain, width=1) from decomposition drift (multi-domain work serialized).
+```bash
+bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"coord_fanout","width":N,"layer":L,"task_type":"T"}'
+```
+
+---
+
 ## Event Reference — what each event measures, what should trigger it
 
 Kills the false-alarm class where a silent event is indistinguishable from a

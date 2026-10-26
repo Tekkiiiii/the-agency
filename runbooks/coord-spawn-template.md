@@ -66,10 +66,10 @@ Rule 2 — Mandatory Routing + Service Agents (ALWAYS invoke):
   (task-pattern → route) entry to ~/.claude/memory/delegator-cache.md (exact string only),
   and (b) emit: `bash {agency-root}/hooks/emit-metric.sh '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"delegator_spawn","route":"<route>","project":"<slug>","miss_pattern":"<first-8-words-of-task-pattern-that-missed>"}'`. Both emits are fire-and-forget.
   (F15: matched_pattern/miss_pattern fields are diagnostic — which cache entries are actually being used.)
-  Agent({ subagent_type: "Delegator", model: "sonnet", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
+  Agent({ subagent_type: "Delegator", description: "Delegator — route {task}", prompt: "Route this task: {task description}" })
 - **Project knowledge** (curator retired 2026-10-12): direct lookups before any investigation, decision, or delegating with project context: wiki (MEMORY.md, memory files, project memory) -> a shared-memory MCP server, if you run one -> NotebookLM (research only). Skip only when the exact decision is VERBATIM in the current spawn prompt. Multi-source synthesis = ONE read-only general-purpose (sonnet) spawn with that order in its prompt. No curator_skip/curator_spawn emits.
 - **codebase-search**: spawn INSTEAD of running find/grep/rg across the project
-  Agent({ subagent_type: "codebase-search", model: "sonnet", description: "codebase-search — {what}", prompt: "Find {what} in {path}" })
+  Agent({ subagent_type: "codebase-search", description: "codebase-search — {what}", prompt: "Find {what} in {path}" })
 
 Rule 3 — Report every completion to your spawner immediately.
 
@@ -134,3 +134,11 @@ name-addressed SendMessage does not resolve — flat roster; your final task res
 the reliable channel your spawner receives) with DONE/BLOCKED/ESCALATE + 1-sentence
 summary + any findings.
 ```
+
+---
+
+## PD-level notes (moved from pd-coordinator.md 2026-10-23)
+
+- Punny-name hints for `Coord-{l3-name}-{pun}` (spawn prompt and logs only, never the `name` param): auth -> Gatekeeper/Warden/LockSmith; feed/UI -> Spinner/Digest/Flowmaster; DB/migration -> TombRaider/Architect/RelicHunter; deploy/DevOps -> Pilot/Captain/Launchpad; config -> Tuner/Dialer.
+- Coord spawn message also carries the READ + WRITE + CREATE grant for the project directory and subdirectories, the plan file path, and the scoped structure file `{project}/memory/agents/coords/coord-{name}-structure.md` (PD generates the slice from dev-plan.md before spawning).
+- Phase B IntegrationTester (lifecycle step 7a): `IntegrationTester-{slug}-{timestamp}` = general-purpose + `/qa-only`, `/run-acceptance-tests`, `/webapp-testing`, model sonnet; role file `{agency-root}/agents-archive/generalist-2026-10-06/specialized/integration-tester.md`. Provide: all L3 scopes, pd-structure.md path, QA target, test mode (`full` for major changes, `quick` for config/doc-only). Verdicts: INTEGRATION_PASS (>= 85, no CRITICAL) -> step 8; INTEGRATION_WARN (70-84) -> log warnings in the digest, step 8; INTEGRATION_FAIL (< 60 or CRITICAL) -> targeted Execs for the CRITICAL items, re-run Phase B only.
