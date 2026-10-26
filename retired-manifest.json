@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generated_from": "976fcf48c61057163db0062065bddde0b860dd6c",
+ "generated_from": "56098bddd30c2ff08be28dd3cabd36969c8cd034",
  "trees": [
   "skills/",
   "agents/",
@@ -1473,6 +1473,13 @@
   "skills/admin-shell-foundation.md": [
    "52e72fea6e49c22175d333c0ea623f1ae32dca65c813aebb3a7c1b55d3dfcd1c"
   ],
+  "skills/admin-shell-foundation/SKILL.md": [
+   "1c89452efedbe24c29a94d0645bc1d5dc9f00eb2b990e6520a1e25f43a631812",
+   "52e72fea6e49c22175d333c0ea623f1ae32dca65c813aebb3a7c1b55d3dfcd1c"
+  ],
+  "skills/admin-shell-foundation/references/sidebar-nav-pattern.md": [
+   "4737de1837a203e34a13ecb851508a5e755ecfd0a11cd33ee46cf3f673d44cc4"
+  ],
   "skills/agent-browser.md": [
    "9a52ba4b4d3b24e363663978f887dcaa116601c5d235816e858951896a0f55d0"
   ],
@@ -1689,6 +1696,10 @@
   "skills/ffmpeg.md": [
    "ded9c5c119bcdab8b05d33a21816973f81b06346ce6966e29ec321ab380c6fa1"
   ],
+  "skills/ffmpeg/SKILL.md": [
+   "bcee659a93e5bca04df640638bb3f489bb2c30fa97ab5930e137d583944658df",
+   "ded9c5c119bcdab8b05d33a21816973f81b06346ce6966e29ec321ab380c6fa1"
+  ],
   "skills/figma-ui-ux-consistency.md": [
    "2548b75a8d0f135273e99947327e2721112727f3ce9f1677eef4f00732a325d9",
    "50cd74bc102dda5f1821e4a8986198b8f5145d8c03a897e840d88e6caa9145ea"
@@ -1812,6 +1823,13 @@
   "skills/laravel-builder.md": [
    "45cdc436d57f0506f39aa61a9a73b537c2c60ac9d3559c94d2fafb0a2f942f20"
   ],
+  "skills/laravel-builder/SKILL.md": [
+   "45cdc436d57f0506f39aa61a9a73b537c2c60ac9d3559c94d2fafb0a2f942f20",
+   "688173f4c4a7c99f0e883d32827fcc8b506970524a914265248e4709f3230712"
+  ],
+  "skills/laravel-builder/references/laravel-11-filament-setup.md": [
+   "c90c74312fa51954e66dd9a03c3206dec86ebbcf979c62011d91da027c85b2e1"
+  ],
   "skills/learn.md": [
    "e38cb1b86ded82b435ec044ef3c3f0e18a735d692a01e9b5bd079a2880d97813"
   ],
@@ -1846,6 +1864,9 @@
    "1725d42e43700fd503bd6b29878f5d6c50bb21f546039ca5be821496e65217fd"
   ],
   "skills/n8n-automation.md": [
+   "fdd572a4c36a56ce9ff06e15eaf907456d1560397bac3f844530ef27d160b150"
+  ],
+  "skills/n8n-automation/SKILL.md": [
    "fdd572a4c36a56ce9ff06e15eaf907456d1560397bac3f844530ef27d160b150"
   ],
   "skills/neon-postgres.md": [
@@ -2028,6 +2049,10 @@
   "skills/postgresql-schema.md": [
    "a77f7c472c9868ce4a1cbc0d347db22bd4af9696373987a883acf4e2ac876033"
   ],
+  "skills/postgresql-schema/SKILL.md": [
+   "a77f7c472c9868ce4a1cbc0d347db22bd4af9696373987a883acf4e2ac876033",
+   "e0bb1b6c2fbcab97697aa79faa6e842399cec9418ab6b0367c887413ad685cf7"
+  ],
   "skills/product-critique.md": [
    "bede9ddc0101e87eaf16ff6c15a205bc101fab5494e9f484cc680dd55ec74956"
   ],
@@ -2205,6 +2230,11 @@
   ],
   "skills/stripe-best-practices/SKILL.md": [
    "2a1616037f71b75b1c897c0f79494348675af0c9defa22acab04891e1ec71699"
+  ],
+  "skills/subtitle-burner/SKILL.md": [
+   "4e820e12547e4f4c92acd67f468b6e21201a1c3ebf8cdb2bf6bb92bf54e818f0",
+   "565f9bb76a5abf548278b3bac38e05806a715baece648a5a90526e3c57c252ad",
+   "e11382f03a19460886a172e018cc57bd7b2f56be1a4879e396df1ea6638c0d60"
   ],
   "skills/supabase-deploy.md": [
    "bb24fd9fdeb9231668966a23d92edbef2ea127f33d29529fc10a51fb3101ad1f",
@@ -2445,6 +2475,12 @@
   "skills/webhook-security.md": [
    "20aad44b7834cd7af67c42d732076a33547ea516b26e30007b2a4c12f341d306"
   ],
+  "skills/webhook-security/SKILL.md": [
+   "20aad44b7834cd7af67c42d732076a33547ea516b26e30007b2a4c12f341d306"
+  ],
+  "skills/webhook-security/references/paymob-hmac-flow.md": [
+   "151422d807b0ac95b63ebd05c7a91b90f3c408834c653a2d30609e52bdab1b33"
+  ],
   "skills/website-to-hyperframes.md": [
    "3647372fc20cf2809cb4026f0c8ba4b115ff60168715ff44e8dc602b81b0b2be"
   ],
@@ -2467,6 +2503,10 @@
    "b5ff4c05545a3469594ef2f599f8ebdbf7b3f5cbd4872d77da7ad4078dce3961"
   ],
   "skills/xlsx-toolkit.md": [
+   "a1a8e172f1722acdaccb9cad4e3f6a7b97a43c098c54c884e3019ba2b7da1940"
+  ],
+  "skills/xlsx-toolkit/SKILL.md": [
+   "5d640fdcb45551c878596022172be7d26d93d2e980d843bba526ba30e67119e9",
    "a1a8e172f1722acdaccb9cad4e3f6a7b97a43c098c54c884e3019ba2b7da1940"
   ]
  }
