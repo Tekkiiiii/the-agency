@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -17,6 +18,10 @@ spec = importlib.util.spec_from_file_location("unsaid_check", os.path.join(ROOT,
 uc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(uc)
 HOOK = os.path.join(ROOT, "hooks", "unsaid-check.sh")
+sys.path.insert(0, os.path.join(ROOT, "hooks", "lib"))
+import find_bash  # noqa: E402  (never the Windows WSL launcher, C:\\Windows\\System32\\bash.exe)
+
+BASH = find_bash.find_bash()
 
 USER_TEXT = ("Q1: ok, design our system like a nesting doll, one screen, "
          "new relevant buttons appear as I enter deeper into a menu")
@@ -185,6 +190,7 @@ class CliReplayTests(unittest.TestCase):
         self.assertIn('UNSAID L1 [A:replace] "- Replaces the 7-tab layout."', r.stdout)
 
 
+@unittest.skipIf(BASH is None, "no bash on this machine")
 class HookTests(unittest.TestCase):
     def setUp(self):
         self.home = tempfile.mkdtemp(prefix="unsaid-home-")
@@ -197,7 +203,7 @@ class HookTests(unittest.TestCase):
         env = dict(os.environ, HOME=self.home, USERPROFILE=self.home)
         env.pop("AGENCY_HOME", None)
         env.pop("CLAUDE_CONFIG_DIR", None)
-        r = subprocess.run(["bash", HOOK], input=json.dumps(payload), capture_output=True, text=True, env=env)
+        r = subprocess.run([BASH, HOOK], input=json.dumps(payload), capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0, r.stderr)
         return json.loads(r.stdout)
 
@@ -231,7 +237,7 @@ class HookTests(unittest.TestCase):
         env = dict(os.environ, HOME=self.home)
         env.pop("AGENCY_HOME", None)
         env.pop("CLAUDE_CONFIG_DIR", None)
-        r = subprocess.run(["bash", HOOK], input="not json", capture_output=True, text=True, env=env)
+        r = subprocess.run([BASH, HOOK], input="not json", capture_output=True, text=True, env=env)
         self.assertEqual(json.loads(r.stdout), {})
 
     def test_minimal_profile_passes(self):
