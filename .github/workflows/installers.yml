@@ -344,7 +344,8 @@ jobs:
           node .github/scripts/check-privacy.js --self-test
           node .github/scripts/check-privacy.js
 
-      # Third-party Vietnamese marketing skills are not licensed for distribution:
+      # Skills not licensed for distribution (third-party Vietnamese marketing skills,
+      # and skills pulled 2026-10-26 because their licence is unknown):
       # no blocked skill directory and no upstream identifier in any tracked file.
       # The blocklist is .github/scripts/never-distribute.txt; the self-test plants both.
       - name: Assert no never-distribute skill or identifier is tracked
@@ -1029,7 +1030,8 @@ jobs:
           node .github/scripts/check-privacy.js --self-test
           node .github/scripts/check-privacy.js
 
-      # Third-party Vietnamese marketing skills are not licensed for distribution:
+      # Skills not licensed for distribution (third-party Vietnamese marketing skills,
+      # and skills pulled 2026-10-26 because their licence is unknown):
       # no blocked skill directory and no upstream identifier in any tracked file.
       # The blocklist is .github/scripts/never-distribute.txt; the self-test plants both.
       - name: Assert no never-distribute skill or identifier is tracked

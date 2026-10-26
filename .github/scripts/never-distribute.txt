@@ -1,9 +1,11 @@
 # never-distribute.txt - the blocklist for .github/scripts/check-never-distribute.js.
 #
-# Third-party Vietnamese marketing skills that are NOT licensed for distribution.
+# Skills that are NOT licensed for distribution: (1) third-party Vietnamese
+# marketing skills, (2) skills pulled 2026-10-26 because their origin and licence
+# are unknown (ruling: "pull them"; blocked until a licence is found).
 # They live in a maintainer's private skills dir and must never reach this repo:
 # not as skills/<dir>, not copied into docs, evals or fixtures, not credited by
-# their upstream identifiers. Ruling: "keep the vietnamese marketing skills off the
+# their upstream identifiers. Ruling (1): "keep the vietnamese marketing skills off the
 # listing, it's not for distribution".
 #
 # Paths into the repo that could pull them in (all copy from skills/ only):
@@ -41,3 +43,14 @@ dir | product-marketing-context
 id | minhnv0807
 id | ai-business-skills
 id | fullstack-mkt-skills
+
+# (2) Pulled 2026-10-26, licence unknown. dir rules only: the names also appear as
+# ordinary words (the ffmpeg binary) and in retired-manifest.json, so no id rules.
+dir | ffmpeg
+dir | xlsx-toolkit
+dir | n8n-automation
+dir | postgresql-schema
+dir | laravel-builder
+dir | webhook-security
+dir | admin-shell-foundation
+dir | subtitle-burner
