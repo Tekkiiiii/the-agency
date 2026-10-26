@@ -271,7 +271,7 @@ class MenuTests(unittest.TestCase):
 
 class RigorPlanOverlayTests(unittest.TestCase):
     """High-rigor (one-way-door) plan tasks must reach html-plan-style via the REAL overlay."""
-    TASK = "Write the plan for the one-way-door migration of the agent-memory Postgres schema (high rigor)"
+    TASK = "Write the plan for the one-way-door migration of the billing Postgres schema (high rigor)"
     REAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "skill-route", "overlay.json")
 
     def test_real_overlay_carries_rigor_triggers_and_hint(self):
