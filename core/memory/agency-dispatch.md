@@ -34,7 +34,7 @@ Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, code
 |---|---|
 | Research, analysis, investigation | `Explore`, `research-pd` |
 | Frontend, UI, design | general-purpose + /frontend, /next-best-practices, /tailwind (role file: agents-archive/generalist-2026-10-06/engineering/engineering-frontend-developer.md); UI: general-purpose + /ui-ux-pro-max, /impeccable (role file: agents-archive/generalist-2026-10-06/design/design-ui-designer.md) |
-| Backend, API, database | general-purpose + /backend, /plan-eng-review (role file: agents-archive/generalist-2026-10-06/engineering/engineering-backend-architect.md); data: + /backend (role file: agents-archive/generalist-2026-10-06/engineering/engineering-data-engineer.md) |
+| Backend, API, database | general-purpose + /backend, /plan-eng-review (role file: agents-archive/generalist-2026-10-06/engineering/engineering-backend-architect.md); data: same skills (role file: agents-archive/generalist-2026-10-06/engineering/engineering-data-engineer.md) |
 | Full-stack / feature work, Laravel/PHP stack | general-purpose + /backend, /review (role file: agents-archive/generalist-2026-10-06/engineering/engineering-senior-developer.md), domain-specific PD |
 | Full-stack / feature work, non-Laravel stack (Node.js, Python, bash, docs, etc.) | `coord` (or general-purpose + stack-appropriate skills), domain-specific PD — do NOT use the Laravel/PHP-scoped senior-developer role file on other stacks |
 | Content creation, writing, copy, editorial, scripts, docs, decks | general-purpose + /content-creator, /copywriting, then /content-polish; critics via /cc-loop (see `runbooks/content-request-protocol.md`) |
