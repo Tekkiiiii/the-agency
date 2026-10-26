@@ -26,7 +26,7 @@ Why: the Agent tool's `model` param overrides an agent file's frontmatter
      param that differs is stripped (model=null). No file / no model / inherit -> untouched.
   3. GENERAL-PURPOSE (general-purpose, claude, ""): model = map.categories[CAT] or map.default.
      An absent param counts as inherit (= the Opus parent), so it is rewritten too. Opt-in Opus
-     escalation via a `MODEL-ESCALATE: opus - <reason>` line, OFF by default (map.escalation).
+     escalation via a `MODEL-ESCALATE: opus - <reason>` line; code default OFF (ESC_DEFAULTS), a map enables it (map.escalation).
   4. EXEC CAP: at most map.exec_cap.max general-purpose/task-executor spawns running per ROOT PD,
      counted across the PD's whole tree (its coords, mini-coords and direct Execs; coords never count).
      Root = the nearest ancestor whose subagent_type ends "-pd" or is "pd-coordinator", found by walking

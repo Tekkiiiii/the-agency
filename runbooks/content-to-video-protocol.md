@@ -24,8 +24,8 @@ The script comes from the content pipeline (`content-request-protocol.md`). The 
 | "make a video", "produce a video", "edit a video", "create a YouTube video", "make a TikTok" | video track under a Coord (flow below) |
 | "animate", "motion graphics" | animation: /remotion-best-practices, /hyperframes |
 | "thumbnail" | thumbnail: /image-prompt-engineer, /social-render |
-| "transcribe video", "add captions" | captioning: /subtitle-burner, /ffmpeg |
-| "upload video to YouTube" | upload: /n8n-automation |
+| "transcribe video", "add captions" | captioning: /video-use, /hyperframes-media |
+| "upload video to YouTube" | upload: general-purpose, no skill (platform upload API or manual upload) |
 | "optimize video for SEO" | video SEO: /seo-aeo-best-practices |
 
 ---
@@ -53,20 +53,20 @@ VIDEO TRACK (Coord + Execs)
   │    └─ animation (/remotion-best-practices, /hyperframes, /motion-canvas; motion graphics, titles)
   │
   ├─ Post-production
-  │    ├─ video editor (/video-use, /ffmpeg; assembly, rough → fine cut)
+  │    ├─ video editor (/video-use; assembly, rough → fine cut)
   │    ├─ VFX and motion (/hyperframes, /html-video, /gsap; motion polish)
-  │    ├─ color + audio (/ffmpeg; color + audio master)
-  │    ├─ captioning (/subtitle-burner, /ffmpeg; SRT + VTT + burned-in)
+  │    ├─ color + audio (/video-use; color + audio master)
+  │    ├─ captioning (/video-use, /hyperframes-media; SRT + VTT + burned-in)
   │    └─ thumbnails (/image-prompt-engineer, /social-render; 3 variants)
   │
   ├─ QA gate (MANDATORY before distribution)
   │    ├─ critique-video agent (technical + content + brand)
-  │    └─ accessibility audit (/subtitle-burner, /design:accessibility-review; WCAG 2.1 AA)
+  │    └─ accessibility audit (/design:accessibility-review; WCAG 2.1 AA)
   │
   └─ Distribution
-       ├─ platform formatter (/ffmpeg, /social-render; per-platform video files)
+       ├─ platform formatter (/social-render; per-platform video files)
        ├─ video SEO (/seo-aeo-best-practices; title, desc, tags, chapters)
-       └─ upload automation (/n8n-automation; scheduled upload + confirmation)
+       └─ upload automation (no skill; platform upload API or manual upload, scheduled upload + confirmation)
 ```
 
 ---
@@ -99,7 +99,7 @@ Missing any required item -> the Coord rejects the handoff in its report before 
 ## Revision Protocol
 
 2 revision rounds are included after fine cut delivery.
-- **Round 1 (content revision):** messaging, pacing, script edits -> back to the video editor role (general-purpose + /video-use, /ffmpeg).
+- **Round 1 (content revision):** messaging, pacing, script edits -> back to the video editor role (general-purpose + /video-use).
 - **Round 2 (polish revision):** color, audio level, caption corrections -> back to the color/audio or captioning role.
 - **Out of scope:** script rewrites after production starts (back to the content pipeline); AI video regeneration after 3 iterations (escalate to the PD).
 

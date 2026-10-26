@@ -20,6 +20,7 @@ Seventeen hooks across four lifecycle events (SessionStart, PreToolUse, PostTool
 | `startup-sync.sh` | SessionStart | always | Auto-pull the agency root's config from GitHub on session open |
 | `check-settings-secrets.sh` | SessionStart | always | Warn if `settings.json` has plaintext tokens in MCP env blocks |
 | `check-session-state.sh` | SessionStart | always | Detect unclean prior exit (crash / Ctrl+C) |
+| `unsaid-check.sh` | PreToolUse | Write, Edit, Bash, SendMessage, Agent | Warn-only: flag brief lines that carry instructions the user never said |
 | `gate-guard.sh` | PreToolUse | Edit, Write | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
 | `spawn-gate.sh` | PreToolUse | Agent | Spawn gate: `general-purpose` + structural agent types pass; an unknown `subagent_type` (typo or specialist name) gets an `ask` pointing to `general-purpose` + skills |
 | `spawn-logger.sh` | PreToolUse | Agent | Log a `spawn_start` event for every agent spawn; injects a `[[CLAUDE_SPAWN_META]]` lineage marker into the child prompt |
@@ -54,6 +55,7 @@ These are the hooks it wires (the table is generated from `hooks/hooks.json`):
 
 | ID | Event | Matcher | Command | Purpose |
 |----|-------|---------|---------|---------|
+| `unsaid-check` | PreToolUse | `Write\|Edit\|Bash\|SendMessage\|Agent` | `bash {root}/hooks/unsaid-check.sh` | Warn-only: flag brief lines (PD briefs, revision/incoming files, SendMessage) that carry instructions the user never said |
 | `gate-guard` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/gate-guard.sh` | Gate writes to sensitive files (settings, agents, hooks, SKILL.md) |
 | `config-protection` | PreToolUse | `Edit\|Write` | `bash {root}/hooks/config-protection.sh` | Block modification of existing linter/formatter configs |
 | `secret-scanner` | PreToolUse | `Bash` | `bash {root}/hooks/secret-scanner.sh` | Scan shell commands for credential-looking patterns |
@@ -217,6 +219,14 @@ Scans `mcpServers.*.env` values in `settings.json` for JWT-shaped tokens (≥50-
 ### check-session-state.sh (SessionStart)
 
 Reads `~/.claude/session-state.json`. If `was_clean` is `false`, the prior session ended without hitting the Stop hook (crash or Ctrl+C). Prints a notice suggesting `/recall` or `/save-state`. Sets `was_clean = false` for the current session; the Stop hook sets it back to `true`.
+
+### unsaid-check.sh (PreToolUse: Write, Edit, Bash, SendMessage, Agent)
+
+Warn-only. Catches briefs (PD spawn prompts, files under `inter-spawn-tasks/revisions/` and `inter-spawn-tasks/incoming/`, `SendMessage` bodies) in which the main session added a removal, restriction or priority instruction the user never said. It reads the user's own turns from the session transcript and checks each brief line:
+- Rule A: a marker word (replace, remove, drop, delete, retire, hide, clear, instead of, no longer, never, priority, must not) whose stem appears nowhere in the user's text.
+- Rule C: a quote attributed to the user (`User verbatim:`, `the user said "..."`) that is not a substring of the user's text.
+
+Lines labelled `Assumption:`, `Question:`, `Source:`, `User verbatim:` or `Main-session addition:`, and `[STRUCK]` lines, are exempt. Output is `{}` or `{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"UNSAID-CHECK: ..."}}`; it never sets `permissionDecision`. Subagent calls (`agent_id` present), unrelated Bash commands, any internal error and the `minimal` profile all return `{}`. Each flagged call appends one summary line to `{agency-root}/logs/unsaid-check.jsonl`. Core logic and a replay/measurement CLI live in `scripts/unsaid_check.py`.
 
 ### gate-guard.sh (PreToolUse: Edit, Write)
 

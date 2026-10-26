@@ -17,6 +17,7 @@ Payload schema (all fields optional except slug, phase, next):
   "phase": "current phase or status",
   "next": "specific next action — one sentence",
   "blockers": ["..."],                # or []
+  "verdicts": [{"id": "D1", "question": "...", "rec": "...", "door": "one-way|two-way"}],  # optional; rendered first under Blockers as `  Verdict: id | question | rec: x | door: y` (question capped 120 chars; full text in session log)
   "decisions": ["..."],               # NEW decisions from this session (appended to decisions.md)
   "top_decisions": ["..."],           # locked decisions for next-session.md Decisions field
   "mid_flight": ["path — one-line desc"],
@@ -122,6 +123,46 @@ def fmt_list(items, empty="none"):
     return items if items else None if empty is None else ([] if not items else items) or []
 
 
+VERDICT_Q_CAP = 120
+NS_MAX_LINES = 15
+NS_FIXED_LINES = 9          # header, Phase, Next, Blockers, Decisions, Mid-flight, Delegated, Pending inbound, Last saved
+NS_MAX_BLOCKER_LINES = NS_MAX_LINES - NS_FIXED_LINES
+
+
+def _clean(v) -> str:
+    return re.sub(r"\s+", " ", str(v).replace("|", " ")).strip()
+
+
+def verdict_lines(p: dict, truncate: bool = True) -> list:
+    """Optional `verdicts` payload list -> ["Verdict: id | question | rec: x | door: y", ...].
+
+    Fields are sanitized (| and newlines -> space); question truncated to VERDICT_Q_CAP when `truncate`.
+    door not one-way|two-way -> unknown; empty rec omits its segment. Entries without id/question
+    are skipped with a stderr warning (never raises). Non-list `verdicts` = off (warning).
+    """
+    vs = p.get("verdicts")
+    if vs is None:
+        return []
+    if not isinstance(vs, list):
+        print("warning: payload 'verdicts' is not a list; ignored", file=sys.stderr)
+        return []
+    out = []
+    for i, v in enumerate(vs):
+        vid = _clean(v.get("id") or "") if isinstance(v, dict) else ""
+        q = _clean(v.get("question") or "") if isinstance(v, dict) else ""
+        if not vid or not q:
+            print(f"warning: verdicts[{i}] needs id and question; skipped", file=sys.stderr)
+            continue
+        if truncate and len(q) > VERDICT_Q_CAP:
+            q = q[:VERDICT_Q_CAP - 1].rstrip() + "…"
+        rec = _clean(v.get("rec") or "")
+        door = _clean(v.get("door") or "").lower()
+        if door not in ("one-way", "two-way"):
+            door = "unknown"
+        out.append(f"Verdict: {vid} | {q}" + (f" | rec: {rec}" if rec else "") + f" | door: {door}")
+    return out
+
+
 # ---------------------------------------------------------------- steps
 
 def write_session_log(project: pathlib.Path, p: dict, date_str: str):
@@ -138,9 +179,10 @@ def write_session_log(project: pathlib.Path, p: dict, date_str: str):
     if p.get("decisions"):
         lines.append("### Decisions")
         lines += [f"- {d}" for d in p["decisions"]]
-    if p.get("blockers"):
+    vlines = verdict_lines(p, truncate=False)
+    if vlines or p.get("blockers"):
         lines.append("### Blockers")
-        lines += [f"- {b}" for b in p["blockers"]]
+        lines += [f"- {b}" for b in vlines + list(p.get("blockers") or [])]
     path.parent.mkdir(parents=True, exist_ok=True)
     header = "" if path.exists() else f"# {p['slug']} — session log {date_str}\n"
     with open(path, "a") as f:
@@ -248,14 +290,24 @@ def write_next_session(project: pathlib.Path, p: dict, date_str: str, inbound: l
     mid = p.get("mid_flight") or []
     deleg = p.get("delegated") or []
     lines = [f"# {p['slug']}", f"Phase: {p['phase']}", f"Next: {p['next']}"]
-    lines.append("Blockers: " + (blockers[0] if len(blockers) == 1 else "none" if not blockers else ""))
-    lines += [f"  {b}" for b in (blockers if len(blockers) > 1 else [])]
+    vlines = verdict_lines(p)
+    items = vlines + list(blockers)
+    if not vlines:  # legacy shape, byte-identical for 0/1/2+ free-text blockers
+        lines.append("Blockers: " + (blockers[0] if len(blockers) == 1 else "none" if not blockers else ""))
+        indented = blockers if len(blockers) > 1 else []
+    else:  # verdicts live indented INSIDE Blockers (never column-0 keys for the digest parser)
+        lines.append("Blockers:")
+        indented = items
+    if len(indented) > NS_MAX_BLOCKER_LINES:  # keep the fixed tail; overflow pointer is true (session log has all)
+        keep = NS_MAX_BLOCKER_LINES - 1
+        indented = indented[:keep] + [f"(+{len(indented) - keep} more blockers — see session log)"]
+    lines += [f"  {b}" for b in indented]
     lines.append("Decisions: " + ("; ".join(tops[:2]) if tops else "see decisions.md"))
     lines.append("Mid-flight: " + ("; ".join(mid[:2]) if mid else "none"))
     lines.append("Delegated: " + ("; ".join(deleg) if deleg else "none"))
     lines.append("Pending inbound: " + ("; ".join(inbound) if inbound else "none"))
     lines.append(f"Last saved: {date_str}")
-    atomic_write(path, "\n".join(lines[:15]) + "\n")
+    atomic_write(path, "\n".join(lines[:NS_MAX_LINES]) + "\n")
 
 
 def update_decisions(project: pathlib.Path, p: dict, date_str: str):

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // check-never-distribute.js - fail the build when a git-tracked path or file
-// carries something on .github/scripts/never-distribute.txt (third-party
-// skills that are not licensed for distribution).
+// carries something on .github/scripts/never-distribute.txt (skills that are
+// not licensed for distribution: third-party skills, and skills whose licence
+// is unknown).
 //
 //   node .github/scripts/check-never-distribute.js            scan the repo this script lives in
 //   node .github/scripts/check-never-distribute.js <dir>      scan the git repo at <dir>

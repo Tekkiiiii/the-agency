@@ -41,7 +41,7 @@ node cli/bin/agency.js init
 ```
 
 This creates `~/.claude/` on your machine with:
-- `skills/` — skills library (235+ skills)
+- `skills/` — skills library (225+ skills)
 - `task-store.db` — SQLite task pipeline
 - `sessions/` — session logs
 - `lessons/` — lessons learned
@@ -253,7 +253,7 @@ edits always win over local installed edits. A flat `skills/<name>.md` file at
 the repo root is not valid and will fail `node scripts/check-flat-skills.js`
 (wired into `npm test` in `cli/`).
 
-Third-party Vietnamese marketing skills are never distributed: never copy them into `skills/` or import them from a maintainer's live skills dir. The blocklist is `.github/scripts/never-distribute.txt`, enforced by `node .github/scripts/check-never-distribute.js` in CI.
+Third-party Vietnamese marketing skills, and the 8 skills pulled on 2026-10-26 because their licence is unknown (see CHANGELOG), are never distributed: never copy them into `skills/` or import them from a maintainer's live skills dir. The blocklist is `.github/scripts/never-distribute.txt`, enforced by `node .github/scripts/check-never-distribute.js` in CI.
 
 ```bash
 agency skill install my-skill   # installs to ~/.claude/skills/my-skill/SKILL.md

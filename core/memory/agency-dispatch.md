@@ -34,8 +34,8 @@ Exceptions (Delegator NOT required): PD spawns via /pd-resume or /pd-spawn, code
 |---|---|
 | Research, analysis, investigation | `Explore`, `research-pd` |
 | Frontend, UI, design | general-purpose + /frontend, /next-best-practices, /tailwind; UI: general-purpose + /ui-ux-pro-max, /impeccable |
-| Backend, API, database | general-purpose + /backend, /postgresql-schema, /plan-eng-review; data: + /xlsx-toolkit |
-| Full-stack / feature work, Laravel/PHP stack | general-purpose + /laravel-builder, /review, domain-specific PD |
+| Backend, API, database | general-purpose + /backend, /plan-eng-review; data: same skills |
+| Full-stack / feature work, Laravel/PHP stack | general-purpose + /backend, /review, domain-specific PD |
 | Full-stack / feature work, non-Laravel stack (Node.js, Python, bash, docs, etc.) | `coord` (or general-purpose + stack-appropriate skills), domain-specific PD |
 | Content creation, writing, copy, editorial, scripts, docs, decks | general-purpose + /content-creator, /copywriting, then /content-polish; critics via /cc-loop (see `runbooks/content-request-protocol.md`) |
 | Security, compliance, legal | general-purpose + /security, /cso; compliance: + /legal-contract-review |

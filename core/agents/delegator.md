@@ -152,7 +152,7 @@ Any agent may spawn the Delegator as a service call:
 ```
 Agent({
   subagent_type: "general-purpose",
-  model: "sonnet",
+  model: "sonnet",   // general-purpose only: the Delegator agent file itself is haiku-pinned, so a NAMED subagent_type "Delegator" spawn must omit model
   description: "Delegator — route: {task-summary}",
   prompt: "Read ~/.agency/agents/specialized/delegator.md fully. That is your complete definition.\n\nRouting question: {full task description}\nCaller: {your agent name}\nContext: {relevant context}"
 })

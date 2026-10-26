@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
-import { parseJevGate, parseKnownSlugs, parsePin, respawnNotice, respawnSlug } from './register'
+import { isHiggsfieldWork, parseJevGate, parseKnownSlugs, parsePin, respawnNotice, respawnSlug } from './register'
 import { seenPosix } from './testpaths'
 
 type Run = { cmd: string; payload: Record<string, unknown> }
@@ -24,6 +24,7 @@ const MEDIUM_TERM = `# Medium-Term Memory
 // mediumTerm = null makes medium-term.md unreadable.
 function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: string | null = MEDIUM_TERM) {
   let prof = profile // setProfile flips the hook profile mid-test
+  const media = { present: true } // <agency root>/agents/general-purpose-media.md exists
   const fail = { effortApplied: false } // the ledger.py effort_applied run throws
   const runs: Run[] = []
   const logs: string[] = []
@@ -37,6 +38,10 @@ function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: s
   on('env.get', (_$, e) => ({ value: e.name === 'HOME' ? '/home/t' : e.name === 'AGENCY_SKILL_ROUTER' ? jev.router : undefined }))
   on('fs.read', (_$, e) => {
     // seenPosix: a real Windows host path.resolve()s '/home/t/x' to 'D:\\home\\t\\x' before the stub sees it.
+    if (seenPosix(e.path).endsWith('/agents/general-purpose-media.md')) {
+      if (!media.present) throw new Error('ENOENT')
+      return { value: '---\nname: general-purpose-media\n---\n' }
+    }
     if (!seenPosix(e.path).endsWith('/memory/medium-term.md')) return { value: prof }
     if (mediumTerm === null) throw new Error('ENOENT')
     return { value: mediumTerm }
@@ -73,7 +78,7 @@ function engine(on: Parameters<TestBody>[1], profile = 'standard', mediumTerm: s
     return { value: undefined }
   })
   on('turn.complete', (_$, e) => ({ text: e.answer }))
-  return { runs, logs, toasts, pin, jev, fail, setProfile: (p: string) => void (prof = p) }
+  return { runs, logs, toasts, pin, jev, media, fail, setProfile: (p: string) => void (prof = p) }
 }
 
 test('slug parsing', async () => {
@@ -636,4 +641,70 @@ test('effort relay: minimal at spawn never runs the pin, so no step is touched',
   await step($, 'a1', 'low')
   expect(pin.calls).toHaveLength(0)
   expect(seen).toEqual([{ agentId: 'a1', effort: 'low' }])
+})
+
+// ---- Higgsfield fence: a bare general-purpose spawn is fenced (agents/general-purpose.md); Higgsfield work is
+// rewritten to the unfenced agents/general-purpose-media.md AFTER the Jev gate, the pin and the ledger 'start' saw the original type.
+
+test('isHiggsfieldWork: Skills line, tool name or MEDIA-WORK marker; plain prompts are not', () => {
+  expect(isHiggsfieldWork('Skills: /higgsfield-functions, /x')).toBe(true)
+  expect(isHiggsfieldWork('task\nSkills: /plugin-authoring, /higgsfield-stickman-video\nmore')).toBe(true)
+  expect(isHiggsfieldWork('call mcp__claude_ai_Higgsfield__generate_image now')).toBe(true)
+  expect(isHiggsfieldWork('hello\nMEDIA-WORK: higgsfield\n')).toBe(true)
+  expect(isHiggsfieldWork('Skills: /frontend, /backend')).toBe(false)
+  expect(isHiggsfieldWork('discuss higgsfield pricing')).toBe(false)
+  expect(isHiggsfieldWork('')).toBe(false)
+})
+
+test('higgsfield fence: Higgsfield work on general-purpose is rewritten to general-purpose-media; pin and ledger saw the original', async ($, on) => {
+  const { runs, pin } = engine(on)
+  const seen: Array<string | undefined> = []
+  on('agent.spawn', (_$, e) => (seen.push(e.subagentType), { model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall({ prompt: 'Skills: /higgsfield-functions' }))
+  expect(seen).toEqual(['general-purpose-media'])
+  expect(pin.calls[0]).toMatchObject({ subagent_type: 'general-purpose' })
+  expect(runs[0]).toMatchObject({ cmd: 'start', payload: { subagent_type: 'general-purpose' } })
+  expect(runs[1]).toMatchObject({ cmd: 'launched', payload: { actual_type: 'general-purpose-media' } })
+})
+
+test('higgsfield fence: an empty type is rewritten too', async ($, on) => {
+  engine(on)
+  const seen: Array<string | undefined> = []
+  on('agent.spawn', (_$, e) => (seen.push(e.subagentType), { model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall({ subagentType: '', prompt: 'MEDIA-WORK: higgsfield' }))
+  expect(seen).toEqual(['general-purpose-media'])
+})
+
+test('higgsfield fence: no rewrite for plain prompts, other types, or an absent media file (fail open)', async ($, on) => {
+  const { media } = engine(on)
+  const seen: Array<string | undefined> = []
+  on('agent.spawn', (_$, e) => (seen.push(e.subagentType), { model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall({ prompt: 'Skills: /frontend' }))
+  await $.agent.spawn(spawnCall({ subagentType: 'coord', prompt: 'Skills: /higgsfield-functions' }))
+  await $.agent.spawn(spawnCall({ subagentType: 'claude', prompt: 'Skills: /higgsfield-functions' }))
+  media.present = false
+  await $.agent.spawn(spawnCall({ prompt: 'Skills: /higgsfield-functions' }))
+  expect(seen).toEqual(['general-purpose', 'coord', 'claude', 'general-purpose'])
+})
+
+test('higgsfield fence: hook profile minimal never rewrites', async ($, on) => {
+  const { setProfile } = engine(on)
+  setProfile('minimal')
+  const seen: Array<string | undefined> = []
+  on('agent.spawn', (_$, e) => (seen.push(e.subagentType), { model: 'm', agentId: 'a1' }))
+  await $.agent.spawn(spawnCall({ prompt: 'Skills: /higgsfield-functions' }))
+  expect(seen).toEqual(['general-purpose'])
+})
+
+test('higgsfield fence: the pending effort key uses the ACTUAL type (turn.step fallback lists the actual type)', async ($, on) => {
+  const { pin } = engine(on)
+  pin.reply = '{"action":"pass","model":null,"effort":"high","effort_category":"coding_complex"}'
+  const seen = bottomStep(on)
+  on('agent.list', () => ({ value: [{ id: 'a1', type: 'general-purpose-media', description: 'd' }] }) as never)
+  on('agent.spawn', async () => {
+    await step($, 'a1', 'low') // inside the spawn: the record is not stored yet, only the pending map can answer
+    return { model: 'm', agentId: 'a1' }
+  })
+  await $.agent.spawn(spawnCall({ prompt: 'Skills: /higgsfield-functions', description: 'd' }))
+  expect(seen).toEqual([{ agentId: 'a1', effort: 'high' }])
 })

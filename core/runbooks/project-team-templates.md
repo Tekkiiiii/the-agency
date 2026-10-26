@@ -20,8 +20,8 @@ Members (role label -> general-purpose + skills):
   - critique         critique-* agents via /cc-loop
   - project-mgmt     /persona-project-manager, /project-status
   - testing          /qa-only, /benchmark
-  - video            /video-use, /ffmpeg
-  - specialized      /xlsx-toolkit, /legal-contract-review
+  - video            /video-use
+  - specialized      /legal-contract-review
   - council-chair (me)
 ```
 
@@ -67,7 +67,7 @@ Members:
 
 **Typical members** (general-purpose + skills, not named agents):
 - Content / SEO / social: `/content-creator`, `/copywriting`, `/seo-aeo-best-practices`
-- Analytics: `/chart-viz`, `/xlsx-toolkit`
+- Analytics: `/chart-viz`
 
 Strategy, growth and sales work has no dedicated team (marketing, sales, paid-media,
 product and operations are archived); run it as `general-purpose` + skills (for
@@ -89,8 +89,8 @@ Build from the role roster (each row = `general-purpose` + skills):
 | Critiques | named `critique-*` agents (via `/cc-loop` or spawned directly) |
 | Project Management | `/persona-project-manager`, `/project-status` |
 | Testing | `/qa-only`, `/benchmark`, `/webapp-testing` |
-| Video | `/video-use`, `/ffmpeg`, `/hyperframes` |
-| Specialized | `/xlsx-toolkit`, `/legal-contract-review`, `/security` |
+| Video | `/video-use`, `/hyperframes` |
+| Specialized | `/legal-contract-review`, `/security` |
 
 ---
 

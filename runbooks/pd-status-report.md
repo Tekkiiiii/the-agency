@@ -35,3 +35,17 @@ Full Log: {project}/memory/agents/pd-status-live.md
 ```
 
 If no active Coords are running (pre-spawn or post-stop), report that clearly. Do not fabricate states — only report what is in the scratch files.
+
+---
+
+# [pd-coordinator.md] Status Log format — `pd-status-live.md`
+_(example lines moved from pd-coordinator.md 2026-10-23)_
+
+Append-only, one line per Coord STATUS_UPDATE, `{HH:MM} | Coord-{l3-name}-{pun} | {child-agent or "self"} | {state} {health-if-known}`:
+```
+14:32 | Coord-auth-Gatekeeper | Exec-login-Keymaster | IN_PROGRESS
+14:35 | Coord-auth-Gatekeeper | Exec-login-Keymaster | QA_GATE 81
+14:40 | Coord-auth-Gatekeeper | Exec-login-Keymaster | DONE
+14:40 | Coord-auth-Gatekeeper | self | DONE 84
+```
+Main session reads it on demand (zero context cost). No SendMessage to root for status.

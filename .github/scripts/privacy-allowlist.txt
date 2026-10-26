@@ -11,7 +11,6 @@
 userpath | cli/lib/hooks-merge.js | John Smith | code comment: example Windows path with a space in the user name
 email | skills/browse/SKILL.md | user@test\.com | generic form-fill example
 email | skills/feedback-pipeline/SKILL.md | x@y\.com | generic placeholder address
-email | skills/postgresql-schema/SKILL.md | password@ep-xxx | masked connection-string template
 
 # Real upstream author names (legitimate credit).
 term | CREDITS.md | ^\| career-ops \| | upstream author credit for an adapted MIT project

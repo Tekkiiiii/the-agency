@@ -125,12 +125,12 @@ decisions that could contradict past decisions or multi-step research. Skip when
 purely mechanical, or next-session.md already covers the context. Protocol: section "Project
 knowledge" above.
 
-### codebase-search (`{agency-root}/agents/specialized/codebase-search.md`, sonnet)
+### codebase-search (`{agency-root}/agents/specialized/codebase-search.md`, haiku-pinned; frontmatter model decides, pass no `model`)
 
 Spawn INSTEAD of running `find`, `grep`, `rg`, `ls -r` across the project.
 
 ```
-Agent({ subagent_type: "codebase-search", model: "sonnet",
+Agent({ subagent_type: "codebase-search",
   description: "codebase-search — {what}",
   prompt: "Find {what} in {project_path}. Context: {why}" })
 ```

@@ -7,7 +7,7 @@ spawn-completion.sh, artifact-verify.sh). Field names, field order and value for
 
   ledger.py start     stdin {tool_use_id, subagent_type, description, prompt, model,
                              parent_spawn_id, parent_agent}  -> prints spawn_id
-  ledger.py launched  stdin {tool_use_id, agent_id, resolved_model}
+  ledger.py launched  stdin {tool_use_id, agent_id, resolved_model, [actual_type: set only when the Higgsfield fence swapped the type]}
   ledger.py effort_applied
                       stdin {tool_use_id, agent_id, seen, applied, category}: the first time the turn.step relay applied the
                       effort policy to a subagent (seen = effort its request carried or null, applied = what was sent)
@@ -430,6 +430,7 @@ def launched(d):
         "tool_use_id": tool_use_id,
         "agent_id": d.get("agent_id", ""),
         "resolved_model": d.get("resolved_model", ""),
+        **({"actual_type": d["actual_type"]} if d.get("actual_type") else {}),  # Higgsfield fence swap only; additive
         "ts": now_iso(),
     })
 

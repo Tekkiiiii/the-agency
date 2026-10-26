@@ -3,7 +3,10 @@ export type Spawn = {
   spawnId: string
   /** The Agent call that started it. */
   toolUseId: string
+  /** The type the caller asked for (what the pin, the cap and the ledger row key on). */
   type: string
+  /** The type actually spawned when the Higgsfield fence swapped it (general-purpose-media); absent otherwise. */
+  actualType?: string
   description: string
   /** The loop that spawned it; null for the main loop. */
   parentAgentId: string | null

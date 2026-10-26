@@ -181,13 +181,13 @@ PASSTHROUGH_MODEL = "sonnet"
 PASSTHROUGH_TOOLS = "edit"
 MODES = ("two-stage", "flat")
 ROUTERS = ("jev", "haiku", "grep")
-MODEL_TIERS = ("haiku", "sonnet", "opus")
+# Advisory tiers are haiku|sonnet only; Opus is reached only via explicit paths (PD agent files, model-pin escalation).
+MODEL_TIERS = ("haiku", "sonnet")
 TOOL_PROFILES = ("read-only", "edit", "web", "full")
 
 MODEL_CRITERIA = {
     "haiku": "Trivial or mechanical task: tiny edit, formatting, rename, simple lookup, file move, short summary.",
     "sonnet": "Normal implementation, writing, analysis or research task with a clear spec and bounded scope.",
-    "opus": "Hard reasoning: architecture, ambiguous multi-step design, deep debugging, high-stakes review or strategy.",
 }
 TOOLS_CRITERIA = {
     "read-only": "Only reads, searches and analyzes; writes or changes nothing.",
