@@ -233,7 +233,7 @@ class MenuTests(unittest.TestCase):
                 sr.route("anything", log=False)
 
     def test_also_domains_offered_in_stage_two(self):
-        with RouterEnv(winners={"domain": "writing-en", "skill": "humanizer", "model": "opus",
+        with RouterEnv(winners={"domain": "writing-en", "skill": "humanizer", "model": "sonnet",
                                 "tools": "web"}) as e:
             ov = read_json(e.overlay)
             ov["skills"]["gws-gmail-send"]["also_domains"] = ["writing-en", "google-workspace"]  # own domain ignored
@@ -267,6 +267,42 @@ class MenuTests(unittest.TestCase):
             self.assertEqual((rc, out, err), (0, "", ""))
             self.assertEqual(e.shadows(), [])
             self.assertEqual(e.stub.count, 0)
+
+
+class RigorPlanOverlayTests(unittest.TestCase):
+    """High-rigor (one-way-door) plan tasks must reach html-plan-style via the REAL overlay."""
+    TASK = "Write the plan for the one-way-door migration of the agent-memory Postgres schema (high rigor)"
+    REAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "skill-route", "overlay.json")
+
+    def test_real_overlay_carries_rigor_triggers_and_hint(self):
+        entry = read_json(self.REAL)["skills"]["html-plan-style"]
+        for phrase in ("one-way door", "one-way-door plan", "high rigor plan"):
+            self.assertIn(phrase, entry["triggers"])
+        self.assertIn("plan-rigor=high", entry["hint"][:sr.TWO_STAGE_HINT_CHARS])  # Jev sees only the first N hint chars
+        self.assertIn("planning-strategy-review", entry["also_domains"])  # plan tasks land in that domain at stage 1
+        self.assertLessEqual(len(entry["triggers"]), 19)
+        # no other skill may own the same phrases
+        for name, sk in read_json(self.REAL)["skills"].items():
+            if name != "html-plan-style":
+                self.assertFalse({"one-way door", "one-way-door plan", "high rigor plan"} & set(sk.get("triggers", [])), name)
+
+    def test_high_rigor_plan_task_routes_to_html_plan_style(self):
+        with RouterEnv(winners={"domain": "writing-en", "skill": "humanizer"}) as e:
+            with open(self.REAL) as f:
+                real = json.load(f)
+            ov = read_json(e.overlay)
+            ov["skills"]["humanizer"] = {"domain": "writing-en", "triggers": []}
+            ov["skills"]["content-polish"] = {"domain": "writing-en", "triggers": []}
+            ov["skills"]["frontend"]["triggers"] = []
+            # offer the real html-plan-style entry (hint + triggers) in the fixture menu and win it
+            hp = real["skills"]["html-plan-style"]
+            ov["skills"]["frontend"] = {"domain": "writing-en", "hint": hp["hint"], "triggers": hp["triggers"]}
+            write_json(e.overlay, ov)
+            sr.load_menu(rebuild=True)
+            res = sr.route(self.TASK, log=False)
+            q2 = req_questions(e.stub, 1)
+            offered = "".join(q2["skill"]["criteria"].values())
+            self.assertIn("plan-rigor=high", offered)
 
 
 class PreRuleTests(unittest.TestCase):
@@ -344,11 +380,11 @@ class PreRuleTests(unittest.TestCase):
 
 class TwoStageTests(unittest.TestCase):
     def test_request_shapes_and_contract(self):
-        with RouterEnv(winners={"domain": "writing-en", "skill": "humanizer", "model": "opus",
+        with RouterEnv(winners={"domain": "writing-en", "skill": "humanizer", "model": "sonnet",
                                 "tools": "web"}) as e:
             res = sr.route("make this less robotic", log=False)
             self.assertEqual(list(res.keys()), CONTRACT_KEYS)
-            self.assertEqual((res["skills"], res["model"], res["tools"]), (["humanizer"], "opus", "web"))
+            self.assertEqual((res["skills"], res["model"], res["tools"]), (["humanizer"], "sonnet", "web"))
             self.assertEqual((res["domain"], res["router"], res["gate"]), ("writing-en", "jev", "pass"))
             # raw stage-2 probabilities (5 options incl. `none`: rest = 0.2/4); `none` is never a score key
             self.assertEqual(res["scores"], {"humanizer": 0.8, "content-polish": 0.05, "proofreader": 0.05})
@@ -365,7 +401,9 @@ class TwoStageTests(unittest.TestCase):
             self.assertEqual(sorted(q2["skill"]["criteria"]),
                              ["content-polish", "humanizer", "none", "proofreader", "simple-english"])
             self.assertEqual(list(q2["skill"]["criteria"])[-1], "none")  # last: stubs/LLMs default to first
-            self.assertEqual(sorted(q2["model"]["criteria"]), ["haiku", "opus", "sonnet"])
+            self.assertEqual(sorted(q2["model"]["criteria"]), ["haiku", "sonnet"])
+            self.assertEqual(sr.MODEL_TIERS, ("haiku", "sonnet"))
+            self.assertNotIn("opus", json.dumps(q2["model"]).lower())
             self.assertEqual(sorted(q2["tools"]["criteria"]), ["edit", "full", "read-only", "web"])
             self.assertIn("Hint: use for AI-sounding prose", q2["skill"]["criteria"]["humanizer"])
             # usage log: purpose skill-route, not shadow

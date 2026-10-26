@@ -42,6 +42,7 @@ Stdlib only. Python 3.9 compatible.
 """
 import argparse
 import datetime
+import importlib.util
 import json
 import os
 import re
@@ -377,24 +378,43 @@ def append_spawn_record(rec, path=None):
         return ["error: %s: %s" % (type(e).__name__, e)]
 
 
+_SPAWN_PROJECT_MOD = None
+
+
+def _spawn_project_mod():
+    """hooks/lib/spawn_project.py: the ONE medium-term.md reader / project resolver (path-boundary, Windows drive paths in any
+    spelling, only a LEADING ~ expands). Next to this file's repo first (<repo>/hooks/lib; an installed root has the same
+    layout), then the agency root's hooks/lib."""
+    global _SPAWN_PROJECT_MOD
+    if _SPAWN_PROJECT_MOD is None:
+        here = os.path.dirname(os.path.abspath(__file__))
+        for lib in (os.path.join(os.path.dirname(here), "hooks", "lib"),
+                    os.path.join(agency_root(os.path.expanduser("~")), "hooks", "lib")):
+            path = os.path.join(lib, "spawn_project.py")
+            if os.path.isfile(path):
+                spec = importlib.util.spec_from_file_location("spawn_project", path)
+                _SPAWN_PROJECT_MOD = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(_SPAWN_PROJECT_MOD)
+                break
+        else:
+            raise ImportError("hooks/lib/spawn_project.py not found")
+    return _SPAWN_PROJECT_MOD
+
+
 def default_spawn_logs():
-    """{root}/logs/spawns.jsonl plus every project memory/spawns.jsonl in medium-term.md (backtick path column)."""
+    """{root}/logs/spawns.jsonl plus every project memory/spawns.jsonl in medium-term.md (backtick path column), in table
+    order, deduped, missing files kept. The table is read by hooks/lib/spawn_project (Windows backslash / drive rows, no
+    ad-hoc "/"-only parsing)."""
     home = os.path.expanduser("~")
     root = agency_root(home)
     logs = [os.path.join(root, "logs", "spawns.jsonl")]
-    medium_term = os.path.join(root, "memory", "medium-term.md")
     try:
-        with open(medium_term, encoding="utf-8") as f:
-            for line in f:
-                m = re.match(r"^\|[^|]+\|\s*`([^`]+)`", line)
-                if not m:
-                    continue
-                raw = m.group(1).replace("~", home).rstrip("/")
-                root = (raw[:-7] if raw.endswith("/memory") else raw).rstrip("/")
-                cand = os.path.join(root, "memory", "spawns.jsonl") if root else ""
-                if cand and cand not in logs:
-                    logs.append(cand)
-    except OSError:
+        sp = _spawn_project_mod()
+        for _slug, proj_root in sp.project_rows(home, path=os.path.join(root, "memory", "medium-term.md")):
+            cand = os.path.join(sp._native(proj_root), "memory", "spawns.jsonl")
+            if cand not in logs:
+                logs.append(cand)
+    except (OSError, ImportError):
         pass
     return logs
 

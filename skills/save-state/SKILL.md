@@ -36,6 +36,7 @@ your Session Delta from Step 9.5 is exactly this content).
   "phase": "current phase or status",
   "next": "specific next action — one sentence, concrete target (file, task ID, action, URL, or agent). Vague entries like 'continue work' are INVALID.",
   "blockers": ["..."],
+  "verdicts": [{"id": "D1", "question": "...", "rec": "...", "door": "one-way"}],
   "decisions": ["new decisions locked this session"],
   "top_decisions": ["top 1-2 locked decisions that affect the Next action"],
   "mid_flight": ["path — one-line description"],
@@ -46,6 +47,8 @@ your Session Delta from Step 9.5 is exactly this content).
   "interspawn_active": ["active inter-spawn tasks for index.md Active Summary"]
 }
 ```
+
+`verdicts` is optional: one entry per decision waiting on the user (`door` = `one-way` or `two-way`; `rec` = your recommendation, may be omitted). Each renders under `Blockers:` in next-session.md as `  Verdict: <id> | <question> | rec: <rec> | door: <door>` (verdicts first, then free-text blockers; question cut at 120 chars; at most 6 blocker lines, overflow becomes a `(+N more blockers — see session log)` pointer). The session log keeps every verdict untruncated. Entries without `id` or `question` are skipped with a stderr warning. Free-text `blockers` still work unchanged.
 
 2. Run:
 

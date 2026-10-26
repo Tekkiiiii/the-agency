@@ -3,6 +3,13 @@
   "version": 1,
   "hooks": [
     {
+      "id": "unsaid-check",
+      "event": "PreToolUse",
+      "matcher": "Write|Edit|Bash|SendMessage|Agent",
+      "command": "bash {root}/hooks/unsaid-check.sh",
+      "purpose": "Warn-only: flag brief lines (PD briefs, revision/incoming files, SendMessage) that carry instructions the user never said"
+    },
+    {
       "id": "gate-guard",
       "event": "PreToolUse",
       "matcher": "Edit|Write",

@@ -10,3 +10,4 @@ description: "Use when the operator names a project or a {slug}-pd (\"work on <p
 4. Act directly only when the message is addressed to you ("you do this", "not the PD") or is about a project with no PD.
 5. **RESPAWN_REQUEST {slug}** from a background PD → in the same turn run `/pd-resume {slug}`, then `rm {agency-root}/state/respawn-queue/{slug}`. Durable flag and drain points: `{agency-root}/runbooks/respawn-contract.md`.
 6. A `PENDING PD RESPAWNS` block at session start is handled before anything else.
+7. Briefs to a PD (revision/incoming files, SendMessage, PD spawn prompts): only the user's words are instructions; label anything you add `Assumption:` or `Question:` for the user. hooks/unsaid-check.sh warns on unlabelled removal/restriction lines.

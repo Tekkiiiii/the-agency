@@ -54,42 +54,24 @@ def agency_root(home):
             root = m.group(1).upper() + ':' + (m.group(2) or '/')
     return root
 
-def resolve_log_file(home, root):
-    # root = agency root (AGENCY_HOME-aware). home stays $HOME because it is used
-    # separately below to expand a literal '~' inside medium-term.md project paths.
+def resolve_log_file(home, root, lib_arg):
     # Testability override: honor a pre-exported SPAWN_LOG_FILE (points at a
-    # /tmp copy in tests) instead of resolving from medium-term.md.
+    # /tmp copy in tests). Otherwise hooks/lib/spawn_project, the ONE resolver
+    # (path-boundary prefix match, Windows drive rows, only a leading ~ expands;
+    # it resolves the agency root itself). lib_arg = this script's directory.
     override = os.environ.get('SPAWN_LOG_FILE', '')
     if override:
         return override
 
-    fallback = os.path.join(root, 'logs/spawns.jsonl')
-    medium_term = os.path.join(root, 'memory/medium-term.md')
-    cwd = os.environ.get('CLAUDE_PROJECT_DIR', os.getcwd())
-    if not os.path.exists(medium_term):
-        return fallback
-    best_len = 0
-    best_path = ''
     try:
-        with open(medium_term) as f:
-            for line in f:
-                m = re.match(r'^\|[^|]+\|\s*\`([^\`]+)\`', line)
-                if not m:
-                    continue
-                raw = m.group(1).replace('~', home).rstrip('/')
-                project_root = raw[:-7] if raw.endswith('/memory') else raw
-                project_root = project_root.rstrip('/')
-                if project_root and cwd.startswith(project_root):
-                    if len(project_root) > best_len:
-                        best_len = len(project_root)
-                        best_path = project_root
+        for lib in (lib_arg, os.path.join(root, 'hooks', 'lib')):
+            if lib and os.path.isfile(os.path.join(lib, 'spawn_project.py')):
+                sys.path.insert(0, lib)
+                import spawn_project
+                return spawn_project.resolve_log_file(home=home)
     except Exception:
         pass
-    if best_path:
-        log_dir = os.path.join(best_path, 'memory')
-        os.makedirs(log_dir, exist_ok=True)
-        return os.path.join(log_dir, 'spawns.jsonl')
-    return fallback
+    return os.path.join(root, 'logs/spawns.jsonl')
 
 try:
     home = os.path.expanduser('~')
@@ -101,7 +83,7 @@ try:
         sys.exit(0)
 
     root = agency_root(home)
-    log_file = resolve_log_file(home, root)
+    log_file = resolve_log_file(home, root, sys.argv[4] if len(sys.argv) > 4 else '')
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     ts = datetime.now().astimezone().isoformat(timespec='seconds')
 
@@ -121,6 +103,6 @@ try:
         f.write(json.dumps(entry) + '\n')
 except Exception:
     pass
-" "$SPAWN_ID" "$OUTCOME" "$SUMMARY" 2>/dev/null || true
+" "$SPAWN_ID" "$OUTCOME" "$SUMMARY" "$(cd "$(dirname "$0")" && pwd)" 2>/dev/null || true
 
 exit 0

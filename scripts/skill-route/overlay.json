@@ -754,12 +754,18 @@
   },
   "html-plan-style": {
    "domain": "decks-docs-reports-charts",
-   "hint": "Use for ANY HTML page made for human review: plans, reports, ADRs, digests, sampler or comparison pages; not for slide decks (marp, strategic-deck).",
+   "hint": "Use for ANY HTML page for human review (plans, reports, ADRs, digests); one-way-door/high-rigor plans: plan-rigor=high, add risk + rollback sections. Not slide decks (marp, strategic-deck).",
    "also_domains": [
-    "frontend-ui"
+    "frontend-ui",
+    "planning-strategy-review"
    ],
    "triggers": [
     "create a plan",
+    "one-way door",
+    "one-way-door plan",
+    "high rigor plan",
+    "irreversible change plan",
+    "plan a migration",
     "write a plan",
     "make an html plan",
     "write an html plan",
