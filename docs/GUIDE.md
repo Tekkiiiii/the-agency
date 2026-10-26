@@ -25,7 +25,7 @@ cd ~/the-agency
 
 ```
 ~/.claude/
-├── skills/              # 235+ skills as {name}/SKILL.md directories
+├── skills/              # 225+ skills as {name}/SKILL.md directories
 ├── agents/              # structural agents: PDs, Coords, critics, council seats, service agents
 ├── hooks/               # lifecycle hook scripts (security, cost tracking, crash detection)
 ├── mods/                # Claude Code mods, wired into settings.json (Claude Code 2.1.287+)
@@ -281,7 +281,7 @@ Each PD runs in the background and reports to your session. A project whose only
 ### What You Now Have
 
 - **`~/.claude/projects/`** — project state that persists across sessions
-- **`~/.claude/skills/`** — 235+ skills ready to invoke
+- **`~/.claude/skills/`** — 225+ skills ready to invoke
 - **`~/.claude/agents/`** — the structural agents (PDs, Coords, critics, council seats, service agents)
 - **`~/.claude/task-store.db`** — SQLite task pipeline with gate tracking
 
