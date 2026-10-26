@@ -108,7 +108,7 @@ These eight skills came into the library with an MCP platform/server I installed
 
 | Skill | Author | Licence | Ships in |
 |---|---|---|---|
-| self-healing | The author of The Agency (original work); inspired by Hermes Agent, see Ideas and patterns above | MIT, as The Agency | `skills/self-healing` |
+| self-healing | Inspired by Hermes Agent, see Ideas and patterns above | MIT, as The Agency | `skills/self-healing` |
 
 ### Agent catalog heritage
 
