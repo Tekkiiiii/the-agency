@@ -9,6 +9,8 @@ color: "#8B5CF6"
 skills:
   - save-state
   - recall
+experimental:
+  cacheTtl: 1h
 ---
 
 # Project Director (PD) — Pattern Template

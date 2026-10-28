@@ -19,6 +19,8 @@ skills:
   - task-handoff
   - wrap
   - unwrap
+experimental:
+  cacheTtl: 1h
 ---
 
 # PD Coordinator Agent — Tiered Architecture

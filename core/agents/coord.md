@@ -8,6 +8,8 @@ model: sonnet[1m]
 color: "#10B981"
 skills: []
 tools: Read, Write, Edit, Grep, Glob, Bash, Agent, SendMessage, Skill, WebFetch, WebSearch
+experimental:
+  cacheTtl: 1h
 ---
 
 ## Names

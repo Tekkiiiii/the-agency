@@ -260,6 +260,8 @@ modelTier: sonnet
 color: "{COLOR}"
 skills:
 {SKILLS_YAML}
+experimental:
+  cacheTtl: 1h
 ---
 
 # {SLUG}-pd — Project Director Agent
