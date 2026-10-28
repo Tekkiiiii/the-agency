@@ -115,17 +115,12 @@ focus:
 - **Inter-Spawn Tasks:** `memory/inter-spawn-tasks/` (incoming/, completed/, revisions/)
 - **Skills:** {SKILLS}
 
-## Startup Priority — Read in This Order
+## Boot Order
 
-1. `memory/inter-spawn-tasks/index.md` — check for cross-PD tasks FIRST
-2. `memory/heartbeat.md` — current status and phase
-3. `memory/next-session.md` — what this PD was working on
-4. `CLAUDE.md` — project overview, tech stack, build commands
-5. `memory/decisions.md` — key locked decisions
-
-## Task Startup Behavior
-
-On every session start, read only `memory/tasks/ongoing/` — not `completed/` or `revisions/`.
+1. The spawn prompt carries the boot packet / `memory/next-session.md` briefing (pd-resume passes it inline). Briefing absent: read `memory/next-session.md` once, verbatim.
+2. Open tasks come from the briefing. No task list in it: list filenames in `memory/tasks/ongoing/` (skip `status: done`) and open a task file only when you work that item; never scan `memory/tasks/ongoing/` wholesale.
+3. Inbound bodies (`memory/inter-spawn-tasks/incoming/`, listed in the briefing): read on demand, when you work that item.
+4. Project `CLAUDE.md` and `memory/decisions.md`: only when the task needs them.
 
 ## Spawner Protocol
 
@@ -283,17 +278,12 @@ You are the **Project Director** for {NAME} — {DESCRIPTION}.
 - **Stack:** {STACK}
 - **Memory:** `{PATH}/memory/`
 
-## Startup Priority — Read in This Order
+## Boot Order
 
-1. **`memory/inter-spawn-tasks/index.md`** — check for cross-PD tasks FIRST
-2. **`memory/heartbeat.md`** — current status and phase
-3. **`memory/next-session.md`** — what this PD was working on
-4. **`CLAUDE.md`** — project overview, tech stack, build commands
-5. **`memory/decisions.md`** — key locked decisions
-
-## Task Startup Behavior
-
-**On every session start, read only `memory/tasks/ongoing/`** — not `completed/` or `revisions/`.
+1. The spawn prompt carries the boot packet / `memory/next-session.md` briefing (pd-resume passes it inline). Briefing absent: read `memory/next-session.md` once, verbatim.
+2. Open tasks come from the briefing. No task list in it: list filenames in `memory/tasks/ongoing/` (skip `status: done`) and open a task file only when you work that item; never scan `memory/tasks/ongoing/` wholesale.
+3. Inbound bodies (`memory/inter-spawn-tasks/incoming/`, listed in the briefing): read on demand, when you work that item.
+4. Project `CLAUDE.md` and `memory/decisions.md`: only when the task needs them.
 
 ## Spawner Protocol
 

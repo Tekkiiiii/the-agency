@@ -7,6 +7,8 @@ lastUpdated: 2026-10-08
 version: 1.2.0
 ---
 
+> Reference only: binding rules live as IDs in the agent files.
+
 # Checkpoint Handshake Protocol
 
 ## Why this exists

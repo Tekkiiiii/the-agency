@@ -20,16 +20,9 @@ lastUpdated: 2026-10-08
 
 **Target context cost: ~600 tokens max**
 
-**Step 1:** Read briefing from spawn prompt. pd-resume passes next-session.md content
-inline -- no file reads needed. If spawned manually without a briefing, read:
-```
-{project}/memory/next-session.md
-```
+**Step 1:** The boot packet / next-session.md briefing arrives in the spawn prompt (pd-resume passes it inline; no file reads needed). Briefing absent (manual spawn): read `{project}/memory/next-session.md` once, verbatim.
 
-**Step 2:** Read active tasks:
-```
-{project}/memory/tasks/ongoing/
-```
+**Step 2:** Open tasks come from the briefing. If it carries no task list, list the filenames in `{project}/memory/tasks/ongoing/` (open items only; skip files whose frontmatter has `status: done`; `completed/` and `revisions/` stay unread) and open a task file only when you work that item. Never scan `memory/tasks/ongoing/` wholesale. Inbound bodies (`memory/inter-spawn-tasks/incoming/`, listed in the briefing): read on demand, when you work that item. Project `CLAUDE.md` and `memory/decisions.md`: only when the task needs them.
 
 **Step 2b:** Read structural contract (if it exists):
 ```
@@ -53,7 +46,7 @@ hours of cross-L3 conflict resolution later.
 ```
 python3 {agency-root}/scripts/skill-route.py --role exec "<task>"   # --role lead for Coord spawns
 ```
-Router on is binding on every spawn (rules JB1-JB9, runbooks/service-lookups.md §Routing): the prompt carries `Skills: /a, /b` + `Jev[r=<route_id>]: accept|modify|reject — <reason>`. gate=pass: Jev's skills are the default; `low_confidence` or zero skills: explicit verdict + reason, you pick alternatives yourself. A `*-pd` spawn (`{slug}-pd`) is exempt: the Jev line is optional there and ignored.
+Router on is binding on every spawn: R-JEV: see {agency-root}/agents/project-management/coord.md (Rules). A `*-pd` spawn (`{slug}-pd`) is exempt: the Jev line is optional there and ignored.
 
 **Step 3:** Delegate per Agent Dispatch Priority below. Spawn `general-purpose` (model sonnet) with 1-3 named skills in the prompt (`Skills: /x, /y`). Only structural agents spawn by name (see Agent Dispatch Priority step 2 below).
 
@@ -73,7 +66,7 @@ Router on is binding on every spawn (rules JB1-JB9, runbooks/service-lookups.md 
    NO  → step 3
 
 3. Is this a workflow task (planning, verification, QA, retro)?
-   YES → use a skill from ~/.claude/skills/INDEX.md
+   YES → use a skill from {agency-root}/skills/INDEX.md
    NO  → step 4
 
 4. Is it knowledge work (analysis, research, planning, memory/state writes)?

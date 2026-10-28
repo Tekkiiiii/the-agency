@@ -7,6 +7,8 @@ lastUpdated: 2026-06-08
 lazyRead: true
 ---
 
+> Reference only: binding rules live as IDs in the agent files.
+
 # Task Decomposition Methodology
 
 **LAZY-READ:** Load this file ONLY when actively decomposing tasks (PD building the L3 chunk table,

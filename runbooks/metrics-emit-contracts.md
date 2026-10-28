@@ -137,7 +137,7 @@ bash {agency-root}/hooks/emit-metric.sh \
   '{"ts":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","event":"skill_route","gate":"pass|low_confidence","router":"jev|haiku|grep|passthrough","top1":"<skill or none>","caller":"main|pd|coord"}'
 ```
 
-- `gate`: `pass` = the router's result was confident enough to use; `low_confidence` = it was not, and the spawner evaluated Jev's result (explicit `Jev[r=<id>]: accept|modify|reject — <reason>` verdict, never a silent fallback).
+- `gate`: `pass` = the router's result was confident enough to use; `low_confidence` = it was not, and the spawner evaluated Jev's result (explicit verdict required: R-JEV, see {agency-root}/agents/project-management/coord.md (Rules); never a silent fallback).
 - `router`: which router answered: `jev`, `haiku` (fallback), `grep` (deterministic fallback), or `passthrough` (explicit `/name` in the task text).
 - `top1`: the top-ranked skill name, or `none` when no skill fit.
 - `caller`: who acted on the result: `main` (main session), `pd`, or `coord`.
