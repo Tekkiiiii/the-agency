@@ -134,7 +134,7 @@ Each project has a dedicated PD agent that:
 
 The project is `taskboard`, a task-manager app whose sign-up and login already shipped. The goal: "Add subscription billing: monthly and annual Stripe plans, a checkout page, and a webhook that marks an account as paid." The paths below are illustrative.
 
-**1. Plan.** The PD reads `next-session.md`, finds no `memory/dev-plan.md`, and writes one. It decomposes the goal into three L3 chunks and applies the two-condition parallel rule (no dependency edge, disjoint `writes-to[]`):
+**1. Plan.** The PD reads `next-session.md`, finds no L3 chunk table in the body of the run's L1 task file (`memory/tasks/ongoing/{id}-*.md`), and builds one there. It decomposes the goal into three L3 chunks and applies the two-condition parallel rule (no dependency edge, disjoint `writes-to[]`):
 
 | L3 chunk | Writes to | Depends on | Layer |
 |----------|-----------|------------|-------|

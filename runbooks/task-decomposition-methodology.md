@@ -9,7 +9,7 @@ lazyRead: true
 
 # Task Decomposition Methodology
 
-**LAZY-READ:** Load this file ONLY when actively decomposing tasks (PD generating dev-plan,
+**LAZY-READ:** Load this file ONLY when actively decomposing tasks (PD building the L3 chunk table,
 Coord generating L4-L6 structure). Never load in base agent context.
 
 Referenced by: `pd-coordinator.md`, `coord.md`
@@ -20,7 +20,7 @@ Referenced by: `pd-coordinator.md`, `coord.md`
 
 This document codifies HOW PDs and Coords break tasks down to the finest independent
 units and arrange them for maximum safe parallelism. This is the methodology behind
-every `dev-plan.md` and coord structure file.
+every L1 task file L3 table and coord structure file.
 
 The goal is not just speed — it is **correctness at speed**. Parallel execution is safe
 only when tasks cannot interfere with each other. This document defines exactly when
@@ -71,7 +71,7 @@ create serialization bottlenecks.
 directory it will write, create, or modify. Include:
 - Source files it creates or edits
 - Config files it modifies
-- Memory files it writes (scratch, dev-plan status updates)
+- Memory files it writes (scratch, L3 table status updates in the L1 task file)
 - Any shared state it mutates
 
 Do NOT include files it reads but does not write. Reads are free to parallelize.
@@ -104,7 +104,7 @@ The writes-to[] list is the most error-prone part. Common misses:
 
 **Direct writes (obvious):**
 - `src/auth/login.ts` — creating or editing a source file
-- `memory/dev-plan.md` — updating task status
+- `memory/tasks/ongoing/{id}-*.md` — updating L3 task status
 - `memory/decisions.md` — recording a decision
 
 **Indirect writes (easy to miss):**
@@ -186,18 +186,18 @@ trip, not a quality failure.
 
 ## 7. Two-Tier Structure Files
 
-**Full-scale master dev-plan** (`{project}/memory/dev-plan.md`):
-- PD-owned. Contains the complete project task DAG.
+**Master L3 chunk table** (body of `{project}/memory/tasks/ongoing/{id}-*.md`):
+- PD-owned. Contains the complete task DAG for the run.
 - All L3 Coord assignments + all L4-L6 sub-tasks (written back by each Coord).
 - PD reads this on every session start to know global task status.
-- Schema: see dev-plan.md template.
+- Schema: section 10.
 
 **Per-Coord scoped structure file** (`{project}/memory/agents/coords/coord-{name}-structure.md`):
 - Coord reads this on spawn — contains ONLY the tasks assigned to this Coord.
-- PD generates the scoped file from the master dev-plan before spawning each Coord.
+- PD generates the scoped file from the L1 body L3 table before spawning each Coord.
 - Coord does NOT read the full master (context cost). Coord reads only its slice.
 - Write-back rule: when a Coord generates its L4-L6 breakdown, it appends those tasks
-  to `{project}/memory/dev-plan.md` under its L3 section. This keeps the master current.
+  to the L1 task file under its L3 section. This keeps the master current.
 
 ---
 
@@ -206,23 +206,23 @@ trip, not a quality failure.
 Decomposition burns heavy context. Planning (decomposition) and deployment (execution)
 should run in separate contexts wherever possible.
 
-**Rule:** After PD completes dev-plan generation AND Coord writes its L4-L6 structure
+**Rule:** After PD completes the L3 chunk table AND Coord writes its L4-L6 structure
 back to the master, check context pressure. If context > 250k tokens, or if the decomposition
 was complex (many tasks, many dependency edges), run /save-state then RESPAWN to
 enter the deployment phase with a clean context window.
 
-**Why:** A PD that generated a 30-task dev-plan has consumed significant context
+**Why:** A PD that built a 30-task L3 chunk table has consumed significant context
 reasoning about dependencies. Starting Coord spawning from that same context means
 Coord completions and PD review overlap with residual decomposition context — risky
 for quality and for hitting the context ceiling mid-execution.
 
 **When to always checkpoint:**
-- Any dev-plan with > 15 tasks
-- Any dev-plan generated from scratch (first session on a project)
+- Any L3 chunk table with > 15 tasks
+- Any L3 chunk table built from scratch (first session on a project)
 - After any session where context reached 60%+ during decomposition
 
 **When checkpoint is optional:**
-- Small update to an existing dev-plan (1-3 tasks added)
+- Small update to an existing L3 chunk table (1-3 tasks added)
 - Re-running a failed layer (most context is fresh)
 
 ---
@@ -249,7 +249,7 @@ src/auth/register.ts"? The answer is no if A writes src/auth/login.ts and B writ
 src/auth/register.ts. Be file-specific, not directory-vague.
 
 **Mistake 5: Over-serializing.**
-"To be safe, I'll run everything in sequence." This defeats the purpose of the dev-plan.
+"To be safe, I'll run everything in sequence." This defeats the purpose of the L3 chunk table.
 Trust the two-condition rule — if both conditions hold, parallel execution is safe.
 The two conditions are designed to catch all interference cases.
 **Parallel is the default for small batches — thresholds differ by level:**
@@ -266,10 +266,10 @@ conditions allow it.
 
 ---
 
-## 10. Dev-Plan Schema Reference
+## 10. L3 Chunk Table Schema Reference
 
 ```markdown
-# dev-plan — {project}
+# L3 chunk table — {project}
 # Generated: YYYY-MM-DD by PD-{slug}
 # Updated: YYYY-MM-DD (append-only — never delete rows)
 #

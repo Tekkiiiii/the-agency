@@ -163,7 +163,7 @@ taskboard — unknown — spawned
 Spawned PDs running in background. Progress arrives via SendMessage.
 ```
 
-The PD runs in the background. It writes `memory/dev-plan.md`, splits the goal into chunks (here: the users table first, then session handling and the reset-email flow side by side), and hands each chunk to a Coord, which spawns Execs for the actual edits. Every Exec result is checked before it is accepted: health 85 or higher, nothing CRITICAL or HIGH. [ARCHITECTURE.md](ARCHITECTURE.md#worked-example-adding-billing-to-a-task-manager) follows one such run step by step, including the QA gates and the Exec limit.
+The PD runs in the background. It builds an L3 chunk table in the body of the run's L1 task file (`memory/tasks/ongoing/{id}-*.md`), splits the goal into chunks (here: the users table first, then session handling and the reset-email flow side by side), and hands each chunk to a Coord, which spawns Execs for the actual edits. Every Exec result is checked before it is accepted: health 85 or higher, nothing CRITICAL or HIGH. [ARCHITECTURE.md](ARCHITECTURE.md#worked-example-adding-billing-to-a-task-manager) follows one such run step by step, including the QA gates and the Exec limit.
 
 When all chunks pass QA and the integration test, the PD sends one final digest to your session and waits for your reply:
 

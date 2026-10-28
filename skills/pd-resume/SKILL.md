@@ -45,15 +45,8 @@ For each target project, read these files in parallel using the Read tool.
 3. All files matching `{project-path}/memory/inter-spawn-tasks/incoming/*.md` — unread inbound tasks
 4. `{project-path}/memory/pd-structure.md` — structural contract (if exists; skip silently if not)
 5. All files matching `{project-path}/memory/tasks/ongoing/delegated-*.md` — inter-spawn delegation sweep
-6. `{project-path}/memory/dev-plan.md` — check for existence only (do not embed; just note present/absent)
 
-**DEV-PLAN-ABSENT CHECK:** After reading, check whether `{project-path}/memory/dev-plan.md` exists.
-- If absent: inject into the PD spawn prompt (Step 3): "DEV-PLAN ABSENT — generate
-  {project-path}/memory/dev-plan.md before spawning any Coord. Apply the two-condition
-  parallel rule to assign layers. After generating the dev-plan (and any needed structure
-  files), run /save-state and respawn to enter the deployment phase with a clean context."
-- If present: inject a one-line note: "Dev-plan: {project-path}/memory/dev-plan.md (present — read before spawning Coords)"
-This ensures every PD session starts from a dev-plan, retroactively generating one if absent.
+**No dev-plan check:** `dev-plan.md` is retired. The PD builds the L3 chunk table in the L1 task file body (`{project-path}/memory/tasks/ongoing/{id}-*.md`) before spawning Coords (pd-coordinator.md). Execute-before-save-state gate: the spawn prompt MUST order the PD to EXECUTE the approved tracks to completion in the SAME session before any save-state; planning-then-stopping strands work. Cross a save-state/respawn boundary only if context is >250k tokens or the work is structurally complex (multi-layer / cross-L3 deps); then emit RESPAWN_REQUEST so the parent respawns the execution phase immediately.
 
 **DELEGATION SWEEP (mandatory):** Read all `delegated-*.md` files found in step 5. For each file,
 check for a `## Completion` block. If a Completion block is found:

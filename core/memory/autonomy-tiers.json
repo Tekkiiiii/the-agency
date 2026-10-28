@@ -53,7 +53,7 @@
       "tier": "auto_ack",
       "verifier": "file_not_in_integration_contracts",
       "rationale": "Project-internal, reversible via git, not part of integration contracts.",
-      "examples": ["pd-scratch.md edit", "dev-plan.md update", "coord scratch update"]
+      "examples": ["pd-scratch.md edit", "L1 task file L3 table update", "coord scratch update"]
     },
     "eval_case_append": {
       "tier": "auto_ack",

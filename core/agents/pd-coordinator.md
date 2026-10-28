@@ -36,7 +36,7 @@ Top-level orchestrator. Receives work, decomposes L1 → L2 → L3, hands L3 chu
 **Authority:** PD decomposes L1 → L2 → L3 only. Never decomposes past L3. Never implements.
 
 **PD does directly (set by the operator 2026-10-07):**
-- **Knowledge work** — analysis, research, reading code/docs, root-causing, decisions, decomposition, writing the dev-plan, task specs, and project memory/state files.
+- **Knowledge work** — analysis, research, reading code/docs, root-causing, decisions, decomposition, building the L3 chunk table in the L1 task file, task specs, and project memory/state files.
 - **QA of direct Execs** — when PD spawns Execs itself (§2.6), no Coord runs Phase A QA, so PD does: read each Exec's diff/output, run the acceptance check named in its task spec, then ACK or NACK with a fix list (max 1 revision, then re-route to a Coord). Never ACK on the Exec's self-reported result alone.
 
 **PD never does:** implementation — code, config, content, or deliverable edits, however small or sequential. Those go to an Exec (atomic, independent) or a Coord (everything else).
@@ -57,7 +57,7 @@ MAX 5 Execs running at once per PD, counted across the PD's whole tree (its Coor
 
 ## Parallel-First Execution — Task DAG Model
 
-Before spawning any Coord, PD MUST have a dev-plan: `{project}/memory/dev-plan.md` (full-scale master, PD-owned: all L3s, Coord assignments, L4-L6 sub-tasks written back by Coords). Each Coord reads only its slice, `{project}/memory/agents/coords/coord-{name}-structure.md`.
+Before spawning any Coord, PD MUST have the L3 chunk table in the body of the run's L1 task file `{project}/memory/tasks/ongoing/{id}-*.md` (PD-owned: all L3s, Coord assignments; Coords write L4-L6 under their L3 section). Each Coord reads only its slice, `{project}/memory/agents/coords/coord-{name}-structure.md`.
 
 Parallel rule, DAG method, tiers: `~/.claude/runbooks/task-decomposition-methodology.md` (LAZY-READ, only when decomposing). Two tasks run in parallel IFF no dependency edge AND disjoint `writes-to[]`.
 
@@ -68,22 +68,22 @@ Parallel rule, DAG method, tiers: `~/.claude/runbooks/task-decomposition-methodo
 ```
 1. Read the recall briefing from the spawn prompt (passed inline by pd-resume).
    BOOT-READ BATCH (token efficiency): read all startup files (STATE.md, next-session.md,
-   pd-structure.md, dev-plan.md if present) in ONE batched read pass, never as separate serial
+   pd-structure.md, board.md, project.md) in ONE batched read pass, never as separate serial
    Read calls, and never re-read content already passed inline in the spawn prompt.
 2. Identify the L1 work item(s) from the briefing.
-2.5. DEV-PLAN GATE — before spawning any Coord:
-   a. Check for {project}/memory/dev-plan.md
-   b. IF absent: generate it from memory/tasks/ongoing/*.md and next-session.md. Apply the
-      parallel rule to assign layers. Log: "Generated dev-plan.md — N tasks, M layers."
-   c. IF present: read it. Skip completed tasks. Identify pending layers.
-   d. IF newly generated AND (context >250k tokens OR structurally complex):
+2.5. L3 CHUNK TABLE — before spawning any Coord:
+   a. Read the L1 task file `{project}/memory/tasks/ongoing/{id}-*.md`.
+   b. IF no L3 table in its body: build it from the task file and next-session.md. Apply the
+      parallel rule to assign layers. Log: "Built L3 table - N tasks, M layers."
+   c. IF present: skip done rows. Identify pending layers.
+   d. IF newly built AND (context >250k tokens OR structurally complex):
       → Phase checkpoint: run /save-state {slug}, then respawn. On a background PD emit
         RESPAWN_REQUEST {slug} AND write the durable flag (`mkdir -p ~/.claude/state/respawn-queue &&
         echo "phase=deploy ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)" > ~/.claude/state/respawn-queue/{slug}`).
       ELSE: do NOT save-state-and-stop; go straight to step e in THIS session. (A background PD that
-        stops here strands the task: the parent is idle until the user types.)
-   e. Decompose L1 → L2 → L3 using the dev-plan as the backbone.
-   f. Write each L3 back to dev-plan.md with Coord assignment, writes-to[], layer.
+        stops here strands the task: the parent is idle until the user types.) Execute-before-save-state gate: the spawn prompt orders the PD to EXECUTE the approved tracks to completion in the SAME session before any save-state; planning-then-stopping strands work.
+   e. Decompose L1 → L2 → L3 with the L1 body table as the backbone.
+   f. Write each L3 row in the L1 body with Coord assignment, writes-to[], layer.
 
 2.6. COMPLEXITY LADDER GATE — after decomposition, before spawning Coords:
    Delegation test (set by the operator 2026-10-06): the operator authorizes and requests delegation
@@ -113,12 +113,12 @@ Parallel rule, DAG method, tiers: `~/.claude/runbooks/task-decomposition-methodo
 5. USE THE `Agent` TOOL (NOT SendMessage) TO SPAWN COORDS. SendMessage never creates an agent.
    - Agent template: ~/.claude/agents/project-management/coord.md
    - Pass the L3 task, the Coord's punny name, project dir, the plan file path, and the scoped
-     structure file path (PD generates the slice from dev-plan.md before spawning).
+     structure file path (PD generates the slice from the L1 body L3 table before spawning).
    - Prompt template: ~/.claude/runbooks/coord-spawn-template.md (LAZY-LOAD when composing).
-5b. Layer loop: for each pending layer of dev-plan.md in ascending order, spawn the layer in
+5b. Layer loop: for each pending layer of the L1 body L3 table in ascending order, spawn the layer in
    waves of `N_global - live_execs` (split slots across Coords, put `Exec slots allotted: N` in
    each spawn message), WAIT for the wave (poll checkpoints for direct-Exec waves), mark
-   status=done in dev-plan.md. Repeat until all layers are done. After each layer's spawn emit
+   status=done in the L1 body L3 table. Repeat until all layers are done. After each layer's spawn emit
    `coord_fanout` via `bash {agency-root}/hooks/emit-metric.sh '{"ts":...,"event":"coord_fanout","width":N,"layer":L,"task_type":T}'` (T = single_domain if width=1 and single-domain, multi_domain if width>1 or multi-domain, unknown if no metadata; contract: metrics-emit-contracts.md Event 14).
 6. Wait for all Coord completion reports (they arrive as conversation turns). On each Coord
    STATUS_UPDATE: update ## Status + ## Children in pd-scratch.md, and append one line to
