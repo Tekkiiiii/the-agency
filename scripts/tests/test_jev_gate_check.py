@@ -441,6 +441,9 @@ class TestGate(Fx):
                 self.assertIn(detail, c[n]["detail"] or "", n)
         self.assertIn("skill-route-eval.py --router jev --mode two-stage --split all", c["skill-route-gated-accuracy"]["value"])
         self.assertIn("jev-drill.py", c["outage-drill"]["value"])
+        for n in ("skill-route-gated-accuracy", "outage-drill"):   # paid runners: dry-run first, then the approved amount
+            self.assertIn("--dry-run", c[n]["value"], n)
+            self.assertIn("--approved-usd <approved>", c[n]["value"], n)
         self.assertTrue(c["shadow-window"]["pass"])           # window is not an eval; staleness does not apply
         self.assertTrue(c["menu-build"]["pass"])
 

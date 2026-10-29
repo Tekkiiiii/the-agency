@@ -6,6 +6,10 @@ OPT-IN, NETWORK-CAPABLE. This tool refuses to run unless the router is enabled: 
 subprocess. Steps s1, s3 and s4 reach the Jev endpoint (s4 with your real key); s2/s3 use a local server and a
 made-up key. Stdlib only; runs on Python 3.9 and newer.
 
+COST GATE: step s4 makes one paid Jev call. Run `--dry-run` first (prints one `jev-budget:` line with the estimate,
+exits 0, no call); after the user approves an amount, re-run with `--approved-usd <amount>`. Without it a real run
+exits 75 before any call (see scripts/skill-route/README.md, "Per-run cost approval").
+
 {root} below is the agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else the default config dir under $HOME.
 
 Four steps, each a SUBPROCESS of the real CLI with env overrides:
@@ -103,6 +107,8 @@ DEFAULT_NOTIFY_LOG = os.path.join(METRICS, "jev-notify.log")
 DEFAULT_USAGE_LOG = os.path.join(METRICS, "jev-usage.jsonl")
 EVENTS_FILE = os.path.join(METRICS, "events.jsonl")
 DEFAULT_RESULTS = os.path.join(ROOT, "evals", "jev-drill", "results")
+
+BUDGET_EXIT = 75     # jev_client.BUDGET_EXIT, inlined: this module imports jev_client only after the switch check
 
 SKILL_ROUTE_TEXT = "Build a responsive landing page for our pricing in React and Tailwind"
 
@@ -226,6 +232,8 @@ def base_env(ctx):
     env["AGENCY_SKILL_ROUTER"] = "1"     # the drill only runs with the switch on; the child must see it too
     env["SKILL_ROUTE_STATE_DIR"] = ctx["state_dir"]
     env["JEV_PURPOSE"] = "drill"
+    if ctx.get("credit_file"):
+        env["JEV_CREDIT_FILE"] = ctx["credit_file"]    # children use a temp state dir: pin the REAL credit file
     env["JEV_NOTIFY_LOG"] = ctx["notify_log"]
     env["JEV_USAGE_LOG"] = ctx["usage_log"]
     if not ctx["notify_real"]:
@@ -330,7 +338,7 @@ def run_step(step, ctx, bogus_env_file, slow_srv):
     detail = "; ".join(fails) if fails else "ok"
     rec = {"pass": not fails, "router": router, "flag_before": flag_before, "flag_after": flag_after,
            "new_notify": notify, "new_events": events, "new_usage": usage, "detail": detail,
-           "elapsed_s": res["elapsed_s"], "events_checked": ctx["events_on"]}
+           "elapsed_s": res["elapsed_s"], "rc": res["rc"], "events_checked": ctx["events_on"]}
     if step == "s3":
         rec["slow_server_hits"] = slow_srv.hits - srv_hits_before
     if res["rc"] != 0 and res["err"]:
@@ -343,6 +351,9 @@ def run_tool(ctx, steps, bogus_env_file, slow_srv):
     rec = {"steps": {}, "steps_run": [s for s in steps if s in ALL_STEPS]}
     for s in steps:
         rec["steps"][s] = run_step(s, ctx, bogus_env_file, slow_srv)
+        if rec["steps"][s].get("rc") == BUDGET_EXIT:   # budget stop: keep what we have
+            rec["budget_stop"] = True
+            break
     lines = read_from(ctx["notify_log"], n0)
     kinds = [ln.split("\t")[-1].strip() for ln in lines]
     rec["notify_down"] = kinds.count("down")
@@ -365,8 +376,14 @@ def router_enabled():
 
 def main(argv=None):
     if not router_enabled():
+        # Nothing runs while disabled, so a dry run costs nothing: say so without touching a file or importing jev_client.
+        if "--dry-run" in (sys.argv[1:] if argv is None else argv):
+            sys.stderr.write("jev-budget: jev-drill purpose=drill est_calls=0 est_usd=$0.0000 -> OK (router disabled, nothing would run)\n")
         print("skill router disabled (set AGENCY_SKILL_ROUTER=1 to run jev-drill.py); nothing run")
         return 0
+
+    sys.path.insert(0, SCRIPTS)
+    import jev_client  # noqa: E402  (after the switch check: nothing router-related is imported while disabled)
 
     ap = argparse.ArgumentParser(description="Jev outage drill for the skill router (needs AGENCY_SKILL_ROUTER=1)")
     ap.add_argument("--no-notify", action="store_true",
@@ -384,6 +401,7 @@ def main(argv=None):
                     help="OPT-IN: use the LIVE {root}/state/skill-route (refuses if jev-down exists; flag always "
                          "restored on exit). Default: a temp state dir")
     ap.add_argument("--steps", default=",".join(DEFAULT_STEPS), help="comma list of s1..s4 (default all)")
+    jev_client.add_cost_args(ap)
     args = ap.parse_args(argv)
 
     steps = [s.strip() for s in args.steps.split(",") if s.strip()]
@@ -397,6 +415,15 @@ def main(argv=None):
             os.path.realpath(notify_log) == os.path.realpath(DEFAULT_NOTIFY_LOG):
         sys.stderr.write("jev-drill.py: --notify-log points at the live notify log; add --real-notify to allow\n")
         return 2
+
+    # Paid-test gate: only s4 uses a real key (one Jev call). Print the estimate; without --approved-usd a real run
+    # exits 75, and --dry-run stops here. Steps s1-s3 use a bogus key or a local server and cannot spend.
+    jev_client.preflight_or_exit("drill", 1 if "s4" in steps else 0, "jev-drill", dry_run=args.dry_run,
+                                 approved_usd=args.approved_usd, owner_pid=args.owner_pid)
+    if args.dry_run:
+        return 0
+    if "s4" not in steps:
+        os.environ.setdefault(jev_client.APPROVED_ENV, "1")    # children's guard needs an approval; these steps are free
 
     cleanup = []      # temp dirs removed at exit
     flag_path = os.path.join(REAL_STATE, "jev-down")
@@ -433,6 +460,7 @@ def main(argv=None):
 def _drill(args, steps, state_dir, notify_log):
     sys.path.insert(0, SCRIPTS)
     import jev_fingerprint  # noqa: E402  (main() already passed the switch check: nothing router-related imported while disabled)
+    import jev_client  # noqa: E402
 
     tmp = tempfile.mkdtemp(prefix="jev-drill-")
     srv = None
@@ -444,7 +472,8 @@ def _drill(args, steps, state_dir, notify_log):
         srv = start_slow_server() if "s3" in steps else None
 
         ctx = {"state_dir": state_dir, "notify_log": notify_log, "usage_log": args.usage_log,
-               "notify_real": args.real_notify and not args.no_notify, "events_on": args.events == "on"}
+               "notify_real": args.real_notify and not args.no_notify, "events_on": args.events == "on",
+               "credit_file": jev_client._credit_path()}
         run = {"ts": now_local().isoformat(timespec="seconds"), "version": DRILL_VERSION, "state_dir": state_dir,
                **jev_fingerprint.fingerprint_fields(),
                "notify_real": ctx["notify_real"], "events_checked": ctx["events_on"],
@@ -453,7 +482,10 @@ def _drill(args, steps, state_dir, notify_log):
         run["steps_run"] = [x for x in steps if x in ALL_STEPS]
         run["pass"] = all(v["pass"] for v in run["tools"].values()) and set(steps) == set(DEFAULT_STEPS)
         # a partial run (--steps) is recorded, but never counts as a full PASS for the gate
-        exit_ok = all(v["pass"] for v in run["tools"].values())
+        budget_stop = bool(run["tools"][TOOL].get("budget_stop"))
+        exit_ok = all(v["pass"] for v in run["tools"].values()) and not budget_stop
+        if budget_stop:
+            run["pass"] = False
     finally:
         if srv is not None:
             srv.shutdown()
@@ -500,6 +532,9 @@ def _drill(args, steps, state_dir, notify_log):
     partial = set(steps) != set(DEFAULT_STEPS)
     print("OVERALL: %s  (results: %s)" % (
         ("PARTIAL-%s" % ("PASS" if exit_ok else "FAIL")) if partial else ("PASS" if run["pass"] else "FAIL"), path))
+    if budget_stop:
+        sys.stderr.write("jev-budget: stopped mid-run (a step exited %d)\n" % BUDGET_EXIT)
+        return BUDGET_EXIT
     return 0 if exit_ok else 1
 
 

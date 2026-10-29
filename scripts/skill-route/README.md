@@ -276,12 +276,39 @@ Logs (append-only JSONL under `{root}/memory/metrics/`):
 
 | File | Content |
 |---|---|
-| `jev-usage.jsonl` | one line per call attempt, Jev and Haiku: `ts`, `purpose`, `router` (`jev`/`haiku`), `model`, `input_tokens`, `output_tokens`, `usd`, `latency_ms`, `ok`, `shadow`. A failed Jev attempt that falls back writes a Jev line with `ok: false` and 0 tokens, then the Haiku line. Written even with `--no-log`. |
+| `jev-usage.jsonl` | one line per call attempt, Jev and Haiku: `ts`, `purpose`, `router` (`jev`/`haiku`), `model`, `input_tokens`, `output_tokens`, `usd`, `latency_ms`, `ok`, `shadow` (plus `run_id` inside an approved paid run). A failed Jev attempt that falls back writes a Jev line with `ok: false` and 0 tokens, then the Haiku line. Written even with `--no-log`. |
 | `skill-route.jsonl` | one decision per route: text excerpt (200 chars), mode, router, domain, probabilities, `skills`, `scores`, `model`, `tools`, `gate`, `lang`, `pre_rules`, `jev_down`, `calls`, tokens, `usd`, `latency_ms`. Skipped by `--no-log`. |
 | `jev-notify.log` | `<timestamp><TAB>down|up` |
 | `jev-feedback.jsonl` | reviewer feedback (`jev-feedback.py`) |
 
 `usd` is an estimate. Jev: `input_tokens x JEV_USD_PER_M_INPUT / 1e6` (a constant in `jev_client.py`; TypeSafe's own billing is authoritative). Haiku: `hooks/lib/claude_pricing.py` if present under `{root}`, else the CLI's `total_cost_usd`.
+
+### Per-run cost approval
+
+Live routing (`purpose` `skill-route`, `spawn-plan`) is never budget-checked. Every other Jev use is a paid test (eval, drill, replay, spike) and is gated twice: a per-run approval and a credit reserve. A paid runner refuses to start (exit `75`, `jev_client.BUDGET_EXIT`) without `--approved-usd <amount>` at least as large as its own estimate. `jev-drill.py` and `skill-route-eval.py` share `jev_client.add_cost_args(parser)` (adds `--approved-usd`, `--owner-pid`, and `--dry-run` when absent) and `preflight_or_exit(...)`.
+
+Flow (never skip a step; an agent never approves its own run):
+
+1. `<runner> ... --dry-run` prints `jev-budget: <label> purpose=<p> est_calls=<n> est_usd=$.. balance=$.. balance_after=$.. reserve=$1.00 approved=none -> DRY-RUN` and exits 0. No call is made and no approval is needed.
+2. Show that line to the user and ask for an amount.
+3. Re-run the same command with `--approved-usd <approved amount>` (must be at least `est_usd`).
+
+What a real run does with the amount: it exports `JEV_APPROVED_USD`, a fresh `JEV_RUN_ID` and `JEV_RUN_OWNER_PID` (the nearest ancestor process named `claude`, else the parent; `--owner-pid N` overrides) to child processes, and every usage-log row carries the `run_id`. Before each Jev attempt the guard stops the run (exit `75`, partial results kept) when:
+
+- the run's logged spend plus the estimated cost of one more call exceeds the approved amount;
+- the owner process no longer exists, or the runner was re-parented to init (one stderr line `jev-budget: owner pid N gone`);
+- credit would drop below the reserve (below).
+
+A child process with a paid purpose and no `JEV_APPROVED_USD` is refused the same way (`ApprovalRequired`, a subclass of `BudgetExhausted`; `OwnerGone` likewise). `BudgetExhausted` is not a `RouterUnavailable`, so the grep and Haiku fallbacks never swallow it: no Jev call, no Haiku call and no usage line is made for a refused attempt. A nested runner inherits the outer approval and run id instead of starting a new run. While the router is disabled, `--dry-run` prints an `est_calls=0` line and nothing runs.
+
+Credit reserve: `JEV_CREDIT_FILE` (default `{root}/state/skill-route/jev-credit.json`) holds the balance. Format:
+
+```json
+{"balance_usd": 12.50, "as_of": "2026-01-01T00:00:00Z",
+ "monthly_grant_usd": 20.0, "grant_day_utc": 1, "current_grant_expires": "2026-02-01T00:00:00Z"}
+```
+
+Only `balance_usd` and `as_of` are required. Estimated balance = `balance_usd` minus the logged Jev spend (`router == "jev"`, `ts` after `as_of`; Haiku rows are subscription and never counted). When `current_grant_expires` is set and has passed, the base becomes `monthly_grant_usd` as of that expiry (next expiry one month later on `grant_day_utc`). A paid call is refused when `balance - estimated cost of one call < JEV_BUDGET_RESERVE_USD` (default `1.00`); the estimate is the mean `usd` of earlier successful Jev rows of that purpose (fallback `$0.0001`). A missing or unparseable credit file fails open for the credit check (one stderr warning); the approval and owner checks still apply.
 
 ## Environment variables
 
@@ -293,6 +320,9 @@ All optional except the switch.
 | `JEV_ENV_FILE` | `~/.config/typesafe/.env` | file holding `TYPESAFE_API_KEY` (and optional `JEV_MODEL`, `JEV_ENDPOINT`) |
 | `JEV_ENDPOINT` | `https://api.typesafe.ai/v1/systemone` | overrides the file; non-secret |
 | `JEV_MODEL` | `jev-latest` | overrides the file; non-secret |
+| `JEV_CREDIT_FILE` | `{root}/state/skill-route/jev-credit.json` | credit balance file for the paid-run guard (format under "Per-run cost approval") |
+| `JEV_BUDGET_RESERVE_USD` | `1.00` | credit reserve a paid run may not dip below |
+| `JEV_APPROVED_USD`, `JEV_RUN_ID`, `JEV_RUN_OWNER_PID` | set by the runner | per-run approval handed to child processes by `--approved-usd`; do not set by hand |
 | `AGENCY_HOME`, `CLAUDE_CONFIG_DIR` | `~/.claude` | root, in that precedence |
 | `SKILL_ROUTE_SKILLS_DIR` | `{root}/skills` | skills directory |
 | `SKILL_ROUTE_OVERLAY` | `<scripts>/skill-route/overlay.json` | overlay file |
@@ -326,9 +356,9 @@ All in `scripts/`. Stdlib only. Run them with the same root as the router.
 
 The last three only read result files written by the opt-in tools below and print `run: <command>` when absent. Results go stale by content hash (`jev_fingerprint.py`: AST of `skill-route.py` + `jev_client.py`, plus the routable menu), not by mtime. `--only NAME` evaluates just that criterion; `--only menu-build` reads no result file. Input paths: `JEV_GATE_SKILL_ROUTE_RESULTS`, `JEV_GATE_DRILL_RESULTS`, `JEV_GATE_SKILL_ROUTE_SHADOW`, `JEV_GATE_FEEDBACK`, `JEV_GATE_SKILL_ROUTE_MODE`, `JEV_GATE_NOW`, `JEV_GATE_SCRIPTS_DIR`.
 
-**`jev-drill.py`**: outage drill. Needs `AGENCY_SKILL_ROUTER=1`, calls the real endpoint with your real key in step `s4`, and needs the `claude` CLI (steps `s1`-`s3` degrade to Haiku). Four subprocess steps: `s1` bogus key gives 401, so haiku, flag created, one `down` line; `s2` repeat, flag count up, no new line; `s3` slow local server gives timeout, so haiku; `s4` real key gives `jev`, flag removed, one `up` line. Safe by default: a plain run uses a fresh temp state dir (removed at exit), a temp notify log, no OS notification (`JEV_NOTIFY=0`) and no events (`JEV_EMIT=0`), so it never touches a live `jev-down` flag or your live logs. The cost log still gets real rows (the drill spends real calls), tagged `purpose=drill`. Opt-ins, each explicit: `--real-state` (use `{root}/state/skill-route`; refuses if `jev-down` exists and always restores "no flag" on exit), `--real-notify` (write the live `jev-notify.log` and fire real OS notifications; `--no-notify` still wins), `--events on` (emit/check events in the live `events.jsonl`). A `--notify-log` that resolves to the live log is refused without `--real-notify`. Dry run: `AGENCY_SKILL_ROUTER=1 python3 scripts/jev-drill.py --results-dir /tmp/res --usage-log /tmp/u.jsonl`. Writes `{root}/evals/jev-drill/results/<date>.json`; exit 0 only if every executed step passes.
+**`jev-drill.py`**: outage drill. Needs `AGENCY_SKILL_ROUTER=1`, calls the real endpoint with your real key in step `s4`, and needs the `claude` CLI (steps `s1`-`s3` degrade to Haiku). Four subprocess steps: `s1` bogus key gives 401, so haiku, flag created, one `down` line; `s2` repeat, flag count up, no new line; `s3` slow local server gives timeout, so haiku; `s4` real key gives `jev`, flag removed, one `up` line. Safe by default: a plain run uses a fresh temp state dir (removed at exit), a temp notify log, no OS notification (`JEV_NOTIFY=0`) and no events (`JEV_EMIT=0`), so it never touches a live `jev-down` flag or your live logs. The cost log still gets real rows (step `s4` spends one real call), tagged `purpose=drill`. Cost gate: run `--dry-run` first (prints the `jev-budget:` estimate line, exits 0, no call), get the user's approval, then re-run with `--approved-usd <amount>`; a real run without it exits 75. Opt-ins, each explicit: `--real-state` (use `{root}/state/skill-route`; refuses if `jev-down` exists and always restores "no flag" on exit), `--real-notify` (write the live `jev-notify.log` and fire real OS notifications; `--no-notify` still wins), `--events on` (emit/check events in the live `events.jsonl`). A `--notify-log` that resolves to the live log is refused without `--real-notify`. Estimate only: `AGENCY_SKILL_ROUTER=1 python3 scripts/jev-drill.py --dry-run`; approved run: `... jev-drill.py --approved-usd <amount> --results-dir /tmp/res --usage-log /tmp/u.jsonl`. Writes `{root}/evals/jev-drill/results/<date>.json`; exit 0 only if every executed step passes.
 
-**`skill-route-eval.py`**: scores the router against labelled tasks. Needs `AGENCY_SKILL_ROUTER=1`; costs real Jev calls (logged with purpose `eval`).
+**`skill-route-eval.py`**: scores the router against labelled tasks. Needs `AGENCY_SKILL_ROUTER=1`; costs real Jev calls (logged with purpose `eval`), so it follows the same cost gate: `--dry-run` for the estimate, then `--approved-usd <amount>` (exit 75 without it).
 
 ```bash
 AGENCY_SKILL_ROUTER=1 python3 scripts/skill-route-eval.py --router jev --mode two-stage --split all [--limit N] [--concurrency 4] [--seed FILE]

@@ -354,7 +354,9 @@ def fake_claude_records(path):
 
 # --------------------------------------------------------------------------- test env
 _ENV_TOUCHED = ("AGENCY_SKILL_ROUTER", "AGENCY_HOME", "CLAUDE_CONFIG_DIR", "SKILL_ROUTE_STATE_DIR", "JEV_USAGE_LOG", "JEV_NOTIFY_LOG", "JEV_ENV_FILE", "JEV_ENDPOINT",
-                "JEV_NOTIFY", "JEV_EMIT", "JEV_HAIKU_CMD", "JEV_PURPOSE", "JEV_MODEL", "SKILL_ROUTE_CHILD")
+                "JEV_NOTIFY", "JEV_EMIT", "JEV_HAIKU_CMD", "JEV_PURPOSE", "JEV_MODEL", "SKILL_ROUTE_CHILD",
+                "JEV_APPROVED_USD", "JEV_RUN_ID", "JEV_RUN_OWNER_PID", "JEV_RUN_STARTED_PPID", "JEV_CREDIT_FILE",
+                "JEV_BUDGET_RESERVE_USD")
 
 
 class JevEnv(object):
@@ -423,8 +425,10 @@ def jev_test_env(stub=True, claude_behavior="valid", endpoint=None, extra_env=No
         if stub:
             env.stub = JevStub(mode=stub_mode, **stub_kwargs).start()
         env.fake_claude = write_fake_claude(root, claude_behavior)
-        for k in ("JEV_PURPOSE", "JEV_MODEL", "SKILL_ROUTE_CHILD", "CLAUDE_CONFIG_DIR"):
+        for k in ("JEV_PURPOSE", "JEV_MODEL", "SKILL_ROUTE_CHILD", "CLAUDE_CONFIG_DIR", "JEV_RUN_ID",
+                  "JEV_RUN_OWNER_PID", "JEV_RUN_STARTED_PPID", "JEV_CREDIT_FILE", "JEV_BUDGET_RESERVE_USD"):
             os.environ.pop(k, None)
+        os.environ["JEV_APPROVED_USD"] = "1000"      # tests are pre-approved; the budget tests clear it
         os.environ.update({
             "AGENCY_SKILL_ROUTER": "1",      # the router ships disabled; a test that needs it off sets None in extra_env
             "AGENCY_HOME": root,             # any default-root fallback lands in the temp dir, never a real install

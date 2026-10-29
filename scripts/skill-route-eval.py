@@ -8,6 +8,10 @@ endpoint (and falls back to `claude -p`). It therefore refuses to run unless the
 unset (or not "1") it prints "skill router disabled (set AGENCY_SKILL_ROUTER=1 to run skill-route-eval.py); nothing run"
 and exits 0 before it imports anything router-related, starts a server or runs a subprocess.
 
+COST GATE: a jev run is a paid test. Run it with `--dry-run` first (prints one `jev-budget:` line with the estimated calls
+and USD, exits 0, no call); after the user approves an amount, re-run with `--approved-usd <amount>`. Without it a real jev
+run exits 75 before any call (see scripts/skill-route/README.md, "Per-run cost approval").
+
 {root} below is the agency root: AGENCY_HOME, else CLAUDE_CONFIG_DIR, else the default config dir under $HOME.
 
 Runs skill-route.py from the directory of this script (override: env SKILL_ROUTE_CMD, shlex-split; used by unit tests and
@@ -126,6 +130,9 @@ def router_cmd():
     return shlex.split(env) if env else list(DEFAULT_CMD)
 
 
+BUDGET = {"stopped": False}   # set when a child routing call exits 75 (BUDGET_EXIT, the budget-stop code)
+
+
 def run_router(task, router, mode, project=None, extra=None, env_over=None, timeout=180):
     """Run one routing call. Returns (result_dict_or_None, error_or_None, latency_ms)."""
     cmd = router_cmd()
@@ -147,6 +154,9 @@ def run_router(task, router, mode, project=None, extra=None, env_over=None, time
     except OSError as e:
         return None, "exec error: %s" % e, int((time.time() - t0) * 1000)
     ms = int((time.time() - t0) * 1000)
+    if p.returncode == 75:     # jev_client.BUDGET_EXIT: the child hit the credit reserve / approval cap: stop the run
+        BUDGET["stopped"] = True
+        return None, "budget_stop", ms
     if p.returncode != 0:
         return None, "exit %d: %s" % (p.returncode, (p.stderr or "").strip()[-200:]), ms
     try:
@@ -190,10 +200,15 @@ def score_skills(skills, exp, expected_none=False):
 
 def run_cases(cases, router, mode, concurrency):
     rows = [None] * len(cases)
+
+    def one(c):
+        return None if BUDGET["stopped"] else evaluate_case(c, router, mode)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, concurrency)) as ex:
-        futs = {ex.submit(evaluate_case, c, router, mode): i for i, c in enumerate(cases)}
+        futs = {ex.submit(one, c): i for i, c in enumerate(cases)}
         for f in concurrent.futures.as_completed(futs):
             rows[futs[f]] = f.result()
+    if BUDGET["stopped"]:   # keep only the cases that really ran (drop the stopped call and the skipped ones)
+        rows = [r for r in rows if r is not None and r.get("error") != "budget_stop"]
     return rows
 
 
@@ -326,7 +341,8 @@ def run_prerules(path, mode):
     env = {"JEV_ENDPOINT": "http://127.0.0.1:%d/v1/systemone" % srv.server_address[1], "JEV_ENV_FILE": envfile,
            "SKILL_ROUTE_STATE_DIR": os.path.join(tmpd, "state"), "JEV_USAGE_LOG": os.path.join(tmpd, "usage.jsonl"),
            "JEV_NOTIFY_LOG": os.path.join(tmpd, "notify.log"), "JEV_NOTIFY": "0", "JEV_EMIT": "0",
-           "JEV_HAIKU_CMD": haiku_stub, "SKILL_ROUTE_CHILD": "", "AGENCY_SKILL_ROUTER": "1"}
+           "JEV_HAIKU_CMD": haiku_stub, "SKILL_ROUTE_CHILD": "", "AGENCY_SKILL_ROUTER": "1",
+           "JEV_APPROVED_USD": "1"}   # local counter + bogus key: cannot spend, but the paid-run guard needs an approval
     results = []
     try:
         for c in cases:
@@ -371,6 +387,9 @@ def router_enabled():
 
 def main(argv=None):
     if not router_enabled():
+        # Nothing runs while disabled, so a dry run costs nothing: say so without touching a file or importing jev_client.
+        if "--dry-run" in (sys.argv[1:] if argv is None else argv):
+            sys.stderr.write("jev-budget: skill-route-eval purpose=eval est_calls=0 est_usd=$0.0000 -> OK (router disabled, nothing would run)\n")
         print("skill router disabled (set AGENCY_SKILL_ROUTER=1 to run skill-route-eval.py); nothing run")
         return 0
     ap = argparse.ArgumentParser(description="Score skill-route.py against a labelled seed set (needs AGENCY_SKILL_ROUTER=1)")
@@ -386,10 +405,12 @@ def main(argv=None):
     ap.add_argument("--results-dir", default=os.path.join(EVAL_DIR, "results"))
     ap.add_argument("--skip-prerules", action="store_true")
     ap.add_argument("--prerules-only", action="store_true")
+    sys.path.insert(0, SCRIPTS_DIR)
+    import jev_client  # noqa: E402  (after the switch check: nothing router-related is imported while disabled)
+    jev_client.add_cost_args(ap)
     a = ap.parse_args(argv)
 
     started = time.time()
-    sys.path.insert(0, SCRIPTS_DIR)
     import jev_fingerprint  # noqa: E402  (after the switch check: nothing router-related is imported while disabled)
     fp_fields = jev_fingerprint.fingerprint_fields()   # at run START: an edit mid-run must not be stamped as evaluated
     summary = {}
@@ -411,8 +432,22 @@ def main(argv=None):
             cases = cases[:a.limit]
         if not cases:
             sys.stderr.write("no cases selected%s\n" % (" (no seed file and no confirmed feedback cases)" if seed_missing else ""))
+            if a.dry_run:     # nothing to run = nothing to pay: still print the estimate line
+                jev_client.preflight_or_exit("eval", 0, "skill-route-eval", dry_run=True)
+                return 0
             return 2
+        # Paid-test gate: two-stage = 2 Jev calls per case. --dry-run prints the estimate and stops; a real run
+        # needs --approved-usd >= the estimate (else exit 75 before any call).
+        jev_client.preflight_or_exit("eval", len(cases) * (2 if a.mode == "two-stage" else 1) if a.router == "jev" else 0,
+                                     "skill-route-eval", dry_run=a.dry_run, approved_usd=a.approved_usd,
+                                     owner_pid=a.owner_pid)
+        if a.dry_run:
+            return 0
         rows = run_cases(cases, a.router, a.mode, a.concurrency)
+        if BUDGET["stopped"]:
+            sys.stderr.write("jev-budget: stopped mid-run after %d/%d cases\n" % (len(rows), len(cases)))
+            if not rows:
+                return jev_client.BUDGET_EXIT
         unscored = [r for r in rows if r.get("unscored")]
         scored = [r for r in rows if not r.get("unscored")]
         summary = {"overall": summarize(scored), "by_source": group(scored, "source"), "by_split": group(scored, "split"),
@@ -433,6 +468,9 @@ def main(argv=None):
         print_table("per split", summary["by_split"])
         print_table("per lang", summary["by_lang"])
 
+    if a.prerules_only and a.dry_run:
+        jev_client.preflight_or_exit("eval", 0, "skill-route-eval", dry_run=True)
+        return 0
     pre = []
     if not a.skip_prerules:
         pre = run_prerules(a.prerules, a.mode)
@@ -461,6 +499,8 @@ def main(argv=None):
         with open(out, "w", encoding="utf-8") as f:
             json.dump(doc, f, indent=1, ensure_ascii=False)
         print("results: %s" % out)
+    if BUDGET["stopped"]:
+        return jev_client.BUDGET_EXIT
     return 1 if any(not r["pass"] for r in pre) else 0
 
 

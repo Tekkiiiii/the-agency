@@ -111,6 +111,13 @@ def router_enabled():
 _JEV = None
 
 
+def _is_budget_stop(exc):
+    """True for a jev_client budget stop (BudgetExhausted and subclasses). Never imports jev_client: if it was
+    never loaded, nothing can have raised one."""
+    jc = sys.modules.get("jev_client")
+    return jc is not None and isinstance(exc, jc.BudgetExhausted)
+
+
 def _jev():
     """jev_client, imported on first use (routing path only). Never called while the CLI is disabled."""
     global _JEV
@@ -1202,7 +1209,9 @@ def _core(text, menu, router, mode, shadow, meta, detect_text=None, full_menu=No
                 res = _jev_flat(text, menu, allow_jev, shadow, meta)
             else:
                 res = _jev_two_stage(text, menu, allow_jev, shadow, meta)
-        except Exception:
+        except Exception as e:
+            if _is_budget_stop(e):
+                raise   # budget stop (non-live purposes): must reach main -> exit 75, not degrade to grep
             res = None  # RouterUnavailable (incl. "disabled") or any client/shape surprise degrades to grep
     if res is None:
         res = _grep_result(text, menu)
@@ -1267,7 +1276,9 @@ def _route_full(text, project, router, mode, log, shadow=False, role=None, cache
         res = _core(text, menu, router, mode, shadow, meta, orig, full_menu, passthrough)
     except MenuError:
         raise
-    except Exception:
+    except Exception as e:
+        if _is_budget_stop(e):
+            raise      # budget stop (non-live purposes) must reach main -> exit 75
         res = _contract_order(dict(_grep_result(text, menu), domain=None, pre_rules=[], lang=detect_lang(text),
                                    jev_down=False))
         if res["skills"]:
@@ -1696,4 +1707,11 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception as _e:
+        # Budget stop (non-live purposes only: eval / replay / spike / drill); exit 75.
+        if not _is_budget_stop(_e):
+            raise
+        sys.stderr.write("jev-budget: stopped: %s\n" % _e)
+        sys.exit(_jev().BUDGET_EXIT)

@@ -110,6 +110,8 @@ DRILL_TOOLS = ("skill-route",)
 CRITERIA = ("menu-build", "skill-route-gated-accuracy", "outage-drill", "shadow-window")
 GATE_DIR = os.path.dirname(os.path.abspath(__file__))     # menu-build loads skill-route.py from here
 OVERLAY_ADD = "python3 %s" % shlex.quote(os.path.join(GATE_DIR, "skill-route-overlay-add.py"))
+# Paid runners refuse (exit 75) without --approved-usd; the printed re-run hints show the dry-run-first flow.
+COST_HINT = " --dry-run (send the jev-budget line for the user's approval; then re-run with --approved-usd <approved>)"
 ROUTER_ON = "AGENCY_SKILL_ROUTER=1 "                      # prefix of the maintainer commands the gate prints (they need the switch)
 _LOAD_SEQ = itertools.count(1)
 
@@ -366,7 +368,7 @@ def check_skill_route(mode, cur):
     name = "skill-route-gated-accuracy"
     thr = "accuracy >= %s AND coverage >= %s" % (EVAL_THRESHOLD, COVERAGE_FLOOR)
     cmd = "%spython3 %s --router jev --mode %s --split all" % (
-        ROUTER_ON, shlex.quote(os.path.join(GATE_DIR, "skill-route-eval.py")), mode)
+        ROUTER_ON, shlex.quote(os.path.join(GATE_DIR, "skill-route-eval.py")), mode) + COST_HINT
     info = {}
 
     def match(doc):
@@ -427,7 +429,7 @@ def check_drill(cur):
     d = p_drill_results()
     name = "outage-drill"
     thr = "steps s1-s4 ran, pass true for skill-route"
-    cmd = "%spython3 %s" % (ROUTER_ON, shlex.quote(os.path.join(GATE_DIR, "jev-drill.py")))
+    cmd = "%spython3 %s" % (ROUTER_ON, shlex.quote(os.path.join(GATE_DIR, "jev-drill.py"))) + COST_HINT
     hit = pick_latest(d, lambda doc: isinstance(doc.get("tools"), dict), lambda doc: parse_ts(doc.get("ts")))
     if hit is None:
         return crit(name, False, "no drill result", thr, d + "/*.json", "run: " + cmd)

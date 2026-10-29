@@ -12,6 +12,14 @@ scripts/skill-route/README.md.
 Public API
 ----------
     class RouterUnavailable(Exception)       # disabled, or Jev (or allow_jev=False) AND Haiku both failed (.reason)
+    class BudgetExhausted(Exception)         # credit reserve or run approval refused a paid call (NOT a RouterUnavailable)
+    class ApprovalRequired(BudgetExhausted)  # non-live run without a large enough --approved-usd / JEV_APPROVED_USD
+    class OwnerGone(BudgetExhausted)         # the owning agent process is gone (orphaned run)
+    BUDGET_EXIT = 75                         # the single budget-stop exit code (EX_TEMPFAIL) everywhere
+    add_cost_args(parser)                    # --approved-usd / --owner-pid / --dry-run for every paid runner
+    budget_preflight(purpose, est_calls, label="", refuse=True, approved_usd=None, owner_pid=None) -> dict
+    preflight_or_exit(purpose, est_calls, label="", dry_run=False, approved_usd=None, owner_pid=None)
+    budget_check(purpose)                    # in-process mid-run check (raises BudgetExhausted)
     router_enabled() -> bool                 # AGENCY_SKILL_ROUTER == "1"
     load_config() -> {"endpoint","model","env_file","has_key"}   # NEVER the key
     redact(text) -> str                      # credential families -> [REDACTED]
@@ -46,8 +54,35 @@ Environment (all optional; tests set every one of them)
     JEV_EMIT=0          skip {root}/hooks/emit-metric.sh
     JEV_HAIKU_CMD       path of the `claude` executable (default: `claude` on PATH)
     JEV_PURPOSE         overrides `purpose` in the usage log (eval runners: eval, drill: drill)
+    JEV_CREDIT_FILE     credit balance file, default <state dir>/jev-credit.json (budget guard)
+    JEV_BUDGET_RESERVE_USD   reserve for non-live purposes, default 1.00
+    JEV_APPROVED_USD / JEV_RUN_ID / JEV_RUN_OWNER_PID   per-run approval, set by the runner's preflight (see below)
     SKILL_ROUTE_CHILD=1 set in the Haiku child env; if already set in THIS process, ask() never
                         spawns `claude` (Jev failure -> RouterUnavailable): recursion guard.
+
+Credit budget guard and per-run approval (non-live purposes only)
+    Live purposes (LIVE_PURPOSES = skill-route, spawn-plan; effective purpose = JEV_PURPOSE else the argument) are
+    never checked. Every other purpose (eval, replay, spike, drill) is a paid test and needs, before EACH Jev attempt:
+      1. a live owner: JEV_RUN_OWNER_PID still exists and we were not re-parented to init (else OwnerGone);
+      2. an approved run: JEV_APPROVED_USD set, and this run's logged spend (usage rows carrying JEV_RUN_ID) plus the
+         estimated cost of one call within it (else ApprovalRequired);
+      3. credit: balance - est_usd_per_call >= reserve (RESERVE_USD = 1.00, JEV_BUDGET_RESERVE_USD overrides)
+         (else BudgetExhausted).
+    A refused call makes no Jev call, no Haiku fallback and writes no usage line. Runners catch BudgetExhausted and
+    exit BUDGET_EXIT (75), keeping partial results.
+    Balance = credit file `balance_usd` minus the sum of `usd` over usage rows with router=="jev" and ts > `as_of`
+    (Haiku rows are subscription: never counted). Credit file JSON:
+      {"balance_usd": 12.5, "as_of": "2026-01-01T00:00:00Z", "monthly_grant_usd": 20, "grant_day_utc": 1,
+       "current_grant_expires": "2026-02-01T00:00:00Z"}   # the last three are optional; past the expiry the base
+    becomes monthly_grant_usd as of that expiry. Missing or unparseable credit file: the credit check fails OPEN with
+    one stderr warning (balance unknown); the approval and owner checks still apply.
+    est_usd_per_call = mean usd of ok Jev rows of that purpose (fallback FALLBACK_EST_USD). The log is scanned
+    incrementally from a saved byte offset (in-process memo + <state dir>/jev-spend-cache.json), so the warm path
+    is a stat plus a read of the new bytes.
+    Flow: runner --dry-run prints one `jev-budget:` line and exits (no approval needed); the user approves an amount;
+    the runner is re-run with --approved-usd <amount>, which must be >= its own estimate. The preflight exports
+    JEV_APPROVED_USD, a fresh JEV_RUN_ID and JEV_RUN_OWNER_PID (nearest ancestor process named `claude`, else the
+    parent; --owner-pid overrides) to child processes; a nested runner inherits the outer run instead of starting a new one.
 
 Failure classes
     DISABLED    AGENCY_SKILL_ROUTER != "1" -> RouterUnavailable(reason="disabled"); nothing else happens.
@@ -134,6 +169,12 @@ JEV_USD_PER_M_INPUT = 0.042
 DEFAULT_TIMEOUT = 2.0
 STATE_CAP = 6000
 HAIKU_TIMEOUT = 60
+# Credit budget guard + per-run approval. Non-live purposes only; BUDGET_EXIT is the single stop code everywhere.
+BUDGET_EXIT = 75
+RESERVE_USD = 1.00
+LIVE_PURPOSES = frozenset(["skill-route", "spawn-plan"])
+APPROVED_ENV, RUN_ID_ENV, OWNER_ENV, PPID_ENV = "JEV_APPROVED_USD", "JEV_RUN_ID", "JEV_RUN_OWNER_PID", "JEV_RUN_STARTED_PPID"
+FALLBACK_EST_USD = 0.0001
 
 DEFAULT_ENDPOINT = "https://api.typesafe.ai/v1/systemone"
 DEFAULT_MODEL = "jev-latest"
@@ -160,6 +201,28 @@ class RouterUnavailable(Exception):
     def __init__(self, message="", reason=None):
         Exception.__init__(self, message)
         self.reason = reason
+
+
+class BudgetExhausted(Exception):
+    """A paid (non-live) call was refused: credit would drop below the reserve, or the run is unapproved / over its
+    cap / orphaned. NOT a RouterUnavailable: callers' grep / Haiku fallbacks must not swallow it. No Jev call, no
+    Haiku call and no usage line was made."""
+
+    def __init__(self, balance, reserve, est_usd, purpose, msg=None):
+        self.balance = balance
+        self.reserve = reserve
+        self.est_usd = est_usd
+        self.purpose = purpose
+        Exception.__init__(self, msg or "jev credit budget: balance $%.2f - est $%.4f < reserve $%.2f (purpose=%s)"
+                           % (balance or 0.0, est_usd, reserve, purpose))
+
+
+class ApprovalRequired(BudgetExhausted):
+    """Non-live run without a (large enough) user-approved --approved-usd / JEV_APPROVED_USD."""
+
+
+class OwnerGone(BudgetExhausted):
+    """The owning agent process is gone (orphaned run); stop like a budget stop."""
 
 
 class _JevFailure(Exception):
@@ -345,6 +408,8 @@ def _log_usage(purpose, router, model, in_tok, out_tok, usd, latency_ms, ok, sha
         "ok": bool(ok),
         "shadow": bool(shadow),
     }
+    if os.environ.get(RUN_ID_ENV):
+        rec["run_id"] = os.environ[RUN_ID_ENV]
     _append_line(_usage_log_path(), json.dumps(rec, ensure_ascii=False))
 
 
@@ -912,6 +977,318 @@ def _call_haiku(state_text, questions, purpose, shadow):
     raise _HaikuFailure("haiku_malformed")
 
 
+# --------------------------------------------------------------------------- credit budget guard
+_budget_mem = {}          # in-process memo of the incremental spend scan (see _spend_state)
+_budget_warned = [False]
+
+
+def _credit_path():
+    return os.environ.get("JEV_CREDIT_FILE") or os.path.join(_state_dir(), "jev-credit.json")
+
+
+def _spend_cache_path():
+    return os.path.join(_state_dir(), "jev-spend-cache.json")
+
+
+def _reserve_usd():
+    try:
+        return float(os.environ.get("JEV_BUDGET_RESERVE_USD", ""))
+    except ValueError:
+        return RESERVE_USD
+
+
+def _effective_purpose(purpose):
+    return os.environ.get("JEV_PURPOSE") or purpose
+
+
+def _is_live(purpose):
+    return _effective_purpose(purpose) in LIVE_PURPOSES
+
+
+def _parse_utc(s):
+    return datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+
+
+def _fmt_utc(d):
+    return d.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _next_month(d, day):
+    y, m = (d.year, d.month + 1) if d.month < 12 else (d.year + 1, 1)
+    return d.replace(year=y, month=m, day=min(int(day), 28))
+
+
+def _credit_base():
+    """(base_usd, base_ts) from the credit file with grant rollover, or None (missing/unparseable: fail OPEN
+    with one stderr warning per process)."""
+    try:
+        with open(_credit_path(), "r", encoding="utf-8") as fh:
+            c = json.load(fh)
+        base, ts = float(c["balance_usd"]), _fmt_utc(_parse_utc(c["as_of"]))
+        exp = c.get("current_grant_expires")
+        if exp:
+            exp = _parse_utc(exp)
+            now = datetime.datetime.now(datetime.timezone.utc)
+            while now >= exp:
+                base, ts = float(c["monthly_grant_usd"]), _fmt_utc(exp)
+                exp = _next_month(exp, c.get("grant_day_utc", exp.day))
+        return base, ts
+    except Exception:
+        if not _budget_warned[0]:
+            _budget_warned[0] = True
+            sys.stderr.write("jev-budget: credit file %s missing/unparseable; guard OPEN (balance unknown)\n"
+                             % _credit_path())
+        return None
+
+
+def _scan_chunk(chunk, base_ts, st):
+    for line in chunk.split(b"\n"):
+        if b'"router": "jev"' not in line:
+            continue
+        try:
+            r = json.loads(line)
+        except ValueError:
+            continue
+        if r.get("router") != "jev":
+            continue
+        usd = float(r.get("usd") or 0.0)
+        if str(r.get("ts", "")) > base_ts:
+            st["usd_since"] += usd
+        if r.get("run_id"):
+            run = st.setdefault("run", {})
+            run[str(r["run_id"])] = run.get(str(r["run_id"]), 0.0) + usd
+        if r.get("ok"):
+            pp = st["pp"].setdefault(str(r.get("purpose")), [0.0, 0])
+            pp[0] += usd
+            pp[1] += 1
+
+
+def _load_cache(log, base_ts):
+    try:
+        with open(_spend_cache_path(), "r", encoding="utf-8") as fh:
+            c = json.load(fh)
+        if c.get("log") == log and c.get("base_ts") == base_ts and isinstance(c.get("pp"), dict):
+            return c
+    except Exception:
+        pass
+    return None
+
+
+def _save_cache(st):
+    try:
+        d = _state_dir()
+        os.makedirs(d, exist_ok=True)
+        tmp = os.path.join(d, ".jev-spend-cache.%d.tmp" % os.getpid())
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(st, fh)
+        os.replace(tmp, _spend_cache_path())
+        st["_saved"] = time.time()
+    except Exception:
+        pass
+
+
+def _spend_state(base_ts):
+    """Incremental scan of the usage log: reads only bytes appended since the saved offset. Rebuilds from 0
+    when the log shrinks / rotates or the credit base changes. Returns the (shared, mutable) state dict."""
+    log = _usage_log_path()
+    try:
+        stt = os.stat(log)
+    except OSError:
+        return {"usd_since": 0.0, "pp": {}, "run": {}}
+    st = _budget_mem.get((log, _state_dir()))
+    if st is None or st["base_ts"] != base_ts:
+        st = _load_cache(log, base_ts) or {"log": log, "base_ts": base_ts, "inode": stt.st_ino,
+                                           "offset": 0, "usd_since": 0.0, "pp": {}, "run": {}}
+        _budget_mem[(log, _state_dir())] = st
+    if st["inode"] != stt.st_ino or stt.st_size < st["offset"]:
+        st.update(inode=stt.st_ino, offset=0, usd_since=0.0, pp={}, run={})
+    if stt.st_size > st["offset"]:
+        with open(log, "rb") as fh:
+            fh.seek(st["offset"])
+            chunk = fh.read(stt.st_size - st["offset"])
+        end = chunk.rfind(b"\n") + 1      # complete lines only
+        if end:
+            _scan_chunk(chunk[:end], base_ts, st)
+            st["offset"] += end
+            if time.time() - st.get("_saved", 0) > 5:
+                _save_cache(st)
+    return st
+
+
+def _est_per_call(purpose, st):
+    s, n = st["pp"].get(_effective_purpose(purpose), (0.0, 0))
+    return s / n if n else FALLBACK_EST_USD
+
+
+def _balance(purpose):
+    """(balance, est_usd_per_call) or None when unknown."""
+    b = _credit_base()
+    if b is None:
+        return None
+    st = _spend_state(b[1])
+    return b[0] - st["usd_since"], _est_per_call(purpose, st)
+
+
+_owner_warned = [False]
+
+
+def _pid_alive(pid):
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True         # EPERM: exists, not ours
+    return True
+
+
+def _owner_guard():
+    """Orphan self-stop: the owner pid recorded by the entry point is gone, or we were re-parented to init."""
+    try:
+        owner = int(os.environ.get(OWNER_ENV, ""))
+    except ValueError:
+        return
+    if _pid_alive(owner) and not (os.getppid() == 1 and os.environ.get(PPID_ENV) != "1"):
+        return
+    if not _owner_warned[0]:
+        _owner_warned[0] = True
+        sys.stderr.write("jev-budget: owner pid %d gone\n" % owner)
+    raise OwnerGone(None, 0.0, 0.0, "", "jev run orphaned: owner pid %d gone" % owner)
+
+
+def _approved_usd(arg=None):
+    """Approved dollars: the explicit arg, else the exported JEV_APPROVED_USD (children, nested runners)."""
+    if arg is not None:
+        return float(arg)
+    try:
+        return float(os.environ.get(APPROVED_ENV, ""))
+    except ValueError:
+        return None
+
+
+def _budget_guard(purpose):
+    """Per-attempt guard (non-live purposes only): owner alive, run approved + under its cap, balance - est >= reserve."""
+    if _is_live(purpose):
+        return
+    _owner_guard()
+    eff = _effective_purpose(purpose)
+    approved = _approved_usd()
+    if approved is None:
+        raise ApprovalRequired(None, 0.0, 0.0, eff, "jev run not approved: no --approved-usd / %s (purpose=%s)"
+                               % (APPROVED_ENV, eff))
+    b = _credit_base()
+    st = _spend_state(b[1] if b else "")
+    est = _est_per_call(purpose, st)
+    spent = st.get("run", {}).get(os.environ.get(RUN_ID_ENV, ""), 0.0)
+    if spent + est > approved + 1e-9:
+        raise ApprovalRequired(None, 0.0, est, eff, "jev run cap: spent $%.4f + est $%.4f > approved $%.4f (purpose=%s)"
+                               % (spent, est, approved, eff))
+    if b is None:
+        return
+    bal = b[0] - st["usd_since"]
+    reserve = _reserve_usd()
+    if bal - est < reserve:
+        raise BudgetExhausted(bal, reserve, est, eff)
+
+
+def budget_check(purpose):
+    """Public mid-run check for in-process runners: raises BudgetExhausted like the per-call guard."""
+    _budget_guard(purpose)
+
+
+def find_owner_pid(override=None):
+    """Owning agent pid: --owner-pid override, else the nearest ancestor process named `claude`, else our ppid."""
+    if override:
+        return int(override)
+    import subprocess
+    pid = os.getpid()
+    try:
+        for _ in range(12):
+            out = subprocess.run(["ps", "-o", "ppid=,comm=", "-p", str(pid)], stdout=subprocess.PIPE,
+                                 stderr=subprocess.DEVNULL, timeout=5).stdout.decode().strip().split(None, 1)
+            if len(out) < 2:
+                break
+            pid, comm = int(out[0]), out[1]
+            if pid <= 1:
+                break
+            parent = subprocess.run(["ps", "-o", "comm=", "-p", str(pid)], stdout=subprocess.PIPE,
+                                    stderr=subprocess.DEVNULL, timeout=5).stdout.decode().strip()
+            if os.path.basename(parent) == "claude":
+                return pid
+    except Exception:
+        pass
+    return os.getppid()
+
+
+def add_cost_args(ap):
+    """Shared argparse flags for every non-live runner : --approved-usd, --owner-pid, --dry-run (if absent)."""
+    ap.add_argument("--approved-usd", type=float, default=None, metavar="USD",
+                    help="user-approved spend cap for this run; the run refuses (exit 75) without it. Get the "
+                         "estimate from --dry-run, ask the user, pass the approved amount here.")
+    ap.add_argument("--owner-pid", type=int, default=None, help="pid of the owning agent (default: nearest "
+                    "`claude` ancestor, else parent); the run stops when it is gone")
+    if not any("--dry-run" in a.option_strings for a in ap._actions):
+        ap.add_argument("--dry-run", action="store_true", help="print the cost estimate and exit; needs no approval")
+
+
+def budget_preflight(purpose, est_calls, label="", refuse=True, approved_usd=None, owner_pid=None):
+    """Print one `jev-budget:` line (calls, est USD, balance-after) to stderr; raise BudgetExhausted when
+    balance - est < reserve, or ApprovalRequired for a non-live run lacking approved_usd >= est (refuse=False,
+    for --dry-run, never raises). On success exports JEV_APPROVED_USD / JEV_RUN_ID / JEV_RUN_OWNER_PID."""
+    got = _balance(purpose)
+    reserve = _reserve_usd()
+    eff = _effective_purpose(purpose)
+    if got is None:
+        bal, est, ok = None, FALLBACK_EST_USD, True
+    else:
+        bal, est = got[0], got[1]
+        ok = bal - est * est_calls >= reserve
+    est_usd = est * est_calls
+    nested = approved_usd is None and _approved_usd() is not None      # inherited run: keep its id / cap
+    approved = _approved_usd(approved_usd)
+    need = not _is_live(purpose) and est_calls > 0
+    ok_appr = (not need) or (approved is not None and est_usd <= approved + 1e-9)
+    if not ok:
+        status = "REFUSED"
+    elif ok_appr:
+        status = "OK"
+    elif refuse:
+        status = "REFUSED (needs --approved-usd >= $%.4f from the user)" % est_usd
+    else:
+        status = "DRY-RUN (a real run needs --approved-usd >= $%.4f from the user)" % est_usd
+    sys.stderr.write("jev-budget: %s purpose=%s est_calls=%d est_usd=$%.4f balance=%s balance_after=%s reserve=$%.2f "
+                     "approved=%s -> %s\n" % (
+                         label, eff, est_calls, est_usd, "unknown" if bal is None else "$%.2f" % bal,
+                         "unknown" if bal is None else "$%.2f" % (bal - est_usd), reserve,
+                         "none" if approved is None else "$%.4f" % approved,
+                         status))
+    res = {"balance": bal, "reserve": reserve, "est_calls": est_calls, "est_usd": est_usd, "ok": ok and ok_appr,
+           "approved": approved, "balance_after": None if bal is None else bal - est_usd}
+    if refuse and not ok_appr:
+        raise ApprovalRequired(bal, reserve, est_usd, eff, "jev run needs --approved-usd >= $%.4f (got %s)"
+                               % (est_usd, approved))
+    if refuse and not ok:
+        raise BudgetExhausted(bal, reserve, est_usd, eff)
+    if refuse and need and not nested:
+        import uuid
+        os.environ[APPROVED_ENV] = repr(approved)
+        os.environ[RUN_ID_ENV] = uuid.uuid4().hex[:8]
+        os.environ[OWNER_ENV] = str(find_owner_pid(owner_pid))
+        os.environ[PPID_ENV] = str(os.getppid())
+    return res
+
+
+def preflight_or_exit(purpose, est_calls, label="", dry_run=False, approved_usd=None, owner_pid=None):
+    """Entry-point helper: preflight; on refusal exit BUDGET_EXIT. dry_run prints but never refuses."""
+    try:
+        return budget_preflight(purpose, est_calls, label, refuse=not dry_run, approved_usd=approved_usd,
+                                owner_pid=owner_pid)
+    except BudgetExhausted:
+        sys.exit(BUDGET_EXIT)
+
+
 # --------------------------------------------------------------------------- ask
 def ask(state, questions, purpose, allow_jev=True, shadow=False, timeout=DEFAULT_TIMEOUT):
     """Ask Jev (or Haiku when allow_jev is False / Jev fails). See module docstring."""
@@ -923,6 +1300,7 @@ def ask(state, questions, purpose, allow_jev=True, shadow=False, timeout=DEFAULT
     jev_error = None
 
     if allow_jev:
+        _budget_guard(purpose)      # before the Jev attempt; non-live purposes only, raises BudgetExhausted
         t0 = time.time()
         try:
             _status, data = _jev_request(cfg["endpoint"], cfg["model"], state_text, questions, timeout)
