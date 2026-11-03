@@ -19,6 +19,11 @@
     "include_root": false,
     "stale_after_sec": 7200
   },
+  "fanout": {
+    "_comment": "Fan-out trigger (Owner ruling 2026-11-03: 'anytime there are 3 or more things to do that doesnt touch each other files, I want pd to fan it out'). min_tasks ready tasks with disjoint writes_to and no dependency edge -> spawn them in ONE message, width min(count, free slots). Applies at every dispatch point: PD board pick (PD-G1), PD L3 list, Coord/Mini-Coord layer. This is the setting the PD/Coord docs quote; ceiling stays exec_cap.max.",
+    "enabled": true,
+    "min_tasks": 3
+  },
   "effort": {
     "enabled": true,
     "categories": {

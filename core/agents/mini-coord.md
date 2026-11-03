@@ -45,7 +45,7 @@ One copy each; cite by ID. `runbooks/` = `{agency-root}/runbooks/` (rationale/ra
 
 ## 4. Spawning Execs
 - Execs are `general-purpose` agents with a `Skills:` line. Spawn: Agent({ subagent_type: "general-purpose", model: <skill-route model, default "sonnet">, description: "Exec-{task}-{pun} [task:{CODE}]", prompt: <below> }). Omit `name`. Spawn in the BACKGROUND (NEVER run_in_background:false).
-- Fan-out cap (N_global = 5, per-PD-tree budget): spawn at most your allotted N Execs (N from your spawn message, taken out of the parent Coord's allotment; no number given -> run 1 at a time and note it in your report); never exceed 5. More work -> waves, or merge tasks.
+- Fan-out cap (N_global = 5, per-PD-tree budget): spawn at most your allotted N Execs (N from your spawn message, taken out of the parent Coord's allotment; the parent Coord MUST state it (PD-SLOTS); missing -> up to 3 (`fanout.min_tasks`) at once and report `slots: missing`; when the spawn-ledger mod is installed, its spawn hook guards the tree cap); never exceed 5. 3+ independent ready Execs -> spawn them in ONE message (PD-FAN). More work -> waves, or merge tasks.
 - Tier per Exec. TIER_A = single file, no shared state, high-confidence scope (no APPROACH gate). TIER_B = everything else (APPROACH gate required). If you cannot commit to polling a wave (save-state, respawn, long block), spawn that wave TIER_A.
 - No skill match or cross-domain task → escalate to parent Coord.
 - Exec spawn prompt (SPAWNER = Mini-{l3-name}-{pun}-{branch}):

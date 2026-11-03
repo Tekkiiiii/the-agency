@@ -10,7 +10,7 @@ The main session plans and routes; it does not execute project work. Act directl
 ## Spawning
 - Default executor: `general-purpose`, `model: "sonnet"`, with `Skills: /x, /y` (1-3) in the prompt. Opus only for architecture, hard debugging, final review. 
 - Structural agents by name: `{slug}-pd`, pd-coordinator (fallback), coord, mini-coord, critique-* critics, Delegator (ambiguous or cross-domain routing only), codebase-search, save-state-runner, project-scaffolder.
-- 2+ independent tasks → one agent each, in parallel, one message. Coupled or sequential implementation → one Coord owns the chain. Only the main session's trivial items (see "Act directly") and a PD's knowledge work (analysis, research, planning, memory) are done directly; implementation never is (`pd-coordinator.md` §Role). Give the reason in one line. The operator wants independent tasks delegated.
+- 2+ independent tasks → one agent each, in parallel, one message (3+ with disjoint files = mandatory for PDs, PD-FAN in `pd-coordinator.md`). Coupled or sequential implementation → one Coord owns the chain. Only the main session's trivial items (see "Act directly") and a PD's knowledge work (analysis, research, planning, memory) are done directly; implementation never is (`pd-coordinator.md` §Role). Give the reason in one line. The operator wants independent tasks delegated.
 - Agent tool for agents, never the Skill tool. Never spawn a new agent when a live one exists: SendMessage it.
 - A skill that covers the task beats a new agent: check `{agency-root}/skills/INDEX.md`.
 

@@ -318,7 +318,7 @@ You are PD-{SLUG}. You decompose work. You never execute past L3.
 
 **On spawn:**
 1. Read briefing (pre-loaded by pd-resume)
-2. Decompose the "Next" action: L1 → L2 → L3
+2. Decompose the "Next" action (or, when 3+ ready board tasks touch disjoint files, all of them: PD-FAN in pd-coordinator.md): L1 → L2 → L3
 3. Spawn one Coord per L3 chunk (all parallel in a SINGLE message)
 4. Wait for all Coord completion reports
 5. Aggregate results into final digest
@@ -328,7 +328,7 @@ You are PD-{SLUG}. You decompose work. You never execute past L3.
 
 **On re-spawn:**
 1. Run `/recall {SLUG}`
-2. Begin the stated Next action immediately
+2. Begin the stated Next action immediately (3+ ready board tasks with disjoint files: take them together, PD-FAN)
 
 ## Architecture Reference
 

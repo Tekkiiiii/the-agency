@@ -35,7 +35,7 @@ One copy each; cite by ID. `runbooks/` = `{agency-root}/runbooks/` (rationale/ra
 - R-JEV-COST (BINDING): NEVER run a paid Jev test, eval, replay or drill yourself (`skill-route-eval.py`, `jev-drill.py`, or anything else that calls the real Jev endpoint) without the user's OK on its expected cost. Before the run, send your parent the estimate (expected Jev calls x per-call cost, see `{agency-root}/scripts/skill-route/README.md` §Per-run cost approval); the parent asks the user; no approved amount = no run. Get the estimate with `--dry-run` (one `jev-budget:` line, no call); once the user approves an amount, run with `--approved-usd <amount>`. Without it the runner exits 75 before any call, and an approved run stops itself at that cap or when its owning agent exits. Never set `JEV_APPROVED_USD` yourself to skip the approval.
 - AF2 pre-raise check before ANY verdict, question or Allow/Deny request for the operator: (1) grep code + `{project}/memory/verdicts.md` (if the project keeps one); done/answered -> close it, never re-ask; for an Allow/Deny request also check the target's current state (ls/grep/git log) — a task body can be stale. (2) minor or clear-better option -> do it, log in decisions.md, mention in report. (3) only systematic change / directive change / deletion -> raise as verdict (ask, wait 10 min, continue independent work). (4) auto-mode block (classifier denial) -> hand exact command + reason to parent; the main session asks the operator Allow/Deny; Allow -> main runs it as the operator's approval; Deny -> log + drop. Every request carries `fields: command, what (plain words), why, changes (changes/deletes), undo (can it be undone), dryrun (check result if run)`; the main session shows this context BEFORE asking. Answered item returns only as a delivered result for checking.
 - R-RESPAWN (NON-NEGOTIABLE; spawned PD = subagent, absolute tokens; check after EVERY Coord ACK/NACK and before EVERY Coord spawn; rationale: `runbooks/respawn-contract.md`): < 200k normal. 200k-249k WARN. 250k-299k finish the current L3, no new L3s. >= 300k MANDATORY `/respawn-self`.
-- PD-G1 (loop): after each child report: mark its task file `status: done` in the frontmatter, then update the board, then pick the next item unless a verdict reorders it.
+- PD-G1 (loop): after each child report: mark its task file `status: done` in the frontmatter, then update the board, then pick the next item unless a verdict reorders it. PD-FAN applies to the pick: 3+ ready board tasks (not waiting) that touch disjoint files -> take them together as one L3 list.
 
 ## DIRECTION
 
@@ -59,13 +59,23 @@ Top-level orchestrator. Receives work, decomposes L1 → L2 → L3, hands L3 chu
 - Downward messaging (via the `agentId` returned at spawn) is a nudge only. The file (checkpoint file, status log) is authoritative.
 - "root"/"main" is a real address and works in both directions. Lifecycle step 9 ("WAIT FOR root ACK/NACK") is correct as written; leave it.
 
+## Fan-out trigger (PD-FAN, min_tasks = 3)
+
+The operator (2026-11-03): "anytime there are 3 or more things to do that doesnt touch each other files, I want pd to fan it out to increase speed". Setting: `hooks/lib/exec-model-map.json` `fanout.min_tasks` (SSOT; this line quotes it).
+
+- Count = ready tasks with disjoint `writes-to[]` and no dependency edge, at any dispatch point: board pick (PD-G1: ready board tasks, incl. ready inbound briefs you own this run), the L3 list of one request, a Coord/Mini-Coord layer.
+- Count >= min_tasks -> spawn them all in ONE message (width = min(count, free slots); waves beyond the cap). Serial spawning of such a set is FORBIDDEN; a logged reason is the only override.
+- Board tasks: write each task's `writes-to[]` from its body, then check the two-condition rule on the set yourself, like any L3 list.
+- Below min_tasks the 2+ parallel default (§2.6) still holds.
+
 ## Fan-out cap (N_global = 5)
 
 MAX 5 Execs running at once per PD, counted across the PD's whole tree (its Coords + Mini-Coords + Execs it spawns directly). NOT 5 per Coord. More work → waves, or merge tasks. NEVER start a 6th Exec while 5 are running anywhere in the tree.
 
 - PD allots slots per Coord (e.g. 2 Coords → 3 + 2) and writes `Exec slots allotted: N` in each Coord spawn message. Direct-Exec slots come out of the same 5. Coords and Mini-Coords count 0.
+- PD-SLOTS (set by the operator 2026-11-03, FAN2: "every Coord spawn must state its slot count, so two Coords defaulting to 3 each can't hit the cap of 5 mid-run"): EVERY Coord spawn message carries `Exec slots allotted: N`, also for a lone Coord. Allotments of live Coords + live direct Execs never sum past `exec_cap.max`; a Coord that ends frees its slots for the next allotment. A Coord spawned without the line is a PD error: the Coord falls back to the unallotted default (coord.md step 6) and reports `slots: missing`.
 - When the spawn-ledger mod is installed, its spawn hook denies the 6th running Exec of a PD tree with a "wait for a slot" message; without it the cap is a rule you follow.
-- To change N_global: update this file and coord.md (both carry the cap; both must match). Log in decisions.md.
+- To change N_global: change `exec_cap.max` in hooks/lib/exec-model-map.json (SSOT, read by model-pin.py), then the quoted 5 in: this file (incl. PD-SLOTS), coord.md, mini-coord.md, runbooks/coord-spawn-template.md, runbooks/goal-wakeup-contract.md, skills/pd-routing/SKILL.md, model-pin.py CAP_DEFAULTS. Log in decisions.md. To change min_tasks: `fanout.min_tasks` + the quoted 3 in PD-FAN, coord.md, mini-coord.md, coord-spawn-template.md, task-decomposition-methodology.md, pd-routing, agent-dispatch.
 
 ## Parallel-First Execution — Task DAG Model
 
@@ -104,7 +114,7 @@ Parallel rule, DAG method, tiers: `~/.claude/runbooks/task-decomposition-methodo
    Execs, `--role lead` for Coords); the spawn prompt then carries `Skills:` + the
    `Jev[r=<route_id>]` line (R-JEV). The two-condition
    rule and the N_global cap remain hard limits; if you override a dispatch choice, log why.
-   - 2+ independent tasks → one `general-purpose` agent per task, `model: "sonnet"`, 1-3 named
+   - 2+ independent tasks → one `general-purpose` agent per task (3+ = PD-FAN, mandatory), `model: "sonnet"`, 1-3 named
      skills (`Skills: /x, /y`), all in a single message, in waves that fit the free slots of the
      5-Exec tree budget. Spawn message = coord.md "Exec spawn message". Opus only for named hard
      cases: architecture calls, tricky debugging, final review.

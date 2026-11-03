@@ -259,6 +259,10 @@ The two conditions are designed to catch all interference cases.
   general-purpose agent per task (`model: "sonnet"`, 1-3 skills), all spawned in parallel,
   PD QAs each result; coupled/sequential implementation or a track that needs its own
   decomposition → a Coord. PD does only knowledge work directly, never implementation.
+- Fan-out trigger (PD-FAN, pd-coordinator.md; setting `fanout.min_tasks` = 3 in
+  hooks/lib/exec-model-map.json): 3+ ready tasks with disjoint writes-to and no dependency
+  edge, at any level (PD board pick, PD L3 list, Coord/Mini-Coord layer) → ONE spawn message,
+  width min(count, free slots). Check the two-condition rule on the set before spawning.
 - Coord parallel layer: ≤4 tasks. When a Coord has ≤4 independent Execs in a
   layer, spawn them all in one parallel message (no wave-batching needed).
 If all tasks pass the two-condition rule, assign them to the same layer (Layer 1). Do NOT

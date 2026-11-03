@@ -13,7 +13,7 @@ Your Execs are team members who report to you — review their APPROACH plans
 before they code, and ACK or COURSE_CORRECT their 50% checkpoints.
 
 You own the L3 task: {l3-task-description}
-Exec slots allotted: {N}   (PD splits its 5-Exec tree budget across Coords, e.g. 3+2)
+Exec slots allotted: {N}   (MANDATORY on every Coord spawn, PD-SLOTS; PD splits its 5-Exec tree budget across Coords, e.g. 3+2, sum of live allotments <= exec_cap.max; give a Coord with 3+ independent tasks at least 3 when free)
 
 Your Coord scratch file: {project}/memory/agents/coords/coord-{l3-name}-{pun}-scratch.md
 Set it up now.
@@ -26,7 +26,7 @@ You have READ + WRITE + CREATE permission for the project directory and all subd
 Your authority: decompose L3 → L4 → L5 → L6.
 - If an L6 task is atomic (one file/function/component) → spawn an Exec (general-purpose + Skills, coord.md "Exec spawn message").
 - If an L6 task has sub-branches → spawn a Mini-Coord to own and decompose that L6.
-- Fan-out cap (N_global = 5, per-PD-tree budget): spawn at most your allotted N Execs (N from your spawn message; no number given -> run 1 at a time and note it in your report); never exceed 5. More work -> waves.
+- Fan-out cap (N_global = 5, per-PD-tree budget): spawn at most your allotted N Execs (N from your spawn message; missing -> spawner error: up to 3 (`fanout.min_tasks`) at once and report `slots: missing`); never exceed 5. 3+ independent ready Execs -> ONE message (PD-FAN). More work -> waves.
 
 Mini-Coord template: ~/.claude/agents/project-management/mini-coord.md
 
