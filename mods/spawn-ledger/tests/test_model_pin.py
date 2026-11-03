@@ -413,7 +413,7 @@ class CapTests(Base):
         self.put(*[self.start("s%d" % i) for i in range(5)])
         o = self.run_pin(parent_spawn_id="P1", model="sonnet", tool_use_id="tu-six")
         self.assertEqual(o["action"], "deny")
-        self.assertEqual(o["deny"], self.MSG)
+        self.assertTrue(o["deny"].startswith(self.MSG), o["deny"])
         rows = self.events("spawn_denied")
         self.assertEqual(len(rows), 1)
         r = rows[0]
@@ -421,6 +421,38 @@ class CapTests(Base):
                          ("tu-six", "general-purpose", "P1", 5, 5))
         self.assertEqual(r["root"], "pd:test-pd")
         self.assertIn("ts", r)
+
+    def test_denial_lists_slot_holders(self):
+        self.map_with(exec_cap={"max": 3})
+        coord = self.start("coordabcd1234zz", parent="P1", typ="coord", pa="test-pd")
+        a = dict(self.start("exec-aaaa", parent="coordabcd1234zz", age=720), description="Build alpha widget")
+        b = dict(self.start("exec-bbbb", parent="coordabcd1234zz", age=90), description="Fix beta parser " + "x" * 80)
+        gone = dict(self.start("exec-cccc", parent="coordabcd1234zz", age=300), description="Ended gamma job")
+        self.put(coord, a, b, gone, self.end(sid="exec-cccc"))
+        with open(os.path.join(self.state, "spawn-slots.jsonl"), "w") as f:
+            f.write(json.dumps({"root": "pd:test-pd", "tool_use_id": "tu-res", "ts": NOW - 20}) + "\n")
+        o = self.run_pin(parent_spawn_id="P1", model="sonnet", tool_use_id="tu-new")
+        self.assertEqual(o["action"], "deny")
+        msg = o["deny"]
+        self.assertTrue(msg.startswith("[spawn-cap] 3 Execs already running under PD test-pd tree"), msg)
+        self.assertIn("Do not retry in a loop.", msg)
+        self.assertIn("Build alpha widget", msg)
+        self.assertIn("Fix beta parser", msg)
+        self.assertNotIn("x" * 60, msg)  # description truncated
+        self.assertNotIn("Ended gamma job", msg)
+        self.assertIn("coord coordabc", msg)  # parent agent + first 8 chars of parent_spawn_id
+        self.assertNotIn("coordabcd", msg)
+        self.assertIn("PD test-pd P1", msg)  # root PD instance
+        self.assertIn("12m", msg)
+        self.assertIn("reserved (pending start), age 20s", msg)
+
+    def test_denial_holder_list_capped(self):
+        self.map_with(exec_cap={"max": 10})
+        self.put(*[dict(self.start("s%d" % i), description="job%d" % i) for i in range(10)])
+        o = self.run_pin(parent_spawn_id="P1", model="sonnet")
+        self.assertEqual(o["action"], "deny")
+        self.assertIn("+2 more", o["deny"])
+        self.assertLessEqual(len(o["deny"].splitlines()), 14)
 
     def test_denied_spawn_is_not_reserved(self):
         self.put(*[self.start("s%d" % i) for i in range(5)])

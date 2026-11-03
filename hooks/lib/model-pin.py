@@ -621,11 +621,11 @@ class Ancestry:
         return res
 
 
-def count_running(rows, root, types, stale, now, anc=None, include_root=False):
+def count_running(rows, root, types, stale, now, anc=None, include_root=False, holders=None):
     """spawn_start rows under this root PD, a capped type, within the stale window, with no spawn_end.
     Ended = spawn_end with the same spawn_id (ABANDONED sweep rows included), OR whose agent_id is the
     agent_id of the spawn_launched row of that spawn (spawn_end rows sometimes carry spawn_id "").
-    Also ended = spawn_end with the start's tool_use_id."""
+    Also ended = spawn_end with the start's tool_use_id. If `holders` is a list, each counted start row is appended."""
     ended_sid, ended_agent, ended_tuid = set(), set(), set()
     agent_by_sid, agent_by_tuid = {}, {}
     start_tuids = set()
@@ -665,6 +665,8 @@ def count_running(rows, root, types, stale, now, anc=None, include_root=False):
         if sid in ended_sid or (tuid and tuid in ended_tuid) or (agent and agent in ended_agent):
             continue
         running += 1
+        if holders is not None:
+            holders.append(r)
     return running, start_tuids
 
 
@@ -692,10 +694,11 @@ def _unlock(fh):
             pass
 
 
-def cap_check(cap, parent, parent_agent, tuid, now, d=None):
+def cap_check(cap, parent, parent_agent, tuid, now, d=None, holders=None):
     """-> (status, denied, total_running_plus_reserved, root). status: "ok" (root PD found and counted),
     "exempt" (chain fully resolved, no PD) or "unresolved" (broken chain; root = the missing spawn_id).
-    Count + reserve atomically under flock; exempt/unresolved spawns reserve nothing."""
+    Count + reserve atomically under flock; exempt/unresolved spawns reserve nothing.
+    If `holders` is a list it receives one dict per slot holder (running start rows + reservations) for the denial text."""
     max_n = int(cap.get("max", 5))
     stale = float(cap.get("stale_after_sec", 7200))
     types = set(norm_type(t) for t in (cap.get("types") or []))
@@ -715,7 +718,8 @@ def cap_check(cap, parent, parent_agent, tuid, now, d=None):
                 return "exempt", False, 0, None
             if kind == "unresolved":
                 return "unresolved", False, 0, root
-            running, start_tuids = count_running(rows, root, types, stale, now, anc, include_root)
+            started = []
+            running, start_tuids = count_running(rows, root, types, stale, now, anc, include_root, started)
             fresh = []
             try:
                 with open(slots, encoding="utf-8") as f:
@@ -728,7 +732,7 @@ def cap_check(cap, parent, parent_agent, tuid, now, d=None):
                             fresh.append(r)
             except FileNotFoundError:
                 pass
-            held, seen = 0, set()
+            held, seen, reserved = 0, set(), []
             for r in fresh:
                 t = r.get("tool_use_id") or ""
                 if r.get("root") != root or (t and t in start_tuids) or (tuid and t == tuid):
@@ -738,7 +742,18 @@ def cap_check(cap, parent, parent_agent, tuid, now, d=None):
                         continue
                     seen.add(t)
                 held += 1
+                reserved.append(r)
             total = running + held
+            if holders is not None:
+                pd_of = lambda row: _pd_instance(anc, row)
+                for r in started:
+                    ts = parse_ts(r.get("ts"))
+                    holders.append({"desc": r.get("description") or r.get("subagent_type") or "?",
+                                    "parent_agent": r.get("parent_agent") or "?",
+                                    "parent": (r.get("parent_spawn_id") or "")[:8], "pd": pd_of(r),
+                                    "age": max(0, now - ts) if ts is not None else None})
+                for r in reserved:
+                    holders.append({"reserved": True, "age": max(0, now - float(r.get("ts", now)))})
             _race_delay = os.environ.get("MODEL_PIN_TEST_RACE_DELAY")  # test hook: widen the count->reserve window
             if _race_delay:
                 time.sleep(float(_race_delay))
@@ -757,11 +772,49 @@ def cap_check(cap, parent, parent_agent, tuid, now, d=None):
             _unlock(lock)
 
 
-def cap_message(n, max_n, root):
+def _pd_instance(anc, row):
+    """Short id of the PD spawn row above this start row (walks parent_spawn_id), or "" if not in the ledger."""
+    cur, seen = row.get("parent_spawn_id") or "", set()
+    while cur and cur not in seen and len(seen) < MAX_ANCESTRY_DEPTH:
+        seen.add(cur)
+        r = anc.idx.get(cur)
+        if r is None:
+            return ""
+        if is_pd(r.get("subagent_type")):
+            return cur[:8]
+        cur = r.get("parent_spawn_id") or ""
+    return ""
+
+
+def _fmt_age(sec):
+    if sec is None:
+        return "?"
+    sec = int(sec)
+    return "%ds" % sec if sec < 60 else ("%dm" % (sec // 60) if sec < 3600 else "%dh%02dm" % (sec // 3600, sec % 3600 // 60))
+
+
+def holders_text(holders, pd_name="?", limit=8, desc_max=50):
+    """One line per slot holder: description, parent agent + short instance id, root PD instance, age."""
+    lines = []
+    for h in sorted(holders, key=lambda h: -(h.get("age") or 0))[:limit]:
+        if h.get("reserved"):
+            lines.append("- reserved (pending start), age %s" % _fmt_age(h.get("age")))
+            continue
+        desc = " ".join(str(h["desc"]).split())
+        desc = desc if len(desc) <= desc_max else desc[:desc_max - 3] + "..."
+        lines.append("- %s | parent %s %s%s | age %s" % (
+            desc, h["parent_agent"], h["parent"] or "-", (", PD %s %s" % (pd_name, h["pd"])) if h["pd"] else "", _fmt_age(h["age"])))
+    if len(holders) > limit:
+        lines.append("+%d more" % (len(holders) - limit))
+    return "\n".join(lines)
+
+
+def cap_message(n, max_n, root, holders=None):
     pd = root[3:] if (root or "").startswith("pd:") else (root or "?")
-    return ("[spawn-cap] %d Execs already running under PD %s tree (cap %d, Exec cap policy: max %d Execs per PD "
+    base = ("[spawn-cap] %d Execs already running under PD %s tree (cap %d, Exec cap policy: max %d Execs per PD "
             "across all its coords). Please wait for a slot - a completion notification arrives on its own - "
             "then spawn again, or merge tasks. Do not retry in a loop." % (n, pd, max_n, max_n))
+    return base + ("\nSlot holders (oldest first):\n" + holders_text(holders, pd) if holders else "")
 
 
 # ---- main -----------------------------------------------------------------
@@ -804,8 +857,9 @@ def decide(raw):
     if (cap.get("enabled") is True and not cap_killed() and norm_type(subagent_type) in types
             and (parent or is_pd(parent_agent) or cap.get("include_root") is True)):
         status, denied, total, root = "ok", False, 0, None
+        holders = []
         try:
-            status, denied, total, root = cap_check(cap, parent, parent_agent, tuid, now_epoch(), d)
+            status, denied, total, root = cap_check(cap, parent, parent_agent, tuid, now_epoch(), d, holders)
         except Exception as e:  # the cap fails open on its own; the rewrite below still applies
             denied, total = False, 0
             append_row({"event": "model_pin_error", "ts": iso(now_epoch()), "tool_use_id": tuid,
@@ -820,7 +874,7 @@ def decide(raw):
             append_row({"event": "spawn_denied", "ts": iso(now_epoch()), "tool_use_id": tuid,
                         "subagent_type": subagent_type, "parent_spawn_id": parent, "root": root,
                         "running": total, "cap": max_n, "reason": "spawn_cap"}, d)
-            return result("deny", None, param, None, "spawn_cap", cap_message(total, max_n, root))
+            return result("deny", None, param, None, "spawn_cap", cap_message(total, max_n, root, holders))
 
     if action == "rewrite":
         append_row({"event": "model_override", "ts": iso(now_epoch()), "tool_use_id": tuid,
