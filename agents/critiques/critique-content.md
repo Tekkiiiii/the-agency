@@ -53,6 +53,12 @@ Flag any of the following patterns with exact quote and location:
 
 ## Step 3 — Evaluate Dimensions
 
+**Generative quality**
+- Line 1 carries proof: a checkable number, a named person or product, or a dated event. Category claims ("save time", "get more done") fail
+- Three tests per key line: can you visualise it, can you falsify it, could only this brand say it; failing two = fail
+- Clean-but-generic copy (passes the slop scan, fails the three tests) scores NEEDS WORK, never PASS
+- Quote the failing line and name which test failed
+
 **Clarity**
 - Every sentence has one job — flag double-duty sentences
 - Vague quantifiers: "many", "fast", "easy", "significantly" — require specifics
